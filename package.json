@@ -1,7 +1,11 @@
 {
-  "name": "car-parts-auction",
-  "version": "0.1.0",
+  "name": "q8sport",
+  "version": "1.0.0",
   "private": true,
+  "description": "Q8Sport - Kuwait Sports Auction Platform - مزاد رياضي كويتي",
+  "keywords": ["kuwait", "sports", "auction", "q8", "مزاد", "رياضي"],
+  "author": "Q8Sport Team",
+  "homepage": "https://q8sport.tk",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
