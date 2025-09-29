@@ -241,10 +241,15 @@ export default function AdminDashboard() {
           {/* Quick Actions */}
           <div className="bg-white rounded-lg shadow p-6 mb-8">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">أوامر إدارية رئيسية</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               <Link href="/admin/users" className="flex items-center justify-center p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
                 <Users className="h-6 w-6 text-blue-600 ml-2" />
                 <span className="text-blue-700 font-medium">إدارة المستخدمين</span>
+              </Link>
+              
+              <Link href="/admin/ads" className="flex items-center justify-center p-4 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+                <Settings className="h-6 w-6 text-red-600 ml-2" />
+                <span className="text-red-700 font-medium">إعلانات Google</span>
               </Link>
               
               <Link href="/admin/advertisements" className="flex items-center justify-center p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors">

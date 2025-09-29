@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Car, Search, User, Eye, Heart } from 'lucide-react';
 import UserActions from '@/components/UserActions';
 import ProductsList from '@/components/ProductsList';
+import { BannerAd, SidebarAd, InArticleAd } from '@/components/ads/GoogleAds';
 
 export default function Home() {
   return (
@@ -59,6 +60,12 @@ export default function Home() {
           </div>
         </div>
       </header>
+
+      {/* Top Banner Ad */}
+      <BannerAd 
+        slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_HEADER || "1234567890"}
+        className="bg-gray-100 border-y border-gray-200" 
+      />
 
       {/* Advertisement Banner - محذوف مؤقتاً */}
       {/* <AdvertisementBanner /> */}
@@ -185,6 +192,12 @@ export default function Home() {
             </div>
           </div>
 
+          {/* In-Article Ad بين المنتجات */}
+          <InArticleAd 
+            slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_IN_ARTICLE || "0987654321"}
+            className="my-8"
+          />
+
           {/* Additional Featured Items */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-6 sm:mt-8">
             {[
@@ -233,6 +246,12 @@ export default function Home() {
           <ProductsList />
         </div>
       </section>
+
+      {/* Bottom Banner Ad */}
+      <BannerAd 
+        slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_FOOTER || "1111222233"}
+        className="bg-white border-y border-gray-200"
+      />
 
       {/* Footer */}
       <footer className="bg-gray-800 text-white py-8 sm:py-12">

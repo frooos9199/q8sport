@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/contexts/AuthContext";
+import GoogleAdSenseScript from "@/components/ads/GoogleAdSenseScript";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -28,6 +29,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl">
+      <head>
+        <GoogleAdSenseScript 
+          publisherId={process.env.NEXT_PUBLIC_GOOGLE_ADSENSE_CLIENT || "ca-pub-XXXXXXXXXXXXXXXX"} 
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased font-sans`}
       >
