@@ -18,22 +18,62 @@ model User {
   phone     String?
   whatsapp  String?
   avatar    String?
+  facebookId String?  @unique  // Facebook User ID
   role      UserRole  @default(USER)
   status    UserStatus @default(ACTIVE)
   rating    Float?    @default(0.0)
   verified  Boolean   @default(false)
   lastLoginAt DateTime?
+  
+  // Shop/Business info
+  shopName    String?   // اسم المحل
+  shopAddress String?   // عنوان المحل
+  shopLicense String?   // رخصة المحل
+  businessType String?  // نوع النشاط التجاري
+  
+  // Permissions for sellers and shop owners
+  canManageProducts Boolean @default(false)
+  canManageUsers    Boolean @default(false)
+  canViewReports    Boolean @default(false)
+  canManageOrders   Boolean @default(false)
+  canManageShop     Boolean @default(false)
+  
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   
   // Relations
   auctions  Auction[]
   bids      Bid[]
+  products  Product[]
   sentMessages Message[] @relation("SentMessages")
   receivedMessages Message[] @relation("ReceivedMessages")
   notifications Notification[]
   
   @@map("users")
+}
+
+model Product {
+  id          String        @id @default(cuid())
+  title       String
+  description String
+  price       Float
+  condition   String        @default("جديد")
+  category    String        @default("قطع غيار")
+  images      String        // JSON array of image URLs/data
+  status      ProductStatus @default(ACTIVE)
+  featured    Boolean       @default(false)
+  views       Int           @default(0)
+  soldPrice   Float?        // سعر البيع النهائي
+  soldDate    DateTime?     // تاريخ البيع
+  buyerInfo   String?       // معلومات المشتري (JSON)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  
+  // Relations
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
+  
+  @@map("products")
 }
 
 model CarBrand {
@@ -234,6 +274,13 @@ enum UserStatus {
   BANNED
 }
 
+enum ProductStatus {
+  ACTIVE
+  SOLD
+  INACTIVE
+  DELETED
+}
+
 enum MessageType {
   TEXT
   SYSTEM
@@ -243,13 +290,16 @@ enum MessageType {
 
 enum UserRole {
   USER
+  SELLER
+  SHOP_OWNER
   ADMIN
 }
 
 enum PartCondition {
-  NEW
-  USED
-  REFURBISHED
+  NEW                 // جديد
+  USED                // مستعمل
+  USED_NEEDS_REPAIR   // مستعمل يحتاج تصليح
+  SCRAP               // سكراب
 }
 
 enum AuctionStatus {

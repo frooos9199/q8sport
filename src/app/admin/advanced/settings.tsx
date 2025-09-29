@@ -97,6 +97,8 @@ export default function AdvancedSettings() {
           </label>
           <input
             type="text"
+            title="اسم الموقع"
+            placeholder="أدخل اسم الموقع"
             value={settings.siteName}
             onChange={(e) => setSettings({...settings, siteName: e.target.value})}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
@@ -156,6 +158,8 @@ export default function AdvancedSettings() {
           وصف الموقع
         </label>
         <textarea
+          title="وصف الموقع"
+          placeholder="أدخل وصفاً مختصراً للموقع"
           value={settings.siteDescription}
           onChange={(e) => setSettings({...settings, siteDescription: e.target.value})}
           rows={3}
@@ -172,6 +176,7 @@ export default function AdvancedSettings() {
           <label className="relative inline-flex items-center cursor-pointer">
             <input
               type="checkbox"
+              title="تفعيل وضع الصيانة"
               checked={settings.maintenanceMode}
               onChange={(e) => setSettings({...settings, maintenanceMode: e.target.checked})}
               className="sr-only peer"
@@ -188,6 +193,7 @@ export default function AdvancedSettings() {
           <label className="relative inline-flex items-center cursor-pointer">
             <input
               type="checkbox"
+              title="السماح بالتسجيلات الجديدة"
               checked={settings.allowRegistrations}
               onChange={(e) => setSettings({...settings, allowRegistrations: e.target.checked})}
               className="sr-only peer"
@@ -208,6 +214,8 @@ export default function AdvancedSettings() {
           </label>
           <input
             type="number"
+            title="أقصى مبلغ مزايدة"
+            placeholder="أدخل أقصى مبلغ مزايدة"
             value={settings.maxBidAmount}
             onChange={(e) => setSettings({...settings, maxBidAmount: parseInt(e.target.value)})}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
@@ -220,6 +228,8 @@ export default function AdvancedSettings() {
           </label>
           <input
             type="number"
+            title="أقل زيادة في المزايدة"
+            placeholder="أدخل أقل زيادة مسموحة"
             value={settings.minBidIncrement}
             onChange={(e) => setSettings({...settings, minBidIncrement: parseInt(e.target.value)})}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
@@ -232,6 +242,8 @@ export default function AdvancedSettings() {
           </label>
           <input
             type="number"
+            title="مدة المزاد الافتراضية"
+            placeholder="أدخل عدد الأيام"
             value={settings.defaultAuctionDuration}
             onChange={(e) => setSettings({...settings, defaultAuctionDuration: parseInt(e.target.value)})}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
@@ -267,6 +279,7 @@ export default function AdvancedSettings() {
           <label className="relative inline-flex items-center cursor-pointer">
             <input
               type="checkbox"
+              title="تفعيل إشعارات واتساب"
               checked={settings.whatsappEnabled}
               onChange={(e) => setSettings({...settings, whatsappEnabled: e.target.checked})}
               className="sr-only peer"
@@ -283,6 +296,7 @@ export default function AdvancedSettings() {
           <label className="relative inline-flex items-center cursor-pointer">
             <input
               type="checkbox"
+              title="تفعيل الإشعارات البريدية"
               checked={settings.emailNotifications}
               onChange={(e) => setSettings({...settings, emailNotifications: e.target.checked})}
               className="sr-only peer"

@@ -6,7 +6,7 @@ import { formatDateLong } from '@/utils/dateUtils';
 import { 
   User, Search, Filter, Star, Award, Calendar, MapPin,
   Eye, MessageCircle, TrendingUp, Package, ShoppingBag,
-  CheckCircle, Car
+  CheckCircle, Car, ArrowLeft
 } from 'lucide-react';
 
 interface UserCard {
@@ -27,6 +27,8 @@ interface UserCard {
   specialties: string[];
   lastActive: string;
   isOnline: boolean;
+  initials: string;
+  avatarColor: string;
 }
 
 const sampleUsers: UserCard[] = [
@@ -46,7 +48,9 @@ const sampleUsers: UserCard[] = [
     },
     specialties: ['Ford Mustang', 'محركات V8', 'قطع أصلية'],
     lastActive: '2024-12-28T10:30:00',
-    isOnline: true
+    isOnline: true,
+    initials: 'AS',
+    avatarColor: 'bg-red-500'
   },
   {
     id: 2,
@@ -64,7 +68,9 @@ const sampleUsers: UserCard[] = [
     },
     specialties: ['Chevrolet Corvette', 'فرامل رياضية', 'تيونينق'],
     lastActive: '2024-12-28T08:15:00',
-    isOnline: false
+    isOnline: false,
+    initials: 'FS',
+    avatarColor: 'bg-pink-500'
   },
   {
     id: 3,
@@ -82,7 +88,9 @@ const sampleUsers: UserCard[] = [
     },
     specialties: ['Ford F-150', 'إكسسوارات', 'قطع مستعملة'],
     lastActive: '2024-12-27T16:45:00',
-    isOnline: false
+    isOnline: false,
+    initials: 'MR',
+    avatarColor: 'bg-blue-500'
   },
   {
     id: 4,
@@ -100,7 +108,9 @@ const sampleUsers: UserCard[] = [
     },
     specialties: ['Camaro SS', 'تعديلات رياضية', 'عوادم'],
     lastActive: '2024-12-28T12:20:00',
-    isOnline: true
+    isOnline: true,
+    initials: 'SM',
+    avatarColor: 'bg-green-500'
   },
   {
     id: 5,
@@ -118,7 +128,9 @@ const sampleUsers: UserCard[] = [
     },
     specialties: ['محركات', 'علب تروس', 'صيانة شاملة'],
     lastActive: '2024-12-28T09:10:00',
-    isOnline: false
+    isOnline: false,
+    initials: 'KN',
+    avatarColor: 'bg-orange-500'
   },
   {
     id: 6,
@@ -136,7 +148,9 @@ const sampleUsers: UserCard[] = [
     },
     specialties: ['قطع أصلية', 'كورفيت كلاسيك', 'ترميم'],
     lastActive: '2024-12-28T11:55:00',
-    isOnline: true
+    isOnline: true,
+    initials: 'NY',
+    avatarColor: 'bg-purple-500'
   }
 ];
 
@@ -200,29 +214,44 @@ export default function UsersPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-              <Link href="/" className="flex items-center ml-6 text-blue-600 hover:text-blue-700">
-                <Car className="h-8 w-8" />
-                <span className="mr-2 text-xl font-bold">Q8 MAZAD SPORT</span>
+      <header className="bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 text-white shadow-xl sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+          <div className="flex flex-col sm:flex-row justify-between items-center py-4 sm:py-6 gap-4">
+            {/* Logo and Back */}
+            <div className="flex items-center justify-center sm:justify-start w-full sm:w-auto">
+              <Link href="/" className="flex items-center ml-6 hover:text-gray-200 transition-colors">
+                <ArrowLeft className="h-5 w-5" />
+                <span className="mr-2">العودة</span>
+              </Link>
+              <div className="bg-white/20 rounded-full p-2 ml-3">
+                <User className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
+              </div>
+              <div className="text-center sm:text-right">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white drop-shadow-lg">البائعون والمتخصصون</h1>
+                <p className="text-gray-200 text-xs sm:text-sm">Q8 MAZAD SPORT</p>
+              </div>
+            </div>
+            
+            <div className="hidden sm:flex space-x-6">
+              <Link href="/auctions" className="text-white hover:text-gray-200 font-medium transition-colors px-4 py-2 rounded-full hover:bg-white/10">
+                المزادات
+              </Link>
+              <Link href="/auth" className="bg-white/20 hover:bg-white/30 px-6 py-3 rounded-full font-medium transition-all">
+                تسجيل الدخول
               </Link>
             </div>
-            <nav className="hidden md:flex space-x-8">
-              <Link href="/auctions" className="text-gray-800 hover:text-gray-900">المزادات</Link>
-              <Link href="/users" className="text-blue-600 font-semibold">البائعون</Link>
-              <Link href="/auth" className="text-gray-800 hover:text-gray-900">تسجيل الدخول</Link>
-            </nav>
           </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Advertisement Banner - محذوف مؤقتاً */}
+      {/* <AdvertisementBanner /> */}
+
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-6 sm:py-8">
         {/* Page Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">البائعون والمتخصصون</h1>
-          <p className="text-gray-800">اكتشف أفضل البائعين وتواصل مع المتخصصين في قطع غيار السيارات</p>
+        <div className="mb-6 sm:mb-8 text-center sm:text-right">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">أفضل البائعين والمتخصصين</h2>
+          <p className="text-gray-800 font-medium">اكتشف أفضل البائعين وتواصل مع المتخصصين في قطع غيار السيارات الرياضية</p>
         </div>
 
         {/* Search and Filters */}
@@ -237,7 +266,7 @@ export default function UsersPage() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="ابحث عن البائعين أو التخصصات..."
-                  className="w-full pr-10 pl-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-600 font-medium"
+                  className="w-full pr-10 pl-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent text-gray-900 placeholder-gray-600 font-medium"
                 />
               </div>
             </div>
@@ -255,7 +284,7 @@ export default function UsersPage() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 font-bold"
+              className="px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 text-gray-900 font-bold"
               title="ترتيب النتائج"
             >
               <option value="rating">الأعلى تقييماً</option>
@@ -275,7 +304,7 @@ export default function UsersPage() {
                   <select
                     value={selectedLocation}
                     onChange={(e) => setSelectedLocation(e.target.value)}
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 text-gray-900 font-medium"
                     title="اختر المنطقة"
                   >
                     <option value="">جميع المناطق</option>
@@ -291,7 +320,7 @@ export default function UsersPage() {
                   <select
                     value={selectedSpecialty}
                     onChange={(e) => setSelectedSpecialty(e.target.value)}
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 text-gray-900 font-medium"
                     title="اختر التخصص"
                   >
                     <option value="">جميع التخصصات</option>
@@ -307,7 +336,7 @@ export default function UsersPage() {
                   <select
                     value={minRating}
                     onChange={(e) => setMinRating(parseFloat(e.target.value))}
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 text-gray-900 font-medium"
                     title="اختر التقييم الأدنى"
                   >
                     <option value={0}>جميع التقييمات</option>
@@ -354,40 +383,40 @@ export default function UsersPage() {
         </div>
 
         {/* Users Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {sortedUsers.map((user) => (
             <div key={user.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
               {/* Header */}
-              <div className="p-6 pb-4">
+              <div className="p-4 sm:p-6 pb-4">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-start space-x-3">
                     <div className="relative">
-                      <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                        <User className="h-8 w-8 text-blue-600" />
+                      <div className={`w-12 h-12 sm:w-16 sm:h-16 ${user.avatarColor} rounded-full flex items-center justify-center`}>
+                        <span className="text-white font-bold text-sm sm:text-lg">{user.initials}</span>
                       </div>
                       {user.isOnline && (
-                        <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+                        <div className="absolute bottom-0 right-0 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 border-2 border-white rounded-full"></div>
                       )}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-1">
-                        <h3 className="text-lg font-bold text-gray-900">{user.name}</h3>
+                        <h3 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">{user.name}</h3>
                         {user.verified && (
-                          <CheckCircle className="h-5 w-5 text-blue-600" />
+                          <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0" />
                         )}
                       </div>
-                      <div className="flex items-center text-sm text-gray-600 mb-2">
-                        <MapPin className="h-4 w-4 ml-1" />
-                        <span>{user.location}</span>
+                      <div className="flex items-center text-xs sm:text-sm text-gray-800 mb-2">
+                        <MapPin className="h-3 w-3 sm:h-4 sm:w-4 ml-1 flex-shrink-0" />
+                        <span className="truncate">{user.location}</span>
                       </div>
-                      <div className="flex items-center space-x-3">
+                      <div className="flex items-center flex-wrap gap-2 text-xs sm:text-sm">
                         <div className="flex items-center">
-                          <Star className="h-4 w-4 text-yellow-500 ml-1" />
-                          <span className="font-semibold">{user.rating}</span>
-                          <span className="text-gray-600">({user.totalRatings})</span>
+                          <Star className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-500 ml-1" />
+                          <span className="font-bold text-gray-900">{user.rating}</span>
+                          <span className="text-gray-700">({user.totalRatings})</span>
                         </div>
-                        <span className={`text-xs px-2 py-1 rounded-full ${
-                          user.isOnline ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                          user.isOnline ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700'
                         }`}>
                           {user.isOnline ? 'متصل' : getTimeAgo(user.lastActive)}
                         </span>
@@ -397,51 +426,51 @@ export default function UsersPage() {
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4">
                   <div className="text-center">
                     <div className="flex items-center justify-center mb-1">
-                      <ShoppingBag className="h-4 w-4 text-blue-600 ml-1" />
-                      <span className="font-bold text-gray-900">{user.stats.totalSales}</span>
+                      <ShoppingBag className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 ml-1" />
+                      <span className="font-bold text-gray-900 text-sm sm:text-base">{user.stats.totalSales}</span>
                     </div>
-                    <p className="text-xs text-gray-600">مبيعات</p>
+                    <p className="text-xs text-gray-700">مبيعات</p>
                   </div>
                   <div className="text-center">
                     <div className="flex items-center justify-center mb-1">
-                      <Package className="h-4 w-4 text-green-600 ml-1" />
-                      <span className="font-bold text-gray-900">{user.stats.totalItems}</span>
+                      <Package className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 ml-1" />
+                      <span className="font-bold text-gray-900 text-sm sm:text-base">{user.stats.totalItems}</span>
                     </div>
-                    <p className="text-xs text-gray-600">منتجات</p>
+                    <p className="text-xs text-gray-700">منتجات</p>
                   </div>
                   <div className="text-center">
                     <div className="flex items-center justify-center mb-1">
-                      <TrendingUp className="h-4 w-4 text-purple-600 ml-1" />
-                      <span className="font-bold text-gray-900">{user.stats.completedDeals}</span>
+                      <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-purple-600 ml-1" />
+                      <span className="font-bold text-gray-900 text-sm sm:text-base">{user.stats.completedDeals}</span>
                     </div>
-                    <p className="text-xs text-gray-600">صفقات</p>
+                    <p className="text-xs text-gray-700">صفقات</p>
                   </div>
                   <div className="text-center">
                     <div className="flex items-center justify-center mb-1">
-                      <MessageCircle className="h-4 w-4 text-orange-600 ml-1" />
-                      <span className="font-bold text-gray-900">{user.stats.responseRate}%</span>
+                      <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4 text-orange-600 ml-1" />
+                      <span className="font-bold text-gray-900 text-sm sm:text-base">{user.stats.responseRate}%</span>
                     </div>
-                    <p className="text-xs text-gray-600">استجابة</p>
+                    <p className="text-xs text-gray-700">استجابة</p>
                   </div>
                 </div>
 
                 {/* Specialties */}
                 <div className="mb-4">
-                  <p className="text-sm font-medium text-gray-700 mb-2">التخصصات:</p>
+                  <p className="text-sm font-bold text-gray-900 mb-2">التخصصات:</p>
                   <div className="flex flex-wrap gap-1">
                     {user.specialties.slice(0, 3).map((specialty, index) => (
                       <span
                         key={index}
-                        className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
+                        className="px-2 py-1 bg-blue-50 text-blue-800 text-xs rounded-full font-medium"
                       >
                         {specialty}
                       </span>
                     ))}
                     {user.specialties.length > 3 && (
-                      <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
+                      <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full font-medium">
                         +{user.specialties.length - 3}
                       </span>
                     )}
@@ -449,30 +478,30 @@ export default function UsersPage() {
                 </div>
 
                 {/* Join Date */}
-                <div className="flex items-center text-sm text-gray-600 mb-4">
-                  <Calendar className="h-4 w-4 ml-1" />
+                <div className="flex items-center text-xs sm:text-sm text-gray-700 mb-4">
+                  <Calendar className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
                   <span>عضو منذ {formatDateLong(user.joinDate)}</span>
                 </div>
 
                 {/* Actions */}
-                <div className="flex space-x-2">
+                <div className="flex gap-2">
                   <Link
-                    href={`/profile/${user.id}`}
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-center text-sm font-medium"
+                    href={`/users/${user.id}`}
+                    className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white text-center px-4 py-2.5 sm:py-3 rounded-lg font-bold transition-all transform hover:scale-105 shadow-md text-xs sm:text-sm"
                   >
                     عرض الملف الشخصي
                   </Link>
                   <button 
-                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                    className="px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                     title="راسل البائع"
                   >
-                    <MessageCircle className="h-4 w-4 text-gray-600" />
+                    <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4 text-gray-700" />
                   </button>
                   <button 
-                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                    className="px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                     title="عرض المنتجات"
                   >
-                    <Eye className="h-4 w-4 text-gray-600" />
+                    <Eye className="h-3 w-3 sm:h-4 sm:w-4 text-gray-700" />
                   </button>
                 </div>
               </div>
@@ -495,7 +524,7 @@ export default function UsersPage() {
                 setVerifiedOnly(false);
                 setOnlineOnly(false);
               }}
-              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold"
+              className="mt-4 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-blue-700 font-bold"
             >
               مسح الفلاتر
             </button>

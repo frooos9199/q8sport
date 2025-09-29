@@ -8,6 +8,7 @@ import {
   Share2, AlertCircle, CheckCircle, User, MessageCircle,
   Zap, Shield, Truck, Award, Loader2
 } from 'lucide-react';
+import { formatDateLong, formatDateShort } from '@/utils/dateUtils';
 
 interface AuctionDetails {
   id: string;
@@ -251,7 +252,9 @@ export default function AuctionDetailPage() {
                     </span>
                   </div>
                   <p className="text-sm text-gray-500">
-                    {new Date(auction.endTime).toLocaleDateString('ar')}
+                                      <span className="text-sm text-gray-600 font-medium">
+                    {formatDateShort(auction.endTime)}
+                  </span>
                   </p>
                 </div>
               </div>
@@ -286,7 +289,7 @@ export default function AuctionDetailPage() {
                   <div className="flex justify-between p-3 bg-gray-50 rounded-lg">
                     <span className="font-medium text-gray-900">تاريخ النشر</span>
                     <span className="text-gray-700">
-                      {new Date(auction.createdAt).toLocaleDateString('ar')}
+                      {formatDateLong(auction.createdAt)}
                     </span>
                   </div>
                 </div>
@@ -375,7 +378,7 @@ export default function AuctionDetailPage() {
                       <p className="text-sm text-gray-600">{bid.bidder.name}</p>
                     </div>
                     <span className="text-sm text-gray-500">
-                      {new Date(bid.createdAt).toLocaleDateString('ar')}
+                      {formatDateShort(bid.createdAt)}
                     </span>
                   </div>
                 ))}

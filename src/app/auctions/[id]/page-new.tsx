@@ -8,6 +8,7 @@ import {
   Zap, Shield, Truck, Award, Loader2
 } from 'lucide-react';
 import CountdownTimer from '../../../components/CountdownTimer';
+import { formatDateLong } from '@/utils/dateUtils';
 import LiveBidding from '../../../components/LiveBidding';
 
 interface AuctionDetails {
@@ -272,7 +273,7 @@ export default function AuctionDetailPage() {
                   <div className="flex justify-between p-3 bg-gray-50 rounded-lg">
                     <span className="font-medium text-gray-900">تاريخ النشر</span>
                     <span className="text-gray-700">
-                      {new Date(auction.createdAt).toLocaleDateString('ar')}
+                      {formatDateLong(auction.createdAt)}
                     </span>
                   </div>
                 </div>

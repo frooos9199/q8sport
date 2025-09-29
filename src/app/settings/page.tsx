@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import AuthWrapper from '@/components/AuthWrapper';
+import AdvertisementBanner from '@/components/ui/AdvertisementBanner';
 import { 
   User, ArrowLeft, Camera, Mail, Phone, MapPin, 
   Shield, Bell, CreditCard, Key, Save, AlertCircle,
@@ -62,6 +63,8 @@ export default function UserSettings() {
             <label className="block text-sm font-medium text-gray-700 mb-2">البريد الإلكتروني</label>
             <input
               type="email"
+              title="البريد الإلكتروني"
+              placeholder="أدخل بريدك الإلكتروني"
               value={profile.email}
               onChange={(e) => setProfile({...profile, email: e.target.value})}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
@@ -71,6 +74,8 @@ export default function UserSettings() {
             <label className="block text-sm font-medium text-gray-700 mb-2">رقم الهاتف</label>
             <input
               type="tel"
+              title="رقم الهاتف"
+              placeholder="أدخل رقم هاتفك"
               value={profile.phone}
               onChange={(e) => setProfile({...profile, phone: e.target.value})}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
@@ -360,7 +365,10 @@ export default function UserSettings() {
         <div className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">اللغة المفضلة</label>
-            <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+            <select 
+              title="اختيار اللغة المفضلة"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+            >
               <option value="ar">العربية</option>
               <option value="en">English</option>
             </select>
@@ -368,7 +376,10 @@ export default function UserSettings() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">المنطقة الزمنية</label>
-            <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+            <select 
+              title="اختيار المنطقة الزمنية"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+            >
               <option value="Asia/Kuwait">الكويت (GMT+3)</option>
               <option value="Asia/Riyadh">الرياض (GMT+3)</option>
               <option value="Asia/Dubai">دبي (GMT+4)</option>
@@ -377,7 +388,10 @@ export default function UserSettings() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">العملة المفضلة</label>
-            <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+            <select 
+              title="اختيار العملة المفضلة"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+            >
               <option value="KWD">دينار كويتي (KWD)</option>
               <option value="SAR">ريال سعودي (SAR)</option>
               <option value="AED">درهم إماراتي (AED)</option>
@@ -397,7 +411,11 @@ export default function UserSettings() {
               <p className="text-sm text-gray-500">السماح للمستخدمين برؤية بريدك الإلكتروني ورقمك</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" className="sr-only peer" />
+              <input 
+                type="checkbox" 
+                title="إظهار بيانات التواصل"
+                className="sr-only peer" 
+              />
               <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
             </label>
           </div>
@@ -448,20 +466,27 @@ export default function UserSettings() {
     <AuthWrapper requireAuth={true}>
       <div className="min-h-screen bg-gray-100">
         {/* Header */}
-        <header className="bg-white shadow">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-6">
+        <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-700 text-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <Link href="/profile" className="flex items-center text-gray-600 hover:text-gray-900 ml-4">
+                <Link 
+                  href="/profile" 
+                  className="flex items-center text-white/80 hover:text-white ml-4 transition-colors"
+                >
                   <ArrowLeft className="h-5 w-5 ml-1" />
                   العودة للملف الشخصي
                 </Link>
-                <Settings className="h-8 w-8 text-blue-600 ml-3" />
-                <h1 className="text-2xl font-bold text-gray-900">إعدادات الحساب</h1>
+                <Settings className="h-10 w-10 ml-4" />
+                <div>
+                  <h1 className="text-3xl font-bold">إعدادات الحساب</h1>
+                  <p className="text-blue-100 mt-1">إدارة حسابك وتخصيص إعداداتك</p>
+                </div>
               </div>
             </div>
           </div>
-        </header>
+          <AdvertisementBanner className="mt-4" />
+        </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex">

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AuthWrapper from '@/components/AuthWrapper';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   Car, Users, Package, TrendingUp, Settings, LogOut, Plus, Edit, 
   Trash2, Upload, Image as ImageIcon, Save, X, Eye, EyeOff,
@@ -14,16 +15,11 @@ export default function AdminDashboard() {
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState('');
   const router = useRouter();
+  const { user, logout } = useAuth();
 
-  const handleLogout = () => {
-    // Clear authentication data
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('isAdmin');
-    localStorage.removeItem('userEmail');
-    localStorage.removeItem('userName');
-    
-    // Redirect to home page
-    router.push('/');
+  const handleLogout = async () => {
+    await logout();
+    router.push('/auth');
   };
 
   // Sample data
@@ -458,8 +454,9 @@ export default function AdminDashboard() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">الحالة</label>
                   <select className="w-full p-2 border border-gray-300 rounded-lg">
                     <option>جديد</option>
-                    <option>جيد جداً</option>
                     <option>مستعمل</option>
+                    <option>مستعمل يحتاج تصليح</option>
+                    <option>سكراب</option>
                   </select>
                 </div>
                 <div className="md:col-span-2">
@@ -588,28 +585,26 @@ export default function AdminDashboard() {
     <AuthWrapper requireAuth={true} requireAdmin={true}>
       <div className="min-h-screen bg-gray-100">
         {/* Header */}
-        <header className="bg-white shadow">
+        <header className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-700 text-white shadow-xl">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center py-6">
               <div className="flex items-center">
-                <Car className="h-8 w-8 text-blue-600 ml-3" />
-                <h1 className="text-2xl font-bold text-gray-900">لوحة الإدارة المتقدمة</h1>
+                <Car className="h-8 w-8 text-white ml-3" />
+                <h1 className="text-2xl font-bold text-white">لوحة الإدارة المتقدمة</h1>
               </div>
               <div className="flex items-center space-x-4">
-                <span className="text-gray-700">مرحباً، الأدمن (summit_kw@hotmail.com)</span>
+                <span className="text-white/90">مرحباً، {user?.name || 'الأدمن'} ({user?.email || 'admin'})</span>
                 <button 
                   onClick={handleLogout}
-                  className="flex items-center px-3 py-2 text-gray-700 hover:text-red-600"
+                  className="flex items-center px-3 py-2 text-white/80 hover:text-white transition-colors"
                 >
                   <LogOut className="h-5 w-5 ml-2" />
                   تسجيل الخروج
                 </button>
+              </div>
             </div>
           </div>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        </header>      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex">
           {/* Sidebar */}
           <div className="w-64 bg-white rounded-lg shadow p-6 ml-8">

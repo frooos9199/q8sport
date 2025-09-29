@@ -1,13 +1,13 @@
 import Link from 'next/link';
-import { Car, Search, User } from 'lucide-react';
-import AdvertisementBanner from '@/components/ui/AdvertisementBanner';
+import { Car, Search, User, Eye, Heart } from 'lucide-react';
 import UserActions from '@/components/UserActions';
+import ProductsList from '@/components/ProductsList';
 
 export default function Home() {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <header className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 text-white shadow-xl sticky top-0 z-50">
+      <header className="bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 text-white shadow-xl sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
           <div className="flex flex-col sm:flex-row justify-between items-center py-4 sm:py-6 gap-4">
             {/* Logo */}
@@ -17,7 +17,7 @@ export default function Home() {
               </div>
               <div className="text-center sm:text-right">
                 <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white drop-shadow-lg">Q8 MAZAD SPORT</h1>
-                <p className="text-blue-200 text-xs sm:text-sm">مزادات قطع الغيار الرياضية</p>
+                <p className="text-gray-200 text-xs sm:text-sm">مزادات قطع الغيار الرياضية</p>
               </div>
             </div>
             
@@ -27,9 +27,9 @@ export default function Home() {
                 <input
                   type="text"
                   placeholder="ابحث عن قطع الغيار..."
-                  className="w-full px-4 sm:px-6 py-3 sm:py-4 pr-10 sm:pr-12 border-0 rounded-full focus:ring-4 focus:ring-blue-300 focus:outline-none font-bold text-gray-900 text-sm sm:text-lg shadow-lg bg-white/95 backdrop-blur-sm placeholder-gray-700"
+                  className="w-full px-4 sm:px-6 py-3 sm:py-4 pr-10 sm:pr-12 border-0 rounded-full focus:ring-4 focus:ring-gray-300 focus:outline-none font-bold text-gray-900 text-sm sm:text-lg shadow-lg bg-white/95 backdrop-blur-sm placeholder-gray-700"
                 />
-                <div className="absolute right-2 sm:right-4 top-1/2 transform -translate-y-1/2 bg-blue-600 rounded-full p-1.5 sm:p-2">
+                <div className="absolute right-2 sm:right-4 top-1/2 transform -translate-y-1/2 bg-gray-600 rounded-full p-1.5 sm:p-2">
                   <Search className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                 </div>
               </div>
@@ -43,16 +43,16 @@ export default function Home() {
         </div>
         
         {/* Navigation Menu */}
-        <div className="border-t border-blue-700/50 bg-blue-800/50">
+        <div className="border-t border-gray-600/50 bg-gray-700/50">
           <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
             <nav className="flex flex-wrap justify-center sm:justify-start gap-2 sm:gap-4 py-3 sm:py-4">
-              <Link href="/" className="text-white hover:text-blue-200 font-medium transition-colors px-3 sm:px-4 py-2 rounded-full hover:bg-white/10 text-sm sm:text-base">
+              <Link href="/" className="text-white hover:text-gray-200 font-medium transition-colors px-3 sm:px-4 py-2 rounded-full hover:bg-white/10 text-sm sm:text-base">
                 🏠 الرئيسية
               </Link>
-              <Link href="/auctions" className="text-white hover:text-blue-200 font-medium transition-colors px-3 sm:px-4 py-2 rounded-full hover:bg-white/10 text-sm sm:text-base">
+              <Link href="/auctions" className="text-white hover:text-gray-200 font-medium transition-colors px-3 sm:px-4 py-2 rounded-full hover:bg-white/10 text-sm sm:text-base">
                 🔨 المزادات
               </Link>
-              <Link href="/users" className="text-white hover:text-blue-200 font-medium transition-colors px-3 sm:px-4 py-2 rounded-full hover:bg-white/10 text-sm sm:text-base">
+              <Link href="/users" className="text-white hover:text-gray-200 font-medium transition-colors px-3 sm:px-4 py-2 rounded-full hover:bg-white/10 text-sm sm:text-base">
                 👥 البائعون
               </Link>
             </nav>
@@ -60,8 +60,11 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Advertisement Banner - يظهر فقط عند وجود إعلانات نشطة */}
-      <AdvertisementBanner />
+      {/* Advertisement Banner - محذوف مؤقتاً */}
+      {/* <AdvertisementBanner /> */}
+
+      {/* Hero Banner - محذوف مؤقتاً */}
+      {/* <HeroBanner /> */}
 
       {/* Featured Cars & Parts Section */}
       <section className="py-8 sm:py-12 lg:py-16">
@@ -91,7 +94,7 @@ export default function Home() {
                 </div>
                 <p className="text-gray-800 mb-2 font-medium text-sm sm:text-base">محرك V8 - موديل 2020</p>
                 <p className="text-xs sm:text-sm text-green-700 font-bold mb-3 sm:mb-4">💰 المزاد ينتهي خلال: 2 ساعة</p>
-                <Link href="/auctions/1" className="block w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-center px-4 py-2.5 sm:py-3 rounded-lg font-bold transition-all transform hover:scale-105 shadow-md text-sm sm:text-base">
+                <Link href="/auctions/1" className="block w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white text-center px-4 py-2.5 sm:py-3 rounded-lg font-bold transition-all transform hover:scale-105 shadow-md text-sm sm:text-base">
                   شارك في المزاد
                 </Link>
               </div>
@@ -119,7 +122,7 @@ export default function Home() {
                 </div>
                 <p className="text-gray-800 mb-2 font-medium text-sm sm:text-base">علبة السرعة - موديل 2019</p>
                 <p className="text-xs sm:text-sm text-orange-700 font-bold mb-3 sm:mb-4">💰 أعلى عرض: 1,250 د.ك</p>
-                <Link href="/auctions/2" className="block w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-center px-4 py-2.5 sm:py-3 rounded-lg font-bold transition-all transform hover:scale-105 shadow-md text-sm sm:text-base">
+                <Link href="/auctions/2" className="block w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white text-center px-4 py-2.5 sm:py-3 rounded-lg font-bold transition-all transform hover:scale-105 shadow-md text-sm sm:text-base">
                   شارك في المزاد
                 </Link>
               </div>
@@ -147,7 +150,7 @@ export default function Home() {
                 </div>
                 <p className="text-gray-800 mb-2 font-medium text-sm sm:text-base">مكابح رياضية - موديل 2021</p>
                 <p className="text-xs sm:text-sm text-blue-700 font-bold mb-3 sm:mb-4">🔥 مزاد ساخن - 15 مشارك</p>
-                <Link href="/auctions/3" className="block w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-center px-4 py-2.5 sm:py-3 rounded-lg font-bold transition-all transform hover:scale-105 shadow-md text-sm sm:text-base">
+                <Link href="/auctions/3" className="block w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white text-center px-4 py-2.5 sm:py-3 rounded-lg font-bold transition-all transform hover:scale-105 shadow-md text-sm sm:text-base">
                   شارك في المزاد
                 </Link>
               </div>
@@ -175,7 +178,7 @@ export default function Home() {
                 </div>
                 <p className="text-gray-800 mb-2 font-medium text-sm sm:text-base">عجلات رياضية - موديل 2020</p>
                 <p className="text-xs sm:text-sm text-red-700 font-bold mb-3 sm:mb-4">⏰ ينتهي اليوم!</p>
-                <Link href="/auctions/4" className="block w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-center px-4 py-2.5 sm:py-3 rounded-lg font-bold transition-all transform hover:scale-105 shadow-md text-sm sm:text-base">
+                <Link href="/auctions/4" className="block w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white text-center px-4 py-2.5 sm:py-3 rounded-lg font-bold transition-all transform hover:scale-105 shadow-md text-sm sm:text-base">
                   شارك في المزاد
                 </Link>
               </div>
@@ -211,13 +214,23 @@ export default function Home() {
                   </div>
                   <p className="text-gray-800 mb-2 font-medium text-sm sm:text-base">{item.desc}</p>
                   <p className={`text-xs sm:text-sm font-bold mb-3 sm:mb-4 ${item.color}`}>{item.status}</p>
-                  <Link href={`/auctions/${item.id}`} className="block w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-center px-4 py-2.5 sm:py-3 rounded-lg font-bold transition-all transform hover:scale-105 shadow-md text-sm sm:text-base">
+                  <Link href={`/auctions/${item.id}`} className="block w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white text-center px-4 py-2.5 sm:py-3 rounded-lg font-bold transition-all transform hover:scale-105 shadow-md text-sm sm:text-base">
                     شارك في المزاد
                   </Link>
                 </div>
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Products Section */}
+      <section className="py-8 sm:py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+          <h3 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-6 sm:mb-8 text-center">
+            آخر المنتجات المضافة
+          </h3>
+          <ProductsList />
         </div>
       </section>
 

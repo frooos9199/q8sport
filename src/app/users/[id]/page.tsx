@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { formatDateShort, formatDateLong } from '@/utils/dateUtils';
+import ProductImage from '@/components/ProductImage';
 import { 
   User, Star, Award, Calendar, MapPin, CheckCircle, 
   MessageCircle, Eye, Heart, Clock, DollarSign, Car,
@@ -198,6 +199,8 @@ const sampleItems: SellerItem[] = [
 
 export default function SellerProfilePage() {
   const params = useParams();
+  const searchParams = useSearchParams();
+  const productId = searchParams.get('product');
   const [seller, setSeller] = useState<SellerProfile | null>(null);
   const [items, setItems] = useState<SellerItem[]>([]);
   const [activeTab, setActiveTab] = useState('active');
@@ -205,12 +208,91 @@ export default function SellerProfilePage() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedType, setSelectedType] = useState('');
   const [sortBy, setSortBy] = useState('newest');
+  const [highlightedProduct, setHighlightedProduct] = useState<string | null>(null);
 
   useEffect(() => {
-    // In a real app, fetch seller data based on params.id
-    setSeller(sampleSeller);
-    setItems(sampleItems);
-  }, [params.id]);
+    const fetchSellerData = async () => {
+      try {
+        const response = await fetch(`/api/users/${params.id}`);
+        const data = await response.json();
+        
+        if (data.success) {
+          // تحويل البيانات للتنسيق المطلوب
+          const sellerData: SellerProfile = {
+            id: parseInt(data.seller.id),
+            name: data.seller.name,
+            location: 'الكويت', // افتراضي
+            rating: data.seller.rating,
+            totalRatings: 50, // افتراضي
+            verified: data.seller.verified,
+            joinDate: data.seller.joinDate,
+            bio: `بائع محترف في قطع غيار السيارات. لديه ${data.seller.totalProducts} منتج.`,
+            stats: {
+              totalSales: data.seller.soldProducts,
+              totalItems: data.seller.activeProducts,
+              completedDeals: data.seller.soldProducts,
+              responseRate: 95,
+              avgResponseTime: '2 ساعات',
+              totalEarnings: data.seller.soldProducts * 1000 // تقدير
+            },
+            specialties: ['قطع غيار أصلية', 'خدمة ممتازة'],
+            lastActive: new Date().toISOString(),
+            isOnline: true,
+            badges: data.seller.verified ? ['بائع موثق'] : []
+          };
+          
+          setSeller(sellerData);
+          
+          // تحويل المنتجات
+          const itemsData: SellerItem[] = data.products.map((product: any) => ({
+            id: parseInt(product.id),
+            title: product.title,
+            titleArabic: product.title,
+            price: product.price,
+            buyNowPrice: product.price,
+            type: 'buy-now' as const,
+            condition: product.condition,
+            category: product.category,
+            carBrand: 'مختلف',
+            carModel: 'متنوع',
+            carYear: '2020',
+            images: JSON.parse(product.images || '[]'),
+            description: product.description,
+            status: product.status as 'active' | 'sold' | 'ended',
+            views: product.views,
+            watchers: Math.floor(Math.random() * 20),
+            createdAt: product.createdAt,
+            featured: false
+          }));
+          
+          setItems(itemsData);
+        } else {
+          // استخدام البيانات التجريبية في حالة الخطأ
+          setSeller(sampleSeller);
+          setItems(sampleItems);
+        }
+      } catch (error) {
+        console.error('Error fetching seller data:', error);
+        // استخدام البيانات التجريبية في حالة الخطأ
+        setSeller(sampleSeller);
+        setItems(sampleItems);
+      }
+    };
+    
+    fetchSellerData();
+    
+    // إذا تم تمرير معرف المنتج، قم بتمييزه
+    if (productId) {
+      setHighlightedProduct(productId);
+      // التمرير للمنتج المحدد بعد تحميل الصفحة
+      setTimeout(() => {
+        const element = document.getElementById(`product-${productId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 1000);
+    }
+  }, [params.id, productId]);
 
   const filteredItems = items.filter(item => {
     const matchesTab = activeTab === 'all' || 
@@ -496,7 +578,15 @@ export default function SellerProfilePage() {
           <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {sortedItems.map((item) => (
-                <div key={item.id} className="bg-gray-50 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+                <div 
+                  key={item.id} 
+                  id={`product-${item.id}`}
+                  className={`rounded-lg overflow-hidden hover:shadow-md transition-all duration-300 ${
+                    highlightedProduct === item.id.toString() 
+                      ? 'bg-blue-50 border-2 border-blue-300 shadow-lg' 
+                      : 'bg-gray-50'
+                  }`}
+                >
                   {/* Image */}
                   <div className="h-48 bg-gray-200 relative">
                     {item.featured && (
@@ -509,9 +599,11 @@ export default function SellerProfilePage() {
                         مباع
                       </div>
                     )}
-                    <div className="h-full flex items-center justify-center">
-                      <Car className="h-16 w-16 text-gray-400" />
-                    </div>
+                    <ProductImage 
+                      images={item.images || []}
+                      title={item.titleArabic || item.title}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
 
                   {/* Content */}

@@ -314,7 +314,10 @@ export default function Messages() {
                           placeholder="اكتب رسالتك..."
                           className="w-full px-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent pl-12"
                         />
-                        <button className="absolute left-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600">
+                        <button 
+                          title="إضافة رمز تعبيري"
+                          className="absolute left-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600"
+                        >
                           <Smile className="h-5 w-5" />
                         </button>
                       </div>

@@ -1,786 +1,1147 @@
-'use client';
+﻿'use client'
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import AuthWrapper from '@/components/AuthWrapper';
-import { formatDateShort, formatDateLong } from '@/utils/dateUtils';
-import { 
-  User, Car, Package, TrendingUp, Eye, Heart, Clock, 
-  DollarSign, Plus, Edit, Trash2, Image as ImageIcon,
-  Settings, MessageCircle, Award, Calendar, MapPin,
-  Star, ShoppingBag, Gavel, Upload, X, Save
-} from 'lucide-react';
-
-interface UserProfile {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-  location: string;
-  joinDate: string;
-  avatar?: string;
-  rating: number;
-  totalRatings: number;
-  verified: boolean;
-  stats: {
-    totalSales: number;
-    totalPurchases: number;
-    activeBids: number;
-    watchlist: number;
-    completedAuctions: number;
-    totalEarnings: number;
-  };
-}
+import { useState, useEffect } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
+import AuthWrapper from '@/components/AuthWrapper'
+import Link from 'next/link'
+import ProductImage, { parseImages, getImageUrl } from '@/components/ProductImage'
+import { PART_CONDITIONS_ARRAY, getConditionColor } from '@/utils/partConditions'
+import { formatDateShort, formatDateLong } from '@/utils/dateUtils'
 
 interface UserItem {
-  id: number;
-  title: string;
-  titleArabic: string;
-  price: number;
-  buyNowPrice?: number; // سعر الشراء المباشر مثل eBay
-  type: 'auction' | 'buy-now' | 'both'; // نوع البيع
-  condition: string;
-  category: string;
-  carBrand: string;
-  carModel: string;
-  carYear: string;
-  images: string[];
-  description: string;
-  status: 'active' | 'sold' | 'ended' | 'draft';
-  views: number;
-  watchers: number;
-  bidsCount?: number;
-  timeLeft?: string;
-  endTime?: string;
-  createdAt: string;
-  featured: boolean;
+  id: string
+  title: string
+  description: string
+  price: string
+  condition: string
+  category: string
+  images: string[]
+  status: 'active' | 'sold' | 'inactive'
+  soldDate?: string
+  soldPrice?: string
+  buyerInfo?: {
+    name: string
+    phone: string
+    email: string
+  }
 }
 
-interface UserBid {
-  id: number;
-  auctionId: number;
-  auctionTitle: string;
-  bidAmount: number;
-  maxBid: number;
-  status: 'winning' | 'outbid' | 'won' | 'lost';
-  timeLeft?: string;
-  placedAt: string;
+interface UserData {
+  id: string
+  name: string
+  email: string
+  phone: string
+  whatsapp: string
+  newPassword?: string
+  confirmPassword?: string
 }
 
-const sampleUser: UserProfile = {
-  id: 1,
-  name: 'أحمد محمد الخليفي',
-  email: 'ahmed@example.com',
-  phone: '+965 9999 9999',
-  location: 'الكويت، حولي',
-  joinDate: '2023-01-15',
-  rating: 4.8,
-  totalRatings: 156,
-  verified: true,
-  stats: {
-    totalSales: 23,
-    totalPurchases: 15,
-    activeBids: 5,
-    watchlist: 12,
-    completedAuctions: 38,
-    totalEarnings: 15750
-  }
-};
+interface Category {
+  id: string
+  nameArabic: string
+}
 
-const sampleItems: UserItem[] = [
-  {
-    id: 1,
-    title: 'V8 5.0L Coyote Engine - Ford Mustang GT',
-    titleArabic: 'محرك V8 5.0 لتر - فورد موستنق GT',
-    price: 2500,
-    buyNowPrice: 3200,
-    type: 'both',
-    condition: 'مستعمل - ممتاز',
-    category: 'المحرك',
-    carBrand: 'Ford',
-    carModel: 'Mustang',
-    carYear: '2018',
-    images: ['/engine1.jpg', '/engine2.jpg', '/engine3.jpg'],
-    description: 'محرك أصلي بحالة ممتازة، مسافة 45,000 كم فقط',
-    status: 'active',
-    views: 247,
-    watchers: 18,
-    bidsCount: 12,
-    timeLeft: '2d 5h',
-    endTime: '2024-12-30T15:30:00',
-    createdAt: '2024-12-25T10:00:00',
-    featured: true
-  },
-  {
-    id: 2,
-    title: 'Brembo Brake Kit - Corvette Z06',
-    titleArabic: 'طقم فرامل Brembo - كورفيت Z06',
-    price: 0,
-    buyNowPrice: 850,
-    type: 'buy-now',
-    condition: 'جديد',
-    category: 'الفرامل',
-    carBrand: 'Chevrolet',
-    carModel: 'Corvette',
-    carYear: '2020',
-    images: ['/brakes1.jpg', '/brakes2.jpg'],
-    description: 'طقم فرامل جديد أصلي من Brembo',
-    status: 'active',
-    views: 189,
-    watchers: 25,
-    createdAt: '2024-12-20T14:00:00',
-    featured: false
-  },
-  {
-    id: 3,
-    title: 'Racing Exhaust System - Camaro SS',
-    titleArabic: 'نظام عادم رياضي - كامارو SS',
-    price: 450,
-    type: 'auction',
-    condition: 'مستعمل - جيد',
-    category: 'العادم',
-    carBrand: 'Chevrolet',
-    carModel: 'Camaro',
-    carYear: '2019',
-    images: ['/exhaust1.jpg'],
-    description: 'نظام عادم رياضي مستعمل بحالة جيدة',
-    status: 'sold',
-    views: 145,
-    watchers: 8,
-    bidsCount: 7,
-    createdAt: '2024-12-18T09:00:00',
-    featured: false
-  }
-];
-
-const sampleBids: UserBid[] = [
-  {
-    id: 1,
-    auctionId: 101,
-    auctionTitle: 'طقم تيربو - موستنق 2020',
-    bidAmount: 1200,
-    maxBid: 1500,
-    status: 'winning',
-    timeLeft: '1d 8h',
-    placedAt: '2024-12-28T10:30:00'
-  },
-  {
-    id: 2,
-    auctionId: 102,
-    auctionTitle: 'علبة تروس أوتوماتيك - F-150',
-    bidAmount: 800,
-    maxBid: 950,
-    status: 'outbid',
-    timeLeft: '3h 20m',
-    placedAt: '2024-12-28T14:15:00'
-  },
-  {
-    id: 3,
-    auctionId: 103,
-    auctionTitle: 'مقاعد جلد - كورفيت C8',
-    bidAmount: 2200,
-    maxBid: 2200,
-    status: 'won',
-    placedAt: '2024-12-25T16:45:00'
-  }
-];
-
-export default function UserProfilePage() {
-  const [user, setUser] = useState<UserProfile>(sampleUser);
-  const [userItems, setUserItems] = useState<UserItem[]>(sampleItems);
-  const [userBids, setUserBids] = useState<UserBid[]>(sampleBids);
-  const [activeTab, setActiveTab] = useState('items');
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [editingItem, setEditingItem] = useState<UserItem | null>(null);
-
+export default function ProfilePage() {
+  const [activeTab, setActiveTab] = useState('profile')
+  const [showAddItem, setShowAddItem] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [userItems, setUserItems] = useState<UserItem[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
+  const { user, token } = useAuth()
+  
+  const [userData, setUserData] = useState<UserData>({
+    id: '',
+    name: '',
+    email: '',
+    phone: '',
+    whatsapp: '',
+    newPassword: '',
+    confirmPassword: ''
+  })
   const [newItem, setNewItem] = useState<Partial<UserItem>>({
-    type: 'auction',
+    title: '',
+    description: '',
+    price: '',
     condition: 'مستعمل',
-    carBrand: 'Ford',
+    category: 'قطع غيار',
     images: []
-  });
+  })
 
-  const handleAddItem = () => {
-    if (!newItem.titleArabic || !newItem.price || !newItem.description) {
-      alert('يرجى ملء جميع الحقول المطلوبة');
-      return;
+  // Load user data from AuthContext on component mount
+  useEffect(() => {
+    const loadUserData = () => {
+      if (user) {
+        setUserData({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone || '',
+          whatsapp: user.whatsapp || ''
+        })
+      }
     }
 
-    const item: UserItem = {
-      id: Date.now(),
-      title: newItem.titleArabic || '',
-      titleArabic: newItem.titleArabic || '',
-      price: newItem.price || 0,
-      buyNowPrice: newItem.buyNowPrice,
-      type: newItem.type as 'auction' | 'buy-now' | 'both',
-      condition: newItem.condition || 'مستعمل',
-      category: newItem.category || 'المحرك',
-      carBrand: newItem.carBrand || 'Ford',
-      carModel: newItem.carModel || 'Mustang',
-      carYear: newItem.carYear || '2020',
-      images: newItem.images || [],
-      description: newItem.description || '',
-      status: 'active',
-      views: 0,
-      watchers: 0,
-      createdAt: new Date().toISOString(),
-      featured: false
-    };
-
-    setUserItems([...userItems, item]);
-    setShowAddModal(false);
-    setNewItem({
-      type: 'auction',
-      condition: 'مستعمل',
-      carBrand: 'Ford',
-      images: []
-    });
-    alert('تم إضافة المنتج بنجاح!');
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-800';
-      case 'sold':
-        return 'bg-blue-100 text-blue-800';
-      case 'ended':
-        return 'bg-gray-100 text-gray-800';
-      case 'draft':
-        return 'bg-yellow-100 text-yellow-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/categories')
+        const data = await response.json()
+        
+        if (data.success) {
+          setCategories(data.categories.map((cat: any) => ({
+            id: cat.id,
+            nameArabic: cat.nameArabic
+          })))
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error)
+      }
     }
-  };
 
-  const getBidStatusColor = (status: string) => {
-    switch (status) {
-      case 'winning':
-        return 'bg-green-100 text-green-800';
-      case 'outbid':
-        return 'bg-red-100 text-red-800';
-      case 'won':
-        return 'bg-blue-100 text-blue-800';
-      case 'lost':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const renderUserStats = () => (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-      <div className="bg-white p-4 rounded-lg shadow text-center">
-        <ShoppingBag className="h-6 w-6 text-blue-600 mx-auto mb-2" />
-        <p className="text-2xl font-bold text-gray-900">{user.stats.totalSales}</p>
-        <p className="text-sm text-gray-800 font-medium">مبيعات مكتملة</p>
-      </div>
-      <div className="bg-white p-4 rounded-lg shadow text-center">
-        <Gavel className="h-6 w-6 text-green-600 mx-auto mb-2" />
-        <p className="text-2xl font-bold text-gray-900">{user.stats.totalPurchases}</p>
-        <p className="text-sm text-gray-800 font-medium">مشتريات</p>
-      </div>
-      <div className="bg-white p-4 rounded-lg shadow text-center">
-        <TrendingUp className="h-6 w-6 text-purple-600 mx-auto mb-2" />
-        <p className="text-2xl font-bold text-gray-900">{user.stats.activeBids}</p>
-        <p className="text-sm text-gray-800 font-medium">مزايدات نشطة</p>
-      </div>
-      <div className="bg-white p-4 rounded-lg shadow text-center">
-        <Heart className="h-6 w-6 text-red-600 mx-auto mb-2" />
-        <p className="text-2xl font-bold text-gray-900">{user.stats.watchlist}</p>
-        <p className="text-sm text-gray-800 font-medium">قائمة المراقبة</p>
-      </div>
-      <div className="bg-white p-4 rounded-lg shadow text-center">
-        <Award className="h-6 w-6 text-yellow-600 mx-auto mb-2" />
-        <p className="text-lg font-bold text-gray-900">{user.rating}</p>
-        <p className="text-sm text-gray-800 font-medium">التقييم</p>
-      </div>
-      <div className="bg-white p-4 rounded-lg shadow text-center">
-        <DollarSign className="h-6 w-6 text-green-600 mx-auto mb-2" />
-        <p className="text-lg font-bold text-gray-900">{user.stats.totalEarnings}</p>
-        <p className="text-sm text-gray-800 font-medium">د.ك</p>
-      </div>
-    </div>
-  );
-
-  const renderUserItems = () => (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-xl font-bold text-gray-900">منتجاتي ({userItems.length})</h3>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          <Plus className="h-5 w-5 ml-2" />
-          إضافة منتج جديد
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {userItems.map((item) => (
-          <div key={item.id} className="bg-white rounded-lg shadow-md overflow-hidden">
-            {/* Image */}
-            <div className="h-48 bg-gray-200 relative">
-              {item.featured && (
-                <div className="absolute top-2 right-2 bg-yellow-500 text-white px-2 py-1 rounded text-xs font-semibold">
-                  مميز
-                </div>
-              )}
-              <div className="absolute top-2 left-2">
-                <span className={`px-2 py-1 rounded text-xs font-semibold ${getStatusColor(item.status)}`}>
-                  {item.status === 'active' ? 'نشط' : 
-                   item.status === 'sold' ? 'مباع' :
-                   item.status === 'ended' ? 'منتهي' : 'مسودة'}
-                </span>
-              </div>
-              <div className="h-full flex items-center justify-center">
-                <Car className="h-16 w-16 text-gray-400" />
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="p-4">
-              <h4 className="font-bold text-gray-900 mb-2 line-clamp-2">
-                {item.titleArabic}
-              </h4>
-              
-              <div className="flex items-center text-sm text-gray-600 mb-3">
-                <span>{item.carBrand} {item.carModel}</span>
-                <span className="mx-2">•</span>
-                <span>{item.carYear}</span>
-              </div>
-
-              {/* Pricing */}
-              <div className="mb-3">
-                {item.type === 'auction' && (
-                  <div>
-                    <p className="text-sm text-gray-600">السعر الحالي</p>
-                    <p className="text-xl font-bold text-green-600">{item.price} د.ك</p>
-                    {item.timeLeft && (
-                      <p className="text-sm text-red-600">ينتهي خلال {item.timeLeft}</p>
-                    )}
-                  </div>
-                )}
-                
-                {item.type === 'buy-now' && (
-                  <div>
-                    <p className="text-sm text-gray-600">اشتري الآن</p>
-                    <p className="text-xl font-bold text-blue-600">{item.buyNowPrice} د.ك</p>
-                  </div>
-                )}
-                
-                {item.type === 'both' && (
-                  <div>
-                    <p className="text-sm text-gray-600">مزايدة: {item.price} د.ك</p>
-                    <p className="text-lg font-bold text-blue-600">
-                      اشتري الآن: {item.buyNowPrice} د.ك
-                    </p>
-                    {item.timeLeft && (
-                      <p className="text-sm text-red-600">ينتهي خلال {item.timeLeft}</p>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Stats */}
-              <div className="flex justify-between text-sm text-gray-600 mb-3">
-                <span className="flex items-center">
-                  <Eye className="h-4 w-4 ml-1" />
-                  {item.views}
-                </span>
-                <span className="flex items-center">
-                  <Heart className="h-4 w-4 ml-1" />
-                  {item.watchers}
-                </span>
-                {item.bidsCount && (
-                  <span className="flex items-center">
-                    <Gavel className="h-4 w-4 ml-1" />
-                    {item.bidsCount}
-                  </span>
-                )}
-              </div>
-
-              {/* Actions */}
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => setEditingItem(item)}
-                  className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
-                >
-                  تعديل
-                </button>
-                <button className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
-                  <Eye className="h-4 w-4" />
-                </button>
-                <button className="px-3 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 text-sm">
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  const renderUserBids = () => (
-    <div className="space-y-4">
-      <h3 className="text-xl font-bold text-gray-900">مزايداتي ({userBids.length})</h3>
+    const fetchUserItems = async () => {
+      if (!user?.id) return
       
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-800 uppercase">المزاد</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-800 uppercase">مزايدتي</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-800 uppercase">الحد الأقصى</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-800 uppercase">الحالة</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-800 uppercase">الوقت المتبقي</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-800 uppercase">تاريخ المزايدة</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {userBids.map((bid) => (
-              <tr key={bid.id}>
-                <td className="px-6 py-4">
-                  <Link href={`/auctions/${bid.auctionId}`} className="text-blue-600 hover:text-blue-900">
-                    {bid.auctionTitle}
-                  </Link>
-                </td>
-                <td className="px-6 py-4 text-sm font-bold text-gray-900">{bid.bidAmount} د.ك</td>
-                <td className="px-6 py-4 text-sm text-gray-900">{bid.maxBid} د.ك</td>
-                <td className="px-6 py-4">
-                  <span className={`px-2 py-1 text-xs rounded-full ${getBidStatusColor(bid.status)}`}>
-                    {bid.status === 'winning' ? 'فائز حالياً' :
-                     bid.status === 'outbid' ? 'تم التفوق عليك' :
-                     bid.status === 'won' ? 'فائز' : 'خاسر'}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-900">
-                  {bid.timeLeft || 'انتهى'}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500">
-                  {formatDateShort(bid.placedAt)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+      try {
+        const response = await fetch(`/api/users/${user.id}/products`)
+        const data = await response.json()
+        
+        if (data.success) {
+          setUserItems(data.products || [])
+        }
+      } catch (error) {
+        console.error('Error fetching user items:', error)
+      }
+    }
 
-  const renderAddItemModal = () => {
-    if (!showAddModal) return null;
+    loadUserData()
+    fetchCategories()
+    fetchUserItems()
+  }, [user])
 
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-bold text-gray-900">إضافة منتج جديد</h3>
-            <button onClick={() => setShowAddModal(false)}>
-              <X className="h-6 w-6 text-gray-400" />
-            </button>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Basic Info */}
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">عنوان المنتج *</label>
-                <input
-                  type="text"
-                  value={newItem.titleArabic || ''}
-                  onChange={(e) => setNewItem({...newItem, titleArabic: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="مثال: محرك V8 فورد موستنق"
-                />
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">نوع البيع *</label>
-                <select
-                  value={newItem.type}
-                  onChange={(e) => setNewItem({...newItem, type: e.target.value as 'auction' | 'buy-now' | 'both'})}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="auction">مزاد فقط</option>
-                  <option value="buy-now">اشتري الآن فقط</option>
-                  <option value="both">مزاد + اشتري الآن</option>
-                </select>
-              </div>
+  const handleUserDataChange = (field: keyof UserData, value: string) => {
+    setUserData(prev => ({ ...prev, [field]: value }))
+  }
 
-              {(newItem.type === 'auction' || newItem.type === 'both') && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {newItem.type === 'both' ? 'سعر بداية المزاد' : 'سعر البداية'} *
-                  </label>
-                  <input
-                    type="number"
-                    value={newItem.price || ''}
-                    onChange={(e) => setNewItem({...newItem, price: parseFloat(e.target.value)})}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="0"
-                    min="1"
-                  />
-                </div>
-              )}
+  // دالة لتمييز المنتج كمباع
+  const markAsSold = async (itemId: string) => {
+    const buyerName = prompt('اسم المشتري:')
+    const buyerPhone = prompt('رقم هاتف المشتري:')
+    const soldPrice = prompt('سعر البيع النهائي:')
+    
+    if (!buyerName || !buyerPhone || !soldPrice) {
+      alert('يرجى إدخال جميع البيانات المطلوبة')
+      return
+    }
 
-              {(newItem.type === 'buy-now' || newItem.type === 'both') && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">سعر اشتري الآن *</label>
-                  <input
-                    type="number"
-                    value={newItem.buyNowPrice || ''}
-                    onChange={(e) => setNewItem({...newItem, buyNowPrice: parseFloat(e.target.value)})}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="0"
-                    min="1"
-                  />
-                </div>
-              )}
+    try {
+      // تحديث حالة المنتج في قاعدة البيانات
+      const response = await fetch(`/api/products/${itemId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: 'SOLD',
+          soldPrice: parseFloat(soldPrice),
+          buyerInfo: {
+            name: buyerName,
+            phone: buyerPhone,
+            email: prompt('بريد المشتري الإلكتروني (اختياري):') || ''
+          }
+        })
+      })
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">الحالة</label>
-                <select
-                  value={newItem.condition}
-                  onChange={(e) => setNewItem({...newItem, condition: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="جديد">جديد</option>
-                  <option value="جيد جداً">جيد جداً</option>
-                  <option value="مستعمل">مستعمل</option>
-                  <option value="يحتاج إصلاح">يحتاج إصلاح</option>
-                </select>
-              </div>
-            </div>
+      if (response.ok) {
+        // تحديث الحالة المحلية
+        setUserItems(prev => prev.map(item => 
+          item.id === itemId 
+            ? { 
+                ...item, 
+                status: 'sold' as const,
+                soldDate: new Date().toISOString(),
+                soldPrice,
+                buyerInfo: {
+                  name: buyerName,
+                  phone: buyerPhone,
+                  email: prompt('بريد المشتري الإلكتروني (اختياري):') || ''
+                }
+              }
+            : item
+        ))
+        alert('تم تمييز المنتج كمباع بنجاح!')
+      } else {
+        alert('حدث خطأ في تحديث حالة المنتج')
+      }
+    } catch (error) {
+      console.error('Error marking as sold:', error)
+      alert('حدث خطأ في تحديث حالة المنتج')
+    }
+  }
 
-            {/* Car Details */}
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">ماركة السيارة</label>
-                <select
-                  value={newItem.carBrand}
-                  onChange={(e) => setNewItem({...newItem, carBrand: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="Ford">Ford</option>
-                  <option value="Chevrolet">Chevrolet</option>
-                </select>
-              </div>
+  // دالة لحذف المنتج
+  const deleteItem = async (itemId: string) => {
+    if (!confirm('هل أنت متأكد من حذف هذا المنتج؟')) return
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">موديل السيارة</label>
-                <select
-                  value={newItem.carModel}
-                  onChange={(e) => setNewItem({...newItem, carModel: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="Mustang">Mustang</option>
-                  <option value="F-150">F-150</option>
-                  <option value="Corvette">Corvette</option>
-                  <option value="Camaro">Camaro</option>
-                </select>
-              </div>
+    try {
+      const response = await fetch(`/api/products/${itemId}`, {
+        method: 'DELETE'
+      })
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">سنة الصنع</label>
-                <input
-                  type="number"
-                  value={newItem.carYear || ''}
-                  onChange={(e) => setNewItem({...newItem, carYear: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="2020"
-                  min="1950"
-                  max="2025"
-                />
-              </div>
+      if (response.ok) {
+        setUserItems(prev => prev.filter(item => item.id !== itemId))
+        alert('تم حذف المنتج بنجاح!')
+      } else {
+        alert('حدث خطأ في حذف المنتج')
+      }
+    } catch (error) {
+      console.error('Error deleting item:', error)
+      alert('حدث خطأ في حذف المنتج')
+    }
+  }
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">فئة القطعة</label>
-                <select
-                  value={newItem.category}
-                  onChange={(e) => setNewItem({...newItem, category: e.target.value})}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="المحرك">المحرك</option>
-                  <option value="الفرامل">الفرامل</option>
-                  <option value="التعليق">التعليق</option>
-                  <option value="العادم">العادم</option>
-                  <option value="الكهربائيات">الكهربائيات</option>
-                  <option value="الداخلية">الداخلية</option>
-                  <option value="الخارجية">الخارجية</option>
-                </select>
-              </div>
-            </div>
-          </div>
+  // دالة لتعديل المنتج
+  const editItem = (itemId: string) => {
+    const item = userItems.find(i => i.id === itemId)
+    if (item) {
+      setNewItem({
+        title: item.title,
+        description: item.description,
+        price: item.price,
+        condition: item.condition,
+        category: item.category,
+        images: item.images
+      })
+      setShowAddItem(true)
+    }
+  }
 
-          {/* Description */}
-          <div className="mt-6">
-            <label className="block text-sm font-medium text-gray-700 mb-1">الوصف التفصيلي *</label>
-            <textarea
-              value={newItem.description || ''}
-              onChange={(e) => setNewItem({...newItem, description: e.target.value})}
-              rows={4}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              placeholder="اكتب وصفاً مفصلاً للمنتج..."
-            />
-          </div>
+  // دالة لتوليد الفاتورة
+  const generateInvoice = (item: UserItem) => {
+    const invoiceData = {
+      invoiceNumber: `INV-${Date.now()}`,
+      date: formatDateShort(new Date().toISOString()),
+      seller: {
+        name: userData.name,
+        email: userData.email,
+        phone: userData.phone,
+        whatsapp: userData.whatsapp
+      },
+      buyer: item.buyerInfo,
+      product: {
+        title: item.title,
+        description: item.description,
+        condition: item.condition,
+        category: item.category,
+        originalPrice: item.price,
+        soldPrice: item.soldPrice || item.price
+      },
+      soldDate: item.soldDate ? formatDateShort(item.soldDate) : formatDateShort(new Date().toISOString())
+    }
 
-          {/* Images Upload */}
-          <div className="mt-6">
-            <label className="block text-sm font-medium text-gray-700 mb-1">صور المنتج</label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-              <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <p className="text-gray-600 mb-2">اضغط لرفع الصور أو اسحبها هنا</p>
-              <p className="text-sm text-gray-500">PNG, JPG, GIF حتى 10MB</p>
-            </div>
-          </div>
+    // فتح نافذة الفاتورة
+    openInvoiceWindow(invoiceData)
+  }
 
-          {/* Actions */}
-          <div className="flex justify-end space-x-4 mt-6">
-            <button
-              onClick={() => setShowAddModal(false)}
-              className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-            >
-              إلغاء
-            </button>
-            <button
-              onClick={handleAddItem}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              إضافة المنتج
-            </button>
+  // دالة لفتح نافذة الفاتورة
+  const openInvoiceWindow = (invoiceData: any) => {
+    const invoiceHTML = generateInvoiceHTML(invoiceData)
+    const newWindow = window.open('', '_blank', 'width=800,height=600')
+    if (newWindow) {
+      newWindow.document.write(invoiceHTML)
+      newWindow.document.close()
+    }
+  }
+
+  // دالة لتوليد HTML الفاتورة
+  const generateInvoiceHTML = (data: any) => {
+    return `
+      <!DOCTYPE html>
+      <html dir="rtl">
+      <head>
+        <meta charset="UTF-8">
+        <title>فاتورة بيع - ${data.invoiceNumber}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; background: white; }
+          .invoice-header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
+          .invoice-title { font-size: 28px; font-weight: bold; color: #333; margin-bottom: 10px; }
+          .invoice-number { font-size: 16px; color: #666; }
+          .section { margin: 20px 0; }
+          .section-title { font-size: 18px; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+          .info-row { display: flex; justify-content: space-between; margin: 8px 0; }
+          .info-label { font-weight: bold; }
+          .product-details { background: #f9f9f9; padding: 15px; border-radius: 5px; }
+          .total-section { background: #e8f5e8; padding: 15px; border-radius: 5px; text-align: center; }
+          .total-amount { font-size: 24px; font-weight: bold; color: #2d5a2d; }
+          .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #666; }
+          @media print {
+            body { margin: 0; }
+            .no-print { display: none; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="invoice-header">
+          <div class="invoice-title">Q8 MAZAD SPORT</div>
+          <div class="invoice-number">فاتورة رقم: ${data.invoiceNumber}</div>
+          <div>تاريخ: ${data.date}</div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">بيانات البائع</div>
+          <div class="info-row"><span class="info-label">الاسم:</span> <span>${data.seller.name}</span></div>
+          <div class="info-row"><span class="info-label">البريد الإلكتروني:</span> <span>${data.seller.email}</span></div>
+          <div class="info-row"><span class="info-label">الهاتف:</span> <span>${data.seller.phone}</span></div>
+          <div class="info-row"><span class="info-label">واتساب:</span> <span>${data.seller.whatsapp}</span></div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">بيانات المشتري</div>
+          <div class="info-row"><span class="info-label">الاسم:</span> <span>${data.buyer?.name || 'غير محدد'}</span></div>
+          <div class="info-row"><span class="info-label">الهاتف:</span> <span>${data.buyer?.phone || 'غير محدد'}</span></div>
+          ${data.buyer?.email ? `<div class="info-row"><span class="info-label">البريد الإلكتروني:</span> <span>${data.buyer.email}</span></div>` : ''}
+        </div>
+
+        <div class="section">
+          <div class="section-title">تفاصيل المنتج</div>
+          <div class="product-details">
+            <div class="info-row"><span class="info-label">اسم المنتج:</span> <span>${data.product.title}</span></div>
+            <div class="info-row"><span class="info-label">الوصف:</span> <span>${data.product.description}</span></div>
+            <div class="info-row"><span class="info-label">الحالة:</span> <span>${data.product.condition}</span></div>
+            <div class="info-row"><span class="info-label">القسم:</span> <span>${data.product.category}</span></div>
+            <div class="info-row"><span class="info-label">السعر المعروض:</span> <span>${data.product.originalPrice} د.ك</span></div>
+            <div class="info-row"><span class="info-label">تاريخ البيع:</span> <span>${data.soldDate}</span></div>
           </div>
         </div>
-      </div>
-    );
-  };
+
+        <div class="section">
+          <div class="total-section">
+            <div>السعر النهائي</div>
+            <div class="total-amount">${data.product.soldPrice} دينار كويتي</div>
+          </div>
+        </div>
+
+        <div class="footer">
+          <p>شكراً لك على التعامل مع Q8 MAZAD SPORT</p>
+          <p>هذه فاتورة رسمية ولها قيمة قانونية</p>
+          <button class="no-print" onclick="window.print()" style="padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 20px;">طباعة الفاتورة</button>
+        </div>
+      </body>
+      </html>
+    `
+  }
+
+  const saveUserData = async () => {
+    try {
+      // Validate password change if requested
+      if (userData.newPassword || userData.confirmPassword) {
+        if (!userData.newPassword || !userData.confirmPassword) {
+          alert('يرجى إدخال كلمة المرور الجديدة وتأكيدها');
+          return;
+        }
+        
+        if (userData.newPassword !== userData.confirmPassword) {
+          alert('كلمة المرور الجديدة وتأكيدها غير متطابقين');
+          return;
+        }
+        
+        if (userData.newPassword.length < 6) {
+          alert('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+          return;
+        }
+      }
+
+      // Prepare update data
+      const updateData: any = {
+        name: userData.name,
+        phone: userData.phone,
+        whatsapp: userData.whatsapp
+      };
+
+      // Add password if changing
+      if (userData.newPassword) {
+        updateData.password = userData.newPassword;
+      }
+
+      // Call API to update user data
+      const response = await fetch('/api/auth/update-profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(updateData)
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        // Update local state
+        setUserData(prev => ({
+          ...prev,
+          newPassword: '',
+          confirmPassword: ''
+        }));
+        
+        alert('تم حفظ البيانات بنجاح!');
+      } else {
+        alert(result.error || 'حدث خطأ في تحديث البيانات');
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('خطأ في حفظ البيانات');
+    }
+  }
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+    if (!files || files.length === 0) return
+
+    const currentImageCount = newItem.images?.length || 0
+    const remainingSlots = 8 - currentImageCount
+
+    if (files.length > remainingSlots) {
+      alert(`يمكنك رفع ${remainingSlots} صورة إضافية فقط`)
+      return
+    }
+
+    // رفع الملفات للخادم
+    const formData = new FormData()
+    const validFiles: File[] = []
+
+    for (let i = 0; i < Math.min(files.length, remainingSlots); i++) {
+      const file = files[i]
+      
+      if (!file.type.startsWith('image/')) {
+        alert(`الملف ${file.name} ليس صورة صالحة`)
+        continue
+      }
+
+      if (file.size > 10 * 1024 * 1024) {
+        alert(`حجم الصورة ${file.name} كبير جداً (حد أقصى 10MB)`)
+        continue
+      }
+
+      validFiles.push(file)
+      formData.append('images', file)
+    }
+
+    if (validFiles.length === 0) {
+      alert('لا توجد ملفات صالحة للرفع')
+      return
+    }
+
+    try {
+      setUploadProgress(10)
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      })
+
+      setUploadProgress(50)
+      const result = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'خطأ في رفع الصور')
+      }
+
+      setUploadProgress(80)
+      
+      setNewItem(prev => ({
+        ...prev,
+        images: [...(prev.images || []), ...result.files]
+      }))
+
+      setUploadProgress(100)
+      setTimeout(() => setUploadProgress(0), 1000)
+      
+    } catch (error) {
+      console.error('Error uploading images:', error)
+      alert('خطأ في رفع الصور: ' + (error as Error).message)
+      setUploadProgress(0)
+    }
+
+    if (event.target) {
+      event.target.value = ''
+    }
+  }
+
+  const removeImage = (index: number) => {
+    setNewItem(prev => ({
+      ...prev,
+      images: prev.images?.filter((_, i) => i !== index) || []
+    }))
+  }
+
+  const saveItem = async () => {
+    const errors: string[] = []
+    if (!newItem.title?.trim()) errors.push('عنوان الإعلان مطلوب')
+    if (!newItem.description?.trim()) errors.push('وصف الإعلان مطلوب')
+    if (!newItem.price?.trim()) errors.push('السعر مطلوب')
+    if (!newItem.images?.length) errors.push('يجب رفع صورة واحدة على الأقل')
+    
+    if (errors.length > 0) {
+      alert('يرجى إكمال البيانات المطلوبة:\n' + errors.join('\n'))
+      return
+    }
+
+    if (!userData.id) {
+      alert('يجب تسجيل الدخول أولاً')
+      return
+    }
+
+    try {
+      setUploadProgress(10)
+      const productData = {
+        title: newItem.title,
+        description: newItem.description,
+        price: parseFloat(newItem.price || '0'),
+        condition: newItem.condition,
+        category: newItem.category,
+        images: JSON.stringify(newItem.images),
+        status: 'ACTIVE',
+        userId: userData.id
+      }
+
+      setUploadProgress(60)
+      
+      const response = await fetch('/api/products', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(productData)
+      })
+
+      setUploadProgress(80)
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'فشل في حفظ المنتج')
+      }
+
+      const savedProduct = await response.json()
+
+      setUserItems(prev => [...prev, {
+        id: savedProduct.id,
+        title: savedProduct.title,
+        description: savedProduct.description,
+        price: savedProduct.price.toString(),
+        condition: savedProduct.condition,
+        category: savedProduct.category,
+        images: JSON.parse(savedProduct.images || '[]'),
+        status: 'active'
+      }])
+
+      // Reset form
+      setNewItem({
+        title: '',
+        description: '',
+        price: '',
+        condition: 'جديد',
+        category: 'قطع غيار',
+        images: []
+      })
+
+      setUploadProgress(100)
+      setTimeout(() => {
+        setUploadProgress(0)
+        setShowAddItem(false)
+        alert('تم حفظ المنتج بنجاح! سيظهر في الصفحة الرئيسية.')
+      }, 1000)
+
+    } catch (error) {
+      console.error('Error saving item:', error)
+      alert('خطأ في حفظ المنتج: ' + (error as Error).message)
+      setUploadProgress(0)
+    }
+  }
 
   return (
     <AuthWrapper requireAuth={true}>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 text-right" dir="rtl">
+      <div className="max-w-4xl mx-auto py-8 px-4">
         {/* Header */}
-        <header className="bg-white shadow">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-6">
-              <div className="flex items-center">
-                <Link href="/" className="flex items-center ml-6 text-blue-600 hover:text-blue-700">
-                  <Car className="h-8 w-8" />
-                  <span className="mr-2 text-xl font-bold">مزادات قطع الغيار</span>
-                </Link>
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-black text-gray-900 mb-2">الملف الشخصي</h1>
+              <p className="text-gray-900 font-semibold">إدارة حسابك ومنتجاتك</p>
             </div>
-            <div className="flex items-center space-x-4">
-              <Link href="/messages" className="p-2 bg-gray-100 rounded-full hover:bg-gray-200" title="الرسائل">
-                <MessageCircle className="h-5 w-5 text-gray-600" />
+            <div className="flex gap-4">
+              <Link 
+                href="/" 
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold transition-colors"
+              >
+                🏠 العودة للموقع
               </Link>
-              <Link href="/settings" className="p-2 bg-gray-100 rounded-full hover:bg-gray-200" title="الإعدادات">
-                <Settings className="h-5 w-5 text-gray-600" />
+              <Link 
+                href="/auctions" 
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold transition-colors"
+              >
+                🔨 تصفح المزادات
               </Link>
             </div>
           </div>
         </div>
-      </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* User Profile Header */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <div className="flex items-start space-x-6">
-            <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center">
-              <User className="h-12 w-12 text-blue-600" />
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center space-x-3 mb-2">
-                <h1 className="text-2xl font-bold text-gray-900">{user.name}</h1>
-                {user.verified && (
-                  <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm flex items-center">
-                    <Award className="h-4 w-4 ml-1" />
-                    موثق
-                  </div>
-                )}
-              </div>
-              <div className="flex items-center space-x-4 text-gray-600 mb-3">
-                <div className="flex items-center">
-                  <Star className="h-4 w-4 text-yellow-500 ml-1" />
-                  <span>{user.rating} ({user.totalRatings} تقييم)</span>
-                </div>
-                <div className="flex items-center">
-                  <MapPin className="h-4 w-4 ml-1" />
-                  <span>{user.location}</span>
-                </div>
-                <div className="flex items-center">
-                  <Calendar className="h-4 w-4 ml-1" />
-                  <span>عضو منذ {formatDateLong(user.joinDate)}</span>
-                </div>
-              </div>
-              <div className="flex items-center space-x-4">
-                <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                  راسلني
-                </button>
-                <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-                  متابعة
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Stats */}
-        {renderUserStats()}
-
-        {/* Tabs */}
-        <div className="bg-white rounded-lg shadow-md">
+        {/* Navigation Tabs */}
+        <div className="bg-white rounded-lg shadow-md mb-6">
           <div className="border-b border-gray-200">
-            <nav className="-mb-px flex">
+            <nav className="flex space-x-8 space-x-reverse">
+              <button
+                onClick={() => setActiveTab('profile')}
+                className={`py-3 px-6 text-sm font-black border-b-2 ${
+                  activeTab === 'profile'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-900 hover:text-gray-700'
+                }`}
+              >
+                البيانات الشخصية
+              </button>
               <button
                 onClick={() => setActiveTab('items')}
-                className={`py-4 px-6 text-sm font-medium border-b-2 ${
+                className={`py-3 px-6 text-sm font-black border-b-2 ${
                   activeTab === 'items'
                     ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    : 'border-transparent text-gray-900 hover:text-gray-700'
                 }`}
               >
                 منتجاتي ({userItems.length})
               </button>
               <button
-                onClick={() => setActiveTab('bids')}
-                className={`py-4 px-6 text-sm font-medium border-b-2 ${
-                  activeTab === 'bids'
+                onClick={() => setActiveTab('account')}
+                className={`py-3 px-6 text-sm font-black border-b-2 ${
+                  activeTab === 'account'
                     ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    : 'border-transparent text-gray-900 hover:text-gray-700'
                 }`}
               >
-                مزايداتي ({userBids.length})
-              </button>
-              <button
-                onClick={() => setActiveTab('watchlist')}
-                className={`py-4 px-6 text-sm font-medium border-b-2 ${
-                  activeTab === 'watchlist'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                قائمة المراقبة ({user.stats.watchlist})
+                إدارة الحساب
               </button>
             </nav>
           </div>
-
-          <div className="p-6">
-            {activeTab === 'items' && renderUserItems()}
-            {activeTab === 'bids' && renderUserBids()}
-            {activeTab === 'watchlist' && (
-              <div className="text-center py-12">
-                <Heart className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">قائمة المراقبة فارغة</h3>
-                <p className="text-gray-600">ابدأ بإضافة منتجات لمراقبتها</p>
-              </div>
-            )}
-          </div>
         </div>
-      </div>
 
-      {/* Add Item Modal */}
-      {renderAddItemModal()}
+        {/* Profile Tab */}
+        {activeTab === 'profile' && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-black mb-6 text-gray-900">المعلومات الشخصية</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-2">
+                  الاسم الكامل *
+                </label>
+                <input
+                  type="text"
+                  value={userData.name}
+                  onChange={(e) => handleUserDataChange('name', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="أدخل اسمك الكامل"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-2">
+                  رقم الهاتف *
+                </label>
+                <input
+                  type="tel"
+                  value={userData.phone}
+                  onChange={(e) => handleUserDataChange('phone', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="أدخل رقم الهاتف"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-2">
+                  البريد الإلكتروني *
+                </label>
+                <input
+                  type="email"
+                  value={userData.email}
+                  onChange={(e) => handleUserDataChange('email', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="أدخل البريد الإلكتروني"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-2">
+                  رقم الواتساب
+                </label>
+                <input
+                  type="tel"
+                  value={userData.whatsapp}
+                  onChange={(e) => handleUserDataChange('whatsapp', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="+965 xxxxxxxx"
+                />
+              </div>
+            </div>
+
+            {/* قسم تغيير كلمة المرور */}
+            <div className="mt-8 pt-6 border-t border-gray-200">
+              <h3 className="text-lg font-black mb-4 text-gray-900">تغيير كلمة المرور</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-bold text-gray-900 mb-2">
+                    كلمة المرور الجديدة
+                  </label>
+                  <input
+                    type="password"
+                    value={userData.newPassword || ''}
+                    onChange={(e) => handleUserDataChange('newPassword', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="اتركه فارغاً إذا لم ترد تغيير كلمة المرور"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-900 mb-2">
+                    تأكيد كلمة المرور الجديدة
+                  </label>
+                  <input
+                    type="password"
+                    value={userData.confirmPassword || ''}
+                    onChange={(e) => handleUserDataChange('confirmPassword', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="أعد إدخال كلمة المرور الجديدة"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <button 
+                onClick={saveUserData}
+                className="w-full md:w-auto px-6 py-2 bg-blue-600 text-white font-bold rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
+                حفظ التغييرات
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Account Management Tab */}
+        {activeTab === 'account' && (
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-black mb-6 text-gray-900">إدارة الحساب والصلاحيات</h2>
+            
+            {/* Account Info */}
+            <div className="mb-8 p-4 bg-blue-50 rounded-lg">
+              <h3 className="text-lg font-bold text-blue-900 mb-4">معلومات الحساب</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <span className="text-sm font-medium text-gray-700">نوع العضوية:</span>
+                  <span className={`mr-2 px-2 py-1 rounded-full text-xs font-bold ${
+                    user?.role === 'ADMIN' ? 'bg-red-100 text-red-800' :
+                    user?.role === 'SHOP_OWNER' ? 'bg-purple-100 text-purple-800' :
+                    user?.role === 'SELLER' ? 'bg-blue-100 text-blue-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}>
+                    {user?.role === 'ADMIN' ? 'مدير' :
+                     user?.role === 'SHOP_OWNER' ? 'صاحب محل' :
+                     user?.role === 'SELLER' ? 'بائع' : 'مستخدم عادي'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-700">تاريخ الانضمام:</span>
+                  <span className="mr-2 text-sm text-gray-600">
+                    {user ? formatDateLong(new Date().toISOString()) : 'غير محدد'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Permissions */}
+            <div className="mb-8 p-4 bg-green-50 rounded-lg">
+              <h3 className="text-lg font-bold text-green-900 mb-4">الصلاحيات المتاحة</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center">
+                  <span className={`w-3 h-3 rounded-full mr-2 ${
+                    user?.permissions?.canManageProducts ? 'bg-green-500' : 'bg-red-500'
+                  }`}></span>
+                  <span className="text-sm text-gray-700">إدارة المنتجات</span>
+                </div>
+                <div className="flex items-center">
+                  <span className={`w-3 h-3 rounded-full mr-2 ${
+                    user?.permissions?.canManageOrders ? 'bg-green-500' : 'bg-red-500'
+                  }`}></span>
+                  <span className="text-sm text-gray-700">إدارة الطلبات</span>
+                </div>
+                <div className="flex items-center">
+                  <span className={`w-3 h-3 rounded-full mr-2 ${
+                    user?.permissions?.canManageShop ? 'bg-green-500' : 'bg-red-500'
+                  }`}></span>
+                  <span className="text-sm text-gray-700">إدارة المحل</span>
+                </div>
+                <div className="flex items-center">
+                  <span className={`w-3 h-3 rounded-full mr-2 ${
+                    user?.permissions?.canViewReports ? 'bg-green-500' : 'bg-red-500'
+                  }`}></span>
+                  <span className="text-sm text-gray-700">عرض التقارير</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Upgrade Options */}
+            <div className="mb-8 p-4 bg-yellow-50 rounded-lg">
+              <h3 className="text-lg font-bold text-yellow-900 mb-4">ترقية العضوية</h3>
+              <p className="text-sm text-gray-700 mb-4">
+                للحصول على المزيد من الصلاحيات والمميزات، يمكنك ترقية حسابك:
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {user?.role === 'USER' && (
+                  <>
+                    <div className="border border-blue-200 rounded-lg p-4">
+                      <h4 className="font-bold text-blue-900 mb-2">عضوية البائع</h4>
+                      <ul className="text-sm text-gray-700 mb-3">
+                        <li>• إدارة المنتجات والمزادات</li>
+                        <li>• تتبع المبيعات</li>
+                        <li>• إحصائيات مفصلة</li>
+                      </ul>
+                      <button className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 font-bold">
+                        طلب ترقية للبائع
+                      </button>
+                    </div>
+                    <div className="border border-purple-200 rounded-lg p-4">
+                      <h4 className="font-bold text-purple-900 mb-2">عضوية صاحب المحل</h4>
+                      <ul className="text-sm text-gray-700 mb-3">
+                        <li>• إدارة شاملة للمحل</li>
+                        <li>• لوحة تحكم متقدمة</li>
+                        <li>• تقارير مالية</li>
+                      </ul>
+                      <button className="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 font-bold">
+                        طلب ترقية لصاحب محل
+                      </button>
+                    </div>
+                  </>
+                )}
+                {user?.role === 'SELLER' && (
+                  <div className="border border-purple-200 rounded-lg p-4">
+                    <h4 className="font-bold text-purple-900 mb-2">ترقية لصاحب المحل</h4>
+                    <ul className="text-sm text-gray-700 mb-3">
+                      <li>• إدارة شاملة للمحل</li>
+                      <li>• لوحة تحكم متقدمة</li>
+                      <li>• تقارير مالية</li>
+                    </ul>
+                    <button className="w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 font-bold">
+                      طلب ترقية لصاحب محل
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Security Settings */}
+            <div className="p-4 bg-red-50 rounded-lg">
+              <h3 className="text-lg font-bold text-red-900 mb-4">إعدادات الأمان</h3>
+              <div className="space-y-3">
+                <button className="w-full md:w-auto bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 font-bold">
+                  🔄 تغيير كلمة المرور
+                </button>
+                <button className="w-full md:w-auto bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 font-bold mr-0 md:mr-3">
+                  🗑️ حذف الحساب
+                </button>
+              </div>
+              <p className="text-xs text-gray-600 mt-3">
+                تحذير: حذف الحساب سيؤدي إلى فقدان جميع البيانات والمنتجات نهائياً
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Items Tab */}
+        {activeTab === 'items' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold">منتجاتي</h2>
+                <button
+                  onClick={() => setShowAddItem(!showAddItem)}
+                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                >
+                  {showAddItem ? 'إلغاء' : 'إضافة منتج جديد'}
+                </button>
+              </div>
+
+              {/* Add Item Form */}
+              {showAddItem && (
+                <div className="bg-gray-50 rounded-lg p-6 mb-6">
+                  <h3 className="text-lg font-bold mb-4">إضافة منتج جديد</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        عنوان الإعلان *
+                      </label>
+                      <input
+                        type="text"
+                        value={newItem.title || ''}
+                        onChange={(e) => setNewItem(prev => ({ ...prev, title: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        placeholder="أدخل عنوان الإعلان"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        السعر *
+                      </label>
+                      <input
+                        type="text"
+                        value={newItem.price || ''}
+                        onChange={(e) => setNewItem(prev => ({ ...prev, price: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        placeholder="السعر بالدينار الكويتي"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        الحالة *
+                      </label>
+                      <select
+                        value={newItem.condition || 'مستعمل'}
+                        onChange={(e) => setNewItem(prev => ({ ...prev, condition: e.target.value }))}
+                        title="اختر حالة المنتج"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      >
+                        {PART_CONDITIONS_ARRAY.map(condition => (
+                          <option key={condition} value={condition}>{condition}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        القسم *
+                      </label>
+                      <select
+                        value={newItem.category || 'قطع غيار'}
+                        onChange={(e) => setNewItem(prev => ({ ...prev, category: e.target.value }))}
+                        title="اختر قسم المنتج"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      >
+                        {categories.length === 0 ? (
+                          <>
+                            <option value="قطع غيار">قطع غيار</option>
+                            <option value="محركات">محركات</option>
+                            <option value="إطارات">إطارات</option>
+                            <option value="زيوت">زيوت ومواد التشحيم</option>
+                            <option value="أدوات">أدوات ومعدات</option>
+                            <option value="إكسسوارات">إكسسوارات</option>
+                            <option value="أخرى">أخرى</option>
+                          </>
+                        ) : (
+                          categories.map(category => (
+                            <option key={category.id} value={category.nameArabic}>
+                              {category.nameArabic}
+                            </option>
+                          ))
+                        )}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-black mb-2">
+                      وصف المنتج *
+                    </label>
+                    <textarea
+                      value={newItem.description || ''}
+                      onChange={(e) => setNewItem(prev => ({ ...prev, description: e.target.value }))}
+                      rows={4}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-black font-medium"
+                      placeholder="وصف تفصيلي للمنتج..."
+                    />
+                  </div>
+
+                  {/* Image Upload */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      صور المنتج * (1-8 صور)
+                    </label>
+                    
+                    <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                      <label className="flex-1 cursor-pointer">
+                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-500 transition-colors">
+                          <input
+                            type="file"
+                            multiple
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="hidden"
+                          />
+                          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                          </svg>
+                          <p className="mt-2 text-sm text-gray-600">اختر الصور أو اسحبها هنا</p>
+                          <p className="text-xs text-gray-500">PNG, JPG, GIF حتى 10MB لكل صورة</p>
+                        </div>
+                      </label>
+                    </div>
+
+                    {/* Upload Progress */}
+                    {uploadProgress > 0 && (
+                      <div className="mb-4">
+                        <div className="flex justify-between text-xs text-gray-600 mb-1">
+                          <span>رفع الصور...</span>
+                          <span>{uploadProgress}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${uploadProgress}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Image Preview Gallery */}
+                    {newItem.images && newItem.images.length > 0 && (
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                        {newItem.images.map((image, index) => (
+                          <div key={index} className="relative group">
+                            <img
+                              src={image}
+                              alt={`صورة ${index + 1}`}
+                              className="w-full h-24 object-cover rounded-lg border-2 border-gray-300"
+                            />
+                            <button
+                              onClick={() => removeImage(index)}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <p className="text-xs text-gray-500">
+                      يمكن رفع {newItem.images?.length || 0} من 8 صور
+                    </p>
+                  </div>
+
+                  <div className="flex justify-end gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowAddItem(false)}
+                      className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                    >
+                      إلغاء
+                    </button>
+                    <button
+                      onClick={saveItem}
+                      className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                    >
+                      حفظ المنتج
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Items List */}
+              {userItems.length === 0 ? (
+                <div className="text-center py-12">
+                  <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2 2v-5m16 0h-2m-2 0h-4m-4 0H6m16 0a2 2 0 002-2V9a2 2 0 00-2-2h-2M6 7h16" />
+                  </svg>
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">لا توجد منتجات</h3>
+                  <p className="mt-1 text-sm text-gray-500">ابدأ بإضافة منتجك الأول</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {userItems.map((item) => (
+                    <div key={item.id} className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+                      {/* صورة المنتج مع حالة البيع */}
+                      <div className="relative">
+                        <ProductImage 
+                          images={item.images}
+                          title={item.title}
+                          className={`w-full h-48 object-cover ${item.status === 'sold' ? 'opacity-50' : ''}`}
+                        />
+                        
+                        {/* شارة "مباع" */}
+                        {item.status === 'sold' && (
+                          <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center">
+                            <div className="bg-red-600 text-white px-6 py-3 rounded-lg font-black text-xl transform -rotate-12">
+                              مباع
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* حالة المنتج */}
+                        <div className="absolute top-2 right-2">
+                          <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                            item.status === 'active' ? 'bg-green-500 text-white' :
+                            item.status === 'sold' ? 'bg-red-500 text-white' :
+                            'bg-gray-500 text-white'
+                          }`}>
+                            {item.status === 'active' ? 'نشط' :
+                             item.status === 'sold' ? 'مباع' : 'غير نشط'}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="p-4">
+                        <h3 className="font-black text-lg text-gray-900 mb-2">{item.title}</h3>
+                        <p className="text-black font-bold text-sm mb-2 line-clamp-2">{item.description}</p>
+                        <div className="flex justify-between items-center mb-3">
+                          <span className="text-lg font-black text-green-600">{item.price} د.ك</span>
+                          <span className="text-sm text-black font-bold">{item.condition}</span>
+                        </div>
+                        
+                        {/* أزرار الإدارة */}
+                        <div className="flex gap-2">
+                          {item.status === 'active' && (
+                            <>
+                              <button
+                                onClick={() => markAsSold(item.id)}
+                                className="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-md font-bold text-sm transition-colors"
+                              >
+                                تم البيع
+                              </button>
+                              <button
+                                onClick={() => editItem(item.id)}
+                                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-md font-bold text-sm transition-colors"
+                              >
+                                تعديل
+                              </button>
+                            </>
+                          )}
+                          
+                          {item.status === 'sold' && (
+                            <button
+                              onClick={() => generateInvoice(item)}
+                              className="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-md font-bold text-sm transition-colors"
+                            >
+                              📄 فاتورة
+                            </button>
+                          )}
+                          
+                          <button
+                            onClick={() => deleteItem(item.id)}
+                            className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 rounded-md font-bold text-sm transition-colors"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
     </AuthWrapper>
-  );
+  )
 }

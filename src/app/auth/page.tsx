@@ -2,8 +2,16 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { Car, Eye, EyeOff, Mail, Lock, User, Phone, MessageCircle } from 'lucide-react';
+
+// Facebook SDK type declaration
+declare global {
+  interface Window {
+    FB: any;
+  }
+}
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -17,6 +25,7 @@ export default function AuthPage() {
   });
   const [error, setError] = useState('');
   const router = useRouter();
+  const { login } = useAuth();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -24,6 +33,130 @@ export default function AuthPage() {
       [e.target.name]: e.target.value
     });
     setError(''); // Clear error when user starts typing
+  };
+
+  const handleFacebookLogin = async () => {
+    setLoading(true);
+    setError('');
+    
+    try {
+      // Initialize Facebook SDK if not already done
+      if (typeof window !== 'undefined' && !window.FB) {
+        await initializeFacebookSDK();
+      }
+      
+      // Check login status
+      window.FB.getLoginStatus((response: any) => {
+        if (response.status === 'connected') {
+          // User is logged in and authenticated
+          handleFacebookResponse(response);
+        } else {
+          // User is not logged in, prompt login
+          window.FB.login((response: any) => {
+            if (response.authResponse) {
+              handleFacebookResponse(response);
+            } else {
+              setError('تم إلغاء تسجيل الدخول بالفيس بوك');
+              setLoading(false);
+            }
+          }, { scope: 'email,public_profile' });
+        }
+      });
+    } catch (error) {
+      console.error('Facebook login error:', error);
+      setError('خطأ في تسجيل الدخول بالفيس بوك');
+      setLoading(false);
+    }
+  };
+
+  const initializeFacebookSDK = (): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      // Check if already loaded
+      if (window.FB) {
+        resolve();
+        return;
+      }
+
+      // Load Facebook SDK
+      if (document.getElementById('facebook-jssdk')) {
+        resolve();
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.id = 'facebook-jssdk';
+      script.src = 'https://connect.facebook.net/ar_AR/sdk.js';
+      script.async = true;
+      script.defer = true;
+      script.onload = () => {
+        try {
+          window.FB.init({
+            appId: process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || '1234567890123456',
+            cookie: true,
+            xfbml: true,
+            version: 'v18.0'
+          });
+          console.log('Facebook SDK initialized successfully');
+          resolve();
+        } catch (error) {
+          console.error('Error initializing Facebook SDK:', error);
+          reject(error);
+        }
+      };
+      script.onerror = () => {
+        console.error('Failed to load Facebook SDK');
+        reject(new Error('Failed to load Facebook SDK'));
+      };
+      document.body.appendChild(script);
+    });
+  };
+
+  const handleFacebookResponse = async (response: any) => {
+    try {
+      // Get user info from Facebook
+      window.FB.api('/me', { fields: 'name,email,picture' }, async (userInfo: any) => {
+        if (!userInfo.email) {
+          setError('يجب السماح بالوصول للبريد الإلكتروني');
+          setLoading(false);
+          return;
+        }
+
+        // Send to our backend for authentication
+        const authResponse = await fetch('/api/auth/facebook', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            facebookId: userInfo.id,
+            name: userInfo.name,
+            email: userInfo.email,
+            picture: userInfo.picture?.data?.url,
+            accessToken: response.authResponse.accessToken
+          })
+        });
+
+        const authData = await authResponse.json();
+
+        if (authResponse.ok) {
+          console.log('Facebook login successful:', authData.user.name);
+          login(authData.token, authData.user);
+          
+          // Show success message
+          alert(`مرحباً ${authData.user.name}! تم تسجيل الدخول بنجاح`);
+          
+          router.push('/');
+        } else {
+          console.error('Facebook auth failed:', authData.error);
+          setError(authData.error || 'خطأ في تسجيل الدخول بالفيس بوك');
+        }
+        setLoading(false);
+      });
+    } catch (error) {
+      console.error('Facebook auth error:', error);
+      setError('خطأ في المصادقة مع فيس بوك');
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -47,20 +180,24 @@ export default function AuthPage() {
 
         const data = await response.json();
 
-        if (response.ok) {
-          // Store auth data
-          localStorage.setItem('isLoggedIn', 'true');
-          localStorage.setItem('isAdmin', data.user.role === 'ADMIN' ? 'true' : 'false');
-          localStorage.setItem('userEmail', data.user.email);
-          localStorage.setItem('userName', data.user.name);
-          localStorage.setItem('userId', data.user.id);
-          localStorage.setItem('authToken', data.token);
-
+        if (response.ok && data.user) {
+          // Login with new auth context, passing the token
+          login(data.user, data.token);
+          
+          // Clear old localStorage items
+          localStorage.removeItem('isLoggedIn');
+          localStorage.removeItem('isAdmin');
+          localStorage.removeItem('userEmail');
+          localStorage.removeItem('userName');
+          localStorage.removeItem('userId');
+          
           // Redirect based on role
           if (data.user.role === 'ADMIN') {
             router.push('/admin');
+          } else if (data.user.role === 'SHOP_OWNER' || data.user.role === 'SELLER') {
+            router.push('/admin/enhanced');
           } else {
-            router.push('/');
+            router.push('/profile');
           }
         } else {
           setError(data.error || 'حدث خطأ في تسجيل الدخول');
@@ -107,17 +244,14 @@ export default function AuthPage() {
           });
 
           const loginData = await loginResponse.json();
-
-          if (loginResponse.ok) {
-            localStorage.setItem('isLoggedIn', 'true');
-            localStorage.setItem('isAdmin', 'false');
-            localStorage.setItem('userEmail', loginData.user.email);
-            localStorage.setItem('userName', loginData.user.name);
-            localStorage.setItem('userId', loginData.user.id);
-            localStorage.setItem('authToken', loginData.token);
-            router.push('/');
+          
+          if (loginResponse.ok && loginData.user) {
+            login(loginData.user, loginData.token);
+            router.push('/profile');
           } else {
-            setError(loginData.error || 'حدث خطأ في تسجيل الدخول بعد التسجيل');
+            // Registration successful but login failed - just show success
+            alert('تم إنشاء الحساب بنجاح، يرجى تسجيل الدخول');
+            setIsLogin(true);
           }
         } else {
           setError(data.error || 'حدث خطأ في إنشاء الحساب');
@@ -165,6 +299,30 @@ export default function AuthPage() {
 
         {/* Form */}
         <div className="bg-white py-8 px-6 shadow-lg rounded-lg">
+          {/* Social Login Buttons */}
+          <div className="space-y-3 mb-6">
+            <button
+              type="button"
+              onClick={handleFacebookLogin}
+              disabled={loading}
+              className="w-full flex justify-center items-center py-3 px-4 border border-blue-300 rounded-lg shadow-sm bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg className="w-5 h-5 text-white ml-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M20 10c0-5.523-4.477-10-10-10S0 4.477 0 10c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V10h2.54V7.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V10h2.773l-.443 2.89h-2.33v6.988C16.343 19.128 20 14.991 20 10z" clipRule="evenodd"/>
+              </svg>
+              {loading ? 'جاري الاتصال...' : (isLogin ? 'دخول بالفيس بوك' : 'إنشاء حساب بالفيس بوك')}
+            </button>
+            
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">أو استخدم البريد الإلكتروني</span>
+              </div>
+            </div>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Name field (Registration only) */}
             {!isLogin && (
@@ -181,7 +339,7 @@ export default function AuthPage() {
                     required={!isLogin}
                     value={formData.name}
                     onChange={handleInputChange}
-                    className="appearance-none block w-full pr-10 pl-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                    className="appearance-none block w-full pr-10 pl-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-gray-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                     placeholder="أدخل اسمك الكامل"
                   />
                 </div>
@@ -202,7 +360,7 @@ export default function AuthPage() {
                   required
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="appearance-none block w-full pr-10 pl-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                  className="appearance-none block w-full pr-10 pl-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-gray-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                   placeholder="أدخل بريدك الإلكتروني"
                 />
               </div>
@@ -222,7 +380,7 @@ export default function AuthPage() {
                     type="tel"
                     value={formData.phone}
                     onChange={handleInputChange}
-                    className="appearance-none block w-full pr-10 pl-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                    className="appearance-none block w-full pr-10 pl-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-gray-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                     placeholder="+965 xxxxxxxx"
                   />
                 </div>
@@ -247,7 +405,7 @@ export default function AuthPage() {
                   required
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="appearance-none block w-full pr-10 pl-10 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                  className="appearance-none block w-full pr-10 pl-10 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-gray-500 focus:border-blue-500 focus:z-10 sm:text-sm"
                   placeholder="أدخل كلمة المرور"
                 />
                 <button
@@ -286,7 +444,7 @@ export default function AuthPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition"
               >
                 {loading ? (
                   <div className="flex items-center">

@@ -86,33 +86,150 @@ export default function AdvertisementsPage() {
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (!isImageFile(file)) {
-        alert('يرجى اختيار ملف صورة صحيح');
-        return;
-      }
+      await processImageFile(file);
+    }
+  };
 
-      try {
-        // إضافة العلامة المائية للصورة
-        const watermarkedFile = await addWatermarkToImage(file, {
-          text: 'Q8 MAZAD SPORT',
-          fontSize: Math.min(file.size > 500000 ? 28 : 20, 32), // حجم النص حسب حجم الصورة
-          opacity: 0.8,
-          position: 'bottom-right',
-          color: 'rgba(255, 255, 255, 0.9)',
-          enableBackground: true, // تفعيل الخلفية المائية
-          backgroundOpacity: 0.06 // شفافية منخفضة للخلفية
-        });
+  const handleCameraCapture = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'environment', // استخدام الكاميرا الخلفية
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        } 
+      });
+      
+      // إنشاء عنصر فيديو لمعاينة الكاميرا
+      const video = document.createElement('video');
+      video.srcObject = stream;
+      video.autoplay = true;
+      video.playsInline = true;
+      
+      // إنشاء modal لمعاينة الكاميرا
+      const cameraModal = document.createElement('div');
+      cameraModal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50';
+      cameraModal.innerHTML = `
+        <div class="bg-white rounded-lg p-4 w-full max-w-md mx-4">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-gray-900">التقاط صورة</h3>
+            <button id="close-camera" class="text-gray-400 hover:text-gray-600">
+              <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+          <div class="relative">
+            <video id="camera-video" class="w-full h-64 bg-black rounded object-cover"></video>
+            <canvas id="camera-canvas" class="hidden"></canvas>
+          </div>
+          <div class="flex justify-center space-x-4 mt-4">
+            <button id="capture-btn" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 flex items-center">
+              <svg class="h-5 w-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89L8.88 4.88A2 2 0 0110.544 4h2.912a2 2 0 011.664.88l1.286 1.23A2 2 0 0017.07 7H18a2 2 0 012 2v9a2 2 0 01-2 2H6a2 2 0 01-2-2V9z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              </svg>
+              التقاط صورة
+            </button>
+            <button id="switch-camera" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(cameraModal);
+      const videoElement = cameraModal.querySelector('#camera-video') as HTMLVideoElement;
+      const canvas = cameraModal.querySelector('#camera-canvas') as HTMLCanvasElement;
+      const captureBtn = cameraModal.querySelector('#capture-btn') as HTMLButtonElement;
+      const closeBtn = cameraModal.querySelector('#close-camera') as HTMLButtonElement;
+      const switchBtn = cameraModal.querySelector('#switch-camera') as HTMLButtonElement;
+      
+      videoElement.srcObject = stream;
+      
+      let currentFacingMode = 'environment';
+      
+      // تبديل الكاميرا
+      switchBtn.onclick = async () => {
+        stream.getTracks().forEach(track => track.stop());
+        currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+        
+        try {
+          const newStream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
+              facingMode: currentFacingMode,
+              width: { ideal: 1920 },
+              height: { ideal: 1080 }
+            } 
+          });
+          videoElement.srcObject = newStream;
+        } catch (error) {
+          console.error('Error switching camera:', error);
+        }
+      };
+      
+      // التقاط الصورة
+      captureBtn.onclick = () => {
+        canvas.width = videoElement.videoWidth;
+        canvas.height = videoElement.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(videoElement, 0, 0);
+        
+        canvas.toBlob(async (blob) => {
+          if (blob) {
+            const file = new File([blob], `camera-${Date.now()}.jpg`, { type: 'image/jpeg' });
+            await processImageFile(file);
+            closeCamera();
+          }
+        }, 'image/jpeg', 0.9);
+      };
+      
+      // إغلاق الكاميرا
+      const closeCamera = () => {
+        stream.getTracks().forEach(track => track.stop());
+        document.body.removeChild(cameraModal);
+      };
+      
+      closeBtn.onclick = closeCamera;
+      cameraModal.onclick = (e) => {
+        if (e.target === cameraModal) closeCamera();
+      };
+      
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      alert('لا يمكن الوصول للكاميرا. يرجى التأكد من السماح بالوصول للكاميرا.');
+    }
+  };
 
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          setImagePreview(e.target?.result as string);
-        };
-        reader.readAsDataURL(watermarkedFile);
-        simulateImageUpload(watermarkedFile);
-      } catch (error) {
-        console.error('فشل في إضافة العلامة المائية:', error);
-        alert('حدث خطأ في معالجة الصورة');
-      }
+  const processImageFile = async (file: File) => {
+    if (!isImageFile(file)) {
+      alert('يرجى اختيار ملف صورة صحيح');
+      return;
+    }
+
+    try {
+      // إضافة العلامة المائية للصورة
+      const watermarkedFile = await addWatermarkToImage(file, {
+        text: 'Q8 MAZAD SPORT',
+        fontSize: Math.min(file.size > 500000 ? 28 : 20, 32), // حجم النص حسب حجم الصورة
+        opacity: 0.8,
+        position: 'bottom-right',
+        color: 'rgba(255, 255, 255, 0.9)',
+        enableBackground: true, // تفعيل الخلفية المائية
+        backgroundOpacity: 0.06 // شفافية منخفضة للخلفية
+      });
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(watermarkedFile);
+      simulateImageUpload(watermarkedFile);
+    } catch (error) {
+      console.error('فشل في إضافة العلامة المائية:', error);
+      alert('حدث خطأ في معالجة الصورة');
     }
   };
 
@@ -139,7 +256,7 @@ export default function AdvertisementsPage() {
       description: '',
       imageUrl: '',
       link: '',
-      position: 'header',
+      position: 'header', // افتراضي: أعلى الصفحة
       isActive: true
     });
     setImagePreview('');
@@ -149,8 +266,13 @@ export default function AdvertisementsPage() {
   const handleCreate = async () => {
     try {
       // التحقق من صحة البيانات
-      if (!formData.title || !formData.description) {
-        alert('يرجى ملء العنوان والوصف');
+      if (!formData.title || !formData.description || !formData.imageUrl) {
+        alert('يرجى ملء جميع البيانات المطلوبة: العنوان، الوصف، والصورة');
+        return;
+      }
+
+      if (formData.description.length < 10) {
+        alert('يرجى كتابة وصف أكثر تفصيلاً (10 أحرف على الأقل)');
         return;
       }
 
@@ -164,7 +286,7 @@ export default function AdvertisementsPage() {
           title: formData.title,
           description: formData.description,
           imageUrl: formData.imageUrl,
-          link: formData.link,
+          link: formData.link || null, // إرسال null بدلاً من string فارغ
           active: formData.isActive
         })
       });
@@ -172,28 +294,30 @@ export default function AdvertisementsPage() {
       if (response.ok) {
         const newAd = await response.json();
         // تحديث القائمة المحلية
-        setAdvertisements([{
+        const newAdvertisement: Advertisement = {
           id: newAd.id,
           title: newAd.title,
           description: newAd.description,
           imageUrl: newAd.imageUrl || '',
           link: newAd.link || '',
           isActive: newAd.active,
-          position: 'header', // قيمة افتراضية
+          position: formData.position, // استخدام القيمة المختارة
           createdAt: newAd.createdAt,
-          updatedAt: newAd.updatedAt
-        }, ...advertisements]);
+          updatedAt: newAd.updatedAt || newAd.createdAt
+        };
         
+        setAdvertisements([newAdvertisement, ...advertisements]);
         setShowCreateModal(false);
         resetForm();
-        alert('تم إنشاء الإعلان بنجاح!');
+        alert('✅ تم إنشاء وتفعيل الإعلان بنجاح!');
       } else {
         const errorData = await response.json();
-        alert(`خطأ في حفظ الإعلان: ${errorData.error}`);
+        console.error('API Error:', errorData);
+        alert(`❌ خطأ في حفظ الإعلان: ${errorData.error || 'خطأ غير معروف'}`);
       }
     } catch (error) {
       console.error('Error creating advertisement:', error);
-      alert('حدث خطأ في حفظ الإعلان');
+      alert('❌ حدث خطأ في الاتصال بالخادم. يرجى المحاولة مرة أخرى.');
     }
   };
 
@@ -212,12 +336,12 @@ export default function AdvertisementsPage() {
 
   const getPositionText = (position: Advertisement['position']) => {
     const positions = {
-      'header': 'أعلى الصفحة',
-      'sidebar': 'الشريط الجانبي',
-      'footer': 'أسفل الصفحة',
-      'between-listings': 'بين القوائم'
+      'header': '🔝 أعلى الصفحة',
+      'sidebar': '↔️ الشريط الجانبي',
+      'footer': '⬇️ أسفل الصفحة',
+      'between-listings': '📋 بين القوائم'
     };
-    return positions[position];
+    return positions[position] || position;
   };
 
   if (loading) {
@@ -237,21 +361,21 @@ export default function AdvertisementsPage() {
     <AuthWrapper>
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
-        <header className="bg-white shadow">
+        <header className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-700 text-white shadow-xl">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center py-6">
               <div className="flex items-center">
-                <Link href="/admin" className="flex items-center text-gray-800 hover:text-blue-600 ml-4">
+                <Link href="/admin" className="flex items-center text-white/80 hover:text-white ml-4 transition-colors">
                   <ArrowLeft className="h-5 w-5 ml-1" />
                   العودة إلى لوحة التحكم
                 </Link>
-                <div className="h-6 border-l border-gray-300 ml-4"></div>
-                <h1 className="text-2xl font-bold text-gray-900">Q8 MAZAD SPORT - إدارة الإعلانات</h1>
+                <div className="h-6 border-l border-white/30 ml-4"></div>
+                <h1 className="text-2xl font-bold text-white">Q8 MAZAD SPORT - إدارة الإعلانات</h1>
               </div>
               
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center"
+                className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg flex items-center transition-colors backdrop-blur-sm"
                 title="إضافة إعلان جديد"
               >
                 <Plus className="h-5 w-5 ml-2" />
@@ -444,31 +568,37 @@ export default function AdvertisementsPage() {
                     type="text"
                     value={formData.title}
                     onChange={(e) => setFormData({...formData, title: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="أدخل عنوان الإعلان"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                    placeholder="مثال: خصم خاص على قطع غيار فورد موستنق"
                   />
+                  <p className="text-xs text-gray-600 mt-1">
+                    💡 اكتب عنواناً قصيراً وجذاباً (يفضل أقل من 50 حرف)
+                  </p>
                 </div>
 
                 <div>
                   <label htmlFor="create-description" className="block text-sm font-medium text-gray-700 mb-1">
-                    الوصف
+                    وصف الإعلان *
                   </label>
                   <textarea
                     id="create-description"
                     value={formData.description}
                     onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="وصف مختصر للإعلان"
+                    rows={4}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                    placeholder="اكتب وصفاً واضحاً ومفصلاً للإعلان... مثال: خصم 25% على جميع قطع غيار فورد الأصلية لفترة محدودة"
                   />
+                  <p className="text-xs text-gray-600 mt-1">
+                    💡 اكتب وصفاً جذاباً يشجع المستخدمين على النقر على الإعلان (10 أحرف على الأقل)
+                  </p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     صورة الإعلان *
                   </label>
-                  <div className="text-xs text-blue-600 mb-2 bg-blue-50 p-2 rounded">
-                    💡 سيتم إضافة علامة "Q8 MAZAD SPORT" المائية وخلفية مائية متكررة تلقائياً على جميع الصور المرفوعة
+                  <div className="text-sm text-blue-700 mb-3 bg-blue-50 p-3 rounded-lg border border-blue-200 font-medium">
+                    ✨ <strong>العلامة المائية التلقائية:</strong> سيتم إضافة شعار "Q8 MAZAD SPORT" مع خلفية مائية على جميع الصور لحمايتها
                   </div>
                   
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
@@ -492,24 +622,46 @@ export default function AdvertisementsPage() {
                       </div>
                     ) : (
                       <div>
-                        <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                        <div className="mt-2">
-                          <label htmlFor="create-image-upload" className="cursor-pointer">
-                            <span className="text-blue-600 hover:text-blue-500 font-medium">
-                              اضغط لرفع صورة
-                            </span>
-                            <input
-                              id="create-image-upload"
-                              type="file"
-                              accept="image/*"
-                              onChange={handleImageUpload}
-                              className="hidden"
-                            />
-                          </label>
-                          <p className="text-xs text-gray-500 mt-1">
-                            PNG, JPG, GIF حتى 5MB
-                          </p>
+                        <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                        
+                        {/* خيارات رفع الصورة */}
+                        <div className="space-y-3">
+                          {/* رفع من الجهاز */}
+                          <div>
+                            <label htmlFor="create-image-upload" className="cursor-pointer inline-block">
+                              <div className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center">
+                                <Upload className="h-5 w-5 ml-2" />
+                                رفع من الجهاز
+                              </div>
+                              <input
+                                id="create-image-upload"
+                                type="file"
+                                accept="image/*"
+                                onChange={handleImageUpload}
+                                className="hidden"
+                              />
+                            </label>
+                          </div>
+                          
+                          {/* التقاط بالكاميرا */}
+                          <div>
+                            <button
+                              type="button"
+                              onClick={handleCameraCapture}
+                              className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center w-full"
+                            >
+                              <svg className="h-5 w-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89L8.88 4.88A2 2 0 0110.544 4h2.912a2 2 0 011.664.88l1.286 1.23A2 2 0 0017.07 7H18a2 2 0 012 2v9a2 2 0 01-2 2H6a2 2 0 01-2-2V9z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                              التقاط بالكاميرا
+                            </button>
+                          </div>
                         </div>
+                        
+                        <p className="text-xs text-gray-500 mt-3">
+                          PNG, JPG, GIF حتى 5MB
+                        </p>
                       </div>
                     )}
                     
@@ -517,8 +669,8 @@ export default function AdvertisementsPage() {
                       <div className="mt-4">
                         <div className="bg-gray-200 rounded-full h-2">
                           <div 
-                            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                            style={{ width: `${uploadProgress}%` }}
+                            className={`bg-blue-600 h-2 rounded-full transition-all duration-300`}
+                            style={{width: `${uploadProgress}%`}}
                           ></div>
                         </div>
                         <p className="text-sm text-gray-600 mt-1">جاري الرفع... {uploadProgress}%</p>
@@ -529,16 +681,19 @@ export default function AdvertisementsPage() {
 
                 <div>
                   <label htmlFor="create-link" className="block text-sm font-medium text-gray-700 mb-1">
-                    رابط الإعلان
+                    رابط الإعلان (اختياري)
                   </label>
                   <input
                     id="create-link"
                     type="url"
                     value={formData.link}
                     onChange={(e) => setFormData({...formData, link: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="https://example.com"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                    placeholder="https://shop.example.com/ford-parts"
                   />
+                  <p className="text-xs text-gray-600 mt-1">
+                    🔗 الرابط الذي سيتم فتحه عند النقر على الإعلان (يُفتح في نافذة جديدة)
+                  </p>
                 </div>
 
                 <div>
@@ -549,13 +704,14 @@ export default function AdvertisementsPage() {
                     id="create-position"
                     value={formData.position}
                     onChange={(e) => setFormData({...formData, position: e.target.value as Advertisement['position']})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
                   >
-                    <option value="header">أعلى الصفحة</option>
-                    <option value="sidebar">الشريط الجانبي</option>
-                    <option value="footer">أسفل الصفحة</option>
-                    <option value="between-listings">بين القوائم</option>
+                    <option value="header">🔝 أعلى الصفحة (الأكثر ظهوراً)</option>
+                    <option value="between-listings">📋 بين القوائم (ظهور متوسط)</option>
                   </select>
+                  <p className="text-xs text-gray-600 mt-1">
+                    💡 اختر "أعلى الصفحة" للحصول على أقصى مشاهدة للإعلان
+                  </p>
                 </div>
 
                 <div className="flex items-center">
@@ -584,11 +740,12 @@ export default function AdvertisementsPage() {
                 </button>
                 <button
                   onClick={handleCreate}
-                  disabled={!formData.title || !formData.imageUrl}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed rounded-md flex items-center"
+                  disabled={!formData.title || !formData.description || !formData.imageUrl}
+                  className="px-6 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed rounded-md flex items-center"
+                  title={!formData.title || !formData.description || !formData.imageUrl ? 'يرجى ملء العنوان والوصف ورفع صورة' : 'حفظ الإعلان الجديد'}
                 >
                   <Save className="h-4 w-4 ml-2" />
-                  حفظ الإعلان
+                  {!formData.title || !formData.description || !formData.imageUrl ? 'املأ البيانات المطلوبة' : 'حفظ وتفعيل الإعلان'}
                 </button>
               </div>
             </div>

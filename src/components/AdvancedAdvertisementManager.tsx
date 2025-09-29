@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Eye, EyeOff, Calendar, Clock, Star, TrendingUp } from 'lucide-react';
+import React, { useState, useEffect } from 'react'
+import { PlusCircle, Edit, Trash2, Eye, BarChart3, Calendar, DollarSign, Target, Plus, TrendingUp, Clock, EyeOff, Edit2 } from 'lucide-react'
+import { formatDateShort } from '@/utils/dateUtils'
 
 interface Advertisement {
   id: string;
@@ -450,13 +451,13 @@ export default function AdvancedAdvertisementManager() {
                         {ad.startDate && (
                           <div className="flex items-center text-xs">
                             <Calendar className="h-3 w-3 ml-1" />
-                            البداية: {new Date(ad.startDate).toLocaleDateString('ar-EG')}
+                            البداية: {formatDateShort(ad.startDate)}
                           </div>
                         )}
                         {ad.endDate && (
                           <div className="flex items-center text-xs">
-                            <Clock className="h-3 w-3 ml-1" />
-                            النهاية: {new Date(ad.endDate).toLocaleDateString('ar-EG')}
+                            <Calendar className="h-3 w-3 ml-1" />
+                            النهاية: {formatDateShort(ad.endDate)}
                           </div>
                         )}
                         {!ad.startDate && !ad.endDate && (

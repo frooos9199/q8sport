@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 interface AuthWrapperProps {
   children: React.ReactNode;
@@ -14,39 +15,27 @@ export default function AuthWrapper({
   requireAuth = false, 
   requireAdmin = false 
 }: AuthWrapperProps) {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    // Check authentication status
-    const checkAuth = () => {
-      if (typeof window !== 'undefined') {
-        const loggedIn = localStorage.getItem('isLoggedIn') === 'true';
-        const adminStatus = localStorage.getItem('isAdmin') === 'true';
-        
-        setIsAuthenticated(loggedIn);
-        setIsAdmin(adminStatus);
-
-        // Redirect if not authenticated and auth is required
-        if (requireAuth && !loggedIn) {
-          router.push('/auth');
-          return;
-        }
-
-        // Redirect if not admin and admin is required
-        if (requireAdmin && (!loggedIn || !adminStatus)) {
-          router.push('/auth');
-          return;
-        }
+    if (!loading) {
+      // Redirect if not authenticated and auth is required
+      if (requireAuth && !user) {
+        router.push('/auth');
+        return;
       }
-    };
 
-    checkAuth();
-  }, [requireAuth, requireAdmin, router]);
+      // Redirect if not admin and admin is required
+      if (requireAdmin && (!user || user.role !== 'ADMIN')) {
+        router.push('/auth');
+        return;
+      }
+    }
+  }, [user, loading, requireAuth, requireAdmin, router]);
 
   // Show loading while checking authentication
-  if (isAuthenticated === null) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="text-center">
@@ -58,11 +47,11 @@ export default function AuthWrapper({
   }
 
   // Don't render protected content if not authorized
-  if (requireAuth && !isAuthenticated) {
+  if (requireAuth && !user) {
     return null;
   }
 
-  if (requireAdmin && (!isAuthenticated || !isAdmin)) {
+  if (requireAdmin && (!user || user.role !== 'ADMIN')) {
     return null;
   }
 

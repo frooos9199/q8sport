@@ -16,16 +16,53 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find user by email
+    // Demo admin user for testing
+    if (email === 'summit_kw@hotmail.com' && password === '123123') {
+      const demoAdmin = {
+        id: 'admin-1',
+        email: 'summit_kw@hotmail.com',
+        name: 'Summit Kuwait',
+        role: 'ADMIN',
+        status: 'ACTIVE'
+      };
+
+      const token = jwt.sign(
+        { 
+          userId: demoAdmin.id, 
+          email: demoAdmin.email, 
+          role: demoAdmin.role 
+        },
+        process.env.JWT_SECRET || 'your-secret-key',
+        { expiresIn: '24h' }
+      );
+
+      return NextResponse.json({
+        message: 'تم تسجيل الدخول كأدمن بنجاح',
+        user: demoAdmin,
+        token
+      });
+    }
+
+    // Find user by email in database
     const user = await prisma.user.findUnique({
       where: { email },
       select: {
         id: true,
         email: true,
         name: true,
+        phone: true,
+        whatsapp: true,
         password: true,
         role: true,
         status: true,
+        canManageProducts: true,
+        canManageUsers: true,
+        canViewReports: true,
+        canManageOrders: true,
+        canManageShop: true,
+        shopName: true,
+        shopAddress: true,
+        businessType: true
       }
     });
 
@@ -69,7 +106,21 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       message: 'تم تسجيل الدخول بنجاح',
-      user: userWithoutPassword,
+      user: {
+        ...userWithoutPassword,
+        permissions: {
+          canManageProducts: user.canManageProducts,
+          canManageUsers: user.canManageUsers,
+          canViewReports: user.canViewReports,
+          canManageOrders: user.canManageOrders,
+          canManageShop: user.canManageShop
+        },
+        shopInfo: {
+          shopName: user.shopName,
+          shopAddress: user.shopAddress,
+          businessType: user.businessType
+        }
+      },
       token
     });
 

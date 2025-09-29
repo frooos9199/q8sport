@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import AuthWrapper from '@/components/AuthWrapper';
 import { 
   Car, ArrowLeft, TrendingUp, Users, Package, DollarSign,
   Calendar, Download, Filter, BarChart3, PieChart, LineChart
@@ -208,31 +209,32 @@ export default function AdminReports() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-              <Link href="/admin" className="flex items-center text-gray-600 hover:text-gray-900 ml-4">
-                <ArrowLeft className="h-5 w-5 ml-1" />
-                العودة للوحة الإدارة
-              </Link>
-              <Car className="h-8 w-8 text-blue-600 ml-3" />
-              <h1 className="text-2xl font-bold text-gray-900">التقارير والإحصائيات</h1>
-            </div>
-            <div className="flex items-center space-x-3">
-              <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                <Download className="h-5 w-5 ml-2" />
-                تصدير التقرير
-              </button>
+    <AuthWrapper requireAuth={true} requireAdmin={true}>
+      <div className="min-h-screen bg-gray-100">
+        {/* Header */}
+        <header className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-700 text-white shadow-xl">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center py-6">
+              <div className="flex items-center">
+                <Link href="/admin" className="flex items-center text-white/80 hover:text-white ml-4 transition-colors">
+                  <ArrowLeft className="h-5 w-5 ml-1" />
+                  العودة للوحة الإدارة
+                </Link>
+                <Car className="h-8 w-8 text-white ml-3" />
+                <h1 className="text-2xl font-bold text-white">التقارير والإحصائيات</h1>
+              </div>
+              <div className="flex items-center space-x-3">
+                <button className="flex items-center px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors backdrop-blur-sm">
+                  <Download className="h-5 w-5 ml-2" />
+                  تصدير التقرير
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex">
           {/* Sidebar */}
           <div className="w-64 bg-white rounded-lg shadow p-6 ml-8">
             <div className="mb-6">
@@ -241,6 +243,7 @@ export default function AdminReports() {
                 value={selectedPeriod}
                 onChange={(e) => setSelectedPeriod(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                title="اختر الفترة الزمنية"
               >
                 <option value="week">هذا الأسبوع</option>
                 <option value="month">هذا الشهر</option>
@@ -314,8 +317,9 @@ export default function AdminReports() {
               </div>
             )}
           </div>
+          </div>
         </div>
       </div>
-    </div>
+    </AuthWrapper>
   );
 }

@@ -9,6 +9,7 @@ import {
   Zap, Shield, Truck, Award, Loader2
 } from 'lucide-react';
 import CountdownTimer from '../../../components/CountdownTimer';
+import { formatDateLong, getTimeRemaining } from '@/utils/dateUtils';
 import LiveBidding from '../../../components/LiveBidding';
 
 interface AuctionDetails {
@@ -273,7 +274,7 @@ export default function AuctionDetailPage() {
                   <div className="flex justify-between p-3 bg-gray-50 rounded-lg">
                     <span className="font-medium text-gray-900">تاريخ النشر</span>
                     <span className="text-gray-700">
-                      {new Date(auction.createdAt).toLocaleDateString('ar')}
+                      {formatDateLong(auction.createdAt)}
                     </span>
                   </div>
                 </div>
@@ -349,94 +350,6 @@ export default function AuctionDetailPage() {
     </div>
   );
 }
-
-interface AuctionDetails {
-  id: number;
-  title: string;
-  titleArabic: string;
-  description: string;
-  descriptionArabic: string;
-  currentPrice: number;
-  startingPrice: number;
-  timeLeft: string;
-  endTime: string;
-  bidsCount: number;
-  carBrand: string;
-  carModel: string;
-  carYear: string;
-  category: string;
-  condition: string;
-  images: string[];
-  seller: {
-    name: string;
-    rating: number;
-    completedAuctions: number;
-    joinDate: string;
-    verified: boolean;
-  };
-  bids: Array<{
-    id: number;
-    bidder: string;
-    amount: number;
-    time: string;
-  }>;
-  specifications: {
-    [key: string]: string;
-  };
-  featured: boolean;
-}
-
-// Sample auction data
-const sampleAuction: AuctionDetails = {
-  id: 1,
-  title: 'V8 5.0L Coyote Engine - Ford Mustang GT 2018',
-  titleArabic: 'محرك V8 5.0 لتر كويوت - فورد موستنق GT 2018',
-  description: 'Original Ford Mustang GT 5.0L Coyote V8 engine with only 45,000 miles. Professionally maintained with full service history. Includes all original components and accessories.',
-  descriptionArabic: 'محرك فورد موستنق GT الأصلي 5.0 لتر كويوت V8 بمسافة 45,000 ميل فقط. صيانة احترافية مع تاريخ خدمة كامل. يتضمن جميع المكونات والإكسسوارات الأصلية.',
-  currentPrice: 2750,
-  startingPrice: 2000,
-  timeLeft: '2h 15m 30s',
-  endTime: 'غداً الساعة 3:30 م',
-  bidsCount: 15,
-  carBrand: 'Ford',
-  carModel: 'Mustang GT',
-  carYear: '2018',
-  category: 'المحرك',
-  condition: 'مستعمل',
-  images: [
-    '/placeholder-engine-1.jpg',
-    '/placeholder-engine-2.jpg',
-    '/placeholder-engine-3.jpg'
-  ],
-  seller: {
-    name: 'أحمد الخليفي',
-    rating: 4.9,
-    completedAuctions: 23,
-    joinDate: 'منذ سنتين',
-    verified: true
-  },
-  bids: [
-    { id: 1, bidder: 'محمد ***', amount: 2750, time: 'منذ 5 دقائق' },
-    { id: 2, bidder: 'سارة ***', amount: 2700, time: 'منذ 12 دقيقة' },
-    { id: 3, bidder: 'علي ***', amount: 2650, time: 'منذ 18 دقيقة' },
-    { id: 4, bidder: 'فاطمة ***', amount: 2600, time: 'منذ 25 دقيقة' },
-    { id: 5, bidder: 'خالد ***', amount: 2550, time: 'منذ 35 دقيقة' }
-  ],
-  specifications: {
-    'المحرك': 'V8 5.0L Coyote',
-    'القوة': '435 حصان',
-    'عزم الدوران': '400 lb-ft',
-    'المسافة المقطوعة': '45,000 ميل',
-    'سنة الصنع': '2018',
-    'الحالة': 'مستعمل - ممتاز',
-    'الضمان': '6 أشهر',
-    'التسليم': 'متوفر',
-    'الدفع': 'كاش أو تقسيط'
-  },
-  featured: true
-};
-
-export default function AuctionDetailPage() {
   const params = useParams();
   const router = useRouter();
   const [auction, setAuction] = useState<AuctionDetails | null>(null);
@@ -478,8 +391,8 @@ export default function AuctionDetailPage() {
   const shareAuction = () => {
     if (navigator.share) {
       navigator.share({
-        title: auction?.titleArabic,
-        text: `شاهد هذا المزاد: ${auction?.titleArabic}`,
+        title: auction?.title,
+        text: `شاهد هذا المزاد: ${auction?.title}`,
         url: window.location.href,
       });
     } else {

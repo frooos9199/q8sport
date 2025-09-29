@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AuthWrapper from '@/components/AuthWrapper';
+import AdvertisementBanner from '@/components/ui/AdvertisementBanner';
+import { useAuth } from '@/contexts/AuthContext';
 import { formatDateShort, formatDateLong, getCurrentDateGregorian } from '@/utils/dateUtils';
 import { 
   Car, 
@@ -26,7 +28,9 @@ import {
   UserCheck,
   UserX,
   Store,
-  Monitor
+  Monitor,
+  Shield,
+  ArrowLeft
 } from 'lucide-react';
 
 interface DashboardStats {
@@ -47,6 +51,7 @@ interface RecentAuction {
 
 export default function AdminDashboard() {
   const router = useRouter();
+  const { user, logout } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
     activeAuctions: 0,
@@ -95,12 +100,9 @@ export default function AdminDashboard() {
     }, 1000);
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('isAdmin');
-    localStorage.removeItem('userEmail');
-    localStorage.removeItem('userName');
-    router.push('/');
+  const handleLogout = async () => {
+    await logout();
+    router.push('/auth');
   };
 
   const formatCurrency = (amount: number) => {
@@ -142,22 +144,32 @@ export default function AdminDashboard() {
     <AuthWrapper requireAuth={true} requireAdmin={true}>
       <div className="min-h-screen bg-gray-100">
         {/* Header */}
-        <header className="bg-white shadow">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-6">
+        <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-700 text-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <Car className="h-8 w-8 text-blue-600 ml-3" />
-                <h1 className="text-2xl font-bold text-gray-900">Q8 MAZAD SPORT - لوحة الإدارة</h1>
+                <Link 
+                  href="/" 
+                  className="flex items-center text-white/80 hover:text-white ml-4 transition-colors"
+                >
+                  <ArrowLeft className="h-5 w-5 ml-1" />
+                  العودة للرئيسية
+                </Link>
+                <Shield className="h-10 w-10 ml-4" />
+                <div>
+                  <h1 className="text-3xl font-bold">لوحة الإدارة</h1>
+                  <p className="text-blue-100 mt-1">Q8 MAZAD SPORT - إدارة النظام</p>
+                </div>
               </div>
               <div className="flex items-center space-x-4">
                 <div className="relative">
-                  <Bell className="h-6 w-6 text-gray-800 cursor-pointer hover:text-blue-600" />
+                  <Bell className="h-6 w-6 cursor-pointer hover:text-blue-200 transition-colors" />
                   <span className="absolute -top-1 -left-1 h-3 w-3 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">3</span>
                 </div>
-                <span className="text-gray-700 font-medium">مرحباً، الأدمن</span>
+                <span className="text-white/90 font-medium">مرحباً، {user?.name || 'الأدمن'}</span>
                 <button 
                   onClick={handleLogout}
-                  className="flex items-center px-3 py-2 text-gray-700 hover:text-red-600 transition-colors"
+                  className="flex items-center px-3 py-2 bg-white/10 rounded-lg text-white hover:bg-white/20 transition-colors"
                 >
                   <LogOut className="h-5 w-5 ml-2" />
                   تسجيل الخروج
@@ -165,7 +177,8 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
-        </header>
+          <AdvertisementBanner className="mt-4" />
+        </div>
 
         {/* Main Content */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -247,6 +260,11 @@ export default function AdminDashboard() {
               <Link href="/admin/reports" className="flex items-center justify-center p-4 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors">
                 <BarChart3 className="h-6 w-6 text-orange-600 ml-2" />
                 <span className="text-orange-700 font-medium">عرض التقارير</span>
+              </Link>
+              
+              <Link href="/admin/categories" className="flex items-center justify-center p-4 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors">
+                <Package className="h-6 w-6 text-indigo-600 ml-2" />
+                <span className="text-indigo-700 font-medium">إدارة الكاتيجوري</span>
               </Link>
             </div>
           </div>

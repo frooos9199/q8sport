@@ -77,11 +77,7 @@ const AdvertisementBanner = ({ className = '' }: AdvertisementBannerProps) => {
   // إخفاء البنر إذا لم توجد إعلانات أو تم إغلاقه
   if (!isVisible || ads.length === 0) {
     console.log('🚫 Advertisement banner hidden:', { isVisible, adsLength: ads.length });
-    return ads.length === 0 ? (
-      <div className="w-full bg-yellow-100 text-yellow-800 p-2 text-center text-sm">
-        💡 لا توجد إعلانات نشطة حالياً
-      </div>
-    ) : null;
+    return null;
   }
 
   const currentAd = ads[currentIndex];
@@ -92,6 +88,24 @@ const AdvertisementBanner = ({ className = '' }: AdvertisementBannerProps) => {
       
       {/* المحتوى الرئيسي */}
       <div className="relative z-10 flex items-center justify-between h-24 px-6">
+        {/* صورة الإعلان */}
+        {currentAd.imageUrl && (
+          <div className="flex-shrink-0 mr-4">
+            <img 
+              src={currentAd.imageUrl} 
+              alt={currentAd.title}
+              className="h-16 w-16 object-cover rounded-lg shadow-md border-2 border-white/30"
+              onError={(e) => {
+                console.log('❌ Image failed to load:', currentAd.imageUrl);
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+              onLoad={() => {
+                console.log('✅ Image loaded successfully:', currentAd.imageUrl);
+              }}
+            />
+          </div>
+        )}
+        
         {/* النص المتحرك */}
         <div className="flex-1 overflow-hidden">
           <div className="flex animate-marquee whitespace-nowrap">

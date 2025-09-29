@@ -1,7 +1,20 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // إعدادات الأمان للصور
+  images: {
+    domains: ['via.placeholder.com', 'localhost'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'via.placeholder.com',
+      },
+    ],
+  },
+  // إعدادات turbopack
+  turbopack: {
+    root: process.cwd(),
+  },
 };
 
 export default nextConfig;

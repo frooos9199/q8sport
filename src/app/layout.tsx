@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { AuthProvider } from "@/contexts/AuthContext";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -15,6 +16,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Q8 MAZAD SPORT | مزادات السيارات الرياضية الكويت",
   description: "موقع مزادات قطع غيار السيارات الرياضية للفورد موستنق وF-150 والشفروليه كورفيت وكامارو في الكويت",
+  other: {
+    'charset': 'utf-8',
+  },
 };
 
 export default function RootLayout({
@@ -27,9 +31,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased font-sans`}
       >
-        <div className="min-h-screen bg-gray-50">
-          {children}
-        </div>
+        <AuthProvider>
+          <div className="min-h-screen bg-gray-50">
+            {children}
+          </div>
+        </AuthProvider>
       </body>
     </html>
   );
