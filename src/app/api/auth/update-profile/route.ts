@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
+import bcryptjs from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -53,7 +53,7 @@ export async function PUT(request: NextRequest) {
       if (password.length < 6) {
         return NextResponse.json({ error: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' }, { status: 400 });
       }
-      updateData.password = await bcrypt.hash(password, 10);
+      updateData.password = await bcryptjs.hash(password, 10);
     }
 
     // Update user in database
