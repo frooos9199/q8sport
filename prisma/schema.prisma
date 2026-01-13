@@ -1,0 +1,320 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  password  String
+  name      String
+  phone     String?
+  whatsapp  String?
+  avatar    String?
+  facebookId String?  @unique  // Facebook User ID
+  role      UserRole  @default(USER)
+  status    UserStatus @default(ACTIVE)
+  rating    Float?    @default(0.0)
+  verified  Boolean   @default(false)
+  lastLoginAt DateTime?
+  
+  // Shop/Business info
+  shopName    String?   // اسم المحل
+  shopAddress String?   // عنوان المحل
+  shopLicense String?   // رخصة المحل
+  businessType String?  // نوع النشاط التجاري
+  
+  // Permissions for sellers and shop owners
+  canManageProducts Boolean @default(false)
+  canManageUsers    Boolean @default(false)
+  canViewReports    Boolean @default(false)
+  canManageOrders   Boolean @default(false)
+  canManageShop     Boolean @default(false)
+  
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  
+  // Relations
+  auctions  Auction[]
+  bids      Bid[]
+  products  Product[]
+  sentMessages Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  notifications Notification[]
+  
+  @@map("users")
+}
+
+model Product {
+  id          String        @id @default(cuid())
+  title       String
+  description String
+  price       Float
+  condition   String        @default("جديد")
+  category    String        @default("قطع غيار")
+  images      String        // JSON array of image URLs/data
+  status      ProductStatus @default(ACTIVE)
+  featured    Boolean       @default(false)
+  views       Int           @default(0)
+  soldPrice   Float?        // سعر البيع النهائي
+  soldDate    DateTime?     // تاريخ البيع
+  buyerInfo   String?       // معلومات المشتري (JSON)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  
+  // Relations
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
+  
+  @@map("products")
+}
+
+model CarBrand {
+  id        String      @id @default(cuid())
+  name      String      @unique
+  slug      String      @unique
+  logo      String?
+  active    Boolean     @default(true)
+  createdAt DateTime    @default(now())
+  
+  // Relations
+  models    CarModel[]
+  
+  @@map("car_brands")
+}
+
+model CarModel {
+  id        String      @id @default(cuid())
+  name      String
+  slug      String
+  yearFrom  Int
+  yearTo    Int
+  active    Boolean     @default(true)
+  createdAt DateTime    @default(now())
+  
+  // Relations
+  brandId   String
+  brand     CarBrand    @relation(fields: [brandId], references: [id])
+  compatibility PartCompatibility[]
+  auctions  Auction[]
+  
+  @@unique([brandId, slug])
+  @@map("car_models")
+}
+
+model PartCategory {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  nameArabic  String
+  slug        String    @unique
+  description String?
+  icon        String?
+  parentId    String?
+  parent      PartCategory? @relation("CategoryParent", fields: [parentId], references: [id])
+  children    PartCategory[] @relation("CategoryParent")
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  
+  // Relations
+  parts       Part[]
+  
+  @@map("part_categories")
+}
+
+model Part {
+  id           String       @id @default(cuid())
+  name         String
+  nameArabic   String
+  description  String
+  partNumber   String?
+  condition    PartCondition @default(USED)
+  yearFrom     Int?
+  yearTo       Int?
+  images       String
+  active       Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  
+  // Relations
+  categoryId   String
+  category     PartCategory @relation(fields: [categoryId], references: [id])
+  
+  // Car compatibility
+  compatibility PartCompatibility[]
+  
+  @@map("parts")
+}
+
+model PartCompatibility {
+  id         String     @id @default(cuid())
+  partId     String
+  part       Part       @relation(fields: [partId], references: [id], onDelete: Cascade)
+  modelId    String
+  model      CarModel   @relation(fields: [modelId], references: [id])
+  yearFrom   Int?
+  yearTo     Int?
+  createdAt  DateTime   @default(now())
+  
+  @@unique([partId, modelId])
+  @@map("part_compatibility")
+}
+
+model Auction {
+  id            String        @id @default(cuid())
+  title         String
+  description   String
+  category      String
+  carModel      String
+  carYear       Int?
+  partNumber    String?
+  condition     String        @default("مستعملة")
+  startingPrice Float
+  reservePrice  Float?
+  currentPrice  Float
+  buyNowPrice   Float?
+  endTime       DateTime
+  status        AuctionStatus @default(ACTIVE)
+  images        String
+  featured      Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  // Relations
+  sellerId      String
+  seller        User          @relation(fields: [sellerId], references: [id])
+  carModelId    String?
+  carModelRef   CarModel?     @relation(fields: [carModelId], references: [id])
+  bids          Bid[]
+  winningBidId  String?       @unique
+  winningBid    Bid?          @relation("WinningBid", fields: [winningBidId], references: [id])
+  messages      Message[]
+  
+  @@map("auctions")
+}
+
+model Bid {
+  id        String    @id @default(cuid())
+  amount    Float
+  createdAt DateTime  @default(now())
+  
+  // Relations
+  bidderId  String
+  bidder    User      @relation(fields: [bidderId], references: [id])
+  auctionId String
+  auction   Auction   @relation(fields: [auctionId], references: [id])
+  
+  // Winning bid relation
+  wonAuction Auction? @relation("WinningBid")
+  
+  @@map("bids")
+}
+
+model Notification {
+  id        String             @id @default(cuid())
+  type      NotificationType
+  title     String
+  message   String
+  read      Boolean            @default(false)
+  data      Json?
+  createdAt DateTime           @default(now())
+  
+  // Relations
+  userId    String
+  user      User               @relation(fields: [userId], references: [id])
+  
+  @@map("notifications")
+}
+
+model Message {
+  id        String      @id @default(cuid())
+  content   String
+  type      MessageType @default(TEXT)
+  read      Boolean     @default(false)
+  createdAt DateTime    @default(now())
+  
+  // Relations
+  senderId    String
+  sender      User      @relation("SentMessages", fields: [senderId], references: [id])
+  receiverId  String
+  receiver    User      @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  auctionId   String?
+  auction     Auction?  @relation(fields: [auctionId], references: [id])
+  
+  @@map("messages")
+}
+
+model Advertisement {
+  id          String    @id @default(cuid())
+  title       String
+  description String
+  imageUrl    String?
+  link        String?
+  active      Boolean   @default(true)
+  position    String    @default("header")
+  clickCount  Int       @default(0)
+  startDate   DateTime?  // تاريخ البداية
+  endDate     DateTime?  // تاريخ الانتهاء
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@map("advertisements")
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  BANNED
+}
+
+enum ProductStatus {
+  ACTIVE
+  SOLD
+  INACTIVE
+  DELETED
+}
+
+enum MessageType {
+  TEXT
+  SYSTEM
+  BID_NOTIFICATION
+  AUCTION_UPDATE
+}
+
+enum UserRole {
+  USER
+  SELLER
+  SHOP_OWNER
+  ADMIN
+}
+
+enum PartCondition {
+  NEW                 // جديد
+  USED                // مستعمل
+  USED_NEEDS_REPAIR   // مستعمل يحتاج تصليح
+  SCRAP               // سكراب
+}
+
+enum AuctionStatus {
+  DRAFT
+  ACTIVE
+  ENDED
+  CANCELLED
+}
+
+enum NotificationType {
+  BID_PLACED
+  BID_OUTBID
+  AUCTION_WON
+  AUCTION_ENDED
+  AUCTION_STARTING
+  PASSWORD_RESET
+  ACCOUNT_VERIFIED
+}

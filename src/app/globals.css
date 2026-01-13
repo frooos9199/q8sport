@@ -1,0 +1,121 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #1f2937;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* تحسين مربعات البحث والإدخال */
+input[type="text"]:not([class*="text-gray-"]),
+input[type="search"]:not([class*="text-gray-"]) {
+  color: #111827 !important;
+}
+
+input::placeholder {
+  color: #6b7280 !important;
+  font-weight: 500;
+}
+
+/* تحسين النصوص في مربعات البحث */
+.search-input {
+  color: #111827 !important;
+  font-weight: 500;
+}
+
+.search-input::placeholder {
+  color: #6b7280 !important;
+  font-weight: 400;
+}
+
+/* تحسين الفلاتر والقوائم المنسدلة */
+select:not([class*="text-gray-"]) {
+  color: #111827 !important;
+  font-weight: 500;
+}
+
+select option {
+  color: #111827 !important;
+  background-color: #ffffff;
+}
+
+/* تحسين labels للفلاتر */
+label:not([class*="text-gray-"]) {
+  color: #1f2937 !important;
+}
+
+/* CSS للإعلانات والأنيميشن */
+* {
+  font-family: 'Noto Sans Arabic', Arial, sans-serif;
+}
+
+/* تحسين عرض النصوص العربية */
+html {
+  direction: rtl;
+}
+
+/* أنيميشن الإعلان المتحرك */
+@keyframes marquee {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes pulse-gradient {
+  0%, 100% {
+    background: linear-gradient(135deg, #2563eb, #7c3aed, #4338ca);
+  }
+  50% {
+    background: linear-gradient(135deg, #1d4ed8, #6d28d9, #3730a3);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 15s linear infinite;
+}
+
+.animate-pulse-gradient {
+  animation: pulse-gradient 3s ease-in-out infinite;
+}
+
+.progress-bar-width {
+  transition: width 0.3s ease-in-out;
+}
+
+/* وقف الأنيميشن عند التمرير */
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* شريط التقدمي للإعلانات */
+.progress-bar[data-width] {
+  width: var(--progress-width, 0%);
+}
+
+.progress-bar[data-width="100%"] { --progress-width: 100%; }
+.progress-bar[data-width="75%"] { --progress-width: 75%; }
+.progress-bar[data-width="50%"] { --progress-width: 50%; }
+.progress-bar[data-width="25%"] { --progress-width: 25%; }

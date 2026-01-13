@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  q8sport:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=file:./dev.db
+      - JWT_SECRET=your-secret-key-here
+      - NEXTAUTH_SECRET=your-nextauth-secret-here
+    volumes:
+      - ./prisma:/app/prisma
+    restart: unless-stopped
+
+  # إضافة قاعدة بيانات PostgreSQL للإنتاج
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=q8sport
+      - POSTGRES_USER=q8sport
+      - POSTGRES_PASSWORD=q8sport123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
