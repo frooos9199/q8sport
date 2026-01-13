@@ -17,8 +17,8 @@ export default function Home() {
                 <Car className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
               </div>
               <div className="text-center sm:text-right">
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white drop-shadow-lg">Q8 MAZAD SPORT</h1>
-                <p className="text-gray-200 text-xs sm:text-sm">مزادات قطع الغيار الرياضية</p>
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white drop-shadow-lg">Q8 SPORT</h1>
+                <p className="text-gray-200 text-xs sm:text-sm">سيارات رياضية وقطع غيار</p>
               </div>
             </div>
             
@@ -27,7 +27,7 @@ export default function Home() {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="ابحث عن قطع الغيار..."
+                  placeholder="ابحث عن سيارات أو قطع غيار..."
                   className="w-full px-4 sm:px-6 py-3 sm:py-4 pr-10 sm:pr-12 border-0 rounded-full focus:ring-4 focus:ring-gray-300 focus:outline-none font-bold text-gray-900 text-sm sm:text-lg shadow-lg bg-white/95 backdrop-blur-sm placeholder-gray-700"
                 />
                 <div className="absolute right-2 sm:right-4 top-1/2 transform -translate-y-1/2 bg-gray-600 rounded-full p-1.5 sm:p-2">
@@ -50,8 +50,11 @@ export default function Home() {
               <Link href="/" className="text-white hover:text-gray-200 font-medium transition-colors px-3 sm:px-4 py-2 rounded-full hover:bg-white/10 text-sm sm:text-base">
                 🏠 الرئيسية
               </Link>
-              <Link href="/auctions" className="text-white hover:text-gray-200 font-medium transition-colors px-3 sm:px-4 py-2 rounded-full hover:bg-white/10 text-sm sm:text-base">
-                🔨 المزادات
+              <Link href="/users" className="text-white hover:text-gray-200 font-medium transition-colors px-3 sm:px-4 py-2 rounded-full hover:bg-white/10 text-sm sm:text-base">
+                🏎️ السيارات
+              </Link>
+              <Link href="/users" className="text-white hover:text-gray-200 font-medium transition-colors px-3 sm:px-4 py-2 rounded-full hover:bg-white/10 text-sm sm:text-base">
+                🔧 قطع الغيار
               </Link>
               <Link href="/users" className="text-white hover:text-gray-200 font-medium transition-colors px-3 sm:px-4 py-2 rounded-full hover:bg-white/10 text-sm sm:text-base">
                 👥 البائعون
@@ -73,7 +76,7 @@ export default function Home() {
       {/* Hero Banner - محذوف مؤقتاً */}
       {/* <HeroBanner /> */}
 
-      {/* Featured Cars & Parts Section */}
+      {/* Featured Cars & Parts Section */}سيارات وقطع غيار مميزة للبيع
       <section className="py-8 sm:py-12 lg:py-16">
         <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
           <h2 className="text-2xl sm:text-3xl font-bold text-center text-gray-900 mb-8 sm:mb-12">المزادات النشطة والقطع المميزة</h2>
@@ -100,9 +103,9 @@ export default function Home() {
                   </div>
                 </div>
                 <p className="text-gray-800 mb-2 font-medium text-sm sm:text-base">محرك V8 - موديل 2020</p>
-                <p className="text-xs sm:text-sm text-green-700 font-bold mb-3 sm:mb-4">💰 المزاد ينتهي خلال: 2 ساعة</p>
-                <Link href="/auctions/1" className="block w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white text-center px-4 py-2.5 sm:py-3 rounded-lg font-bold transition-all transform hover:scale-105 shadow-md text-sm sm:text-base">
-                  شارك في المزاد
+                <p className="text-lg sm:text-xl text-green-700 font-bold mb-3 sm:mb-4">💰 1,850 د.ك</p>
+                <Link href="/auctions/1" className="block w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white text-center px-4 py-2.5 sm:py-3 rounded-lg font-bold transition-all transform hover:scale-105 shadow-md text-sm sm:text-base">
+                  اتصل بالبائع
                 </Link>
               </div>
             </div>
@@ -128,9 +131,9 @@ export default function Home() {
                   </div>
                 </div>
                 <p className="text-gray-800 mb-2 font-medium text-sm sm:text-base">علبة السرعة - موديل 2019</p>
-                <p className="text-xs sm:text-sm text-orange-700 font-bold mb-3 sm:mb-4">💰 أعلى عرض: 1,250 د.ك</p>
-                <Link href="/auctions/2" className="block w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white text-center px-4 py-2.5 sm:py-3 rounded-lg font-bold transition-all transform hover:scale-105 shadow-md text-sm sm:text-base">
-                  شارك في المزاد
+                <p className="text-lg sm:text-xl text-green-700 font-bold mb-3 sm:mb-4">💰 1,250 د.ك</p>
+                <Link href="/auctions/2" className="block w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white text-center px-4 py-2.5 sm:py-3 rounded-lg font-bold transition-all transform hover:scale-105 shadow-md text-sm sm:text-base">
+                  اتصل بالبائع
                 </Link>
               </div>
             </div>
@@ -156,9 +159,9 @@ export default function Home() {
                   </div>
                 </div>
                 <p className="text-gray-800 mb-2 font-medium text-sm sm:text-base">مكابح رياضية - موديل 2021</p>
-                <p className="text-xs sm:text-sm text-blue-700 font-bold mb-3 sm:mb-4">🔥 مزاد ساخن - 15 مشارك</p>
-                <Link href="/auctions/3" className="block w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white text-center px-4 py-2.5 sm:py-3 rounded-lg font-bold transition-all transform hover:scale-105 shadow-md text-sm sm:text-base">
-                  شارك في المزاد
+                <p className="text-lg sm:text-xl text-green-700 font-bold mb-3 sm:mb-4">💰 850 د.ك</p>
+                <Link href="/auctions/3" className="block w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white text-center px-4 py-2.5 sm:py-3 rounded-lg font-bold transition-all transform hover:scale-105 shadow-md text-sm sm:text-base">
+                  اتصل بالبائع
                 </Link>
               </div>
             </div>
@@ -184,9 +187,9 @@ export default function Home() {
                   </div>
                 </div>
                 <p className="text-gray-800 mb-2 font-medium text-sm sm:text-base">عجلات رياضية - موديل 2020</p>
-                <p className="text-xs sm:text-sm text-red-700 font-bold mb-3 sm:mb-4">⏰ ينتهي اليوم!</p>
-                <Link href="/auctions/4" className="block w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white text-center px-4 py-2.5 sm:py-3 rounded-lg font-bold transition-all transform hover:scale-105 shadow-md text-sm sm:text-base">
-                  شارك في المزاد
+                <p className="text-lg sm:text-xl text-green-700 font-bold mb-3 sm:mb-4">💰 950 د.ك</p>
+                <Link href="/auctions/4" className="block w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white text-center px-4 py-2.5 sm:py-3 rounded-lg font-bold transition-all transform hover:scale-105 shadow-md text-sm sm:text-base">
+                  اتصل بالبائع
                 </Link>
               </div>
             </div>
@@ -260,17 +263,18 @@ export default function Home() {
             <div className="col-span-1 sm:col-span-2 lg:col-span-2 text-center sm:text-right">
               <div className="flex items-center justify-center sm:justify-start mb-4">
                 <Car className="h-6 w-6 sm:h-8 sm:w-8 text-blue-400 ml-2" />
-                <h3 className="text-xl sm:text-2xl font-bold">Q8 MAZAD SPORT</h3>
+                <h3 className="text-xl sm:text-2xl font-bold">Q8 SPORT</h3>
               </div>
               <p className="text-gray-200 font-medium text-sm sm:text-base">
-                منصة مزادات قطع غيار السيارات الرياضية الأمريكية في الكويت
+                منصة بيع السيارات الرياضية الأمريكية وقطع الغيار الأصلية في الكويت
               </p>
             </div>
             
             <div className="text-center sm:text-right">
               <h4 className="font-bold mb-4 text-white text-base sm:text-lg">روابط سريعة</h4>
               <ul className="space-y-2 text-gray-200 font-medium text-sm sm:text-base">
-                <li><Link href="/auctions" className="hover:text-white transition-colors">المزادات</Link></li>
+                <li><Link href="/" className="hover:text-white transition-colors">السيارات</Link></li>
+                <li><Link href="/" className="hover:text-white transition-colors">قطع الغيار</Link></li>
                 <li><Link href="/users" className="hover:text-white transition-colors">البائعون</Link></li>
                 <li><Link href="/auth" className="hover:text-white transition-colors">تسجيل الدخول</Link></li>
               </ul>
@@ -286,7 +290,7 @@ export default function Home() {
           </div>
           
           <div className="border-t border-gray-700 mt-6 sm:mt-8 pt-6 sm:pt-8 text-center text-gray-200 font-medium text-sm sm:text-base">
-            <p>&copy; 2025 Q8 MAZAD SPORT. جميع الحقوق محفوظة.</p>
+            <p>&copy; 2026 Q8 SPORT. جميع الحقوق محفوظة.</p>
             <div className="mt-3 pt-3 border-t border-gray-700">
               <p className="text-gray-400 text-xs sm:text-sm">
                 تطوير وتصميم: <a href="https://www.q8nexdev.com" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors">Q8NexDev</a>
