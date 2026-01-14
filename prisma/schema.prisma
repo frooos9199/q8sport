@@ -49,6 +49,7 @@ model User {
   receivedMessages Message[] @relation("ReceivedMessages")
   notifications Notification[]
   favorites Favorite[]
+  requests Request[]
   
   @@map("users")
 }
@@ -358,4 +359,36 @@ enum NotificationType {
   AUCTION_STARTING
   PASSWORD_RESET
   ACCOUNT_VERIFIED
+}
+model Request {
+  id          String        @id @default(cuid())
+  title       String        // عنوان الطلب
+  description String        // الوصف المفتوح
+  
+  // معلومات السيارة (اختيارية)
+  carBrand    String?       // ماركة السيارة
+  carModel    String?       // موديل السيارة
+  carYear     Int?          // سنة الصنع
+  
+  image       String?       // صورة توضيحية
+  phone       String        // رقم التواصل
+  
+  status      RequestStatus @default(ACTIVE)
+  
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  
+  // Relations
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([status])
+  @@map("requests")
+}
+
+enum RequestStatus {
+  ACTIVE      // نشط
+  FOUND       // تم الإيجاد
+  CANCELLED   // ملغي
 }
