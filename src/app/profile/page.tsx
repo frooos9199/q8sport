@@ -746,7 +746,7 @@ export default function ProfilePage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-gray-900 mb-2">
+                  <label className="block text-sm font-bold text-white mb-2">
                     تأكيد كلمة المرور الجديدة
                   </label>
                   <input
@@ -773,20 +773,20 @@ export default function ProfilePage() {
 
         {/* Account Management Tab */}
         {activeTab === 'account' && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-black mb-6 text-gray-900">إدارة الحساب والصلاحيات</h2>
+          <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
+            <h2 className="text-xl font-black mb-6 text-white">إدارة الحساب والصلاحيات</h2>
             
             {/* Account Info */}
-            <div className="mb-8 p-4 bg-blue-50 rounded-lg">
-              <h3 className="text-lg font-bold text-blue-900 mb-4">معلومات الحساب</h3>
+            <div className="mb-8 p-4 bg-gray-800 rounded-lg border border-gray-700">
+              <h3 className="text-lg font-bold text-white mb-4">معلومات الحساب</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <span className="text-sm font-medium text-gray-700">نوع العضوية:</span>
+                  <span className="text-sm font-medium text-gray-300">نوع العضوية:</span>
                   <span className={`mr-2 px-2 py-1 rounded-full text-xs font-bold ${
-                    user?.role === 'ADMIN' ? 'bg-red-100 text-red-800' :
-                    user?.role === 'SHOP_OWNER' ? 'bg-purple-100 text-purple-800' :
-                    user?.role === 'SELLER' ? 'bg-blue-100 text-blue-800' :
-                    'bg-gray-100 text-gray-800'
+                    user?.role === 'ADMIN' ? 'bg-red-600 text-white' :
+                    user?.role === 'SHOP_OWNER' ? 'bg-purple-600 text-white' :
+                    user?.role === 'SELLER' ? 'bg-blue-600 text-white' :
+                    'bg-gray-700 text-white'
                   }`}>
                     {user?.role === 'ADMIN' ? 'مدير' :
                      user?.role === 'SHOP_OWNER' ? 'صاحب محل' :
@@ -794,8 +794,8 @@ export default function ProfilePage() {
                   </span>
                 </div>
                 <div>
-                  <span className="text-sm font-medium text-gray-700">تاريخ الانضمام:</span>
-                  <span className="mr-2 text-sm text-gray-600">
+                  <span className="text-sm font-medium text-gray-300">تاريخ الانضمام:</span>
+                  <span className="mr-2 text-sm text-gray-400">
                     {user ? formatDateLong(new Date().toISOString()) : 'غير محدد'}
                   </span>
                 </div>
@@ -810,25 +810,25 @@ export default function ProfilePage() {
                   <span className={`w-3 h-3 rounded-full mr-2 ${
                     user?.permissions?.canManageProducts ? 'bg-green-500' : 'bg-red-500'
                   }`}></span>
-                  <span className="text-sm text-gray-700">إدارة المنتجات</span>
+                  <span className="text-sm text-gray-300">إدارة المنتجات</span>
                 </div>
                 <div className="flex items-center">
                   <span className={`w-3 h-3 rounded-full mr-2 ${
                     user?.permissions?.canManageOrders ? 'bg-green-500' : 'bg-red-500'
                   }`}></span>
-                  <span className="text-sm text-gray-700">إدارة الطلبات</span>
+                  <span className="text-sm text-gray-300">إدارة الطلبات</span>
                 </div>
                 <div className="flex items-center">
                   <span className={`w-3 h-3 rounded-full mr-2 ${
                     user?.permissions?.canManageShop ? 'bg-green-500' : 'bg-red-500'
                   }`}></span>
-                  <span className="text-sm text-gray-700">إدارة المحل</span>
+                  <span className="text-sm text-gray-300">إدارة المحل</span>
                 </div>
                 <div className="flex items-center">
                   <span className={`w-3 h-3 rounded-full mr-2 ${
                     user?.permissions?.canViewReports ? 'bg-green-500' : 'bg-red-500'
                   }`}></span>
-                  <span className="text-sm text-gray-700">عرض التقارير</span>
+                  <span className="text-sm text-gray-300">عرض التقارير</span>
                 </div>
               </div>
             </div>
@@ -836,7 +836,7 @@ export default function ProfilePage() {
             {/* Upgrade Options */}
             <div className="mb-8 p-4 bg-yellow-50 rounded-lg">
               <h3 className="text-lg font-bold text-yellow-900 mb-4">ترقية العضوية</h3>
-              <p className="text-sm text-gray-700 mb-4">
+              <p className="text-sm text-gray-300 mb-4">
                 للحصول على المزيد من الصلاحيات والمميزات، يمكنك ترقية حسابك:
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -844,7 +844,7 @@ export default function ProfilePage() {
                   <>
                     <div className="border border-blue-200 rounded-lg p-4">
                       <h4 className="font-bold text-blue-900 mb-2">عضوية البائع</h4>
-                      <ul className="text-sm text-gray-700 mb-3">
+                      <ul className="text-sm text-gray-300 mb-3">
                         <li>• إدارة المنتجات والمزادات</li>
                         <li>• تتبع المبيعات</li>
                         <li>• إحصائيات مفصلة</li>
@@ -855,7 +855,7 @@ export default function ProfilePage() {
                     </div>
                     <div className="border border-purple-200 rounded-lg p-4">
                       <h4 className="font-bold text-purple-900 mb-2">عضوية صاحب المحل</h4>
-                      <ul className="text-sm text-gray-700 mb-3">
+                      <ul className="text-sm text-gray-300 mb-3">
                         <li>• إدارة شاملة للمحل</li>
                         <li>• لوحة تحكم متقدمة</li>
                         <li>• تقارير مالية</li>
@@ -869,7 +869,7 @@ export default function ProfilePage() {
                 {user?.role === 'SELLER' && (
                   <div className="border border-purple-200 rounded-lg p-4">
                     <h4 className="font-bold text-purple-900 mb-2">ترقية لصاحب المحل</h4>
-                    <ul className="text-sm text-gray-700 mb-3">
+                    <ul className="text-sm text-gray-300 mb-3">
                       <li>• إدارة شاملة للمحل</li>
                       <li>• لوحة تحكم متقدمة</li>
                       <li>• تقارير مالية</li>
@@ -893,7 +893,7 @@ export default function ProfilePage() {
                   🗑️ حذف الحساب
                 </button>
               </div>
-              <p className="text-xs text-gray-600 mt-3">
+              <p className="text-xs text-gray-400 mt-3">
                 تحذير: حذف الحساب سيؤدي إلى فقدان جميع البيانات والمنتجات نهائياً
               </p>
             </div>
@@ -903,7 +903,7 @@ export default function ProfilePage() {
         {/* Items Tab */}
         {activeTab === 'items' && (
           <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold">منتجاتي</h2>
                 <button
@@ -916,12 +916,12 @@ export default function ProfilePage() {
 
               {/* Add Item Form */}
               {showAddItem && (
-                <div className="bg-gray-50 rounded-lg p-6 mb-6">
+                <div className="bg-black rounded-lg border border-gray-800 p-6 mb-6">
                   <h3 className="text-lg font-bold mb-4">إضافة منتج جديد</h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-white mb-2">
                         عنوان الإعلان *
                       </label>
                       <input
@@ -934,7 +934,7 @@ export default function ProfilePage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
                         نوع المنتج *
                       </label>
                       <select
@@ -948,7 +948,7 @@ export default function ProfilePage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
                         السعر *
                       </label>
                       <input
@@ -964,7 +964,7 @@ export default function ProfilePage() {
                     {newItem.productType === 'CAR' && (
                       <>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-sm font-medium text-gray-300 mb-2">
                             الماركة *
                           </label>
                           <select
@@ -985,7 +985,7 @@ export default function ProfilePage() {
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-sm font-medium text-gray-300 mb-2">
                             الموديل *
                           </label>
                           <input
@@ -998,7 +998,7 @@ export default function ProfilePage() {
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-sm font-medium text-gray-300 mb-2">
                             سنة الصنع
                           </label>
                           <input
@@ -1013,7 +1013,7 @@ export default function ProfilePage() {
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-sm font-medium text-gray-300 mb-2">
                             الكيلومترات
                           </label>
                           <input
@@ -1026,7 +1026,7 @@ export default function ProfilePage() {
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-sm font-medium text-gray-300 mb-2">
                             اللون
                           </label>
                           <input
@@ -1041,7 +1041,7 @@ export default function ProfilePage() {
                     )}
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
                         الحالة *
                       </label>
                       <select
@@ -1058,21 +1058,21 @@ export default function ProfilePage() {
                   </div>
 
                   <div className="mb-6">
-                    <label className="block text-sm font-medium text-black mb-2">
+                    <label className="block text-sm font-medium text-white mb-2">
                       وصف المنتج *
                     </label>
                     <textarea
                       value={newItem.description || ''}
                       onChange={(e) => setNewItem(prev => ({ ...prev, description: e.target.value }))}
                       rows={4}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-black font-medium"
+                      className="w-full px-3 py-2 border border-gray-700 bg-black rounded-md focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-red-600 text-white font-medium"
                       placeholder="وصف تفصيلي للمنتج..."
                     />
                   </div>
 
                   {/* Image Upload */}
                   <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
                       صور المنتج * (1-8 صور)
                     </label>
                     
@@ -1089,7 +1089,7 @@ export default function ProfilePage() {
                           <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                           </svg>
-                          <p className="mt-2 text-sm text-gray-600">اختر الصور أو اسحبها هنا</p>
+                          <p className="mt-2 text-sm text-gray-400">اختر الصور أو اسحبها هنا</p>
                           <p className="text-xs text-gray-500">PNG, JPG, GIF حتى 10MB لكل صورة</p>
                         </div>
                       </label>
@@ -1098,7 +1098,7 @@ export default function ProfilePage() {
                     {/* Upload Progress */}
                     {uploadProgress > 0 && (
                       <div className="mb-4">
-                        <div className="flex justify-between text-xs text-gray-600 mb-1">
+                        <div className="flex justify-between text-xs text-gray-400 mb-1">
                           <span>رفع الصور...</span>
                           <span>{uploadProgress}%</span>
                         </div>
@@ -1141,7 +1141,7 @@ export default function ProfilePage() {
                     <button
                       type="button"
                       onClick={() => setShowAddItem(false)}
-                      className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                      className="px-6 py-2 border border-gray-700 rounded-md text-white bg-gray-800 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                     >
                       إلغاء
                     </button>
@@ -1161,7 +1161,7 @@ export default function ProfilePage() {
                   <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2 2v-5m16 0h-2m-2 0h-4m-4 0H6m16 0a2 2 0 002-2V9a2 2 0 00-2-2h-2M6 7h16" />
                   </svg>
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">لا توجد منتجات</h3>
+                  <h3 className="mt-2 text-sm font-medium text-gray-400">لا توجد منتجات</h3>
                   <p className="mt-1 text-sm text-gray-500">ابدأ بإضافة منتجك الأول</p>
                 </div>
               ) : (
@@ -1190,7 +1190,7 @@ export default function ProfilePage() {
                           <span className={`px-2 py-1 rounded-full text-xs font-bold ${
                             item.status === 'active' ? 'bg-green-500 text-white' :
                             item.status === 'sold' ? 'bg-red-500 text-white' :
-                            'bg-gray-500 text-white'
+                            'bg-black border border-gray-8000 text-white'
                           }`}>
                             {item.status === 'active' ? 'نشط' :
                              item.status === 'sold' ? 'مباع' : 'غير نشط'}
@@ -1200,7 +1200,7 @@ export default function ProfilePage() {
                       
                       <div className="p-4">
                         <div className="flex items-center justify-between mb-2">
-                          <h3 className="font-black text-lg text-gray-900">{item.title}</h3>
+                          <h3 className="font-black text-lg text-white">{item.title}</h3>
                           <span className={`px-2 py-1 rounded-full text-xs font-bold ${
                             item.productType === 'CAR' ? 'bg-blue-500 text-white' : 'bg-green-500 text-white'
                           }`}>
@@ -1212,12 +1212,12 @@ export default function ProfilePage() {
                         {item.productType === 'CAR' && (
                           <div className="grid grid-cols-2 gap-2 mb-2 text-xs">
                             {item.carBrand && (
-                              <span className="bg-gray-100 px-2 py-1 rounded text-gray-800 font-bold">
+                              <span className="bg-gray-800 px-2 py-1 rounded text-white font-bold">
                                 {item.carBrand}
                               </span>
                             )}
                             {item.carModel && (
-                              <span className="bg-gray-100 px-2 py-1 rounded text-gray-800 font-bold">
+                              <span className="bg-gray-800 px-2 py-1 rounded text-white font-bold">
                                 {item.carModel}
                               </span>
                             )}
@@ -1234,10 +1234,10 @@ export default function ProfilePage() {
                           </div>
                         )}
                         
-                        <p className="text-black font-bold text-sm mb-2 line-clamp-2">{item.description}</p>
+                        <p className="text-gray-300 font-bold text-sm mb-2 line-clamp-2">{item.description}</p>
                         <div className="flex justify-between items-center mb-3">
                           <span className="text-lg font-black text-green-600">{item.price} د.ك</span>
-                          <span className="text-sm text-black font-bold">{item.condition}</span>
+                          <span className="text-sm text-gray-300 font-bold">{item.condition}</span>
                         </div>
                         
                         {/* أزرار الإدارة */}
@@ -1270,7 +1270,7 @@ export default function ProfilePage() {
                           
                           <button
                             onClick={() => deleteItem(item.id)}
-                            className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 rounded-md font-bold text-sm transition-colors"
+                            className="bg-black border border-gray-8000 hover:bg-gray-600 text-white px-3 py-2 rounded-md font-bold text-sm transition-colors"
                           >
                             🗑️
                           </button>
