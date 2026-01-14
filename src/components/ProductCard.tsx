@@ -81,8 +81,8 @@ export default function ProductCard({ product }: ProductCardProps) {
   }
 
   const handleImageClick = () => {
-    // الانتقال لصفحة البائع مع تمرير معرف المنتج
-    window.location.href = `/users/${product.user.id}?product=${product.id}`
+    // الانتقال لصفحة تفاصيل المنتج
+    window.location.href = `/products/${product.id}`
   }
 
   return (
@@ -228,15 +228,18 @@ export default function ProductCard({ product }: ProductCardProps) {
         {/* Action Buttons */}
         <div className="flex gap-2">
           <Link 
-            href={`/users/${product.user.id}`} 
-            className="flex-1 bg-gray-600 hover:bg-gray-700 text-white text-center px-4 py-2 rounded-lg font-bold transition-colors text-sm"
+            href={`/products/${product.id}`} 
+            className="flex-1 bg-red-600 hover:bg-red-700 text-white text-center px-4 py-2 rounded-lg font-bold transition-colors text-sm"
           >
-            عرض البائع
+            عرض التفاصيل
           </Link>
-          <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-bold transition-colors text-sm flex items-center">
-            <Heart className="h-4 w-4 ml-1" />
-            اتصل
-          </button>
+          <Link 
+            href={`/users/${product.user.id}`} 
+            className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-bold transition-colors text-sm flex items-center"
+          >
+            <Eye className="h-4 w-4 ml-1" />
+            البائع
+          </Link>
         </div>
       </div>
     </div>
