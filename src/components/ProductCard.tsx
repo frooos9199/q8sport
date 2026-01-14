@@ -80,15 +80,11 @@ export default function ProductCard({ product }: ProductCardProps) {
     setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length)
   }
 
-  const handleImageClick = () => {
-    // الانتقال لصفحة تفاصيل المنتج
-    window.location.href = `/products/${product.id}`
-  }
-
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-      {/* Product Image with Navigation */}
-      <div 
+    <Link href={`/products/${product.id}`} className="block">
+      <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+        {/* Product Image with Navigation */}
+        <div 
         className="relative h-48 bg-gray-100 group"
         onMouseEnter={() => setAutoSlide(true)}
         onMouseLeave={() => {
@@ -101,8 +97,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             <img 
               src={getImageUrl(images[currentImageIndex])} 
               alt={product.title}
-              className="w-full h-full object-cover cursor-pointer"
-              onClick={handleImageClick}
+              className="w-full h-full object-cover"
               onError={(e) => {
                 // في حالة فشل تحميل الصورة، عرض أيقونة افتراضية
                 console.log('Image failed to load:', images[currentImageIndex]);
@@ -110,7 +105,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                 e.currentTarget.nextElementSibling?.classList.remove('hidden');
               }}
             />
-            <div className="hidden w-full h-full flex items-center justify-center bg-gray-200 cursor-pointer" onClick={handleImageClick}>
+            <div className="hidden w-full h-full flex items-center justify-center bg-gray-200">
               <Car className="h-12 w-12 text-gray-400" />
             </div>
             
@@ -155,8 +150,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           </>
         ) : (
           <div 
-            className="w-full h-full flex items-center justify-center bg-gray-200 cursor-pointer"
-            onClick={handleImageClick}
+            className="w-full h-full flex items-center justify-center bg-gray-200"
           >
             <Car className="h-12 w-12 text-gray-400" />
           </div>
@@ -225,23 +219,14 @@ export default function ProductCard({ product }: ProductCardProps) {
           </span>
         </div>
         
-        {/* Action Buttons */}
+        {/* Action Button */}
         <div className="flex gap-2">
-          <Link 
-            href={`/products/${product.id}`} 
-            className="flex-1 bg-red-600 hover:bg-red-700 text-white text-center px-4 py-2 rounded-lg font-bold transition-colors text-sm"
-          >
-            عرض التفاصيل
-          </Link>
-          <Link 
-            href={`/users/${product.user.id}`} 
-            className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-bold transition-colors text-sm flex items-center"
-          >
-            <Eye className="h-4 w-4 ml-1" />
-            البائع
-          </Link>
+          <div className="flex-1 bg-red-600 hover:bg-red-700 text-white text-center px-4 py-2 rounded-lg font-bold transition-colors text-sm">
+            عرض التفاصيل الكاملة
+          </div>
         </div>
       </div>
-    </div>
+      </div>
+    </Link>
   )
 }
