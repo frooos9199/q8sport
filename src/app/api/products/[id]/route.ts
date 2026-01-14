@@ -14,6 +14,14 @@ export async function GET(
       where: {
         id: productId,
         status: 'ACTIVE'
+      },
+      include: {
+        user: {
+          select: {
+            name: true,
+            phone: true
+          }
+        }
       }
     })
 

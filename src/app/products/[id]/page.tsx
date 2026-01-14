@@ -28,6 +28,10 @@ interface Product {
   status: string
   views: number
   createdAt: string
+  user?: {
+    name: string
+    phone?: string
+  }
 }
 
 export default function ProductDetailsPage() {
@@ -141,15 +145,6 @@ export default function ProductDetailsPage() {
               </h1>
             </Link>
             <div className="flex gap-4">
-              <a
-                href={`https://wa.me/?text=${encodeURIComponent(`شاهد هذا المنتج: ${product.title} - السعر: ${formatPrice(product.price)}\n${window.location.href}`)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold transition-all flex items-center"
-              >
-                <MessageCircle className="h-4 w-4 ml-2" />
-                مشاركة واتساب
-              </a>
               <button
                 onClick={shareProduct}
                 className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-semibold transition-all flex items-center"
@@ -328,6 +323,20 @@ export default function ProductDetailsPage() {
                 معلومات التواصل
               </h3>
               
+              {/* معلومات البائع */}
+              <div className="mb-4 bg-black p-4 rounded-lg border border-gray-700">
+                <p className="text-gray-400 text-sm mb-2">البائع:</p>
+                <p className="text-white font-bold text-lg">{product.user?.name || 'غير معروف'}</p>
+                {product.user?.phone && (
+                  <div className="mt-2 pt-2 border-t border-gray-700">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400 text-sm">رقم البائع:</span>
+                      <span className="text-white font-bold" dir="ltr">{product.user.phone}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
               {product.contactPhone && (
                 <div className="mb-4">
                   <div className="bg-black p-4 rounded-lg border border-gray-700">
@@ -387,6 +396,19 @@ export default function ProductDetailsPage() {
                     </a>
                   </div>
                 )}
+              </div>
+              
+              {/* مشاركة المنتج عبر واتساب */}
+              <div className="mt-4 pt-4 border-t border-gray-800">
+                <a
+                  href={`https://wa.me/?text=${encodeURIComponent(`شاهد هذا المنتج في Q8 Motors:\n\n${product.title}\nالسعر: ${formatPrice(product.price)}\n\n${window.location.href}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg text-center font-semibold transition-all flex items-center justify-center"
+                >
+                  <MessageCircle className="h-5 w-5 ml-2" />
+                  مشاركة هذا المنتج عبر واتساب
+                </a>
               </div>
             </div>
           </div>
