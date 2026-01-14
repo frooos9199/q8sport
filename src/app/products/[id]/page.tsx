@@ -36,7 +36,6 @@ export default function ProductDetailsPage() {
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
-  const [showPhone, setShowPhone] = useState(false)
   
   useEffect(() => {
     if (params.id) {
@@ -88,10 +87,6 @@ export default function ProductDetailsPage() {
       currency: 'KWD',
       minimumFractionDigits: 0
     }).format(price)
-  }
-
-  const handlePhoneClick = () => {
-    setShowPhone(true)
   }
 
   const shareProduct = () => {
@@ -146,6 +141,15 @@ export default function ProductDetailsPage() {
               </h1>
             </Link>
             <div className="flex gap-4">
+              <a
+                href={`https://wa.me/?text=${encodeURIComponent(`شاهد هذا المنتج: ${product.title} - السعر: ${formatPrice(product.price)}\n${window.location.href}`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold transition-all flex items-center"
+              >
+                <MessageCircle className="h-4 w-4 ml-2" />
+                مشاركة واتساب
+              </a>
               <button
                 onClick={shareProduct}
                 className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-semibold transition-all flex items-center"
@@ -326,21 +330,12 @@ export default function ProductDetailsPage() {
               
               {product.contactPhone && (
                 <div className="mb-4">
-                  {showPhone ? (
-                    <div className="bg-black p-4 rounded-lg border border-gray-700">
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-300">رقم الهاتف:</span>
-                        <span className="text-white font-bold text-xl">{product.contactPhone}</span>
-                      </div>
+                  <div className="bg-black p-4 rounded-lg border border-gray-700">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-300">رقم الهاتف:</span>
+                      <span className="text-white font-bold text-xl" dir="ltr">{product.contactPhone}</span>
                     </div>
-                  ) : (
-                    <button
-                      onClick={handlePhoneClick}
-                      className="w-full bg-red-600 hover:bg-red-700 text-white py-3 px-6 rounded-lg font-semibold transition-all"
-                    >
-                      📞 إظهار رقم الهاتف
-                    </button>
-                  )}
+                  </div>
                 </div>
               )}
               
@@ -361,7 +356,7 @@ export default function ProductDetailsPage() {
               
               {/* أزرار التواصل */}
               <div className="space-y-3">
-                {showPhone && product.contactPhone && (
+                {product.contactPhone && (
                   <a
                     href={`tel:${product.contactPhone}`}
                     className="w-full bg-red-600 hover:bg-red-700 text-white py-3 px-6 rounded-lg text-center font-semibold transition-all flex items-center justify-center"
