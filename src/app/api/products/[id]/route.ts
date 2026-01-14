@@ -79,7 +79,7 @@ export const PATCH = requireAuth(async (
     if (body.brand !== undefined) updateData.carBrand = body.brand;
     if (body.model !== undefined) updateData.carModel = body.model;
     if (body.year) updateData.carYear = parseInt(body.year);
-    if (body.partType !== undefined) updateData.partType = body.partType;
+
     if (body.partCondition) {
       // Convert condition to enum
       const conditionMap: { [key: string]: string } = {
