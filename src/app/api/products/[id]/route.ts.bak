@@ -80,24 +80,8 @@ export const PATCH = requireAuth(async (
     if (body.model !== undefined) updateData.carModel = body.model;
     if (body.year) updateData.carYear = parseInt(body.year);
     if (body.partType !== undefined) updateData.partType = body.partType;
-    if (body.partCondition) {
-      // Convert condition to enum
-      const conditionMap: { [key: string]: string } = {
-        'new': 'NEW',
-        'used': 'USED',
-        'refurbished': 'REFURBISHED'
-      };
-      updateData.condition = conditionMap[body.partCondition.toLowerCase()] || body.partCondition.toUpperCase();
-    }
-    if (body.partCondition) {
-      // Convert condition to enum
-      const conditionMap: { [key: string]: string } = {
-        'new': 'NEW',
-        'used': 'USED',
-        'refurbished': 'REFURBISHED'
-      };
-      updateData.condition = conditionMap[body.partCondition.toLowerCase()] || body.partCondition.toUpperCase();
-    }
+    if (body.partCondition) updateData.condition = body.partCondition;
+    if (body.phone !== undefined) updateData.contactPhone = body.phone;
     if (body.location !== undefined) updateData.location = body.location;
     if (body.status) {
       // Convert status to enum
