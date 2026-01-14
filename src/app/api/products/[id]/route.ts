@@ -66,41 +66,28 @@ export const PATCH = requireAuth(async (
     if (body.title) updateData.title = body.title;
     if (body.description !== undefined) updateData.description = body.description;
     if (body.price) updateData.price = parseFloat(body.price);
-    if (body.type) {
-      // Convert type to productType enum
+    if (body.productType) {
       const typeMap: { [key: string]: string } = {
         'car': 'CAR',
         'parts': 'PART',
         'accessories': 'PART'
       };
-      updateData.productType = typeMap[body.type] || body.type.toUpperCase();
+      updateData.productType = typeMap[body.productType.toLowerCase()] || body.productType.toUpperCase();
     }
     if (body.category) updateData.category = body.category;
-    if (body.brand !== undefined) updateData.carBrand = body.brand;
-    if (body.model !== undefined) updateData.carModel = body.model;
-    if (body.year) updateData.carYear = parseInt(body.year);
-
-    if (body.partCondition) {
-      // Convert condition to enum
+    if (body.carBrand !== undefined) updateData.carBrand = body.carBrand;
+    if (body.carModel !== undefined) updateData.carModel = body.carModel;
+    if (body.carYear) updateData.carYear = parseInt(body.carYear);
+    if (body.condition) {
       const conditionMap: { [key: string]: string } = {
         'new': 'NEW',
         'used': 'USED',
         'refurbished': 'REFURBISHED'
       };
-      updateData.condition = conditionMap[body.partCondition.toLowerCase()] || body.partCondition.toUpperCase();
+      updateData.condition = conditionMap[body.condition.toLowerCase()] || body.condition.toUpperCase();
     }
-    if (body.partCondition) {
-      // Convert condition to enum
-      const conditionMap: { [key: string]: string } = {
-        'new': 'NEW',
-        'used': 'USED',
-        'refurbished': 'REFURBISHED'
-      };
-      updateData.condition = conditionMap[body.partCondition.toLowerCase()] || body.partCondition.toUpperCase();
-    }
-    if (body.location !== undefined) updateData.location = body.location;
+    if (body.contactPhone !== undefined) updateData.contactPhone = body.contactPhone;
     if (body.status) {
-      // Convert status to enum
       const statusMap: { [key: string]: string } = {
         'active': 'ACTIVE',
         'sold': 'SOLD',

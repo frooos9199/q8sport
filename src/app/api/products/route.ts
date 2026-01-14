@@ -54,12 +54,13 @@ export async function POST(request: NextRequest) {
     
     const { 
       title, description, price, condition, category, images,
-      productType, carBrand, carModel, carYear, kilometers, color
+      productType, carBrand, carModel, carYear, kilometers, color,
+      contactPhone
     } = data
     
     // التحقق من البيانات المطلوبة
-    if (!title || !description || !price || !images) {
-      return NextResponse.json({ error: 'جميع الحقول مطلوبة' }, { status: 400 })
+    if (!title || !price || !images) {
+      return NextResponse.json({ error: 'العنوان والسعر والصور مطلوبة' }, { status: 400 })
     }
 
     // استخدام userId من المصادقة بدلاً من البيانات المرسلة
@@ -69,9 +70,9 @@ export async function POST(request: NextRequest) {
     const product = await prisma.product.create({
       data: {
         title,
-        description,
+        description: description || '',
         price: parseFloat(price),
-        condition: condition || 'جديد',
+        condition: condition || 'NEW',
         category: category || 'قطع غيار',
         productType: productType || 'PART',
         carBrand,
@@ -79,8 +80,9 @@ export async function POST(request: NextRequest) {
         carYear: carYear ? parseInt(carYear) : null,
         kilometers: kilometers ? parseInt(kilometers) : null,
         color,
+        contactPhone,
         images: typeof images === 'string' ? images : JSON.stringify(images),
-        userId: userId, // استخدام userId من المصادقة
+        userId: userId,
         status: 'ACTIVE'
       }
     })
