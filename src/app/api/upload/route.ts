@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { put } from '@vercel/blob'
 
 const MAX_FILE_SIZE = 10485760 // 10MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
@@ -32,11 +31,12 @@ export async function POST(request: NextRequest) {
         }, { status: 400 })
       }
 
-      const blob = await put(file.name, file, {
-        access: 'public',
-      })
-
-      uploadedFiles.push(blob.url)
+      // Convert to base64 for temporary storage
+      const bytes = await file.arrayBuffer()
+      const buffer = Buffer.from(bytes)
+      const base64 = `data:${file.type};base64,${buffer.toString('base64')}`
+      
+      uploadedFiles.push(base64)
     }
 
     return NextResponse.json({ 
@@ -53,4 +53,4 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export const runtime = 'edge'
+export const runtime = 'nodejs'
