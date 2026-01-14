@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { put } from '@vercel/blob'
 
-const MAX_FILE_SIZE = 10485760 // 10MB
+const MAX_FILE_SIZE = 4500000 // 4.5MB (Vercel Blob server upload limit)
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
 
 export async function POST(request: NextRequest) {
@@ -27,16 +28,25 @@ export async function POST(request: NextRequest) {
 
       if (file.size > MAX_FILE_SIZE) {
         return NextResponse.json({ 
-          error: `File ${file.name} is too large. Maximum: 10MB` 
+          error: `File ${file.name} is too large. Maximum: 4.5MB for server uploads` 
         }, { status: 400 })
       }
 
-      // Convert to base64 for temporary storage
-      const bytes = await file.arrayBuffer()
-      const buffer = Buffer.from(bytes)
-      const base64 = `data:${file.type};base64,${buffer.toString('base64')}`
-      
-      uploadedFiles.push(base64)
+      try {
+        // Upload to Vercel Blob
+        const blob = await put(file.name, file, {
+          access: 'public',
+        })
+
+        uploadedFiles.push(blob.url)
+      } catch (blobError) {
+        console.error('Blob upload error:', blobError)
+        // Fallback to base64 if Blob fails
+        const bytes = await file.arrayBuffer()
+        const buffer = Buffer.from(bytes)
+        const base64 = `data:${file.type};base64,${buffer.toString('base64')}`
+        uploadedFiles.push(base64)
+      }
     }
 
     return NextResponse.json({ 
@@ -52,5 +62,3 @@ export async function POST(request: NextRequest) {
     }, { status: 500 })
   }
 }
-
-export const runtime = 'nodejs'
