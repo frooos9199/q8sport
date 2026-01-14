@@ -38,6 +38,11 @@ export function parseImages(imagesString: string | string[]): string[] {
 export function getImageUrl(imagePath: string): string {
   if (!imagePath) return ''
   
+  // إذا كان base64 image
+  if (imagePath.startsWith('data:image/')) {
+    return imagePath
+  }
+  
   // إذا كان الرابط خارجي (http/https)
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
     return imagePath
