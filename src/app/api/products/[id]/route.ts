@@ -70,8 +70,8 @@ export const PATCH = requireAuth(async (
       // Convert type to productType enum
       const typeMap: { [key: string]: string } = {
         'car': 'CAR',
-        'parts': 'PARTS',
-        'accessories': 'ACCESSORIES'
+        'parts': 'PART',
+        'accessories': 'PART'
       };
       updateData.productType = typeMap[body.type] || body.type.toUpperCase();
     }
