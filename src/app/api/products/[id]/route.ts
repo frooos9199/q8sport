@@ -1,19 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth, AuthenticatedRequest } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: productId } = await params
+    const params = await context.params;
+    const productId = params.id;
 
     const product = await prisma.product.findUnique({
       where: {
         id: productId,
-        status: 'ACTIVE'
       },
       include: {
         user: {
@@ -23,15 +22,120 @@ export async function GET(
           }
         }
       }
-    })
+    });
 
     if (!product) {
-      return NextResponse.json({ error: 'المنتج غير موجود' }, { status: 404 })
+      return NextResponse.json({ error: 'المنتج غير موجود' }, { status: 404 });
     }
 
-    return NextResponse.json(product)
+    return NextResponse.json(product);
   } catch (error) {
-    console.error('Error fetching product:', error)
-    return NextResponse.json({ error: 'خطأ في جلب المنتج' }, { status: 500 })
+    console.error('Error fetching product:', error);
+    return NextResponse.json({ error: 'خطأ في جلب المنتج' }, { status: 500 });
   }
 }
+
+export const PATCH = requireAuth(async (
+  request: AuthenticatedRequest,
+  context: { params: Promise<{ id: string }> }
+) => {
+  try {
+    const params = await context.params;
+    const productId = params.id;
+    const user = request.user;
+    
+    if (!user) {
+      return NextResponse.json({ error: 'غير مصرح بالدخول' }, { status: 401 });
+    }
+
+    const body = await request.json();
+
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+    });
+
+    if (!product) {
+      return NextResponse.json({ error: 'المنتج غير موجود' }, { status: 404 });
+    }
+
+    if (product.userId !== user.userId) {
+      return NextResponse.json({ error: 'غير مصرح لك بتعديل هذا المنتج' }, { status: 403 });
+    }
+
+    const updateData: any = {};
+    if (body.title) updateData.title = body.title;
+    if (body.description !== undefined) updateData.description = body.description;
+    if (body.price) updateData.price = parseFloat(body.price);
+    if (body.type) updateData.type = body.type;
+    if (body.category) updateData.category = body.category;
+    if (body.brand !== undefined) updateData.brand = body.brand;
+    if (body.model !== undefined) updateData.model = body.model;
+    if (body.year) updateData.year = parseInt(body.year);
+    if (body.partType !== undefined) updateData.partType = body.partType;
+    if (body.partCondition) updateData.partCondition = body.partCondition;
+    if (body.phone !== undefined) updateData.phone = body.phone;
+    if (body.location !== undefined) updateData.location = body.location;
+    if (body.status) updateData.status = body.status;
+    if (body.images) updateData.images = body.images;
+
+    const updatedProduct = await prisma.product.update({
+      where: { id: productId },
+      data: updateData,
+    });
+
+    return NextResponse.json({ 
+      success: true, 
+      product: updatedProduct 
+    });
+
+  } catch (error) {
+    console.error('Update product error:', error);
+    return NextResponse.json(
+      { error: 'حدث خطأ أثناء تحديث المنتج' },
+      { status: 500 }
+    );
+  }
+});
+
+export const DELETE = requireAuth(async (
+  request: AuthenticatedRequest,
+  context: { params: Promise<{ id: string }> }
+) => {
+  try {
+    const params = await context.params;
+    const productId = params.id;
+    const user = request.user;
+    
+    if (!user) {
+      return NextResponse.json({ error: 'غير مصرح بالدخول' }, { status: 401 });
+    }
+
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+    });
+
+    if (!product) {
+      return NextResponse.json({ error: 'المنتج غير موجود' }, { status: 404 });
+    }
+
+    if (product.userId !== user.userId) {
+      return NextResponse.json({ error: 'غير مصرح لك بحذف هذا المنتج' }, { status: 403 });
+    }
+
+    await prisma.product.delete({
+      where: { id: productId },
+    });
+
+    return NextResponse.json({ 
+      success: true,
+      message: 'تم حذف المنتج بنجاح'
+    });
+
+  } catch (error) {
+    console.error('Delete product error:', error);
+    return NextResponse.json(
+      { error: 'حدث خطأ أثناء حذف المنتج' },
+      { status: 500 }
+    );
+  }
+});
