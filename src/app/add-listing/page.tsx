@@ -137,6 +137,11 @@ export default function AddListingPage() {
         showSellerName: false
       };
 
+      // التأكد من وجود token قبل الإرسال
+      if (!token) {
+        throw new Error('لا يوجد token للمصادقة');
+      }
+
       const response = await fetch('/api/products', {
         method: 'POST',
         headers: { 

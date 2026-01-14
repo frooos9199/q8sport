@@ -36,11 +36,15 @@ export async function verifyToken(request: NextRequest) {
     const authHeader = request.headers.get('authorization');
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('No valid authorization header found');
       return null;
     }
 
     const token = authHeader.substring(7);
+    console.log('Verifying token:', token.substring(0, 20) + '...');
+    
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
+    console.log('Token decoded successfully, userId:', decoded.userId);
     
     // Verify user still exists and is active
     const user = await prisma.user.findUnique({
@@ -59,9 +63,12 @@ export async function verifyToken(request: NextRequest) {
     });
 
     if (!user || user.status !== 'ACTIVE') {
+      console.log('User not found or not active');
       return null;
     }
 
+    console.log('Token verified successfully for user:', user.email);
+    
     return {
       userId: user.id,
       email: user.email,

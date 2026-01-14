@@ -38,7 +38,11 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     // التحقق من المصادقة
+    const authHeader = request.headers.get('authorization');
+    console.log('Authorization header:', authHeader?.substring(0, 30) + '...');
+    
     const authUser = await verifyToken(request);
+    console.log('Auth user result:', authUser ? 'Authenticated' : 'Not authenticated');
     
     if (!authUser) {
       return NextResponse.json({ 

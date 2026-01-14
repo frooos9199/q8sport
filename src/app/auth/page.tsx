@@ -140,7 +140,7 @@ export default function AuthPage() {
 
         if (authResponse.ok) {
           console.log('Facebook login successful:', authData.user.name);
-          login(authData.token, authData.user);
+          login(authData.user, authData.token);
           
           // Show success message
           alert(`مرحباً ${authData.user.name}! تم تسجيل الدخول بنجاح`);
