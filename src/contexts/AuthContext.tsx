@@ -49,11 +49,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const userData = localStorage.getItem('user')
     const authToken = localStorage.getItem('authToken')
     
+    console.log('Loading auth from localStorage:', { 
+      hasUser: !!userData, 
+      hasToken: !!authToken,
+      tokenPreview: authToken?.substring(0, 20) + '...'
+    })
+    
     if (userData) {
       try {
         setUser(JSON.parse(userData))
         if (authToken) {
           setToken(authToken)
+        } else {
+          console.warn('User found in localStorage but no token!')
         }
       } catch (error) {
         console.error('Error parsing user data:', error)
@@ -86,12 +94,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const login = (userData: User, authToken?: string) => {
+    console.log('Login called with:', { userData, authToken: authToken?.substring(0, 20) + '...' })
     setUser(userData)
     localStorage.setItem('user', JSON.stringify(userData))
     
     if (authToken) {
       setToken(authToken)
       localStorage.setItem('authToken', authToken)
+      console.log('Token saved to localStorage')
+    } else {
+      console.warn('No auth token provided to login function')
     }
   }
 

@@ -24,11 +24,16 @@ export default function AddListingPage() {
   
   // فحص المصادقة
   useEffect(() => {
+    console.log('Auth Check:', { user, token });
     if (!user) {
       alert('يجب عليك تسجيل الدخول أولاً لإضافة إعلان');
       router.push('/auth');
+    } else if (!token) {
+      console.warn('User exists but no token found!');
+      alert('جلسة المستخدم غير صالحة. يرجى تسجيل الدخول مرة أخرى');
+      router.push('/auth');
     }
-  }, [user, router]);
+  }, [user, token, router]);
   
   const [formData, setFormData] = useState({
     productType: 'CAR',
@@ -85,6 +90,15 @@ export default function AddListingPage() {
       router.push('/auth');
       return;
     }
+    
+    if (!token) {
+      setError('جلسة المستخدم غير صالحة. يرجى تسجيل الدخول مرة أخرى');
+      console.error('No token available for authenticated user');
+      router.push('/auth');
+      return;
+    }
+    
+    console.log('Submitting product with token:', token?.substring(0, 20) + '...');
     
     setLoading(true);
     setError('');
