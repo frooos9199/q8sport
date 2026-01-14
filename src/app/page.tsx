@@ -46,17 +46,6 @@ export default function Home() {
   const [selectedModel, setSelectedModel] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
-  const handleAddListing = () => {
-    if (!user) {
-      // إذا لم يكن المستخدم مسجلاً، توجيهه لصفحة التسجيل
-      alert('يجب عليك تسجيل الدخول أولاً لإضافة إعلان');
-      router.push('/auth');
-    } else {
-      // إذا كان مسجلاً، توجيهه لصفحة إضافة الإعلان
-      router.push('/add-listing');
-    }
-  };
-
   const handleLogout = () => {
     logout();
     alert('تم تسجيل الخروج بنجاح');
@@ -135,14 +124,11 @@ export default function Home() {
               Q8 <span className="text-red-600">Motors</span>
             </h1>
             <nav className="flex gap-6">
-              <button 
-                onClick={handleAddListing}
-                className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold transition-all"
-              >
-                أضف إعلانك
-              </button>
               {user ? (
                 <div className="flex gap-4">
+                  <Link href="/add-listing" className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold transition-all">
+                    أضف إعلانك
+                  </Link>
                   {canAccessAdminPanel() && (
                     <Link href="/admin" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-all">
                       لوحة الإدارة
@@ -177,17 +163,6 @@ export default function Home() {
           <p className="text-xl text-gray-300 mb-8">
             اشتري وبيع السيارات الرياضية وقطع الغيار بكل سهولة
           </p>
-          <button 
-            onClick={handleAddListing}
-            className="bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-lg font-bold text-lg transition-all shadow-lg hover:shadow-red-600/50"
-          >
-            🚗 أضف إعلانك الآن
-          </button>
-          {!user && (
-            <p className="text-gray-400 text-sm mt-4">
-              يجب تسجيل الدخول لإضافة إعلان جديد
-            </p>
-          )}
         </div>
       </section>
 

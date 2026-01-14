@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
+import { verifyToken } from '@/lib/auth'
 
 const prisma = new PrismaClient()
 
@@ -33,13 +34,22 @@ export async function GET() {
   }
 }
 
-// POST - إضافة منتج جديد
+// POST - إضافة منتج جديد (يتطلب تسجيل دخول)
 export async function POST(request: NextRequest) {
   try {
+    // التحقق من المصادقة
+    const authUser = await verifyToken(request);
+    
+    if (!authUser) {
+      return NextResponse.json({ 
+        error: 'يجب عليك تسجيل الدخول أولاً لإضافة منتج' 
+      }, { status: 401 })
+    }
+    
     const data = await request.json()
     
     const { 
-      title, description, price, condition, category, images, userId, status,
+      title, description, price, condition, category, images,
       productType, carBrand, carModel, carYear, kilometers, color
     } = data
     
@@ -48,12 +58,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'جميع الحقول مطلوبة' }, { status: 400 })
     }
 
-    // التحقق من وجود userId
-    if (!userId) {
-      return NextResponse.json({ error: 'معرف المستخدم مطلوب' }, { status: 400 })
-    }
+    // استخدام userId من المصادقة بدلاً من البيانات المرسلة
+    const userId = authUser.userId;
 
-    // إنشاء المنتج مع userId صحيح
+    // إنشاء المنتج مع userId من المستخدم المسجل
     const product = await prisma.product.create({
       data: {
         title,
@@ -68,8 +76,8 @@ export async function POST(request: NextRequest) {
         kilometers: kilometers ? parseInt(kilometers) : null,
         color,
         images: typeof images === 'string' ? images : JSON.stringify(images),
-        userId: userId,
-        status: status || 'ACTIVE'
+        userId: userId, // استخدام userId من المصادقة
+        status: 'ACTIVE'
       }
     })
 

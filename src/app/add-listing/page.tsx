@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
 const SPORT_CARS = {
   Ford: ['Mustang', 'F-150 Raptor', 'GT', 'Shelby GT500'],
@@ -17,8 +18,17 @@ const SPORT_CARS = {
 
 export default function AddListingPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  // فحص المصادقة
+  useEffect(() => {
+    if (!user) {
+      alert('يجب عليك تسجيل الدخول أولاً لإضافة إعلان');
+      router.push('/auth');
+    }
+  }, [user, router]);
   
   const [formData, setFormData] = useState({
     productType: 'CAR',
@@ -68,6 +78,14 @@ export default function AddListingPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // فحص تسجيل الدخول قبل الإرسال
+    if (!user || !user.id) {
+      setError('يجب عليك تسجيل الدخول أولاً لإضافة إعلان');
+      router.push('/auth');
+      return;
+    }
+    
     setLoading(true);
     setError('');
 
@@ -84,6 +102,7 @@ export default function AddListingPage() {
       }
 
       const payload = {
+        userId: user.id, // إضافة معرف المستخدم
         productType: formData.productType,
         title: formData.title,
         description: formData.description,
