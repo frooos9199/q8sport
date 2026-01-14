@@ -3,29 +3,27 @@ import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
-// DELETE - حذف المنتج
-export async function DELETE(
+export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id: productId } = await params
+    const productId = params.id
 
-    // تحديث حالة المنتج بدلاً من حذفه نهائياً
-    await prisma.product.update({
-      where: { id: productId },
-      data: { status: 'DELETED' }
+    const product = await prisma.product.findUnique({
+      where: {
+        id: productId,
+        status: 'ACTIVE'
+      }
     })
 
-    return NextResponse.json({
-      success: true,
-      message: 'تم حذف المنتج بنجاح'
-    })
+    if (!product) {
+      return NextResponse.json({ error: 'المنتج غير موجود' }, { status: 404 })
+    }
+
+    return NextResponse.json(product)
   } catch (error) {
-    console.error('Error deleting product:', error)
-    return NextResponse.json(
-      { success: false, message: 'حدث خطأ في حذف المنتج' },
-      { status: 500 }
-    )
+    console.error('Error fetching product:', error)
+    return NextResponse.json({ error: 'خطأ في جلب المنتج' }, { status: 500 })
   }
 }

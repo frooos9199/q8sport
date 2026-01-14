@@ -3,7 +3,6 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // إعدادات الأمان للصور
   images: {
-    domains: ['via.placeholder.com', 'localhost', 'q8sport.tk'],
     remotePatterns: [
       {
         protocol: 'https',
@@ -12,6 +11,10 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'q8sport.tk',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
       },
     ],
   },
@@ -24,11 +27,7 @@ const nextConfig: NextConfig = {
   // إعدادات إضافية للـ production
   productionBrowserSourceMaps: false,
   poweredByHeader: false,
-  // تعطيل ESLint للبناء السريع
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  // تعطيل TypeScript errors للبناء السريع
+  // تعطيل TypeScript errors للبناء السريع (فقط للتطوير)
   typescript: {
     ignoreBuildErrors: true,
   },

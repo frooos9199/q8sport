@@ -46,63 +46,63 @@ export default function AdminReports() {
   const renderOverviewReport = () => (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 rounded-lg text-white">
+        <div className="bg-gradient-to-r from-red-600 to-red-700 p-6 rounded-lg text-white border border-red-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-blue-100">إجمالي الإيرادات</p>
+              <p className="text-red-100">إجمالي الإيرادات</p>
               <p className="text-2xl font-bold">{reportData.overview.totalRevenue.toLocaleString()} د.ك</p>
             </div>
-            <DollarSign className="h-8 w-8 text-blue-200" />
+            <DollarSign className="h-8 w-8 text-red-200" />
           </div>
         </div>
         
-        <div className="bg-gradient-to-r from-green-500 to-green-600 p-6 rounded-lg text-white">
+        <div className="bg-gradient-to-r from-gray-700 to-gray-800 p-6 rounded-lg text-white border border-gray-600">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-green-100">المزادات المكتملة</p>
+              <p className="text-gray-300">المزادات المكتملة</p>
               <p className="text-2xl font-bold">{reportData.overview.totalAuctions}</p>
             </div>
-            <Package className="h-8 w-8 text-green-200" />
+            <Package className="h-8 w-8 text-gray-300" />
           </div>
         </div>
         
-        <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 p-6 rounded-lg text-white">
+        <div className="bg-gradient-to-r from-gray-700 to-gray-800 p-6 rounded-lg text-white border border-gray-600">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-yellow-100">متوسط سعر البيع</p>
+              <p className="text-gray-300">متوسط سعر البيع</p>
               <p className="text-2xl font-bold">{reportData.overview.averagePrice} د.ك</p>
             </div>
-            <TrendingUp className="h-8 w-8 text-yellow-200" />
+            <TrendingUp className="h-8 w-8 text-gray-300" />
           </div>
         </div>
         
-        <div className="bg-gradient-to-r from-purple-500 to-purple-600 p-6 rounded-lg text-white">
+        <div className="bg-gradient-to-r from-gray-700 to-gray-800 p-6 rounded-lg text-white border border-gray-600">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-purple-100">معدل النمو</p>
+              <p className="text-gray-300">معدل النمو</p>
               <p className="text-2xl font-bold">+{reportData.overview.growthRate}%</p>
             </div>
-            <BarChart3 className="h-8 w-8 text-purple-200" />
+            <BarChart3 className="h-8 w-8 text-gray-300" />
           </div>
         </div>
       </div>
 
       {/* Charts placeholder */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">الإيرادات الشهرية</h3>
-          <div className="h-64 bg-gray-100 rounded-lg flex items-center justify-center">
-            <div className="text-center text-gray-500">
+        <div className="bg-gray-900 border border-gray-800 p-6 rounded-lg">
+          <h3 className="text-lg font-semibold text-white mb-4">الإيرادات الشهرية</h3>
+          <div className="h-64 bg-black rounded-lg flex items-center justify-center border border-gray-800">
+            <div className="text-center text-gray-400">
               <LineChart className="h-12 w-12 mx-auto mb-2" />
               <p>مخطط الإيرادات الشهرية</p>
             </div>
           </div>
         </div>
         
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">توزيع الفئات</h3>
-          <div className="h-64 bg-gray-100 rounded-lg flex items-center justify-center">
-            <div className="text-center text-gray-500">
+        <div className="bg-gray-900 border border-gray-800 p-6 rounded-lg">
+          <h3 className="text-lg font-semibold text-white mb-4">توزيع الفئات</h3>
+          <div className="h-64 bg-black rounded-lg flex items-center justify-center border border-gray-800">
+            <div className="text-center text-gray-400">
               <PieChart className="h-12 w-12 mx-auto mb-2" />
               <p>مخطط توزيع فئات القطع</p>
             </div>
@@ -210,21 +210,21 @@ export default function AdminReports() {
 
   return (
     <AuthWrapper requireAuth={true} requireAdmin={true}>
-      <div className="min-h-screen bg-gray-100">
+      <div className="min-h-screen bg-black">
         {/* Header */}
-        <header className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-700 text-white shadow-xl">
+        <header className="bg-gradient-to-r from-black via-gray-900 to-black border-b border-red-600">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center py-6">
               <div className="flex items-center">
-                <Link href="/admin" className="flex items-center text-white/80 hover:text-white ml-4 transition-colors">
+                <Link href="/admin" className="flex items-center text-gray-400 hover:text-white ml-4 transition-colors">
                   <ArrowLeft className="h-5 w-5 ml-1" />
                   العودة للوحة الإدارة
                 </Link>
-                <Car className="h-8 w-8 text-white ml-3" />
+                <Car className="h-8 w-8 text-red-600 ml-3" />
                 <h1 className="text-2xl font-bold text-white">التقارير والإحصائيات</h1>
               </div>
               <div className="flex items-center space-x-3">
-                <button className="flex items-center px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors backdrop-blur-sm">
+                <button className="flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">
                   <Download className="h-5 w-5 ml-2" />
                   تصدير التقرير
                 </button>
@@ -236,13 +236,13 @@ export default function AdminReports() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex">
           {/* Sidebar */}
-          <div className="w-64 bg-white rounded-lg shadow p-6 ml-8">
+          <div className="w-64 bg-gray-900 border border-gray-800 rounded-lg p-6 ml-8">
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">الفترة الزمنية</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">الفترة الزمنية</label>
               <select 
                 value={selectedPeriod}
                 onChange={(e) => setSelectedPeriod(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 bg-black text-white border border-gray-700 rounded-lg focus:ring-red-600 focus:border-red-600"
                 title="اختر الفترة الزمنية"
               >
                 <option value="week">هذا الأسبوع</option>
@@ -258,8 +258,8 @@ export default function AdminReports() {
                 onClick={() => setSelectedReport('overview')}
                 className={`w-full flex items-center px-4 py-2 text-right rounded-lg ${
                   selectedReport === 'overview'
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    ? 'bg-red-900 text-red-200'
+                    : 'text-gray-300 hover:bg-gray-800'
                 }`}
               >
                 <BarChart3 className="h-5 w-5 ml-3" />
@@ -270,8 +270,8 @@ export default function AdminReports() {
                 onClick={() => setSelectedReport('sales')}
                 className={`w-full flex items-center px-4 py-2 text-right rounded-lg ${
                   selectedReport === 'sales'
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    ? 'bg-red-900 text-red-200'
+                    : 'text-gray-300 hover:bg-gray-800'
                 }`}
               >
                 <DollarSign className="h-5 w-5 ml-3" />
@@ -282,8 +282,8 @@ export default function AdminReports() {
                 onClick={() => setSelectedReport('users')}
                 className={`w-full flex items-center px-4 py-2 text-right rounded-lg ${
                   selectedReport === 'users'
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    ? 'bg-red-900 text-red-200'
+                    : 'text-gray-300 hover:bg-gray-800'
                 }`}
               >
                 <Users className="h-5 w-5 ml-3" />

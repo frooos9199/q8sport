@@ -18,33 +18,33 @@ export default function AuctionsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
-          <Car className="h-16 w-16 text-gray-400 mx-auto mb-4 animate-pulse" />
-          <p className="text-gray-600 text-lg">جاري تحميل المزادات...</p>
+          <Car className="h-16 w-16 text-gray-600 mx-auto mb-4 animate-pulse" />
+          <p className="text-gray-400 text-lg">جاري تحميل المزادات...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-black">
       {/* Header */}
-      <header className="bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-lg">
+      <header className="bg-gradient-to-r from-black via-gray-900 to-black border-b border-red-600 text-white shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-6">
             <div className="flex items-center">
               <button
                 onClick={() => router.back()}
-                className="flex items-center ml-6 text-white hover:text-blue-200 transition-colors"
+                className="flex items-center ml-6 text-gray-400 hover:text-white transition-colors"
               >
                 <ArrowLeft className="h-5 w-5" />
                 <span className="mr-2">العودة للرئيسية</span>
               </button>
-              <Car className="h-8 w-8 text-white ml-3" />
+              <Car className="h-8 w-8 text-red-600 ml-3" />
               <div>
                 <h1 className="text-2xl font-bold text-white">المزادات النشطة</h1>
-                <p className="text-blue-100">قطع غيار السيارات الرياضية</p>
+                <p className="text-gray-400">قطع غيار السيارات الرياضية</p>
               </div>
             </div>
           </div>
@@ -53,7 +53,7 @@ export default function AuctionsPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Success Message */}
-        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6">
+        <div className="bg-green-600/20 border border-green-600/30 text-green-400 px-4 py-3 rounded mb-6">
           <strong>✅ صفحة المزادات تعمل بنجاح!</strong>
           <p>تم حل المشكلة وصفحة المزادات الآن نشطة.</p>
         </div>
@@ -68,30 +68,30 @@ export default function AuctionsPage() {
             { id: '5', title: 'محرك دودج تشارجر هيمي', price: 4500, time: '2:18:30' },
             { id: '6', title: 'مقاعد كورفيت جلد أحمر', price: 1800, time: '3:06:15' }
           ].map((auction) => (
-            <div key={auction.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+            <div key={auction.id} className="bg-gray-900 rounded-lg border border-gray-800 overflow-hidden hover:border-red-600 transition-all">
               {/* Image */}
-              <div className="h-48 bg-gray-200 flex items-center justify-center">
-                <Car className="h-16 w-16 text-gray-400" />
+              <div className="h-48 bg-black flex items-center justify-center border-b border-gray-800">
+                <Car className="h-16 w-16 text-red-600" />
               </div>
 
               {/* Content */}
               <div className="p-4">
-                <h3 className="font-bold text-lg text-gray-900 mb-2">{auction.title}</h3>
+                <h3 className="font-bold text-lg text-white mb-2">{auction.title}</h3>
                 
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
-                    <p className="text-xs text-gray-500">السعر الحالي</p>
-                    <p className="text-lg font-bold text-green-600">{auction.price} د.ك</p>
+                    <p className="text-xs text-gray-400">السعر الحالي</p>
+                    <p className="text-lg font-bold text-green-500">{auction.price} د.ك</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500">متبقي</p>
-                    <p className="text-lg font-bold text-red-600">{auction.time}</p>
+                    <p className="text-xs text-gray-400">متبقي</p>
+                    <p className="text-lg font-bold text-red-500">{auction.time}</p>
                   </div>
                 </div>
 
                 <Link 
                   href={`/auctions/${auction.id}`}
-                  className="block w-full bg-blue-600 hover:bg-blue-700 text-white text-center py-3 rounded-lg font-bold transition-colors"
+                  className="block w-full bg-red-600 hover:bg-red-700 text-white text-center py-3 rounded-lg font-bold transition-colors"
                 >
                   شارك في المزاد
                 </Link>
@@ -102,12 +102,12 @@ export default function AuctionsPage() {
 
         {/* Footer Note */}
         <div className="text-center mt-12">
-          <p className="text-gray-600">
+          <p className="text-gray-400">
             هذه نسخة مبسطة من صفحة المزادات للتأكد من عمل الروابط والتنقل
           </p>
           <Link 
             href="/" 
-            className="inline-block mt-4 text-blue-600 hover:text-blue-800 underline"
+            className="inline-block mt-4 text-red-500 hover:text-red-400 underline"
           >
             العودة للصفحة الرئيسية
           </Link>

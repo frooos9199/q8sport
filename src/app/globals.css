@@ -2,8 +2,12 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #1f2937;
+  --background: #0a0a0a;
+  --foreground: #ffffff;
+  --primary: #dc2626;
+  --primary-hover: #b91c1c;
+  --secondary: #1a1a1a;
+  --accent: #ef4444;
 }
 
 @theme inline {
@@ -13,34 +17,32 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Noto Sans Arabic', Arial, Helvetica, sans-serif;
 }
 
 /* تحسين مربعات البحث والإدخال */
-input[type="text"]:not([class*="text-gray-"]),
-input[type="search"]:not([class*="text-gray-"]) {
-  color: #111827 !important;
+input[type="text"],
+input[type="search"],
+input[type="number"],
+input[type="tel"] {
+  color: #ffffff !important;
+  background: #1a1a1a !important;
+  border-color: #333333 !important;
 }
 
 input::placeholder {
   color: #6b7280 !important;
-  font-weight: 500;
+  font-weight: 400;
 }
 
 /* تحسين النصوص في مربعات البحث */
 .search-input {
-  color: #111827 !important;
+  color: #ffffff !important;
   font-weight: 500;
+  background: #1a1a1a !important;
 }
 
 .search-input::placeholder {
@@ -49,19 +51,31 @@ input::placeholder {
 }
 
 /* تحسين الفلاتر والقوائم المنسدلة */
-select:not([class*="text-gray-"]) {
-  color: #111827 !important;
+select {
+  color: #ffffff !important;
   font-weight: 500;
+  background: #1a1a1a !important;
+  border-color: #333333 !important;
 }
 
 select option {
-  color: #111827 !important;
-  background-color: #ffffff;
+  color: #ffffff !important;
+  background-color: #1a1a1a;
 }
 
 /* تحسين labels للفلاتر */
-label:not([class*="text-gray-"]) {
-  color: #1f2937 !important;
+label {
+  color: #ffffff !important;
+}
+
+/* أزرار حمراء */
+.btn-primary {
+  background: var(--primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
 }
 
 /* CSS للإعلانات والأنيميشن */

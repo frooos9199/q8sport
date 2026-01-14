@@ -32,71 +32,71 @@ export default function UserSettings() {
 
   const renderProfileSettings = () => (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-6">المعلومات الشخصية</h3>
+      <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
+        <h3 className="text-lg font-semibold text-white mb-6">المعلومات الشخصية</h3>
         
         {/* Avatar Upload */}
         <div className="flex items-center space-x-6 mb-6">
-          <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center">
-            <User className="h-12 w-12 text-blue-600" />
+          <div className="w-24 h-24 bg-red-600/20 rounded-full flex items-center justify-center border border-red-600/30">
+            <User className="h-12 w-12 text-red-600" />
           </div>
           <div>
-            <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            <button className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
               <Camera className="h-5 w-5 ml-2" />
               تغيير الصورة
             </button>
-            <p className="text-sm text-gray-500 mt-2">PNG, JPG حتى 2MB</p>
+            <p className="text-sm text-gray-400 mt-2">PNG, JPG حتى 2MB</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">الاسم الكامل</label>
+            <label className="block text-sm font-medium text-white mb-2">الاسم الكامل</label>
             <input
               type="text"
               value={profile.name}
               onChange={(e) => setProfile({...profile, name: e.target.value})}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-700 bg-black text-white rounded-lg focus:ring-red-600 focus:border-red-600"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">البريد الإلكتروني</label>
+            <label className="block text-sm font-medium text-white mb-2">البريد الإلكتروني</label>
             <input
               type="email"
               title="البريد الإلكتروني"
               placeholder="أدخل بريدك الإلكتروني"
               value={profile.email}
               onChange={(e) => setProfile({...profile, email: e.target.value})}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-700 bg-black text-white rounded-lg focus:ring-red-600 focus:border-red-600"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">رقم الهاتف</label>
+            <label className="block text-sm font-medium text-white mb-2">رقم الهاتف</label>
             <input
               type="tel"
               title="رقم الهاتف"
               placeholder="أدخل رقم هاتفك"
               value={profile.phone}
               onChange={(e) => setProfile({...profile, phone: e.target.value})}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-700 bg-black text-white rounded-lg focus:ring-red-600 focus:border-red-600"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">الموقع</label>
+            <label className="block text-sm font-medium text-white mb-2">الموقع</label>
             <input
               type="text"
               value={profile.location}
               onChange={(e) => setProfile({...profile, location: e.target.value})}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-700 bg-black text-white rounded-lg focus:ring-red-600 focus:border-red-600"
             />
           </div>
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">نبذة شخصية</label>
+            <label className="block text-sm font-medium text-white mb-2">نبذة شخصية</label>
             <textarea
               value={profile.bio}
               onChange={(e) => setProfile({...profile, bio: e.target.value})}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-700 bg-black text-white rounded-lg focus:ring-red-600 focus:border-red-600"
               placeholder="اكتب نبذة مختصرة عن نفسك واهتماماتك..."
             />
           </div>
@@ -464,23 +464,23 @@ export default function UserSettings() {
 
   return (
     <AuthWrapper requireAuth={true}>
-      <div className="min-h-screen bg-gray-100">
+      <div className="min-h-screen bg-black">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-700 text-white">
+        <div className="bg-gradient-to-r from-black via-gray-900 to-black border-b border-red-600 text-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <Link 
                   href="/profile" 
-                  className="flex items-center text-white/80 hover:text-white ml-4 transition-colors"
+                  className="flex items-center text-gray-400 hover:text-white ml-4 transition-colors"
                 >
                   <ArrowLeft className="h-5 w-5 ml-1" />
                   العودة للملف الشخصي
                 </Link>
-                <Settings className="h-10 w-10 ml-4" />
+                <Settings className="h-10 w-10 ml-4 text-red-600" />
                 <div>
                   <h1 className="text-3xl font-bold">إعدادات الحساب</h1>
-                  <p className="text-blue-100 mt-1">إدارة حسابك وتخصيص إعداداتك</p>
+                  <p className="text-gray-400 mt-1">إدارة حسابك وتخصيص إعداداتك</p>
                 </div>
               </div>
             </div>
@@ -491,14 +491,14 @@ export default function UserSettings() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex">
           {/* Sidebar */}
-          <div className="w-64 bg-white rounded-lg shadow p-6 ml-8">
+          <div className="w-64 bg-gray-900 rounded-lg border border-gray-800 p-6 ml-8">
             <nav className="space-y-2">
               <button
                 onClick={() => setActiveTab('profile')}
                 className={`w-full flex items-center px-4 py-2 text-right rounded-lg ${
                   activeTab === 'profile'
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    ? 'bg-red-600 text-white'
+                    : 'text-gray-400 hover:bg-gray-800'
                 }`}
               >
                 <User className="h-5 w-5 ml-3" />
@@ -509,8 +509,8 @@ export default function UserSettings() {
                 onClick={() => setActiveTab('security')}
                 className={`w-full flex items-center px-4 py-2 text-right rounded-lg ${
                   activeTab === 'security'
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    ? 'bg-red-600 text-white'
+                    : 'text-gray-400 hover:bg-gray-800'
                 }`}
               >
                 <Shield className="h-5 w-5 ml-3" />
@@ -521,8 +521,8 @@ export default function UserSettings() {
                 onClick={() => setActiveTab('notifications')}
                 className={`w-full flex items-center px-4 py-2 text-right rounded-lg ${
                   activeTab === 'notifications'
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    ? 'bg-red-600 text-white'
+                    : 'text-gray-400 hover:bg-gray-800'
                 }`}
               >
                 <Bell className="h-5 w-5 ml-3" />
@@ -533,8 +533,8 @@ export default function UserSettings() {
                 onClick={() => setActiveTab('account')}
                 className={`w-full flex items-center px-4 py-2 text-right rounded-lg ${
                   activeTab === 'account'
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    ? 'bg-red-600 text-white'
+                    : 'text-gray-400 hover:bg-gray-800'
                 }`}
               >
                 <Settings className="h-5 w-5 ml-3" />
@@ -552,10 +552,10 @@ export default function UserSettings() {
 
             {/* Save Button */}
             <div className="mt-8 flex justify-end space-x-3">
-              <button className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+              <button className="px-6 py-2 border border-gray-700 text-gray-400 rounded-lg hover:bg-gray-900">
                 إلغاء
               </button>
-              <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center">
+              <button className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center">
                 <Save className="h-5 w-5 ml-2" />
                 حفظ التغييرات
               </button>

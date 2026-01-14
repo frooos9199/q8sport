@@ -38,23 +38,22 @@ export async function POST(request: NextRequest) {
   try {
     const data = await request.json()
     
-    const { title, description, price, condition, category, images, userId, status } = data
+    const { 
+      title, description, price, condition, category, images, userId, status,
+      productType, carBrand, carModel, carYear, kilometers, color
+    } = data
     
     // التحقق من البيانات المطلوبة
-    if (!title || !description || !price || !images || !userId) {
+    if (!title || !description || !price || !images) {
       return NextResponse.json({ error: 'جميع الحقول مطلوبة' }, { status: 400 })
     }
 
-    // التحقق من أن المستخدم موجود
-    const user = await prisma.user.findUnique({
-      where: { id: userId }
-    })
-
-    if (!user) {
-      return NextResponse.json({ error: 'المستخدم غير موجود' }, { status: 404 })
+    // التحقق من وجود userId
+    if (!userId) {
+      return NextResponse.json({ error: 'معرف المستخدم مطلوب' }, { status: 400 })
     }
 
-    // إنشاء المنتج
+    // إنشاء المنتج مع userId صحيح
     const product = await prisma.product.create({
       data: {
         title,
@@ -62,20 +61,15 @@ export async function POST(request: NextRequest) {
         price: parseFloat(price),
         condition: condition || 'جديد',
         category: category || 'قطع غيار',
+        productType: productType || 'PART',
+        carBrand,
+        carModel,
+        carYear: carYear ? parseInt(carYear) : null,
+        kilometers: kilometers ? parseInt(kilometers) : null,
+        color,
         images: typeof images === 'string' ? images : JSON.stringify(images),
-        userId,
+        userId: userId,
         status: status || 'ACTIVE'
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true,
-            rating: true
-          }
-        }
       }
     })
 

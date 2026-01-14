@@ -15,6 +15,12 @@ interface UserItem {
   price: string
   condition: string
   category: string
+  productType?: 'CAR' | 'PART'
+  carBrand?: string
+  carModel?: string
+  carYear?: string
+  kilometers?: string
+  color?: string
   images: string[]
   status: 'active' | 'sold' | 'inactive'
   soldDate?: string
@@ -64,6 +70,12 @@ export default function ProfilePage() {
     price: '',
     condition: 'مستعمل',
     category: 'قطع غيار',
+    productType: 'PART',
+    carBrand: '',
+    carModel: '',
+    carYear: '',
+    kilometers: '',
+    color: '',
     images: []
   })
 
@@ -98,14 +110,24 @@ export default function ProfilePage() {
     }
 
     const fetchUserItems = async () => {
-      if (!user?.id) return
+      if (!user?.id) {
+        console.log('No user ID found')
+        return
+      }
+      
+      console.log('Fetching products for user:', user.id)
       
       try {
         const response = await fetch(`/api/users/${user.id}/products`)
         const data = await response.json()
         
+        console.log('API Response:', data)
+        
         if (data.success) {
+          console.log(`Setting ${data.products?.length || 0} products`)
           setUserItems(data.products || [])
+        } else {
+          console.log('API returned success: false')
         }
       } catch (error) {
         console.error('Error fetching user items:', error)
@@ -125,6 +147,11 @@ export default function ProfilePage() {
 
   // دالة لتمييز المنتج كمباع
   const markAsSold = async (itemId: string) => {
+    // تأكيد من المستخدم
+    if (!confirm('هل أنت متأكد من تحديد المنتج كمباع؟')) {
+      return
+    }
+
     const buyerName = prompt('اسم المشتري:')
     const buyerPhone = prompt('رقم هاتف المشتري:')
     const soldPrice = prompt('سعر البيع النهائي:')
@@ -169,7 +196,7 @@ export default function ProfilePage() {
               }
             : item
         ))
-        alert('تم تمييز المنتج كمباع بنجاح!')
+        alert('✅ تم البيع بنجاح!')
       } else {
         alert('حدث خطأ في تحديث حالة المنتج')
       }
@@ -397,7 +424,7 @@ export default function ProfilePage() {
     const files = event.target.files
     if (!files || files.length === 0) return
 
-    const currentImageCount = newItem.images?.length || 0
+    const currentImageCount = Array.isArray(newItem.images) ? newItem.images.length : 0
     const remainingSlots = 8 - currentImageCount
 
     if (files.length > remainingSlots) {
@@ -449,7 +476,7 @@ export default function ProfilePage() {
       
       setNewItem(prev => ({
         ...prev,
-        images: [...(prev.images || []), ...result.files]
+        images: [...(Array.isArray(prev.images) ? prev.images : []), ...result.files]
       }))
 
       setUploadProgress(100)
@@ -469,7 +496,7 @@ export default function ProfilePage() {
   const removeImage = (index: number) => {
     setNewItem(prev => ({
       ...prev,
-      images: prev.images?.filter((_, i) => i !== index) || []
+      images: Array.isArray(prev.images) ? prev.images.filter((_, i) => i !== index) : []
     }))
   }
 
@@ -478,7 +505,7 @@ export default function ProfilePage() {
     if (!newItem.title?.trim()) errors.push('عنوان الإعلان مطلوب')
     if (!newItem.description?.trim()) errors.push('وصف الإعلان مطلوب')
     if (!newItem.price?.trim()) errors.push('السعر مطلوب')
-    if (!newItem.images?.length) errors.push('يجب رفع صورة واحدة على الأقل')
+    if (!Array.isArray(newItem.images) || newItem.images.length === 0) errors.push('يجب رفع صورة واحدة على الأقل')
     
     if (errors.length > 0) {
       alert('يرجى إكمال البيانات المطلوبة:\n' + errors.join('\n'))
@@ -498,6 +525,12 @@ export default function ProfilePage() {
         price: parseFloat(newItem.price || '0'),
         condition: newItem.condition,
         category: newItem.category,
+        productType: newItem.productType || 'PART',
+        carBrand: newItem.carBrand,
+        carModel: newItem.carModel,
+        carYear: newItem.carYear ? parseInt(newItem.carYear) : null,
+        kilometers: newItem.kilometers ? parseInt(newItem.kilometers) : null,
+        color: newItem.color,
         images: JSON.stringify(newItem.images),
         status: 'ACTIVE',
         userId: userData.id
@@ -530,6 +563,12 @@ export default function ProfilePage() {
         price: savedProduct.price.toString(),
         condition: savedProduct.condition,
         category: savedProduct.category,
+        productType: savedProduct.productType,
+        carBrand: savedProduct.carBrand,
+        carModel: savedProduct.carModel,
+        carYear: savedProduct.carYear?.toString(),
+        kilometers: savedProduct.kilometers?.toString(),
+        color: savedProduct.color,
         images: JSON.parse(savedProduct.images || '[]'),
         status: 'active'
       }])
@@ -541,6 +580,12 @@ export default function ProfilePage() {
         price: '',
         condition: 'جديد',
         category: 'قطع غيار',
+        productType: 'PART',
+        carBrand: '',
+        carModel: '',
+        carYear: '',
+        kilometers: '',
+        color: '',
         images: []
       })
 
@@ -560,25 +605,25 @@ export default function ProfilePage() {
 
   return (
     <AuthWrapper requireAuth={true}>
-      <div className="min-h-screen bg-gray-50 text-right" dir="rtl">
+      <div className="min-h-screen bg-black text-right" dir="rtl">
       <div className="max-w-4xl mx-auto py-8 px-4">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="bg-gray-900 rounded-lg border border-gray-800 p-6 mb-6">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-black text-gray-900 mb-2">الملف الشخصي</h1>
-              <p className="text-gray-900 font-semibold">إدارة حسابك ومنتجاتك</p>
+              <h1 className="text-3xl font-black text-white mb-2">الملف الشخصي</h1>
+              <p className="text-gray-400 font-semibold">إدارة حسابك ومنتجاتك</p>
             </div>
             <div className="flex gap-4">
               <Link 
                 href="/" 
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold transition-colors"
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-bold transition-colors"
               >
                 🏠 العودة للموقع
               </Link>
               <Link 
                 href="/auctions" 
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold transition-colors"
+                className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 font-bold transition-colors border border-gray-700"
               >
                 🔨 تصفح المزادات
               </Link>
@@ -587,15 +632,15 @@ export default function ProfilePage() {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="bg-white rounded-lg shadow-md mb-6">
-          <div className="border-b border-gray-200">
+        <div className="bg-gray-900 rounded-lg border border-gray-800 mb-6">
+          <div className="border-b border-gray-800">
             <nav className="flex space-x-8 space-x-reverse">
               <button
                 onClick={() => setActiveTab('profile')}
                 className={`py-3 px-6 text-sm font-black border-b-2 ${
                   activeTab === 'profile'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-900 hover:text-gray-700'
+                    ? 'border-red-600 text-red-600'
+                    : 'border-transparent text-white hover:text-gray-300'
                 }`}
               >
                 البيانات الشخصية
@@ -604,8 +649,8 @@ export default function ProfilePage() {
                 onClick={() => setActiveTab('items')}
                 className={`py-3 px-6 text-sm font-black border-b-2 ${
                   activeTab === 'items'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-900 hover:text-gray-700'
+                    ? 'border-red-600 text-red-600'
+                    : 'border-transparent text-white hover:text-gray-300'
                 }`}
               >
                 منتجاتي ({userItems.length})
@@ -614,8 +659,8 @@ export default function ProfilePage() {
                 onClick={() => setActiveTab('account')}
                 className={`py-3 px-6 text-sm font-black border-b-2 ${
                   activeTab === 'account'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-900 hover:text-gray-700'
+                    ? 'border-red-600 text-red-600'
+                    : 'border-transparent text-white hover:text-gray-300'
                 }`}
               >
                 إدارة الحساب
@@ -626,76 +671,76 @@ export default function ProfilePage() {
 
         {/* Profile Tab */}
         {activeTab === 'profile' && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-black mb-6 text-gray-900">المعلومات الشخصية</h2>
+          <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
+            <h2 className="text-xl font-black mb-6 text-white">المعلومات الشخصية</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
+                <label className="block text-sm font-bold text-white mb-2">
                   الاسم الكامل *
                 </label>
                 <input
                   type="text"
                   value={userData.name}
                   onChange={(e) => handleUserDataChange('name', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-700 bg-black rounded-md focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-red-600 text-white"
                   placeholder="أدخل اسمك الكامل"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
+                <label className="block text-sm font-bold text-white mb-2">
                   رقم الهاتف *
                 </label>
                 <input
                   type="tel"
                   value={userData.phone}
                   onChange={(e) => handleUserDataChange('phone', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-700 bg-black rounded-md focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-red-600 text-white"
                   placeholder="أدخل رقم الهاتف"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
+                <label className="block text-sm font-bold text-white mb-2">
                   البريد الإلكتروني *
                 </label>
                 <input
                   type="email"
                   value={userData.email}
                   onChange={(e) => handleUserDataChange('email', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-700 bg-black rounded-md focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-red-600 text-white"
                   placeholder="أدخل البريد الإلكتروني"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
+                <label className="block text-sm font-bold text-white mb-2">
                   رقم الواتساب
                 </label>
                 <input
                   type="tel"
                   value={userData.whatsapp}
                   onChange={(e) => handleUserDataChange('whatsapp', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-700 bg-black rounded-md focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-red-600 text-white"
                   placeholder="+965 xxxxxxxx"
                 />
               </div>
             </div>
 
             {/* قسم تغيير كلمة المرور */}
-            <div className="mt-8 pt-6 border-t border-gray-200">
-              <h3 className="text-lg font-black mb-4 text-gray-900">تغيير كلمة المرور</h3>
+            <div className="mt-8 pt-6 border-t border-gray-800">
+              <h3 className="text-lg font-black mb-4 text-white">تغيير كلمة المرور</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-bold text-gray-900 mb-2">
+                  <label className="block text-sm font-bold text-white mb-2">
                     كلمة المرور الجديدة
                   </label>
                   <input
                     type="password"
                     value={userData.newPassword || ''}
                     onChange={(e) => handleUserDataChange('newPassword', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-700 bg-black rounded-md focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-red-600 text-white"
                     placeholder="اتركه فارغاً إذا لم ترد تغيير كلمة المرور"
                   />
                 </div>
@@ -890,6 +935,20 @@ export default function ProfilePage() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
+                        نوع المنتج *
+                      </label>
+                      <select
+                        value={newItem.productType || 'PART'}
+                        onChange={(e) => setNewItem(prev => ({ ...prev, productType: e.target.value as 'CAR' | 'PART' }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      >
+                        <option value="PART">قطعة غيار</option>
+                        <option value="CAR">سيارة كاملة</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
                         السعر *
                       </label>
                       <input
@@ -900,6 +959,86 @@ export default function ProfilePage() {
                         placeholder="السعر بالدينار الكويتي"
                       />
                     </div>
+
+                    {/* معلومات السيارة */}
+                    {newItem.productType === 'CAR' && (
+                      <>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            الماركة *
+                          </label>
+                          <select
+                            value={newItem.carBrand || ''}
+                            onChange={(e) => setNewItem(prev => ({ ...prev, carBrand: e.target.value, carModel: '' }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                          >
+                            <option value="">اختر الماركة</option>
+                            <option value="Ford">Ford</option>
+                            <option value="Chevrolet">Chevrolet</option>
+                            <option value="Toyota">Toyota</option>
+                            <option value="Dodge">Dodge</option>
+                            <option value="Nissan">Nissan</option>
+                            <option value="BMW">BMW</option>
+                            <option value="Mercedes">Mercedes</option>
+                            <option value="Porsche">Porsche</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            الموديل *
+                          </label>
+                          <input
+                            type="text"
+                            value={newItem.carModel || ''}
+                            onChange={(e) => setNewItem(prev => ({ ...prev, carModel: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            placeholder="مثال: Mustang, Corvette"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            سنة الصنع
+                          </label>
+                          <input
+                            type="number"
+                            value={newItem.carYear || ''}
+                            onChange={(e) => setNewItem(prev => ({ ...prev, carYear: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            placeholder="2020"
+                            min="1980"
+                            max="2026"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            الكيلومترات
+                          </label>
+                          <input
+                            type="number"
+                            value={newItem.kilometers || ''}
+                            onChange={(e) => setNewItem(prev => ({ ...prev, kilometers: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            placeholder="50000"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            اللون
+                          </label>
+                          <input
+                            type="text"
+                            value={newItem.color || ''}
+                            onChange={(e) => setNewItem(prev => ({ ...prev, color: e.target.value }))}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            placeholder="أحمر, أزرق, أبيض"
+                          />
+                        </div>
+                      </>
+                    )}
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -914,36 +1053,6 @@ export default function ProfilePage() {
                         {PART_CONDITIONS_ARRAY.map(condition => (
                           <option key={condition} value={condition}>{condition}</option>
                         ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        القسم *
-                      </label>
-                      <select
-                        value={newItem.category || 'قطع غيار'}
-                        onChange={(e) => setNewItem(prev => ({ ...prev, category: e.target.value }))}
-                        title="اختر قسم المنتج"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      >
-                        {categories.length === 0 ? (
-                          <>
-                            <option value="قطع غيار">قطع غيار</option>
-                            <option value="محركات">محركات</option>
-                            <option value="إطارات">إطارات</option>
-                            <option value="زيوت">زيوت ومواد التشحيم</option>
-                            <option value="أدوات">أدوات ومعدات</option>
-                            <option value="إكسسوارات">إكسسوارات</option>
-                            <option value="أخرى">أخرى</option>
-                          </>
-                        ) : (
-                          categories.map(category => (
-                            <option key={category.id} value={category.nameArabic}>
-                              {category.nameArabic}
-                            </option>
-                          ))
-                        )}
                       </select>
                     </div>
                   </div>
@@ -1003,7 +1112,7 @@ export default function ProfilePage() {
                     )}
 
                     {/* Image Preview Gallery */}
-                    {newItem.images && newItem.images.length > 0 && (
+                    {newItem.images && Array.isArray(newItem.images) && newItem.images.length > 0 && (
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                         {newItem.images.map((image, index) => (
                           <div key={index} className="relative group">
@@ -1024,7 +1133,7 @@ export default function ProfilePage() {
                     )}
 
                     <p className="text-xs text-gray-500">
-                      يمكن رفع {newItem.images?.length || 0} من 8 صور
+                      يمكن رفع {Array.isArray(newItem.images) ? newItem.images.length : 0} من 8 صور
                     </p>
                   </div>
 
@@ -1090,7 +1199,41 @@ export default function ProfilePage() {
                       </div>
                       
                       <div className="p-4">
-                        <h3 className="font-black text-lg text-gray-900 mb-2">{item.title}</h3>
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="font-black text-lg text-gray-900">{item.title}</h3>
+                          <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                            item.productType === 'CAR' ? 'bg-blue-500 text-white' : 'bg-green-500 text-white'
+                          }`}>
+                            {item.productType === 'CAR' ? 'سيارة' : 'قطعة غيار'}
+                          </span>
+                        </div>
+                        
+                        {/* معلومات السيارة */}
+                        {item.productType === 'CAR' && (
+                          <div className="grid grid-cols-2 gap-2 mb-2 text-xs">
+                            {item.carBrand && (
+                              <span className="bg-gray-100 px-2 py-1 rounded text-gray-800 font-bold">
+                                {item.carBrand}
+                              </span>
+                            )}
+                            {item.carModel && (
+                              <span className="bg-gray-100 px-2 py-1 rounded text-gray-800 font-bold">
+                                {item.carModel}
+                              </span>
+                            )}
+                            {item.carYear && (
+                              <span className="bg-blue-100 px-2 py-1 rounded text-blue-800 font-bold">
+                                {item.carYear}
+                              </span>
+                            )}
+                            {item.kilometers && (
+                              <span className="bg-orange-100 px-2 py-1 rounded text-orange-800 font-bold">
+                                {item.kilometers} كم
+                              </span>
+                            )}
+                          </div>
+                        )}
+                        
                         <p className="text-black font-bold text-sm mb-2 line-clamp-2">{item.description}</p>
                         <div className="flex justify-between items-center mb-3">
                           <span className="text-lg font-black text-green-600">{item.price} د.ك</span>

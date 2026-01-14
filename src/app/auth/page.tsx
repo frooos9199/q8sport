@@ -276,20 +276,20 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-black flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">
           <div className="flex justify-center">
             <div className="flex items-center">
-              <Car className="h-12 w-12 text-blue-600 ml-3" />
-              <h1 className="text-2xl font-bold text-gray-900">Q8 MAZAD SPORT</h1>
+              <Car className="h-12 w-12 text-red-600 ml-3" />
+              <h1 className="text-2xl font-bold text-white">Q8 <span className="text-red-600">Motors</span></h1>
             </div>
           </div>
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">
+          <h2 className="mt-6 text-3xl font-bold text-white">
             {isLogin ? 'تسجيل الدخول' : 'إنشاء حساب جديد'}
           </h2>
-          <p className="mt-2 text-sm text-gray-800">
+          <p className="mt-2 text-sm text-gray-400">
             {isLogin 
               ? 'ادخل للوصول لحسابك ومتابعة المزادات' 
               : 'انضم إلينا وابدأ في المزايدة على قطع الغيار'
@@ -298,14 +298,14 @@ export default function AuthPage() {
         </div>
 
         {/* Form */}
-        <div className="bg-white py-8 px-6 shadow-lg rounded-lg">
+        <div className="bg-gray-900 border border-gray-800 py-8 px-6 shadow-lg rounded-lg">
           {/* Social Login Buttons */}
           <div className="space-y-3 mb-6">
             <button
               type="button"
               onClick={handleFacebookLogin}
               disabled={loading}
-              className="w-full flex justify-center items-center py-3 px-4 border border-blue-300 rounded-lg shadow-sm bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex justify-center items-center py-3 px-4 border border-blue-600 rounded-lg shadow-sm bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg className="w-5 h-5 text-white ml-2" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M20 10c0-5.523-4.477-10-10-10S0 4.477 0 10c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V10h2.54V7.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V10h2.773l-.443 2.89h-2.33v6.988C16.343 19.128 20 14.991 20 10z" clipRule="evenodd"/>
@@ -315,10 +315,10 @@ export default function AuthPage() {
             
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
+                <div className="w-full border-t border-gray-700" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">أو استخدم البريد الإلكتروني</span>
+                <span className="px-2 bg-gray-900 text-gray-400">أو استخدم البريد الإلكتروني</span>
               </div>
             </div>
           </div>
@@ -327,11 +327,11 @@ export default function AuthPage() {
             {/* Name field (Registration only) */}
             {!isLogin && (
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="name" className="block text-sm font-medium text-white mb-1">
                   الاسم الكامل *
                 </label>
                 <div className="relative">
-                  <User className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                  <User className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
                   <input
                     id="name"
                     name="name"
@@ -339,7 +339,7 @@ export default function AuthPage() {
                     required={!isLogin}
                     value={formData.name}
                     onChange={handleInputChange}
-                    className="appearance-none block w-full pr-10 pl-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-gray-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                    className="appearance-none block w-full pr-10 pl-3 py-3 border border-gray-700 placeholder-gray-500 text-white bg-black rounded-lg focus:outline-none focus:ring-red-600 focus:border-red-600 focus:z-10 sm:text-sm"
                     placeholder="أدخل اسمك الكامل"
                   />
                 </div>
@@ -348,11 +348,11 @@ export default function AuthPage() {
 
             {/* Email field */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="email" className="block text-sm font-medium text-white mb-1">
                 البريد الإلكتروني *
               </label>
               <div className="relative">
-                <Mail className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                <Mail className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
                 <input
                   id="email"
                   name="email"
@@ -360,7 +360,7 @@ export default function AuthPage() {
                   required
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="appearance-none block w-full pr-10 pl-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-gray-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                  className="appearance-none block w-full pr-10 pl-3 py-3 border border-gray-700 placeholder-gray-500 text-white bg-black rounded-lg focus:outline-none focus:ring-red-600 focus:border-red-600 focus:z-10 sm:text-sm"
                   placeholder="أدخل بريدك الإلكتروني"
                 />
               </div>
@@ -369,22 +369,22 @@ export default function AuthPage() {
             {/* Phone field (Registration only) */}
             {!isLogin && (
               <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="phone" className="block text-sm font-medium text-white mb-1">
                   رقم الواتساب (اختياري)
                 </label>
                 <div className="relative">
-                  <Phone className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                  <Phone className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
                   <input
                     id="phone"
                     name="phone"
                     type="tel"
                     value={formData.phone}
                     onChange={handleInputChange}
-                    className="appearance-none block w-full pr-10 pl-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-gray-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                    className="appearance-none block w-full pr-10 pl-3 py-3 border border-gray-700 placeholder-gray-500 text-white bg-black rounded-lg focus:outline-none focus:ring-red-600 focus:border-red-600 focus:z-10 sm:text-sm"
                     placeholder="+965 xxxxxxxx"
                   />
                 </div>
-                <p className="mt-1 text-xs text-gray-700 flex items-center">
+                <p className="mt-1 text-xs text-gray-400 flex items-center">
                   <MessageCircle className="h-3 w-3 ml-1" />
                   لتلقي إشعارات المزادات عبر واتساب
                 </p>
@@ -393,11 +393,11 @@ export default function AuthPage() {
 
             {/* Password field */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="block text-sm font-medium text-white mb-1">
                 كلمة المرور *
               </label>
               <div className="relative">
-                <Lock className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                <Lock className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-5 w-5" />
                 <input
                   id="password"
                   name="password"
@@ -405,19 +405,19 @@ export default function AuthPage() {
                   required
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="appearance-none block w-full pr-10 pl-10 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-gray-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                  className="appearance-none block w-full pr-10 pl-10 py-3 border border-gray-700 placeholder-gray-500 text-white bg-black rounded-lg focus:outline-none focus:ring-red-600 focus:border-red-600 focus:z-10 sm:text-sm"
                   placeholder="أدخل كلمة المرور"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-300"
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
               {!isLogin && (
-                <p className="mt-1 text-xs text-gray-700">
+                <p className="mt-1 text-xs text-gray-400">
                   يجب أن تحتوي على 6 أحرف على الأقل
                 </p>
               )}
@@ -432,10 +432,10 @@ export default function AuthPage() {
 
             {/* Admin demo credentials */}
             {isLogin && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <p className="text-blue-800 text-sm font-medium mb-1">🔑 للدخول كأدمن:</p>
-                <p className="text-blue-700 text-xs">البريد: summit_kw@hotmail.com</p>
-                <p className="text-blue-700 text-xs">كلمة المرور: 123123</p>
+              <div className="bg-gray-800 border border-gray-700 rounded-lg p-3">
+                <p className="text-red-400 text-sm font-medium mb-1">🔑 للدخول كأدمن:</p>
+                <p className="text-gray-300 text-xs">البريد: summit_kw@hotmail.com</p>
+                <p className="text-gray-300 text-xs">كلمة المرور: 123123</p>
               </div>
             )}
 
@@ -444,7 +444,7 @@ export default function AuthPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
               >
                 {loading ? (
                   <div className="flex items-center">
@@ -463,7 +463,7 @@ export default function AuthPage() {
                 <button
                   type="button"
                   onClick={handleForgotPassword}
-                  className="text-sm text-blue-600 hover:text-blue-500"
+                  className="text-sm text-red-500 hover:text-red-400"
                 >
                   نسيت كلمة المرور؟ (إرسال عبر واتساب)
                 </button>
@@ -472,7 +472,7 @@ export default function AuthPage() {
 
             {/* Toggle between login/register */}
             <div className="text-center">
-              <p className="text-sm text-gray-800">
+              <p className="text-sm text-gray-400">
                 {isLogin ? 'ليس لديك حساب؟' : 'لديك حساب بالفعل؟'}
                 <button
                   type="button"
@@ -481,7 +481,7 @@ export default function AuthPage() {
                     setError('');
                     setFormData({ email: '', password: '', name: '', phone: '' });
                   }}
-                  className="font-medium text-blue-600 hover:text-blue-500 mr-1"
+                  className="font-medium text-red-500 hover:text-red-400 mr-1"
                 >
                   {isLogin ? 'إنشاء حساب جديد' : 'تسجيل الدخول'}
                 </button>
@@ -492,7 +492,7 @@ export default function AuthPage() {
 
         {/* Back to home */}
         <div className="text-center">
-          <Link href="/" className="text-sm text-gray-800 hover:text-blue-600">
+          <Link href="/" className="text-sm text-gray-400 hover:text-red-500">
             ← العودة للصفحة الرئيسية
           </Link>
         </div>

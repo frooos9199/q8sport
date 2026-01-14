@@ -8,6 +8,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   try {
     const userId = params.id
     
+    console.log('Fetching products for userId:', userId)
+    
     const products = await prisma.product.findMany({
       where: {
         userId: userId
@@ -16,6 +18,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         createdAt: 'desc'
       }
     })
+
+    console.log(`Found ${products.length} products for user ${userId}`)
 
     return NextResponse.json({ 
       success: true,

@@ -333,10 +333,10 @@ export default function ShopManagement() {
   // Utility functions
   const getStatusColor = (status: Shop['status']) => {
     switch (status) {
-      case 'ACTIVE': return 'bg-green-100 text-green-800';
-      case 'SUSPENDED': return 'bg-yellow-100 text-yellow-800';
-      case 'BANNED': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'ACTIVE': return 'bg-green-900/30 text-green-400 border border-green-700';
+      case 'SUSPENDED': return 'bg-yellow-900/30 text-yellow-400 border border-yellow-700';
+      case 'BANNED': return 'bg-red-900/30 text-red-400 border border-red-700';
+      default: return 'bg-gray-900/30 text-gray-400 border border-gray-700';
     }
   };
 
@@ -366,10 +366,10 @@ export default function ShopManagement() {
   if (loading) {
     return (
       <AuthWrapper requireAuth={true} requireAdmin={true}>
-        <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="min-h-screen bg-black flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-800">جاري تحميل المحلات...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+            <p className="text-white">جاري تحميل المحلات...</p>
           </div>
         </div>
       </AuthWrapper>
@@ -378,20 +378,20 @@ export default function ShopManagement() {
 
   return (
     <AuthWrapper requireAuth={true} requireAdmin={true}>
-      <div className="min-h-screen bg-gray-100">
+      <div className="min-h-screen bg-black">
         {/* Header */}
-        <header className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-700 text-white shadow-xl">
+        <header className="bg-gradient-to-r from-black via-gray-900 to-black border-b border-red-600">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center py-6">
               <div className="flex items-center">
-                <Link href="/admin" className="flex items-center text-white/80 hover:text-white ml-4 transition-colors">
+                <Link href="/admin" className="flex items-center text-gray-400 hover:text-white ml-4 transition-colors">
                   ← العودة للوحة الإدارة
                 </Link>
                 <h1 className="text-2xl font-bold text-white mr-4">إدارة المحلات</h1>
               </div>
               <button
                 onClick={() => openModal('add')}
-                className="flex items-center px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors backdrop-blur-sm"
+                className="flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
               >
                 🏪 إضافة محل جديد
               </button>
@@ -401,7 +401,7 @@ export default function ShopManagement() {
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* البحث والفلاتر */}
-          <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {/* البحث */}
               <div className="relative">
@@ -410,7 +410,7 @@ export default function ShopManagement() {
                   placeholder="البحث بالاسم أو صاحب المحل..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pr-10 pl-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pr-10 pl-3 py-2 bg-black text-white border border-gray-700 rounded-lg focus:ring-red-600 focus:border-red-600"
                 />
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
                   🔍
@@ -421,7 +421,7 @@ export default function ShopManagement() {
               <select
                 value={filterBusinessType}
                 onChange={(e) => setFilterBusinessType(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 bg-black text-white border border-gray-700 rounded-lg focus:ring-red-600 focus:border-red-600"
                 title="فلترة حسب نوع النشاط"
               >
                 <option value="">جميع الأنشطة</option>
@@ -436,7 +436,7 @@ export default function ShopManagement() {
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 bg-black text-white border border-gray-700 rounded-lg focus:ring-red-600 focus:border-red-600"
                 title="فلترة حسب الحالة"
               >
                 <option value="">جميع الحالات</option>
@@ -446,8 +446,8 @@ export default function ShopManagement() {
               </select>
 
               {/* عدد النتائج */}
-              <div className="flex items-center justify-center bg-gray-50 rounded-lg px-3 py-2">
-                <span className="text-gray-700 font-medium">
+              <div className="flex items-center justify-center bg-gray-800 rounded-lg px-3 py-2">
+                <span className="text-white font-medium">
                   {filteredShops.length} من {shops.length} محل
                 </span>
               </div>
@@ -455,48 +455,48 @@ export default function ShopManagement() {
           </div>
 
           {/* جدول المحلات */}
-          <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50">
+                <thead className="bg-gray-800 border-b border-gray-700">
                   <tr>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">المحل</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">صاحب المحل</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">نوع النشاط</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الحالة</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">التقييم</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">المنتجات</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الطلبات</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الإجراءات</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase">المحل</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase">صاحب المحل</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase">نوع النشاط</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase">الحالة</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase">التقييم</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase">المنتجات</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase">الطلبات</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase">الإجراءات</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-700">
                   {filteredShops.map((shop) => (
-                    <tr key={shop.id} className="hover:bg-gray-50">
+                    <tr key={shop.id} className="hover:bg-gray-800 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center">
-                          <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center ml-3">
-                            <span className="text-blue-600 font-semibold text-lg">
+                          <div className="h-12 w-12 bg-gray-800 rounded-lg flex items-center justify-center ml-3">
+                            <span className="text-red-500 font-semibold text-lg">
                               🏪
                             </span>
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-gray-900">{shop.name}</p>
-                            <p className="text-xs text-gray-500">{shop.address}</p>
+                            <p className="text-sm font-medium text-white">{shop.name}</p>
+                            <p className="text-xs text-gray-400">{shop.address}</p>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div>
-                          <p className="text-sm font-medium text-gray-900">{shop.ownerName}</p>
-                          <p className="text-sm text-gray-500">{shop.ownerEmail}</p>
+                          <p className="text-sm font-medium text-white">{shop.ownerName}</p>
+                          <p className="text-sm text-gray-400">{shop.ownerEmail}</p>
                           {shop.ownerPhone && (
-                            <p className="text-xs text-gray-400">{shop.ownerPhone}</p>
+                            <p className="text-xs text-gray-500">{shop.ownerPhone}</p>
                           )}
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-900/30 text-red-400 border border-red-700">
                           {shop.businessType}
                         </span>
                       </td>
@@ -507,29 +507,29 @@ export default function ShopManagement() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center">
-                          <span className="text-sm font-medium text-gray-900">{shop.rating.toFixed(1)}</span>
+                          <span className="text-sm font-medium text-white">{shop.rating.toFixed(1)}</span>
                           <span className="text-yellow-400 mr-1">{getRatingStars(shop.rating)}</span>
-                          <span className="text-xs text-gray-500 mr-1">({shop.reviewCount})</span>
+                          <span className="text-xs text-gray-400 mr-1">({shop.reviewCount})</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-900 text-center">
+                      <td className="px-6 py-4 text-sm text-white text-center">
                         {shop.productCount}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-900 text-center">
+                      <td className="px-6 py-4 text-sm text-white text-center">
                         {shop.orderCount}
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2 space-x-reverse">
                           <button
                             onClick={() => openModal('view', shop)}
-                            className="text-blue-600 hover:text-blue-900 text-lg"
+                            className="text-red-400 hover:text-red-300 text-lg transition-colors"
                             title="عرض التفاصيل"
                           >
                             👁️
                           </button>
                           <button
                             onClick={() => openModal('edit', shop)}
-                            className="text-green-600 hover:text-green-900 text-lg"
+                            className="text-green-400 hover:text-green-300 text-lg transition-colors"
                             title="تعديل"
                           >
                             ✏️
@@ -538,14 +538,14 @@ export default function ShopManagement() {
                             <>
                               <button
                                 onClick={() => handleChangeShopStatus(shop, 'SUSPENDED')}
-                                className="text-yellow-600 hover:text-yellow-900 text-lg"
+                                className="text-yellow-400 hover:text-yellow-300 text-lg transition-colors"
                                 title="إيقاف مؤقت"
                               >
                                 ⏸️
                               </button>
                               <button
                                 onClick={() => handleChangeShopStatus(shop, 'BANNED')}
-                                className="text-red-600 hover:text-red-900 text-lg"
+                                className="text-red-500 hover:text-red-400 text-lg transition-colors"
                                 title="حظر"
                               >
                                 ⚠️
@@ -554,7 +554,7 @@ export default function ShopManagement() {
                           ) : (
                             <button
                               onClick={() => handleChangeShopStatus(shop, 'ACTIVE')}
-                              className="text-green-600 hover:text-green-900 text-lg"
+                              className="text-green-400 hover:text-green-300 text-lg transition-colors"
                               title="تفعيل"
                             >
                               ✅
@@ -562,7 +562,7 @@ export default function ShopManagement() {
                           )}
                           <button
                             onClick={() => openModal('delete', shop)}
-                            className="text-red-600 hover:text-red-900 text-lg"
+                            className="text-red-500 hover:text-red-400 text-lg transition-colors"
                             title="حذف"
                           >
                             🗑️
@@ -578,8 +578,7 @@ export default function ShopManagement() {
             {filteredShops.length === 0 && (
               <div className="text-center py-12">
                 <div className="text-4xl mb-4">🏪</div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">لا توجد نتائج</h3>
-                <p className="text-gray-600">لم يتم العثور على محلات تطابق معايير البحث</p>
+                <p className="text-gray-400 text-lg">لا توجد محلات مسجلة حالياً</p>
               </div>
             )}
           </div>
@@ -587,10 +586,10 @@ export default function ShopManagement() {
 
         {/* Modal */}
         {showModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-gray-900">
+                <h3 className="text-lg font-bold text-white">
                   {modalType === 'add' && '🏪 إضافة محل جديد'}
                   {modalType === 'edit' && '✏️ تعديل المحل'}
                   {modalType === 'view' && '👁️ تفاصيل المحل'}
@@ -598,7 +597,7 @@ export default function ShopManagement() {
                 </h3>
                 <button
                   onClick={closeModal}
-                  className="text-gray-400 hover:text-gray-600 text-xl"
+                  className="text-gray-400 hover:text-white text-xl transition-colors"
                 >
                   ✕
                 </button>
@@ -608,45 +607,45 @@ export default function ShopManagement() {
               {(modalType === 'add' || modalType === 'edit') && (
                 <div className="space-y-6">
                   {/* معلومات المحل */}
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <h4 className="font-medium text-blue-900 mb-3">معلومات المحل</h4>
+                  <div className="bg-gray-800 border border-gray-700 p-4 rounded-lg">
+                    <h4 className="font-medium text-red-400 mb-3">معلومات المحل</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">اسم المحل *</label>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">اسم المحل *</label>
                         <input
                           type="text"
                           value={shopForm.name}
                           onChange={(e) => setShopForm(prev => ({ ...prev, name: e.target.value }))}
-                          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full p-2 bg-black border border-gray-700 text-white rounded-lg focus:ring-red-500 focus:border-red-500"
                           placeholder="اسم المحل"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">نوع النشاط *</label>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">نوع النشاط *</label>
                         <input
                           type="text"
                           value={shopForm.businessType}
                           onChange={(e) => setShopForm(prev => ({ ...prev, businessType: e.target.value }))}
-                          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full p-2 bg-black border border-gray-700 text-white rounded-lg focus:ring-red-500 focus:border-red-500"
                           placeholder="قطع غيار السيارات"
                         />
                       </div>
                       <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">عنوان المحل *</label>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">عنوان المحل *</label>
                         <textarea
                           value={shopForm.address}
                           onChange={(e) => setShopForm(prev => ({ ...prev, address: e.target.value }))}
-                          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full p-2 bg-black border border-gray-700 text-white rounded-lg focus:ring-red-500 focus:border-red-500"
                           rows={2}
                           placeholder="العنوان الكامل للمحل"
                         />
                       </div>
                       <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">وصف المحل</label>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">وصف المحل</label>
                         <textarea
                           value={shopForm.description}
                           onChange={(e) => setShopForm(prev => ({ ...prev, description: e.target.value }))}
-                          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full p-2 bg-black border border-gray-700 text-white rounded-lg focus:ring-red-500 focus:border-red-500"
                           rows={3}
                           placeholder="وصف مختصر عن المحل وخدماته"
                         />
@@ -655,62 +654,62 @@ export default function ShopManagement() {
                   </div>
 
                   {/* معلومات صاحب المحل */}
-                  <div className="bg-green-50 p-4 rounded-lg">
-                    <h4 className="font-medium text-green-900 mb-3">معلومات صاحب المحل</h4>
+                  <div className="bg-gray-800 border border-gray-700 p-4 rounded-lg">
+                    <h4 className="font-medium text-red-400 mb-3">معلومات صاحب المحل</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">اسم صاحب المحل *</label>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">اسم صاحب المحل *</label>
                         <input
                           type="text"
                           value={shopForm.ownerName}
                           onChange={(e) => setShopForm(prev => ({ ...prev, ownerName: e.target.value }))}
-                          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full p-2 bg-black border border-gray-700 text-white rounded-lg focus:ring-red-500 focus:border-red-500"
                           placeholder="الاسم الكامل"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">البريد الإلكتروني *</label>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">البريد الإلكتروني *</label>
                         <input
                           type="email"
                           value={shopForm.ownerEmail}
                           onChange={(e) => setShopForm(prev => ({ ...prev, ownerEmail: e.target.value }))}
-                          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full p-2 bg-black border border-gray-700 text-white rounded-lg focus:ring-red-500 focus:border-red-500"
                           placeholder="example@domain.com"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">رقم الهاتف</label>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">رقم الهاتف</label>
                         <input
                           type="tel"
                           value={shopForm.ownerPhone}
                           onChange={(e) => setShopForm(prev => ({ ...prev, ownerPhone: e.target.value }))}
-                          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full p-2 bg-black border border-gray-700 text-white rounded-lg focus:ring-red-500 focus:border-red-500"
                           placeholder="96565000000"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">واتساب</label>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">واتساب</label>
                         <input
                           type="tel"
                           value={shopForm.ownerWhatsapp}
                           onChange={(e) => setShopForm(prev => ({ ...prev, ownerWhatsapp: e.target.value }))}
-                          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full p-2 bg-black border border-gray-700 text-white rounded-lg focus:ring-red-500 focus:border-red-500"
                           placeholder="96565000000"
                         />
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex justify-end space-x-2 mt-6">
+                  <div className="flex justify-end gap-2 mt-6">
                     <button
                       onClick={closeModal}
-                      className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                      className="px-4 py-2 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-800 transition-colors"
                     >
                       إلغاء
                     </button>
                     <button
                       onClick={modalType === 'add' ? handleAddShop : handleEditShop}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                     >
                       💾 {modalType === 'add' ? 'إضافة المحل' : 'تحديث المحل'}
                     </button>
@@ -722,86 +721,86 @@ export default function ShopManagement() {
               {modalType === 'view' && selectedShop && (
                 <div className="space-y-6">
                   {/* معلومات المحل */}
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <h4 className="font-medium text-blue-900 mb-3">معلومات المحل</h4>
+                  <div className="bg-gray-800 border border-gray-700 p-4 rounded-lg">
+                    <h4 className="font-medium text-red-400 mb-3">معلومات المحل</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">اسم المحل</label>
-                        <p className="mt-1 text-sm text-gray-900">{selectedShop.name}</p>
+                        <label className="block text-sm font-medium text-gray-400">اسم المحل</label>
+                        <p className="mt-1 text-sm text-white">{selectedShop.name}</p>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">نوع النشاط</label>
-                        <p className="mt-1 text-sm text-gray-900">{selectedShop.businessType}</p>
+                        <label className="block text-sm font-medium text-gray-400">نوع النشاط</label>
+                        <p className="mt-1 text-sm text-white">{selectedShop.businessType}</p>
                       </div>
                       <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-gray-700">العنوان</label>
-                        <p className="mt-1 text-sm text-gray-900">{selectedShop.address}</p>
+                        <label className="block text-sm font-medium text-gray-400">العنوان</label>
+                        <p className="mt-1 text-sm text-white">{selectedShop.address}</p>
                       </div>
                       {selectedShop.description && (
                         <div className="md:col-span-2">
-                          <label className="block text-sm font-medium text-gray-700">الوصف</label>
-                          <p className="mt-1 text-sm text-gray-900">{selectedShop.description}</p>
+                          <label className="block text-sm font-medium text-gray-400">الوصف</label>
+                          <p className="mt-1 text-sm text-white">{selectedShop.description}</p>
                         </div>
                       )}
                     </div>
                   </div>
 
                   {/* معلومات صاحب المحل */}
-                  <div className="bg-green-50 p-4 rounded-lg">
-                    <h4 className="font-medium text-green-900 mb-3">معلومات صاحب المحل</h4>
+                  <div className="bg-gray-800 border border-gray-700 p-4 rounded-lg">
+                    <h4 className="font-medium text-red-400 mb-3">معلومات صاحب المحل</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">الاسم</label>
-                        <p className="mt-1 text-sm text-gray-900">{selectedShop.ownerName}</p>
+                        <label className="block text-sm font-medium text-gray-400">الاسم</label>
+                        <p className="mt-1 text-sm text-white">{selectedShop.ownerName}</p>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">البريد الإلكتروني</label>
-                        <p className="mt-1 text-sm text-gray-900">{selectedShop.ownerEmail}</p>
+                        <label className="block text-sm font-medium text-gray-400">البريد الإلكتروني</label>
+                        <p className="mt-1 text-sm text-white">{selectedShop.ownerEmail}</p>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">رقم الهاتف</label>
-                        <p className="mt-1 text-sm text-gray-900">{selectedShop.ownerPhone || 'غير محدد'}</p>
+                        <label className="block text-sm font-medium text-gray-400">رقم الهاتف</label>
+                        <p className="mt-1 text-sm text-white">{selectedShop.ownerPhone || 'غير محدد'}</p>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">واتساب</label>
-                        <p className="mt-1 text-sm text-gray-900">{selectedShop.ownerWhatsapp || 'غير محدد'}</p>
+                        <label className="block text-sm font-medium text-gray-400">واتساب</label>
+                        <p className="mt-1 text-sm text-white">{selectedShop.ownerWhatsapp || 'غير محدد'}</p>
                       </div>
                     </div>
                   </div>
 
                   {/* الإحصائيات */}
-                  <div className="bg-yellow-50 p-4 rounded-lg">
-                    <h4 className="font-medium text-yellow-900 mb-3">الإحصائيات والتقييم</h4>
+                  <div className="bg-gray-800 border border-gray-700 p-4 rounded-lg">
+                    <h4 className="font-medium text-red-400 mb-3">الإحصائيات والتقييم</h4>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">الحالة</label>
+                        <label className="block text-sm font-medium text-gray-400">الحالة</label>
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(selectedShop.status)}`}>
                           {getStatusText(selectedShop.status)}
                         </span>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">التقييم</label>
+                        <label className="block text-sm font-medium text-gray-400">التقييم</label>
                         <div className="flex items-center mt-1">
-                          <span className="text-sm font-medium text-gray-900">{selectedShop.rating.toFixed(1)}</span>
+                          <span className="text-sm font-medium text-white">{selectedShop.rating.toFixed(1)}</span>
                           <span className="text-yellow-400 mr-1">{getRatingStars(selectedShop.rating)}</span>
-                          <span className="text-xs text-gray-500">({selectedShop.reviewCount} تقييم)</span>
+                          <span className="text-xs text-gray-400">({selectedShop.reviewCount} تقييم)</span>
                         </div>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">عدد المنتجات</label>
-                        <p className="mt-1 text-sm text-gray-900">{selectedShop.productCount}</p>
+                        <label className="block text-sm font-medium text-gray-400">عدد المنتجات</label>
+                        <p className="mt-1 text-sm text-white">{selectedShop.productCount}</p>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">عدد الطلبات</label>
-                        <p className="mt-1 text-sm text-gray-900">{selectedShop.orderCount}</p>
+                        <label className="block text-sm font-medium text-gray-400">عدد الطلبات</label>
+                        <p className="mt-1 text-sm text-white">{selectedShop.orderCount}</p>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">تاريخ الانضمام</label>
-                        <p className="mt-1 text-sm text-gray-900">{formatDateLong(selectedShop.createdAt)}</p>
+                        <label className="block text-sm font-medium text-gray-400">تاريخ الانضمام</label>
+                        <p className="mt-1 text-sm text-white">{formatDateLong(selectedShop.createdAt)}</p>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">آخر نشاط</label>
-                        <p className="mt-1 text-sm text-gray-900">
+                        <label className="block text-sm font-medium text-gray-400">آخر نشاط</label>
+                        <p className="mt-1 text-sm text-white">
                           {selectedShop.lastActivity ? formatDateLong(selectedShop.lastActivity) : 'غير محدد'}
                         </p>
                       </div>
@@ -813,12 +812,12 @@ export default function ShopManagement() {
               {/* Delete Confirmation */}
               {modalType === 'delete' && selectedShop && (
                 <div className="space-y-4">
-                  <div className="p-4 bg-red-50 rounded-lg">
+                  <div className="p-4 bg-red-900/30 border border-red-700 rounded-lg">
                     <div className="flex items-center">
-                      <div className="text-red-600 text-2xl ml-3">⚠️</div>
+                      <div className="text-red-500 text-2xl ml-3">⚠️</div>
                       <div>
-                        <h4 className="text-red-800 font-medium">تحذير: حذف المحل</h4>
-                        <p className="text-red-700 text-sm mt-1">
+                        <h4 className="text-red-400 font-medium">تحذير: حذف المحل</h4>
+                        <p className="text-red-300 text-sm mt-1">
                           هذا الإجراء لا يمكن التراجع عنه. سيتم حذف جميع بيانات المحل ومنتجاته نهائياً.
                         </p>
                       </div>
@@ -826,25 +825,25 @@ export default function ShopManagement() {
                   </div>
 
                   <div className="space-y-2">
-                    <p className="text-gray-900">هل أنت متأكد من حذف المحل التالي؟</p>
-                    <div className="p-3 bg-gray-50 rounded-lg">
-                      <p className="font-medium text-lg">🏪 {selectedShop.name}</p>
-                      <p className="text-sm text-gray-600">صاحب المحل: {selectedShop.ownerName}</p>
-                      <p className="text-sm text-gray-600">نوع النشاط: {selectedShop.businessType}</p>
-                      <p className="text-sm text-gray-600">المنتجات: {selectedShop.productCount} | الطلبات: {selectedShop.orderCount}</p>
+                    <p className="text-white">هل أنت متأكد من حذف المحل التالي؟</p>
+                    <div className="p-3 bg-gray-800 border border-gray-700 rounded-lg">
+                      <p className="font-medium text-lg text-white">🏪 {selectedShop.name}</p>
+                      <p className="text-sm text-gray-400">صاحب المحل: {selectedShop.ownerName}</p>
+                      <p className="text-sm text-gray-400">نوع النشاط: {selectedShop.businessType}</p>
+                      <p className="text-sm text-gray-400">المنتجات: {selectedShop.productCount} | الطلبات: {selectedShop.orderCount}</p>
                     </div>
                   </div>
 
-                  <div className="flex justify-end space-x-2 mt-6">
+                  <div className="flex justify-end gap-2 mt-6">
                     <button
                       onClick={closeModal}
-                      className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                      className="px-4 py-2 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-800 transition-colors"
                     >
                       إلغاء
                     </button>
                     <button
                       onClick={confirmDeleteShop}
-                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                     >
                       🗑️ حذف المحل نهائياً
                     </button>

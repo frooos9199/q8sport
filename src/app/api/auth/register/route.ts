@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { prisma } from '../../../../lib/prisma';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,21 +10,33 @@ export async function POST(request: NextRequest) {
     const { name, email, password, phone, whatsapp } = body;
 
     // Validate input
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !phone) {
       return NextResponse.json(
-        { error: 'الاسم والبريد الإلكتروني وكلمة المرور مطلوبة' },
+        { error: 'الاسم، البريد الإلكتروني، كلمة المرور، ورقم الهاتف مطلوبة' },
         { status: 400 }
       );
     }
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
+    // Check if email already exists
+    const existingUserByEmail = await prisma.user.findUnique({
       where: { email }
     });
 
-    if (existingUser) {
+    if (existingUserByEmail) {
       return NextResponse.json(
-        { error: 'المستخدم موجود بالفعل' },
+        { error: 'البريد الإلكتروني مستخدم بالفعل' },
+        { status: 409 }
+      );
+    }
+
+    // Check if phone already exists
+    const existingUserByPhone = await prisma.user.findUnique({
+      where: { phone }
+    });
+
+    if (existingUserByPhone) {
+      return NextResponse.json(
+        { error: 'رقم الهاتف مستخدم بالفعل' },
         { status: 409 }
       );
     }
@@ -36,8 +50,8 @@ export async function POST(request: NextRequest) {
         name,
         email,
         password: hashedPassword,
-        phone: phone || null,
-        whatsapp: whatsapp || phone || null,
+        phone: phone,
+        whatsapp: whatsapp || phone,
         role: 'USER',
         status: 'ACTIVE'
       },

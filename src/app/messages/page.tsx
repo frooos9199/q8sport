@@ -137,36 +137,36 @@ export default function Messages() {
 
   return (
     <AuthWrapper requireAuth={true}>
-      <div className="min-h-screen bg-gray-100">
+      <div className="min-h-screen bg-black">
         {/* Header */}
-        <header className="bg-white shadow">
+        <header className="bg-gray-900 border-b border-gray-800">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center py-6">
               <div className="flex items-center">
-                <Link href="/profile" className="flex items-center text-gray-800 hover:text-gray-900 ml-4">
+                <Link href="/profile" className="flex items-center text-gray-400 hover:text-white ml-4">
                   <ArrowLeft className="h-5 w-5 ml-1" />
                   العودة
                 </Link>
-                <MessageCircle className="h-8 w-8 text-blue-600 ml-3" />
-                <h1 className="text-2xl font-bold text-gray-900">الرسائل</h1>
+                <MessageCircle className="h-8 w-8 text-red-600 ml-3" />
+                <h1 className="text-2xl font-bold text-white">الرسائل</h1>
               </div>
             </div>
           </div>
         </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden" style={{ height: '600px' }}>
+        <div className="bg-gray-900 rounded-lg border border-gray-800 overflow-hidden" style={{ height: '600px' }}>
           <div className="flex h-full">
             {/* Sidebar - Chat List */}
-            <div className="w-1/3 border-l border-gray-200 flex flex-col">
+            <div className="w-1/3 border-l border-gray-800 flex flex-col">
               {/* Search */}
-              <div className="p-4 border-b border-gray-200">
+              <div className="p-4 border-b border-gray-800">
                 <div className="relative">
-                  <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-700 h-5 w-5" />
+                  <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                   <input
                     type="text"
                     placeholder="ابحث في المحادثات..."
-                    className="w-full pr-10 pl-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-600 font-medium"
+                    className="w-full pr-10 pl-4 py-2 border border-gray-700 bg-black rounded-lg focus:ring-2 focus:ring-red-600 focus:border-transparent text-white placeholder-gray-400 font-medium"
                   />
                 </div>
               </div>
@@ -177,14 +177,14 @@ export default function Messages() {
                   <div
                     key={chat.id}
                     onClick={() => setSelectedChat(chat.id)}
-                    className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
-                      selectedChat === chat.id ? 'bg-blue-50 border-blue-200' : ''
+                    className={`p-4 border-b border-gray-800 cursor-pointer hover:bg-gray-800 ${
+                      selectedChat === chat.id ? 'bg-gray-800 border-red-600' : ''
                     }`}
                   >
                     <div className="flex items-center space-x-3">
                       <div className="relative">
-                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                          <span className="text-blue-600 font-medium">
+                        <div className="w-12 h-12 bg-red-600/20 rounded-full flex items-center justify-center border border-red-600/30">
+                          <span className="text-red-500 font-medium">
                             {chat.name.charAt(0)}
                           </span>
                         </div>
@@ -194,21 +194,21 @@ export default function Messages() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
-                          <h3 className="text-sm font-medium text-gray-900 truncate">
+                          <h3 className="text-sm font-medium text-white truncate">
                             {chat.name}
                           </h3>
-                          <span className="text-xs text-gray-800">{chat.time}</span>
+                          <span className="text-xs text-gray-400">{chat.time}</span>
                         </div>
                         <div className="flex items-center justify-between mt-1">
-                          <p className="text-sm text-gray-800 font-medium truncate">
+                          <p className="text-sm text-gray-400 font-medium truncate">
                             {chat.isTyping ? (
-                              <span className="text-blue-600 font-medium">يكتب...</span>
+                              <span className="text-red-500 font-medium">يكتب...</span>
                             ) : (
                               chat.lastMessage
                             )}
                           </p>
                           {chat.unread > 0 && (
-                            <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-blue-600 rounded-full">
+                            <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full">
                               {chat.unread}
                             </span>
                           )}
@@ -225,39 +225,39 @@ export default function Messages() {
               {selectedChatData && (
                 <>
                   {/* Chat Header */}
-                  <div className="p-4 border-b border-gray-200 bg-white">
+                  <div className="p-4 border-b border-gray-800 bg-gray-900">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <div className="relative">
-                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                            <span className="text-blue-600 font-medium">
+                          <div className="w-10 h-10 bg-red-600/20 rounded-full flex items-center justify-center border border-red-600/30">
+                            <span className="text-red-500 font-medium">
                               {selectedChatData.name.charAt(0)}
                             </span>
                           </div>
                           {selectedChatData.online && (
-                            <div className="absolute bottom-0 left-0 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
+                            <div className="absolute bottom-0 left-0 w-3 h-3 bg-green-400 rounded-full border-2 border-gray-900"></div>
                           )}
                         </div>
                         <div>
-                          <h3 className="text-sm font-medium text-gray-900">
+                          <h3 className="text-sm font-medium text-white">
                             {selectedChatData.name}
                           </h3>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-gray-400">
                             {selectedChatData.online ? 'متصل الآن' : 'غير متصل'}
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <button className="p-2 text-gray-400 hover:text-gray-600" title="مكالمة صوتية">
+                        <button className="p-2 text-gray-400 hover:text-white" title="مكالمة صوتية">
                           <Phone className="h-5 w-5" />
                         </button>
-                        <button className="p-2 text-gray-400 hover:text-gray-600" title="مكالمة فيديو">
+                        <button className="p-2 text-gray-400 hover:text-white" title="مكالمة فيديو">
                           <Video className="h-5 w-5" />
                         </button>
-                        <button className="p-2 text-gray-400 hover:text-gray-600" title="معلومات">
+                        <button className="p-2 text-gray-400 hover:text-white" title="معلومات">
                           <Info className="h-5 w-5" />
                         </button>
-                        <button className="p-2 text-gray-400 hover:text-gray-600" title="المزيد">
+                        <button className="p-2 text-gray-400 hover:text-white" title="المزيد">
                           <MoreVertical className="h-5 w-5" />
                         </button>
                       </div>
@@ -265,7 +265,7 @@ export default function Messages() {
                   </div>
 
                   {/* Messages */}
-                  <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
+                  <div className="flex-1 overflow-y-auto p-4 bg-black">
                     <div className="space-y-4">
                       {messages.map((message) => (
                         <div
@@ -277,14 +277,14 @@ export default function Messages() {
                           <div
                             className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
                               message.senderId === currentUser
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-white text-gray-900 shadow'
+                                ? 'bg-red-600 text-white'
+                                : 'bg-gray-900 text-white border border-gray-800'
                             }`}
                           >
                             <p className="text-sm">{message.content}</p>
                             <div
                               className={`flex items-center justify-end mt-1 space-x-1 ${
-                                message.senderId === currentUser ? 'text-blue-100' : 'text-gray-500'
+                                message.senderId === currentUser ? 'text-red-100' : 'text-gray-500'
                               }`}
                             >
                               <span className="text-xs">{message.time}</span>
@@ -297,12 +297,12 @@ export default function Messages() {
                   </div>
 
                   {/* Message Input */}
-                  <div className="p-4 border-t border-gray-200 bg-white">
+                  <div className="p-4 border-t border-gray-800 bg-gray-900">
                     <div className="flex items-center space-x-3">
-                      <button className="p-2 text-gray-400 hover:text-gray-600" title="إرفاق ملف">
+                      <button className="p-2 text-gray-400 hover:text-white" title="إرفاق ملف">
                         <Paperclip className="h-5 w-5" />
                       </button>
-                      <button className="p-2 text-gray-400 hover:text-gray-600" title="إرسال صورة">
+                      <button className="p-2 text-gray-400 hover:text-white" title="إرسال صورة">
                         <Image className="h-5 w-5" />
                       </button>
                       <div className="flex-1 relative">
@@ -312,11 +312,11 @@ export default function Messages() {
                           onChange={(e) => setNewMessage(e.target.value)}
                           onKeyPress={handleKeyPress}
                           placeholder="اكتب رسالتك..."
-                          className="w-full px-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent pl-12"
+                          className="w-full px-4 py-2 border border-gray-700 bg-black text-white rounded-full focus:ring-2 focus:ring-red-600 focus:border-transparent pl-12"
                         />
                         <button 
                           title="إضافة رمز تعبيري"
-                          className="absolute left-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600"
+                          className="absolute left-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-white"
                         >
                           <Smile className="h-5 w-5" />
                         </button>
@@ -326,8 +326,8 @@ export default function Messages() {
                         disabled={!newMessage.trim()}
                         className={`p-2 rounded-full ${
                           newMessage.trim()
-                            ? 'bg-blue-600 text-white hover:bg-blue-700'
-                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            ? 'bg-red-600 text-white hover:bg-red-700'
+                            : 'bg-gray-800 text-gray-600 cursor-not-allowed'
                         }`}
                       >
                         <Send className="h-5 w-5" />

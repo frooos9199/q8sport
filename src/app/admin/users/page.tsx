@@ -369,19 +369,19 @@ export default function UserManagement() {
 
   return (
     <AuthWrapper requireAuth={true} requireAdmin={true}>
-      <div className="min-h-screen bg-gray-100">
-        <header className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-700 text-white shadow-xl">
+      <div className="min-h-screen bg-black">
+        <header className="bg-gradient-to-r from-black via-gray-900 to-black border-b border-red-600">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center py-6">
               <div className="flex items-center">
-                <Link href="/admin" className="flex items-center text-white/80 hover:text-white ml-4 transition-colors">
+                <Link href="/admin" className="flex items-center text-gray-400 hover:text-white ml-4 transition-colors">
                   ← العودة للوحة الإدارة
                 </Link>
                 <h1 className="text-2xl font-bold text-white mr-4">إدارة المستخدمين</h1>
               </div>
               <button
                 onClick={() => openModal('add')}
-                className="flex items-center px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors backdrop-blur-sm"
+                className="flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
               >
                 👤 إضافة مستخدم جديد
               </button>
@@ -391,7 +391,7 @@ export default function UserManagement() {
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* البحث والفلاتر */}
-          <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <div className="bg-gray-900 rounded-lg border border-gray-800 p-6 mb-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {/* البحث */}
               <div className="relative">
@@ -400,7 +400,7 @@ export default function UserManagement() {
                   placeholder="البحث بالاسم أو البريد الإلكتروني..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pr-10 pl-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pr-10 pl-3 py-2 bg-black text-white border border-gray-700 rounded-lg focus:ring-red-600 focus:border-red-600"
                 />
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
                   🔍
@@ -411,7 +411,7 @@ export default function UserManagement() {
               <select
                 value={filterRole}
                 onChange={(e) => setFilterRole(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 bg-black text-white border border-gray-700 rounded-lg focus:ring-red-600 focus:border-red-600"
                 title="فلترة حسب الدور"
               >
                 <option value="">جميع الأدوار</option>
@@ -425,7 +425,7 @@ export default function UserManagement() {
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 bg-black text-white border border-gray-700 rounded-lg focus:ring-red-600 focus:border-red-600"
                 title="فلترة حسب الحالة"
               >
                 <option value="">جميع الحالات</option>
@@ -435,8 +435,8 @@ export default function UserManagement() {
               </select>
 
               {/* عدد النتائج */}
-              <div className="flex items-center justify-center bg-gray-50 rounded-lg px-3 py-2">
-                <span className="text-gray-700 font-medium">
+              <div className="flex items-center justify-center bg-gray-800 rounded-lg px-3 py-2">
+                <span className="text-white font-medium">
                   {filteredUsers.length} من {users.length} مستخدم
                 </span>
               </div>
@@ -444,45 +444,45 @@ export default function UserManagement() {
           </div>
 
           {/* جدول المستخدمين */}
-          <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="bg-gray-900 rounded-lg border border-gray-800 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50">
+                <thead className="bg-gray-800 border-b border-gray-700">
                   <tr>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">المستخدم</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الدور</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الحالة</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">تاريخ الانضمام</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">آخر دخول</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">المنتجات</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الطلبات</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">الإجراءات</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase">المستخدم</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase">الدور</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase">الحالة</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase">تاريخ الانضمام</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase">آخر دخول</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase">المنتجات</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase">الطلبات</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase">الإجراءات</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-800">
                   {filteredUsers.map((user) => (
-                    <tr key={user.id} className="hover:bg-gray-50">
+                    <tr key={user.id} className="hover:bg-gray-800 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center">
-                          <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center ml-3">
-                            <span className="text-blue-600 font-semibold">
+                          <div className="h-10 w-10 bg-red-900 rounded-full flex items-center justify-center ml-3">
+                            <span className="text-red-400 font-semibold">
                               {user.name.charAt(0)}
                             </span>
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                            <p className="text-sm text-gray-500">{user.email}</p>
+                            <p className="text-sm font-medium text-white">{user.name}</p>
+                            <p className="text-sm text-gray-400">{user.email}</p>
                             {user.phone && (
-                              <p className="text-xs text-gray-400">{user.phone}</p>
+                              <p className="text-xs text-gray-500">{user.phone}</p>
                             )}
                             {user.whatsapp && user.whatsapp !== user.phone && (
-                              <p className="text-xs text-gray-400">واتساب: {user.whatsapp}</p>
+                              <p className="text-xs text-gray-500">واتساب: {user.whatsapp}</p>
                             )}
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-900 text-red-300">
                           {getRoleText(user.role)}
                         </span>
                       </td>
@@ -491,37 +491,44 @@ export default function UserManagement() {
                           {getStatusText(user.status)}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
+                      <td className="px-6 py-4 text-sm text-white">
                         {formatDateShort(user.createdAt)}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
+                      <td className="px-6 py-4 text-sm text-gray-400">
                         {user.lastLoginAt ? formatDateShort(user.lastLoginAt) : 'لم يسجل دخول'}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
+                      <td className="px-6 py-4 text-sm text-white">
                         {user.productCount}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
+                      <td className="px-6 py-4 text-sm text-white">
                         {user.orderCount}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => openModal('view', user)}
-                            className="text-blue-600 hover:text-blue-900 text-lg"
-                            title="عرض التفاصيل"
+                          <Link
+                            href={`/admin/users/${user.id}`}
+                            className="text-red-400 hover:text-red-300 text-lg cursor-pointer"
+                            title="عرض التفاصيل الكاملة"
                           >
                             👁️
-                          </button>
+                          </Link>
+                          <Link
+                            href={`/admin/users/${user.id}/products`}
+                            className="text-blue-400 hover:text-blue-300 text-lg cursor-pointer"
+                            title="عرض منتجات المستخدم"
+                          >
+                            📦
+                          </Link>
                           <button
                             onClick={() => openModal('edit', user)}
-                            className="text-green-600 hover:text-green-900 text-lg"
+                            className="text-green-400 hover:text-green-300 text-lg cursor-pointer"
                             title="تعديل"
                           >
                             ✏️
                           </button>
                           <button
                             onClick={() => openModal('password', user)}
-                            className="text-purple-600 hover:text-purple-900 text-lg"
+                            className="text-purple-400 hover:text-purple-300 text-lg"
                             title="تغيير كلمة المرور"
                           >
                             🔒
@@ -530,14 +537,14 @@ export default function UserManagement() {
                             <>
                               <button
                                 onClick={() => handleChangeStatus(user, 'SUSPENDED')}
-                                className="text-yellow-600 hover:text-yellow-900 text-lg"
+                                className="text-yellow-400 hover:text-yellow-300 text-lg"
                                 title="إيقاف مؤقت"
                               >
                                 ⏸️
                               </button>
                               <button
                                 onClick={() => handleChangeStatus(user, 'BANNED')}
-                                className="text-red-600 hover:text-red-900 text-lg"
+                                className="text-red-400 hover:text-red-300 text-lg"
                                 title="حظر"
                               >
                                 ⚠️
@@ -580,9 +587,9 @@ export default function UserManagement() {
         {/* Modal */}
         {showModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold text-gray-900">
+                <h3 className="text-lg font-bold text-white">
                   {modalType === 'add' && 'إضافة مستخدم جديد'}
                   {modalType === 'edit' && 'تعديل المستخدم'}
                   {modalType === 'view' && 'تفاصيل المستخدم'}
@@ -591,7 +598,7 @@ export default function UserManagement() {
                 </h3>
                 <button
                   onClick={closeModal}
-                  className="text-gray-400 hover:text-gray-600 text-xl"
+                  className="text-gray-400 hover:text-white text-xl"
                 >
                   ✕
                 </button>
@@ -602,42 +609,42 @@ export default function UserManagement() {
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">الاسم *</label>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">الاسم *</label>
                       <input
                         type="text"
                         value={userForm.name}
                         onChange={(e) => setUserForm(prev => ({ ...prev, name: e.target.value }))}
-                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full p-2 bg-black text-white border border-gray-700 rounded-lg focus:ring-red-600 focus:border-red-600"
                         placeholder="اسم المستخدم"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">البريد الإلكتروني *</label>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">البريد الإلكتروني *</label>
                       <input
                         type="email"
                         value={userForm.email}
                         onChange={(e) => setUserForm(prev => ({ ...prev, email: e.target.value }))}
-                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full p-2 bg-black text-white border border-gray-700 rounded-lg focus:ring-red-600 focus:border-red-600"
                         placeholder="example@domain.com"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">رقم الهاتف</label>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">رقم الهاتف</label>
                       <input
                         type="tel"
                         value={userForm.phone}
                         onChange={(e) => setUserForm(prev => ({ ...prev, phone: e.target.value }))}
-                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full p-2 bg-black text-white border border-gray-700 rounded-lg focus:ring-red-600 focus:border-red-600"
                         placeholder="96565000000"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">واتساب</label>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">واتساب</label>
                       <input
                         type="tel"
                         value={userForm.whatsapp}
                         onChange={(e) => setUserForm(prev => ({ ...prev, whatsapp: e.target.value }))}
-                        className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full p-2 bg-black text-white border border-gray-700 rounded-lg focus:ring-red-600 focus:border-red-600"
                         placeholder="96565000000"
                       />
                     </div>

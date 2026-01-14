@@ -15,7 +15,7 @@ model User {
   email     String    @unique
   password  String
   name      String
-  phone     String?
+  phone     String?   @unique  // جعل رقم الهاتف فريد
   whatsapp  String?
   avatar    String?
   facebookId String?  @unique  // Facebook User ID
@@ -64,14 +64,20 @@ model Product {
   category    String        @default("قطع غيار")
   
   // معلومات السيارة (للسيارات الكاملة)
-  carBrand    String?       // ماركة السيارة
-  carModel    String?       // موديل السيارة
+  carBrand    String?       // ماركة السيارة (Ford, Chevrolet, Toyota)
+  carModel    String?       // موديل السيارة (Mustang, F-150, Raptor, Corvette, Camaro, Supra)
   carYear     Int?          // سنة الصنع
   kilometers  Int?          // الكيلومترات
   transmission String?      // ناقل الحركة (أوتوماتيك/يدوي)
   fuelType    String?       // نوع الوقود
   color       String?       // اللون
   engineSize  String?       // حجم المحرك
+  
+  // معلومات الاتصال (بدون اسم البائع)
+  contactPhone    String?   // رقم الهاتف للاتصال
+  contactWhatsapp String?   // رقم الواتساب
+  preferredContact String?  // طرق التواصل المفضلة (JSON)
+  showSellerName  Boolean   @default(false) // إخفاء اسم البائع
   
   images      String        // JSON array of image URLs/data
   status      ProductStatus @default(ACTIVE)

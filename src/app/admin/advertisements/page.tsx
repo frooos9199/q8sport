@@ -347,10 +347,10 @@ export default function AdvertisementsPage() {
   if (loading) {
     return (
       <AuthWrapper>
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="min-h-screen bg-black flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-800 font-medium">جاري تحميل الإعلانات...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+            <p className="text-white font-medium">جاري تحميل الإعلانات...</p>
           </div>
         </div>
       </AuthWrapper>
@@ -359,23 +359,23 @@ export default function AdvertisementsPage() {
 
   return (
     <AuthWrapper>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-black">
         {/* Header */}
-        <header className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-700 text-white shadow-xl">
+        <header className="bg-gradient-to-r from-black via-gray-900 to-black border-b border-red-600">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center py-6">
               <div className="flex items-center">
-                <Link href="/admin" className="flex items-center text-white/80 hover:text-white ml-4 transition-colors">
+                <Link href="/admin" className="flex items-center text-gray-400 hover:text-white ml-4 transition-colors">
                   <ArrowLeft className="h-5 w-5 ml-1" />
                   العودة إلى لوحة التحكم
                 </Link>
-                <div className="h-6 border-l border-white/30 ml-4"></div>
-                <h1 className="text-2xl font-bold text-white">Q8 MAZAD SPORT - إدارة الإعلانات</h1>
+                <div className="h-6 border-l border-gray-700 ml-4"></div>
+                <h1 className="text-2xl font-bold text-white">Q8 Motors - إدارة الإعلانات</h1>
               </div>
               
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg flex items-center transition-colors backdrop-blur-sm"
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors"
                 title="إضافة إعلان جديد"
               >
                 <Plus className="h-5 w-5 ml-2" />
@@ -389,34 +389,34 @@ export default function AdvertisementsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
               <div className="flex items-center">
-                <ImageIcon className="h-12 w-12 text-blue-600" />
+                <ImageIcon className="h-12 w-12 text-red-600" />
                 <div className="mr-4">
-                  <p className="text-sm text-gray-800 font-medium">إجمالي الإعلانات</p>
-                  <p className="text-2xl font-bold text-gray-900">{advertisements.length}</p>
+                  <p className="text-sm text-gray-400 font-medium">إجمالي الإعلانات</p>
+                  <p className="text-2xl font-bold text-white">{advertisements.length}</p>
                 </div>
               </div>
             </div>
             
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
               <div className="flex items-center">
-                <Eye className="h-12 w-12 text-green-600" />
+                <Eye className="h-12 w-12 text-green-500" />
                 <div className="mr-4">
-                  <p className="text-sm text-gray-800 font-medium">الإعلانات النشطة</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-sm text-gray-400 font-medium">الإعلانات النشطة</p>
+                  <p className="text-2xl font-bold text-white">
                     {advertisements.filter(ad => ad.isActive).length}
                   </p>
                 </div>
               </div>
             </div>
             
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
               <div className="flex items-center">
-                <AlertCircle className="h-12 w-12 text-red-600" />
+                <AlertCircle className="h-12 w-12 text-red-500" />
                 <div className="mr-4">
-                  <p className="text-sm text-gray-800 font-medium">الإعلانات المعطلة</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-sm text-gray-400 font-medium">الإعلانات المعطلة</p>
+                  <p className="text-2xl font-bold text-white">
                     {advertisements.filter(ad => !ad.isActive).length}
                   </p>
                 </div>
@@ -425,28 +425,28 @@ export default function AdvertisementsPage() {
           </div>
 
           {/* Advertisements List */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">قائمة الإعلانات</h2>
+          <div className="bg-gray-900 border border-gray-800 rounded-lg">
+            <div className="p-6 border-b border-gray-800">
+              <h2 className="text-lg font-medium text-white">قائمة الإعلانات</h2>
             </div>
             
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50">
+                <thead className="bg-gray-800 border-b border-gray-700">
                   <tr>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-800 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
                       الإعلان
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-800 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
                       الموضع
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-800 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
                       الحالة
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-800 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
                       تاريخ الإنشاء
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-800 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
                       الإجراءات
                     </th>
                   </tr>
@@ -470,14 +470,14 @@ export default function AdvertisementsPage() {
                             )}
                           </div>
                           <div>
-                            <h3 className="text-sm font-medium text-gray-900">{ad.title}</h3>
-                            <p className="text-sm text-gray-600">{ad.description}</p>
+                            <h3 className="text-sm font-medium text-white">{ad.title}</h3>
+                            <p className="text-sm text-gray-400">{ad.description}</p>
                             {ad.link && (
                               <a 
                                 href={ad.link} 
                                 target="_blank" 
                                 rel="noopener noreferrer"
-                                className="text-xs text-blue-600 hover:text-blue-500"
+                                className="text-xs text-red-400 hover:text-red-300"
                               >
                                 عرض الرابط
                               </a>
@@ -485,8 +485,8 @@ export default function AdvertisementsPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
-                        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
+                        <span className="px-2 py-1 bg-red-900 text-red-300 rounded-full text-xs">
                           {getPositionText(ad.position)}
                         </span>
                       </td>
@@ -495,22 +495,22 @@ export default function AdvertisementsPage() {
                           onClick={() => toggleActive(ad.id)}
                           className={`px-2 py-1 rounded-full text-xs font-medium ${
                             ad.isActive 
-                              ? 'bg-green-100 text-green-800 hover:bg-green-200' 
-                              : 'bg-red-100 text-red-800 hover:bg-red-200'
+                              ? 'bg-green-900 text-green-300 hover:bg-green-800' 
+                              : 'bg-red-900 text-red-300 hover:bg-red-800'
                           }`}
                           title={ad.isActive ? 'معطل الإعلان' : 'تفعيل الإعلان'}
                         >
                           {ad.isActive ? 'نشط' : 'معطل'}
                         </button>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
                         {ad.createdAt}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
                         <div className="flex space-x-2">
                           <button
                             onClick={() => handleDelete(ad.id)}
-                            className="text-red-600 hover:text-red-900"
+                            className="text-red-400 hover:text-red-300"
                             title="حذف الإعلان"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -542,16 +542,16 @@ export default function AdvertisementsPage() {
 
         {/* Create Modal */}
         {showCreateModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 max-h-screen overflow-y-auto">
+          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 w-full max-w-md mx-4 max-h-screen overflow-y-auto">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-medium text-gray-900">إضافة إعلان جديد</h3>
+                <h3 className="text-lg font-medium text-white">إضافة إعلان جديد</h3>
                 <button
                   onClick={() => {
                     setShowCreateModal(false);
                     resetForm();
                   }}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-white"
                   title="إغلاق"
                 >
                   <X className="h-5 w-5" />
@@ -560,7 +560,7 @@ export default function AdvertisementsPage() {
 
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="create-title" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="create-title" className="block text-sm font-medium text-gray-300 mb-1">
                     عنوان الإعلان *
                   </label>
                   <input
@@ -568,16 +568,16 @@ export default function AdvertisementsPage() {
                     type="text"
                     value={formData.title}
                     onChange={(e) => setFormData({...formData, title: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                    className="w-full px-3 py-2 bg-black text-white border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600"
                     placeholder="مثال: خصم خاص على قطع غيار فورد موستنق"
                   />
-                  <p className="text-xs text-gray-600 mt-1">
+                  <p className="text-xs text-gray-400 mt-1">
                     💡 اكتب عنواناً قصيراً وجذاباً (يفضل أقل من 50 حرف)
                   </p>
                 </div>
 
                 <div>
-                  <label htmlFor="create-description" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="create-description" className="block text-sm font-medium text-gray-300 mb-1">
                     وصف الإعلان *
                   </label>
                   <textarea
@@ -585,19 +585,19 @@ export default function AdvertisementsPage() {
                     value={formData.description}
                     onChange={(e) => setFormData({...formData, description: e.target.value})}
                     rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                    className="w-full px-3 py-2 bg-black text-white border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600"
                     placeholder="اكتب وصفاً واضحاً ومفصلاً للإعلان... مثال: خصم 25% على جميع قطع غيار فورد الأصلية لفترة محدودة"
                   />
-                  <p className="text-xs text-gray-600 mt-1">
+                  <p className="text-xs text-gray-400 mt-1">
                     💡 اكتب وصفاً جذاباً يشجع المستخدمين على النقر على الإعلان (10 أحرف على الأقل)
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
                     صورة الإعلان *
                   </label>
-                  <div className="text-sm text-blue-700 mb-3 bg-blue-50 p-3 rounded-lg border border-blue-200 font-medium">
+                  <div className="text-sm text-red-400 mb-3 bg-red-900/20 p-3 rounded-lg border border-red-800">
                     ✨ <strong>العلامة المائية التلقائية:</strong> سيتم إضافة شعار "Q8 MAZAD SPORT" مع خلفية مائية على جميع الصور لحمايتها
                   </div>
                   
@@ -667,20 +667,20 @@ export default function AdvertisementsPage() {
                     
                     {uploadProgress > 0 && uploadProgress < 100 && (
                       <div className="mt-4">
-                        <div className="bg-gray-200 rounded-full h-2">
+                        <div className="bg-gray-700 rounded-full h-2">
                           <div 
-                            className={`bg-blue-600 h-2 rounded-full transition-all duration-300`}
+                            className={`bg-red-600 h-2 rounded-full transition-all duration-300`}
                             style={{width: `${uploadProgress}%`}}
                           ></div>
                         </div>
-                        <p className="text-sm text-gray-600 mt-1">جاري الرفع... {uploadProgress}%</p>
+                        <p className="text-sm text-gray-400 mt-1">جاري الرفع... {uploadProgress}%</p>
                       </div>
                     )}
                   </div>
                 </div>
 
                 <div>
-                  <label htmlFor="create-link" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="create-link" className="block text-sm font-medium text-gray-300 mb-1">
                     رابط الإعلان (اختياري)
                   </label>
                   <input
@@ -688,28 +688,28 @@ export default function AdvertisementsPage() {
                     type="url"
                     value={formData.link}
                     onChange={(e) => setFormData({...formData, link: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                    className="w-full px-3 py-2 bg-black text-white border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600"
                     placeholder="https://shop.example.com/ford-parts"
                   />
-                  <p className="text-xs text-gray-600 mt-1">
+                  <p className="text-xs text-gray-400 mt-1">
                     🔗 الرابط الذي سيتم فتحه عند النقر على الإعلان (يُفتح في نافذة جديدة)
                   </p>
                 </div>
 
                 <div>
-                  <label htmlFor="create-position" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="create-position" className="block text-sm font-medium text-gray-300 mb-1">
                     موضع الإعلان *
                   </label>
                   <select
                     id="create-position"
                     value={formData.position}
                     onChange={(e) => setFormData({...formData, position: e.target.value as Advertisement['position']})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 font-medium"
+                    className="w-full px-3 py-2 bg-black text-white border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-red-600"
                   >
                     <option value="header">🔝 أعلى الصفحة (الأكثر ظهوراً)</option>
                     <option value="between-listings">📋 بين القوائم (ظهور متوسط)</option>
                   </select>
-                  <p className="text-xs text-gray-600 mt-1">
+                  <p className="text-xs text-gray-400 mt-1">
                     💡 اختر "أعلى الصفحة" للحصول على أقصى مشاهدة للإعلان
                   </p>
                 </div>
@@ -720,9 +720,9 @@ export default function AdvertisementsPage() {
                     type="checkbox"
                     checked={formData.isActive}
                     onChange={(e) => setFormData({...formData, isActive: e.target.checked})}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-700 rounded bg-black"
                   />
-                  <label htmlFor="create-is-active" className="mr-2 block text-sm text-gray-900">
+                  <label htmlFor="create-is-active" className="mr-2 block text-sm text-white">
                     تفعيل الإعلان
                   </label>
                 </div>
@@ -734,14 +734,14 @@ export default function AdvertisementsPage() {
                     setShowCreateModal(false);
                     resetForm();
                   }}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-md"
+                  className="px-4 py-2 text-sm font-medium text-white bg-gray-800 hover:bg-gray-700 rounded-md"
                 >
                   إلغاء
                 </button>
                 <button
                   onClick={handleCreate}
                   disabled={!formData.title || !formData.description || !formData.imageUrl}
-                  className="px-6 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed rounded-md flex items-center"
+                  className="px-6 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-md flex items-center"
                   title={!formData.title || !formData.description || !formData.imageUrl ? 'يرجى ملء العنوان والوصف ورفع صورة' : 'حفظ الإعلان الجديد'}
                 >
                   <Save className="h-4 w-4 ml-2" />
