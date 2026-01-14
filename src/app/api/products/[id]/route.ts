@@ -66,7 +66,15 @@ export const PATCH = requireAuth(async (
     if (body.title) updateData.title = body.title;
     if (body.description !== undefined) updateData.description = body.description;
     if (body.price) updateData.price = parseFloat(body.price);
-    if (body.type) updateData.productType = body.type;
+    if (body.type) {
+      // Convert type to productType enum
+      const typeMap: { [key: string]: string } = {
+        'car': 'CAR',
+        'parts': 'PARTS',
+        'accessories': 'ACCESSORIES'
+      };
+      updateData.productType = typeMap[body.type] || body.type.toUpperCase();
+    }
     if (body.category) updateData.category = body.category;
     if (body.brand !== undefined) updateData.carBrand = body.brand;
     if (body.model !== undefined) updateData.carModel = body.model;
@@ -75,7 +83,15 @@ export const PATCH = requireAuth(async (
     if (body.partCondition) updateData.condition = body.partCondition;
     if (body.phone !== undefined) updateData.contactPhone = body.phone;
     if (body.location !== undefined) updateData.location = body.location;
-    if (body.status) updateData.status = body.status;
+    if (body.status) {
+      // Convert status to enum
+      const statusMap: { [key: string]: string } = {
+        'active': 'ACTIVE',
+        'sold': 'SOLD',
+        'pending': 'PENDING'
+      };
+      updateData.status = statusMap[body.status.toLowerCase()] || body.status.toUpperCase();
+    }
     if (body.images) updateData.images = body.images;
 
     const updatedProduct = await prisma.product.update({
