@@ -48,6 +48,7 @@ model User {
   sentMessages Message[] @relation("SentMessages")
   receivedMessages Message[] @relation("ReceivedMessages")
   notifications Notification[]
+  favorites Favorite[]
   
   @@map("users")
 }
@@ -92,6 +93,7 @@ model Product {
   // Relations
   userId      String
   user        User          @relation(fields: [userId], references: [id])
+  favorites   Favorite[]
   
   @@map("products")
 }
@@ -292,6 +294,20 @@ enum UserStatus {
   INACTIVE
   SUSPENDED
   BANNED
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, productId])
+  @@index([userId])
+  @@index([productId])
 }
 
 enum ProductStatus {
