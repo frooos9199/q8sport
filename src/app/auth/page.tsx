@@ -430,15 +430,6 @@ export default function AuthPage() {
               </div>
             )}
 
-            {/* Admin demo credentials */}
-            {isLogin && (
-              <div className="bg-gray-800 border border-gray-700 rounded-lg p-3">
-                <p className="text-red-400 text-sm font-medium mb-1">🔑 للدخول كأدمن:</p>
-                <p className="text-gray-300 text-xs">البريد: summit_kw@hotmail.com</p>
-                <p className="text-gray-300 text-xs">كلمة المرور: 123123</p>
-              </div>
-            )}
-
             {/* Submit button */}
             <div>
               <button
