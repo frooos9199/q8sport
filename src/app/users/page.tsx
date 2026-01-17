@@ -212,7 +212,7 @@ export default function UsersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen">
       {/* Header */}
       <header className="bg-gradient-to-r from-black via-gray-900 to-black border-b border-red-600 shadow-xl sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">

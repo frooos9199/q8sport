@@ -166,7 +166,7 @@ export default function AddListingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen">
       <header className="bg-gradient-to-r from-black via-gray-900 to-black border-b border-red-600">
         <div className="container mx-auto px-4 py-6">
           <div className="flex justify-between items-center">

@@ -130,7 +130,7 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <AuthWrapper requireAuth={true} requireAdmin={true}>
-        <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
             <p className="text-white">جاري تحميل لوحة الإدارة...</p>
@@ -142,7 +142,7 @@ export default function AdminDashboard() {
 
   return (
     <AuthWrapper requireAuth={true} requireAdmin={true}>
-      <div className="min-h-screen bg-black">
+      <div className="min-h-screen">
         {/* Header */}
         <div className="bg-gradient-to-r from-black via-gray-900 to-black border-b border-red-600">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

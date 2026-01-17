@@ -28,7 +28,7 @@ export default function AuctionsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen">
       {/* Header */}
       <header className="bg-gradient-to-r from-black via-gray-900 to-black border-b border-red-600 text-white shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

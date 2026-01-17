@@ -605,7 +605,7 @@ export default function ProfilePage() {
 
   return (
     <AuthWrapper requireAuth={true}>
-      <div className="min-h-screen bg-black text-right" dir="rtl">
+      <div className="min-h-screen text-right" dir="rtl">
       <div className="max-w-4xl mx-auto py-8 px-4">
         {/* Header */}
         <div className="bg-gray-900 rounded-lg border border-gray-800 p-6 mb-6">

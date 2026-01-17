@@ -115,7 +115,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen">
       {/* Header */}
       <header className="bg-gradient-to-r from-black via-gray-900 to-black border-b border-red-600 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-6">
