@@ -4,9 +4,9 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 // GET - جلب منتجات مستخدم محدد
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const userId = params.id
+    const { id: userId } = await params
     
     console.log('Fetching products for userId:', userId)
     
