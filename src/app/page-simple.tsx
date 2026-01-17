@@ -13,7 +13,7 @@ export default function Home() {
             {/* Logo */}
             <div className="flex items-center">
               <Car className="h-8 w-8 text-blue-600 ml-2" />
-              <h1 className="text-2xl font-bold text-gray-900">Q8 MAZAD SPORT</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Q8 Sport Car</h1>
             </div>
             
             {/* Search */}
@@ -41,7 +41,7 @@ export default function Home() {
       <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl font-bold mb-6">
-            Q8 MAZAD SPORT
+            Q8 Sport Car
           </h2>
           <p className="text-xl mb-8 opacity-90">
             مزادات قطع غيار السيارات الرياضية الأمريكية في الكويت
@@ -91,7 +91,7 @@ export default function Home() {
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center mb-4">
                 <Car className="h-8 w-8 text-blue-400 ml-2" />
-                <h3 className="text-2xl font-bold">Q8 MAZAD SPORT</h3>
+                <h3 className="text-2xl font-bold">Q8 Sport Car</h3>
               </div>
               <p className="text-gray-300">
                 منصة مزادات قطع غيار السيارات الرياضية الأمريكية في الكويت
@@ -110,7 +110,7 @@ export default function Home() {
             <div>
               <h4 className="font-bold mb-4">اتصل بنا</h4>
               <ul className="space-y-2 text-gray-300">
-                <li>📧 info@q8mazadsport.com</li>
+                <li>📧 info@q8sportcar.com</li>
                 <li>📱 واتساب: +965 1234 5678</li>
                 <li>📍 الكويت</li>
               </ul>
@@ -118,7 +118,7 @@ export default function Home() {
           </div>
           
           <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-300">
-            <p>&copy; 2025 Q8 MAZAD SPORT. جميع الحقوق محفوظة.</p>
+            <p>&copy; 2025 Q8 Sport Car. جميع الحقوق محفوظة.</p>
           </div>
         </div>
       </footer>

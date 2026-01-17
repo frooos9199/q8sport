@@ -309,7 +309,7 @@ export default function ProfilePage() {
       </head>
       <body>
         <div class="invoice-header">
-          <div class="invoice-title">Q8 MAZAD SPORT</div>
+          <div class="invoice-title">Q8 Sport Car</div>
           <div class="invoice-number">فاتورة رقم: ${data.invoiceNumber}</div>
           <div>تاريخ: ${data.date}</div>
         </div>
@@ -349,7 +349,7 @@ export default function ProfilePage() {
         </div>
 
         <div class="footer">
-          <p>شكراً لك على التعامل مع Q8 MAZAD SPORT</p>
+          <p>شكراً لك على التعامل مع Q8 Sport Car</p>
           <p>هذه فاتورة رسمية ولها قيمة قانونية</p>
           <button class="no-print" onclick="window.print()" style="padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 20px;">طباعة الفاتورة</button>
         </div>

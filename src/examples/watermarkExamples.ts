@@ -8,7 +8,7 @@ import { addWatermarkToImage, addWatermarkToImages } from '@/utils/imageWatermar
 async function handleSingleImageUpload(file: File) {
   try {
     const watermarkedImage = await addWatermarkToImage(file, {
-      text: 'Q8 MAZAD SPORT',
+      text: 'Q8 Sport Car',
       fontSize: 24,
       opacity: 0.8,
       position: 'bottom-right',
@@ -33,7 +33,7 @@ async function handleMultipleImageUpload(files: FileList) {
   
   try {
     const watermarkedImages = await addWatermarkToImages(imageFiles, {
-      text: 'Q8 MAZAD SPORT',
+      text: 'Q8 Sport Car',
       fontSize: 28,
       opacity: 0.7,
       position: 'bottom-right',
@@ -52,7 +52,7 @@ async function handleMultipleImageUpload(files: FileList) {
 // مثال 3: إعدادات مخصصة للعلامة المائية حسب نوع الصورة
 function getWatermarkSettings(imageType: string, fileSize: number) {
   const baseSettings = {
-    text: 'Q8 MAZAD SPORT',
+    text: 'Q8 Sport Car',
     opacity: 0.8,
     color: 'rgba(255, 255, 255, 0.9)'
   };
@@ -110,7 +110,7 @@ function createImageUploadForm() {
 export const imageContexts = {
   // للإعلانات
   advertisements: {
-    text: 'Q8 MAZAD SPORT',
+    text: 'Q8 Sport Car',
     fontSize: 28,
     opacity: 0.8,
     position: 'bottom-right' as const,
@@ -121,7 +121,7 @@ export const imageContexts = {
   
   // لصور قطع الغيار
   carParts: {
-    text: 'Q8 MAZAD SPORT',
+    text: 'Q8 Sport Car',
     fontSize: 24,
     opacity: 0.7,
     position: 'bottom-left' as const,
@@ -132,7 +132,7 @@ export const imageContexts = {
   
   // لصور الملف الشخصي
   profile: {
-    text: 'Q8 MAZAD SPORT',
+    text: 'Q8 Sport Car',
     fontSize: 20,
     opacity: 0.6,
     position: 'center' as const,

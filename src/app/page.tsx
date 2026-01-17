@@ -121,7 +121,7 @@ export default function Home() {
         <div className="container mx-auto px-4 py-6">
           <div className="flex justify-between items-center">
             <h1 className="text-4xl font-bold text-white">
-              Q8 <span className="text-red-600">Motors</span>
+              Q8 <span className="text-red-600">Sport Car</span>
             </h1>
             <nav className="flex gap-6">
               {user ? (

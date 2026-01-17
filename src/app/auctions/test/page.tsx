@@ -6,7 +6,7 @@ export default function TestAuctionsPage() {
         <p className="text-xl text-gray-700 mb-6">هذه رسالة اختبار للتأكد من عمل الصفحة</p>
         
         <div className="bg-white rounded-lg shadow-lg p-8 max-w-md mx-auto">
-          <h2 className="text-2xl font-bold mb-4">مزادات Q8Sport</h2>
+          <h2 className="text-2xl font-bold mb-4">مزادات Q8 Sport Car</h2>
           <p className="text-gray-600 mb-4">صفحة المزادات الآن نشطة وتعمل بشكل صحيح</p>
           
           <div className="grid grid-cols-1 gap-4">

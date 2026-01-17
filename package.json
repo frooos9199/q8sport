@@ -2,7 +2,7 @@
   "name": "q8sport",
   "version": "1.0.0",
   "private": true,
-  "description": "Q8Sport - Kuwait Sports Auction Platform - مزاد رياضي كويتي",
+  "description": "Q8 Sport Car - Kuwait Sports Car Platform - منصة السيارات الرياضية الكويتية",
   "keywords": [
     "kuwait",
     "sports",
@@ -11,7 +11,7 @@
     "مزاد",
     "رياضي"
   ],
-  "author": "Q8Sport Team",
+  "author": "Q8 Sport Car Team",
   "homepage": "https://www.q8sportcar.com",
   "scripts": {
     "dev": "next dev --turbopack",
