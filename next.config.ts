@@ -13,6 +13,14 @@ const nextConfig: NextConfig = {
         hostname: 'q8sport.tk',
       },
       {
+        protocol: 'https',
+        hostname: 'q8sportcar.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.q8sportcar.com',
+      },
+      {
         protocol: 'http',
         hostname: 'localhost',
       },

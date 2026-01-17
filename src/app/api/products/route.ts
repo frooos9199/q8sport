@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
-import { verifyToken } from '@/lib/auth'
 
 const prisma = new PrismaClient()
 
@@ -34,45 +33,33 @@ export async function GET() {
   }
 }
 
-// POST - إضافة منتج جديد (يتطلب تسجيل دخول)
+// POST - إضافة منتج جديد
 export async function POST(request: NextRequest) {
   try {
-    // التحقق من المصادقة
-    const authHeader = request.headers.get('authorization');
-    console.log('Authorization header:', authHeader?.substring(0, 30) + '...');
-    
-    const authUser = await verifyToken(request);
-    console.log('Auth user result:', authUser ? 'Authenticated' : 'Not authenticated');
-    
-    if (!authUser) {
-      return NextResponse.json({ 
-        error: 'يجب عليك تسجيل الدخول أولاً لإضافة منتج' 
-      }, { status: 401 })
-    }
-    
     const data = await request.json()
     
     const { 
-      title, description, price, condition, category, images,
-      productType, carBrand, carModel, carYear, kilometers, color,
-      contactPhone
+      title, description, price, condition, category, images, userId, status,
+      productType, carBrand, carModel, carYear, kilometers, color
     } = data
     
     // التحقق من البيانات المطلوبة
-    if (!title || !price || !images) {
-      return NextResponse.json({ error: 'العنوان والسعر والصور مطلوبة' }, { status: 400 })
+    if (!title || !description || !price || !images) {
+      return NextResponse.json({ error: 'جميع الحقول مطلوبة' }, { status: 400 })
     }
 
-    // استخدام userId من المصادقة بدلاً من البيانات المرسلة
-    const userId = authUser.userId;
+    // التحقق من وجود userId
+    if (!userId) {
+      return NextResponse.json({ error: 'معرف المستخدم مطلوب' }, { status: 400 })
+    }
 
-    // إنشاء المنتج مع userId من المستخدم المسجل
+    // إنشاء المنتج مع userId صحيح
     const product = await prisma.product.create({
       data: {
         title,
-        description: description || '',
+        description,
         price: parseFloat(price),
-        condition: condition || 'NEW',
+        condition: condition || 'جديد',
         category: category || 'قطع غيار',
         productType: productType || 'PART',
         carBrand,
@@ -80,10 +67,9 @@ export async function POST(request: NextRequest) {
         carYear: carYear ? parseInt(carYear) : null,
         kilometers: kilometers ? parseInt(kilometers) : null,
         color,
-        contactPhone,
         images: typeof images === 'string' ? images : JSON.stringify(images),
         userId: userId,
-        status: 'ACTIVE'
+        status: status || 'ACTIVE'
       }
     })
 

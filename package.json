@@ -12,7 +12,7 @@
     "رياضي"
   ],
   "author": "Q8Sport Team",
-  "homepage": "https://q8sport.tk",
+  "homepage": "https://www.q8sportcar.com",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
