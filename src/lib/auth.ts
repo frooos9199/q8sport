@@ -98,6 +98,36 @@ export function getUserFromToken(request: NextRequest): UserPayload | null {
   }
 }
 
+// دالة للتحقق من token string مباشرة
+export async function verifyTokenString(tokenString: string): Promise<{ userId: string; email: string } | null> {
+  try {
+    console.log('🔐 Verifying token:', tokenString.substring(0, 30) + '...');
+    
+    const secret = process.env.JWT_SECRET || 'your-secret-key';
+    console.log('🔑 Using JWT_SECRET:', secret ? `${secret.substring(0, 20)}...` : 'NOT SET');
+    
+    const decoded = jwt.verify(tokenString, secret) as any;
+    
+    console.log('✅ Token decoded successfully:', {
+      userId: decoded.userId,
+      email: decoded.email
+    });
+    
+    if (!decoded.userId) {
+      console.error('❌ Token missing userId');
+      return null;
+    }
+    
+    return {
+      userId: decoded.userId,
+      email: decoded.email
+    };
+  } catch (error) {
+    console.error('❌ Error verifying token:', error instanceof Error ? error.message : String(error));
+    return null;
+  }
+}
+
 export function hasPermission(user: any, permission: string): boolean {
   if (!user) return false
   

@@ -547,14 +547,28 @@ export default function ProfilePage() {
         body: JSON.stringify(productData)
       })
 
+      console.log('🔍 Submitting product - Auth check:', {
+        hasToken: !!token,
+        hasUser: !!user,
+        isAuthenticated: !!user && !!token,
+        userName: user?.name,
+        tokenPreview: token?.substring(0, 20) + '...'
+      })
+      console.log('📦 Product data:', productData)
+
       setUploadProgress(80)
       
+      console.log('📡 Response status:', response.status, response.statusText)
+      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()))
+      
+      const responseText = await response.text()
+      console.log('📡 Response text:', responseText.substring(0, 200))
+      
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'فشل في حفظ المنتج')
+        throw new Error('فشل في حفظ المنتج: ' + responseText.substring(0, 100))
       }
 
-      const savedProduct = await response.json()
+      const savedProduct = JSON.parse(responseText)
 
       setUserItems(prev => [...prev, {
         id: savedProduct.id,

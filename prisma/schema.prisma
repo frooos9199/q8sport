@@ -48,6 +48,7 @@ model User {
   sentMessages Message[] @relation("SentMessages")
   receivedMessages Message[] @relation("ReceivedMessages")
   notifications Notification[]
+  requests Request[] // المطلوبات التي أضافها المستخدم
   
   @@map("users")
 }
@@ -287,6 +288,33 @@ model Advertisement {
   @@map("advertisements")
 }
 
+model Request {
+  id          String        @id @default(cuid())
+  title       String        // عنوان المطلوب
+  description String        // وصف المطلوب
+  category    String        @default("قطع غيار") // نوع المطلوب
+  carBrand    String?       // ماركة السيارة
+  carModel    String?       // موديل السيارة
+  carYear     Int?          // سنة الصنع
+  partName    String?       // اسم القطعة المطلوبة
+  condition   String?       // الحالة المطلوبة (جديد/مستعمل)
+  budget      Float?        // الميزانية المتوقعة
+  urgent      Boolean       @default(false) // هل الطلب عاجل
+  contactPhone String?      // رقم التواصل
+  contactWhatsapp String?   // واتساب
+  status      RequestStatus @default(ACTIVE)
+  responseCount Int         @default(0) // عدد الردود
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  expiresAt   DateTime?     // تاريخ انتهاء الطلب
+  
+  // Relations
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
+  
+  @@map("requests")
+}
+
 enum UserStatus {
   ACTIVE
   INACTIVE
@@ -342,4 +370,11 @@ enum NotificationType {
   AUCTION_STARTING
   PASSWORD_RESET
   ACCOUNT_VERIFIED
+}
+
+enum RequestStatus {
+  ACTIVE      // نشط
+  FULFILLED   // تم تلبيته
+  EXPIRED     // منتهي
+  CANCELLED   // ملغي
 }
