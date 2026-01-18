@@ -14,13 +14,14 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import { useAuth } from '../../contexts/AuthContext';
 
 const EditProfileScreen = ({ navigation }) => {
-  const { user, token, updateUser } = useAuth();
+  const { user, updateUser, updateProfile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [avatar, setAvatar] = useState(null);
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
     phone: user?.phone || '',
+    whatsapp: user?.whatsapp || user?.phone || '',
     bio: user?.bio || '',
   });
 
@@ -52,17 +53,31 @@ const EditProfileScreen = ({ navigation }) => {
 
     setLoading(true);
     try {
-      // تحديث البيانات محلياً فقط (لأن الـ API غير متوفر)
+      if (!updateProfile) {
+        Alert.alert('خطأ', 'ميزة تحديث الملف الشخصي غير متوفرة');
+        return;
+      }
+
+      const result = await updateProfile({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        whatsapp: formData.whatsapp,
+      });
+
+      if (!result?.success) {
+        Alert.alert('خطأ', result?.error || 'حدث خطأ أثناء التحديث');
+        return;
+      }
+
+      // Keep any local-only fields in sync (e.g., bio)
       if (updateUser) {
-        updateUser({
-          ...user,
-          name: formData.name,
-          phone: formData.phone,
+        await updateUser({
           bio: formData.bio,
         });
       }
 
-      Alert.alert('تم', 'تم تحديث الملف الشخصي محلياً', [
+      Alert.alert('تم', 'تم تحديث الملف الشخصي بنجاح', [
         { text: 'حسناً', onPress: () => navigation.goBack() },
       ]);
     } catch (error) {
@@ -122,6 +137,18 @@ const EditProfileScreen = ({ navigation }) => {
             style={styles.input}
             value={formData.phone}
             onChangeText={(text) => setFormData({ ...formData, phone: text })}
+            placeholder="+965 XXXX XXXX"
+            placeholderTextColor="#666"
+            keyboardType="phone-pad"
+          />
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>رقم الواتساب</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.whatsapp}
+            onChangeText={(text) => setFormData({ ...formData, whatsapp: text })}
             placeholder="+965 XXXX XXXX"
             placeholderTextColor="#666"
             keyboardType="phone-pad"

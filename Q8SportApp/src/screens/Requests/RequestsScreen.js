@@ -137,7 +137,11 @@ const RequestsScreen = ({ navigation }) => {
 
           <TouchableOpacity
             style={styles.callButton}
-            onPress={() => openWhatsApp(item.contactWhatsapp || item.contactPhone || item.phone)}
+            onPress={() =>
+              openWhatsApp(
+                item?.user?.whatsapp || item?.user?.phone || item.contactWhatsapp || item.contactPhone || item.phone
+              )
+            }
           >
             <Ionicons name="logo-whatsapp" size={18} color="#fff" />
             <Text style={styles.callButtonText}>واتساب</Text>

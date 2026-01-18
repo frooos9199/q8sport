@@ -17,6 +17,17 @@ export async function GET(req: NextRequest) {
       where: {
         userId: user.userId,
       },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            whatsapp: true,
+            avatar: true,
+          },
+        },
+      },
       orderBy: {
         createdAt: 'desc',
       },

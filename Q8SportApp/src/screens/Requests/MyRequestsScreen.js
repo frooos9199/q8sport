@@ -176,13 +176,19 @@ const MyRequestsScreen = ({ navigation }) => {
           </View>
         )}
 
-        {!!(item.contactWhatsapp || item.contactPhone || item.phone) && (
+        {!!(item?.user?.whatsapp || item?.user?.phone || item.contactWhatsapp || item.contactPhone || item.phone) && (
           <TouchableOpacity
             style={styles.phoneInfo}
-            onPress={() => openWhatsApp(item.contactWhatsapp || item.contactPhone || item.phone)}
+            onPress={() =>
+              openWhatsApp(
+                item?.user?.whatsapp || item?.user?.phone || item.contactWhatsapp || item.contactPhone || item.phone
+              )
+            }
           >
             <Ionicons name="logo-whatsapp" size={16} color="#16A34A" />
-            <Text style={styles.phoneText}>{item.contactWhatsapp || item.contactPhone || item.phone}</Text>
+            <Text style={styles.phoneText}>
+              {item?.user?.whatsapp || item?.user?.phone || item.contactWhatsapp || item.contactPhone || item.phone}
+            </Text>
           </TouchableOpacity>
         )}
 

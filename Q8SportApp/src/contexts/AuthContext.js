@@ -127,6 +127,29 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateProfile = async (data) => {
+    try {
+      const response = await AuthService.updateProfile(data);
+
+      if (response?.token && response?.user) {
+        await StorageService.saveToken(response.token);
+        await StorageService.saveUser(response.user);
+        setToken(response.token);
+        setUser(response.user);
+        setIsAuthenticated(true);
+        return { success: true, user: response.user };
+      }
+
+      return { success: false, error: response?.error || 'فشل تحديث الملف الشخصي' };
+    } catch (error) {
+      console.error('❌ AuthContext: Update profile error:', error);
+      return {
+        success: false,
+        error: error?.response?.data?.error || 'حدث خطأ أثناء تحديث الملف الشخصي',
+      };
+    }
+  };
+
   const value = {
     user,
     token,
@@ -136,6 +159,7 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     updateUser,
+    updateProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
