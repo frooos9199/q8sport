@@ -140,13 +140,13 @@ const AuctionsListScreen = ({ navigation }) => {
     <View style={styles.container}>
       <View style={styles.filterRow}>
         <TouchableOpacity
-          style={[styles.filterButton, filter === 'ACTIVE' && styles.filterButtonActive]}
+          style={[styles.filterButton, filter === 'ACTIVE' && styles.filterButtonActiveGreen]}
           onPress={() => { setFilter('ACTIVE'); load(false, 'ACTIVE'); }}
         >
           <Text style={[styles.filterText, filter === 'ACTIVE' && styles.filterTextActive]}>نشط</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.filterButton, filter === 'ENDED' && styles.filterButtonActive]}
+          style={[styles.filterButton, filter === 'ENDED' && styles.filterButtonActiveRed]}
           onPress={() => { setFilter('ENDED'); load(false, 'ENDED'); }}
         >
           <Text style={[styles.filterText, filter === 'ENDED' && styles.filterTextActive]}>منتهي</Text>
@@ -180,6 +180,8 @@ const styles = StyleSheet.create({
   filterRow: { flexDirection: 'row', paddingHorizontal: 12, paddingTop: 12, paddingBottom: 6 },
   filterButton: { flex: 1, backgroundColor: '#111', borderRadius: 10, paddingVertical: 10, borderWidth: 1, borderColor: '#333', alignItems: 'center', marginRight: 10 },
   filterButtonActive: { borderColor: '#DC2626', backgroundColor: '#1a1a1a' },
+  filterButtonActiveGreen: { borderColor: '#16a34a', backgroundColor: '#16a34a' },
+  filterButtonActiveRed: { borderColor: '#DC2626', backgroundColor: '#DC2626' },
   filterText: { color: '#aaa', fontWeight: 'bold' },
   filterTextActive: { color: '#fff' },
   list: { padding: 12 },
