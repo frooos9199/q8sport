@@ -55,10 +55,23 @@ const RequestsScreen = ({ navigation }) => {
 
   const openWhatsApp = async (phone) => {
     const normalized = normalizePhone(phone);
-    if (!normalized) return;
-    const url = `https://wa.me/${normalized}`;
-    const supported = await Linking.canOpenURL(url);
-    if (supported) await Linking.openURL(url);
+    if (!normalized) {
+      Alert.alert('خطأ', 'رقم الواتساب غير صحيح');
+      return;
+    }
+
+    const appUrl = `whatsapp://send?phone=${normalized}`;
+    const webUrl = `https://wa.me/${normalized}`;
+
+    try {
+      await Linking.openURL(appUrl);
+    } catch (error) {
+      try {
+        await Linking.openURL(webUrl);
+      } catch {
+        Alert.alert('خطأ', 'تأكد من تثبيت واتساب');
+      }
+    }
   };
 
   const getStatusColor = (status) => {
