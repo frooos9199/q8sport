@@ -138,8 +138,66 @@ export const PUT = requireAuth(async (
 
     const body = await request.json();
 
+    // Whitelist allowed fields to avoid accidental privilege escalation
+    const allowedFields = new Set([
+      'title',
+      'description',
+      'category',
+      'carModel',
+      'carYear',
+      'partNumber',
+      'condition',
+      'startingPrice',
+      'reservePrice',
+      'currentPrice',
+      'buyNowPrice',
+      'endTime',
+      'status',
+      'images',
+      'featured',
+      'carModelId'
+    ]);
+
+    const updateData: Record<string, any> = {};
+    for (const key of Object.keys(body || {})) {
+      if (allowedFields.has(key)) updateData[key] = (body as any)[key];
+    }
+
+    // Normalize endTime (if provided)
+    if (Object.prototype.hasOwnProperty.call(updateData, 'endTime')) {
+      const raw = updateData.endTime;
+      if (raw) {
+        const d = new Date(raw);
+        if (Number.isNaN(d.getTime())) {
+          return NextResponse.json(
+            { error: 'وقت انتهاء المزاد غير صحيح' },
+            { status: 400 }
+          );
+        }
+        updateData.endTime = d;
+      }
+    }
+
+    // Normalize numeric fields
+    for (const numericKey of ['startingPrice', 'reservePrice', 'currentPrice'] as const) {
+      if (Object.prototype.hasOwnProperty.call(updateData, numericKey)) {
+        const raw = updateData[numericKey];
+        if (raw === null || raw === undefined || String(raw).trim() === '') {
+          updateData[numericKey] = null;
+        } else {
+          const n = typeof raw === 'number' ? raw : Number(String(raw).trim());
+          if (!Number.isFinite(n) || n < 0) {
+            return NextResponse.json(
+              { error: 'قيمة رقمية غير صحيحة' },
+              { status: 400 }
+            );
+          }
+          updateData[numericKey] = n;
+        }
+      }
+    }
+
     // Normalize buyNowPrice updates (allow null/empty to clear)
-    const updateData: any = { ...body };
     if (Object.prototype.hasOwnProperty.call(body, 'buyNowPrice')) {
       const raw = body.buyNowPrice;
       if (raw === null || raw === undefined || String(raw).trim() === '') {
@@ -176,7 +234,8 @@ export const PUT = requireAuth(async (
       );
     }
 
-    if (auction.status !== 'ACTIVE') {
+    // Only admin can edit ended/cancelled auctions
+    if (auction.status !== 'ACTIVE' && request.user!.role !== 'ADMIN') {
       return NextResponse.json(
         { error: 'لا يمكن تعديل المزاد المنتهي' },
         { status: 400 }
@@ -247,17 +306,31 @@ export const DELETE = requireAuth(async (
       );
     }
 
-    if (auction._count.bids > 0) {
+    if (auction._count.bids > 0 && request.user!.role !== 'ADMIN') {
       return NextResponse.json(
         { error: 'لا يمكن حذف مزاد يحتوي على مزايدات' },
         { status: 400 }
       );
     }
 
-    // Delete auction
-    await prisma.auction.delete({
-      where: { id: auctionId }
-    });
+    // Admin can force-delete auctions with bids/messages
+    if (request.user!.role === 'ADMIN') {
+      await prisma.$transaction(async (tx) => {
+        // Clear winning bid reference first to avoid FK/unique issues
+        await tx.auction.update({
+          where: { id: auctionId },
+          data: { winningBidId: null }
+        });
+
+        await tx.message.deleteMany({ where: { auctionId } });
+        await tx.bid.deleteMany({ where: { auctionId } });
+        await tx.auction.delete({ where: { id: auctionId } });
+      });
+    } else {
+      await prisma.auction.delete({
+        where: { id: auctionId }
+      });
+    }
 
     return NextResponse.json({
       message: 'تم حذف المزاد بنجاح'

@@ -324,6 +324,16 @@ export default function AdminDashboard() {
                 <Users className="h-6 w-6 text-red-600 ml-2" />
                 <span className="text-white font-medium">إدارة المستخدمين</span>
               </Link>
+
+              <Link href="/admin/auctions" className="flex items-center justify-center p-4 bg-black border border-gray-800 hover:border-red-600 rounded-lg transition-colors">
+                <Car className="h-6 w-6 text-green-600 ml-2" />
+                <span className="text-white font-medium">إدارة المزادات</span>
+              </Link>
+
+              <Link href="/admin/requests" className="flex items-center justify-center p-4 bg-black border border-gray-800 hover:border-red-600 rounded-lg transition-colors">
+                <ShoppingCart className="h-6 w-6 text-yellow-600 ml-2" />
+                <span className="text-white font-medium">إدارة المطلوبات</span>
+              </Link>
               
               <Link href="/admin/ads" className="flex items-center justify-center p-4 bg-black border border-gray-800 hover:border-red-600 rounded-lg transition-colors">
                 <Settings className="h-6 w-6 text-red-600 ml-2" />

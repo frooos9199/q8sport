@@ -72,7 +72,7 @@ export async function PATCH(
       );
     }
 
-    if (existingRequest.userId !== user.userId) {
+    if (existingRequest.userId !== user.userId && user.role !== 'ADMIN') {
       return NextResponse.json(
         { success: false, error: 'غير مصرح لك بتعديل هذا الطلب' },
         { status: 403 }
@@ -86,8 +86,11 @@ export async function PATCH(
     if (body.carBrand !== undefined) updateData.carBrand = body.carBrand || null;
     if (body.carModel !== undefined) updateData.carModel = body.carModel || null;
     if (body.carYear !== undefined) updateData.carYear = body.carYear ? parseInt(body.carYear) : null;
-    if (body.image !== undefined) updateData.image = body.image || null;
-    if (body.phone !== undefined) updateData.phone = body.phone;
+    // Request model uses contactPhone/contactWhatsapp (keep backward compat with phone/whatsapp)
+    if (body.contactPhone !== undefined) updateData.contactPhone = body.contactPhone || null;
+    if (body.contactWhatsapp !== undefined) updateData.contactWhatsapp = body.contactWhatsapp || null;
+    if (body.phone !== undefined) updateData.contactPhone = body.phone || null;
+    if (body.whatsapp !== undefined) updateData.contactWhatsapp = body.whatsapp || null;
     if (body.status !== undefined) updateData.status = body.status;
 
     const updatedRequest = await prisma.request.update({
