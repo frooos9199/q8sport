@@ -24,6 +24,12 @@ const AuctionDetailsScreen = ({ route, navigation }) => {
     return typeof v === 'number' ? v : v ? Number(v) : null;
   }, [auction]);
 
+  const formatKwd = useCallback((value) => {
+    const n = typeof value === 'number' ? value : value ? Number(value) : null;
+    if (!Number.isFinite(n)) return '—';
+    return String(Math.trunc(n));
+  }, []);
+
   const load = useCallback(async () => {
     try {
       setLoading(true);
@@ -109,8 +115,23 @@ const AuctionDetailsScreen = ({ route, navigation }) => {
 
         <View style={styles.separator} />
 
-        <Text style={styles.price}>أعلى مزايدة: {auction?.currentBid ?? auction?.highestBid ?? auction?.currentPrice ?? '—'} د.ك</Text>
-        <Text style={styles.meta}>سعر ابتدائي: {auction?.startingPrice ?? auction?.startingBid ?? auction?.startPrice ?? '—'} د.ك</Text>
+        <Text style={styles.price}>أعلى مزايدة: {formatKwd(auction?.currentBid ?? auction?.highestBid ?? auction?.currentPrice)} د.ك</Text>
+        <Text style={styles.meta}>أعلى مزايد: {auction?.highestBidder?.name || '—'}</Text>
+        <Text style={styles.meta}>سعر ابتدائي: {formatKwd(auction?.startingPrice ?? auction?.startingBid ?? auction?.startPrice)} د.ك</Text>
+      </View>
+
+      <View style={styles.bidsCard}>
+        <Text style={styles.bidsTitle}>المزايدات</Text>
+        {Array.isArray(auction?.bids) && auction.bids.length > 0 ? (
+          auction.bids.slice(0, 10).map((b) => (
+            <View key={b.id} style={styles.bidItem}>
+              <Text style={styles.bidName}>{b?.bidder?.name || '—'}</Text>
+              <Text style={styles.bidAmount}>{formatKwd(b?.amount)} د.ك</Text>
+            </View>
+          ))
+        ) : (
+          <Text style={styles.meta}>لا توجد مزايدات بعد</Text>
+        )}
       </View>
 
       <View style={styles.bidCard}>
@@ -158,6 +179,12 @@ const styles = StyleSheet.create({
   bidButton: { backgroundColor: '#DC2626', paddingHorizontal: 16, borderRadius: 10, justifyContent: 'center' },
   bidButtonDisabled: { opacity: 0.6 },
   bidButtonText: { color: '#fff', fontWeight: 'bold' },
+
+  bidsCard: { backgroundColor: '#111', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#333', marginBottom: 12 },
+  bidsTitle: { color: '#fff', fontSize: 16, fontWeight: 'bold', marginBottom: 10 },
+  bidItem: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#222' },
+  bidName: { color: '#ddd', fontSize: 13, flex: 1, marginRight: 10 },
+  bidAmount: { color: '#DC2626', fontSize: 13, fontWeight: 'bold' },
 });
 
 export default AuctionDetailsScreen;

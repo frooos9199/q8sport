@@ -2,6 +2,31 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, AuthenticatedRequest } from '../../../../../lib/auth';
 import { prisma } from '../../../../../lib/prisma';
 
+function normalizeNumberInput(input: unknown): number {
+  if (typeof input === 'number') return input;
+  if (typeof input !== 'string') return Number.NaN;
+
+  // Convert Arabic-Indic and Eastern Arabic-Indic digits to Latin digits
+  const arabicIndic = '٠١٢٣٤٥٦٧٨٩';
+  const easternArabicIndic = '۰۱۲۳۴۵۶۷۸۹';
+  let normalized = input
+    .trim()
+    .replace(/[٠-٩]/g, (d) => String(arabicIndic.indexOf(d)))
+    .replace(/[۰-۹]/g, (d) => String(easternArabicIndic.indexOf(d)))
+    .replace(/,/g, '')
+    .replace(/\s+/g, '');
+
+  // Keep only digits and a single dot
+  normalized = normalized.replace(/[^0-9.]/g, '');
+  const firstDot = normalized.indexOf('.');
+  if (firstDot !== -1) {
+    normalized =
+      normalized.slice(0, firstDot + 1) + normalized.slice(firstDot + 1).replace(/\./g, '');
+  }
+
+  return Number(normalized);
+}
+
 // POST /api/auctions/[id]/bid - Place a bid
 export const POST = requireAuth(async (
   request: AuthenticatedRequest,
@@ -13,8 +38,10 @@ export const POST = requireAuth(async (
     const auctionId = params.id;
     const bidderId = request.user!.userId;
 
+    const bidAmount = normalizeNumberInput(amount);
+
     // Validate bid amount
-    if (!amount || amount <= 0) {
+    if (!Number.isFinite(bidAmount) || bidAmount <= 0) {
       return NextResponse.json(
         { error: 'مبلغ المزايدة غير صحيح' },
         { status: 400 }
@@ -73,9 +100,9 @@ export const POST = requireAuth(async (
     // Check if bid is higher than current highest bid
     const currentHighestBid = auction.bids[0]?.amount || auction.startingPrice;
     
-    if (amount <= currentHighestBid) {
+    if (bidAmount <= currentHighestBid) {
       return NextResponse.json(
-        { error: `يجب أن تكون المزايدة أعلى من ${currentHighestBid} دينار` },
+        { error: `يجب أن تكون المزايدة أعلى من ${Math.trunc(currentHighestBid)} دينار` },
         { status: 400 }
       );
     }
@@ -85,7 +112,7 @@ export const POST = requireAuth(async (
       // Create the bid
       const bid = await tx.bid.create({
         data: {
-          amount: parseFloat(amount.toString()),
+          amount: bidAmount,
           bidderId,
           auctionId
         },
@@ -103,7 +130,7 @@ export const POST = requireAuth(async (
       await tx.auction.update({
         where: { id: auctionId },
         data: {
-          currentPrice: parseFloat(amount.toString())
+          currentPrice: bidAmount
         }
       });
 

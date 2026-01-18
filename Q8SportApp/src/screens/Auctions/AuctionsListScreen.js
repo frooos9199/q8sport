@@ -36,6 +36,12 @@ const AuctionsListScreen = ({ navigation }) => {
     load(false);
   }, [load]);
 
+  const formatKwd = (value) => {
+    const n = typeof value === 'number' ? value : value ? Number(value) : null;
+    if (!Number.isFinite(n)) return '—';
+    return String(Math.trunc(n));
+  };
+
   const renderItem = ({ item }) => {
     const endsAt = item?.endTime ? new Date(item.endTime) : null;
     const endsText = endsAt ? endsAt.toLocaleString() : '—';
@@ -53,9 +59,10 @@ const AuctionsListScreen = ({ navigation }) => {
         <Text style={styles.subtitle} numberOfLines={2}>{item.description || '—'}</Text>
 
         <View style={styles.metaRow}>
-          <Text style={styles.meta}>سعر ابتدائي: {item.startingPrice ?? item.startingBid ?? item.startPrice ?? '—'} د.ك</Text>
-          <Text style={styles.meta}>أعلى مزايدة: {item.currentBid ?? item.highestBid ?? item.currentPrice ?? '—'} د.ك</Text>
+          <Text style={styles.meta}>سعر ابتدائي: {formatKwd(item.startingPrice ?? item.startingBid ?? item.startPrice)} د.ك</Text>
+          <Text style={styles.meta}>أعلى مزايدة: {formatKwd(item.currentBid ?? item.highestBid ?? item.currentPrice)} د.ك</Text>
         </View>
+        <Text style={styles.meta}>أعلى مزايد: {item?.highestBidder?.name || '—'}</Text>
         <Text style={styles.meta}>ينتهي: {endsText}</Text>
       </TouchableOpacity>
     );
