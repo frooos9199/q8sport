@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
+import { Prisma } from '@prisma/client';
 
 // GET /api/requests/[id] - جلب طلب واحد (عامة)
 export async function GET(
@@ -49,6 +50,14 @@ export async function GET(
     return NextResponse.json({ success: true, request });
   } catch (error) {
     console.error('Error fetching request:', error);
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2022') {
+      return NextResponse.json(
+        { success: false, error: 'قاعدة البيانات غير محدثة. يرجى تحديث قاعدة البيانات ثم إعادة المحاولة' },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json(
       { success: false, error: 'فشل جلب الطلب' },
       { status: 500 }
@@ -129,6 +138,14 @@ export async function PATCH(
     });
   } catch (error) {
     console.error('Error updating request:', error);
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2022') {
+      return NextResponse.json(
+        { success: false, error: 'قاعدة البيانات غير محدثة. يرجى تحديث قاعدة البيانات ثم إعادة المحاولة' },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json(
       { success: false, error: 'فشل تحديث الطلب' },
       { status: 500 }

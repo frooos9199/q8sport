@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
+import { Prisma } from '@prisma/client';
 
 function normalizePhone(input: unknown) {
   if (!input) return '';
@@ -39,6 +40,17 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error('Error fetching requests:', error);
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2022') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'قاعدة البيانات غير محدثة. يرجى تشغيل prisma db push / migrate ثم إعادة المحاولة',
+        },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json(
       { success: false, error: 'فشل جلب الطلبات' },
       { status: 500 }
@@ -140,6 +152,17 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error('Error creating request:', error);
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2022') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'قاعدة البيانات غير محدثة (طلبات). يلزم تحديث الـ DB ثم إعادة المحاولة.',
+        },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json(
       { success: false, error: 'فشل إضافة الطلب' },
       { status: 500 }
