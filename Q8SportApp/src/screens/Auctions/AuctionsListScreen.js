@@ -93,7 +93,7 @@ const AuctionsListScreen = ({ navigation }) => {
       >
         <View style={styles.cardHeader}>
           <Text style={styles.title} numberOfLines={1}>{item.title || 'مزاد'}</Text>
-          <Text style={styles.badge}>{(item.status || 'ACTIVE').toString()}</Text>
+          <Text style={[styles.badge, isEnded ? styles.badgeEnded : styles.badgeActive]}>{(item.status || 'ACTIVE').toString()}</Text>
         </View>
 
         <Text style={styles.subtitle} numberOfLines={2}>{item.description || '—'}</Text>
@@ -192,7 +192,9 @@ const styles = StyleSheet.create({
   card: { backgroundColor: '#1a1a1a', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#333', marginBottom: 12 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   title: { color: '#fff', fontSize: 16, fontWeight: 'bold', flex: 1, marginRight: 10 },
-  badge: { color: '#fff', backgroundColor: '#DC2626', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, fontSize: 11 },
+  badge: { color: '#fff', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, fontSize: 11 },
+  badgeActive: { backgroundColor: '#16a34a' },
+  badgeEnded: { backgroundColor: '#DC2626' },
   subtitle: { color: '#aaa', fontSize: 13, marginBottom: 10 },
   metaRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
   meta: { color: '#999', fontSize: 12 },
