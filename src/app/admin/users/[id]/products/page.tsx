@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import AuthWrapper from '@/components/AuthWrapper'
 import { formatDateShort } from '@/utils/dateUtils'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface Product {
   id: string
@@ -38,9 +39,11 @@ interface User {
 export default function UserProductsPage() {
   const params = useParams()
   const router = useRouter()
+  const { token } = useAuth()
   const [user, setUser] = useState<User | null>(null)
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [showEditModal, setShowEditModal] = useState(false)
 
@@ -52,57 +55,41 @@ export default function UserProductsPage() {
 
   const loadUserAndProducts = async (userId: string) => {
     try {
-      // محاكاة بيانات المستخدم والمنتجات
-      const mockUser: User = {
-        id: userId,
-        name: 'أحمد محمد الصالح',
-        email: 'ahmed@example.com',
-        phone: '96565001234',
-        role: 'USER'
+      setLoading(true)
+      setLoadError(null)
+
+      if (!token) {
+        setUser(null)
+        setProducts([])
+        setLoadError('الرجاء تسجيل الدخول مرة أخرى')
+        return
       }
 
-      const mockProducts: Product[] = [
-        {
-          id: '1',
-          title: 'فورد موستانج GT 2020',
-          description: 'سيارة رياضية بحالة ممتازة، محرك V8',
-          price: 25000,
-          condition: 'ممتازة',
-          category: 'سيارات رياضية',
-          productType: 'CAR',
-          carBrand: 'Ford',
-          carModel: 'Mustang',
-          carYear: 2020,
-          kilometers: 15000,
-          color: 'أحمر',
-          images: JSON.stringify(['/car1.jpg', '/car2.jpg']),
-          status: 'ACTIVE',
-          views: 45,
-          createdAt: '2024-01-15'
-        },
-        {
-          id: '2',
-          title: 'فلتر هواء أصلي',
-          description: 'فلتر هواء أصلي لفورد موستانج',
-          price: 45,
-          condition: 'جديدة',
-          category: 'قطع غيار',
-          productType: 'PART',
-          carBrand: 'Ford',
-          carModel: 'Mustang',
-          images: JSON.stringify(['/part1.jpg']),
-          status: 'SOLD',
-          views: 23,
-          createdAt: '2024-02-10',
-          soldPrice: 45,
-          soldDate: '2024-02-15'
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
         }
-      ]
+      })
 
-      setUser(mockUser)
-      setProducts(mockProducts)
+      const data = await res.json()
+      if (!res.ok || !data.success) {
+        throw new Error(data?.error || 'فشل تحميل بيانات المستخدم')
+      }
+
+      setUser({
+        id: data.user.id,
+        name: data.user.name,
+        email: data.user.email,
+        phone: data.user.phone || undefined,
+        role: data.user.role
+      })
+
+      setProducts(data.products || [])
     } catch (error) {
       console.error('خطأ في تحميل البيانات:', error)
+      setUser(null)
+      setProducts([])
+      setLoadError(error instanceof Error ? error.message : 'فشل تحميل البيانات')
     } finally {
       setLoading(false)
     }
@@ -117,17 +104,44 @@ export default function UserProductsPage() {
     if (!editingProduct) return
 
     try {
-      // تحديث المنتج في القائمة
-      setProducts(prev => prev.map(p => 
-        p.id === editingProduct.id ? editingProduct : p
-      ))
-      
+      if (!token) {
+        alert('غير مصرح')
+        return
+      }
+
+      const res = await fetch(`/api/products/${editingProduct.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title: editingProduct.title,
+          description: editingProduct.description,
+          price: editingProduct.price,
+          productType: editingProduct.productType,
+          category: editingProduct.category,
+          carBrand: editingProduct.carBrand,
+          carModel: editingProduct.carModel,
+          carYear: editingProduct.carYear,
+          condition: editingProduct.condition,
+          status: editingProduct.status,
+          images: editingProduct.images
+        })
+      })
+
+      const data = await res.json()
+      if (!res.ok || data?.success === false) {
+        throw new Error(data?.error || 'حدث خطأ في تحديث المنتج')
+      }
+
+      setProducts(prev => prev.map(p => (p.id === editingProduct.id ? { ...p, ...editingProduct } : p)))
       setShowEditModal(false)
       setEditingProduct(null)
       alert('تم تحديث المنتج بنجاح')
     } catch (error) {
       console.error('خطأ في تحديث المنتج:', error)
-      alert('حدث خطأ في تحديث المنتج')
+      alert(error instanceof Error ? error.message : 'حدث خطأ في تحديث المنتج')
     }
   }
 
@@ -135,11 +149,28 @@ export default function UserProductsPage() {
     if (!confirm('هل أنت متأكد من حذف هذا المنتج؟')) return
 
     try {
+      if (!token) {
+        alert('غير مصرح')
+        return
+      }
+
+      const res = await fetch(`/api/products/${productId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+
+      const data = await res.json()
+      if (!res.ok || data?.success === false) {
+        throw new Error(data?.error || 'حدث خطأ في حذف المنتج')
+      }
+
       setProducts(prev => prev.filter(p => p.id !== productId))
       alert('تم حذف المنتج بنجاح')
     } catch (error) {
       console.error('خطأ في حذف المنتج:', error)
-      alert('حدث خطأ في حذف المنتج')
+      alert(error instanceof Error ? error.message : 'حدث خطأ في حذف المنتج')
     }
   }
 
@@ -168,6 +199,22 @@ export default function UserProductsPage() {
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <p className="text-gray-800">جاري تحميل المنتجات...</p>
+          </div>
+        </div>
+      </AuthWrapper>
+    )
+  }
+
+  if (!user) {
+    return (
+      <AuthWrapper requireAuth={true} requireAdmin={true}>
+        <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+          <div className="text-center max-w-md">
+            <p className="text-gray-900 font-semibold mb-2">تعذر تحميل بيانات المستخدم</p>
+            <p className="text-gray-600 mb-4">{loadError || 'المستخدم غير موجود'}</p>
+            <Link href="/admin/users" className="inline-flex items-center px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">
+              العودة لقائمة المستخدمين
+            </Link>
           </div>
         </div>
       </AuthWrapper>

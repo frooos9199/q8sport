@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
+import { getAppSettings } from '@/lib/appSettings';
 
 export async function POST(request: NextRequest) {
   try {
+    const settings = await getAppSettings();
+    if (!settings.allowRegistrations) {
+      return NextResponse.json(
+        { error: 'التسجيل مغلق حالياً' },
+        { status: 403 }
+      );
+    }
+
     const body = await request.json();
     const { name, email, password, phone, whatsapp } = body;
 

@@ -30,6 +30,8 @@ interface Product {
   kilometers?: number;
   color?: string;
   images: string;
+  condition?: string;
+  views?: number;
   contactPhone?: string;
   contactWhatsapp?: string;
   status: string;
@@ -123,7 +125,21 @@ export default function Home() {
             <h1 className="text-4xl font-bold text-white">
               Q8 <span className="text-red-600">Sport Car</span>
             </h1>
-            <nav className="flex gap-6">
+            <nav className="flex items-center gap-6">
+              <div className="hidden md:flex items-center gap-4">
+                <Link href="/auctions" className="text-gray-200 hover:text-white font-semibold transition-colors">
+                  المزادات
+                </Link>
+                <Link href="/requests" className="text-gray-200 hover:text-white font-semibold transition-colors">
+                  المطلوبات
+                </Link>
+                <Link href="/shops" className="text-gray-200 hover:text-white font-semibold transition-colors">
+                  المحلات
+                </Link>
+                <Link href="/users" className="text-gray-200 hover:text-white font-semibold transition-colors">
+                  البائعين
+                </Link>
+              </div>
               {user ? (
                 <div className="flex gap-4">
                   <Link href="/add-listing" className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold transition-all">

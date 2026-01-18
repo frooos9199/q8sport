@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { formatDateLong } from '@/utils/dateUtils';
 import { 
@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 
 interface UserCard {
-  id: number;
+  id: string;
   name: string;
   location: string;
   rating: number;
@@ -31,131 +31,46 @@ interface UserCard {
   avatarColor: string;
 }
 
-const sampleUsers: UserCard[] = [
-  {
-    id: 1,
-    name: 'أحمد محمد الخليفي',
-    location: 'الكويت، حولي',
-    rating: 4.9,
-    totalRatings: 234,
-    verified: true,
-    joinDate: '2022-03-15',
-    stats: {
-      totalSales: 45,
-      totalItems: 23,
-      completedDeals: 67,
-      responseRate: 98
-    },
-    specialties: ['Ford Mustang', 'محركات V8', 'قطع أصلية'],
-    lastActive: '2024-12-28T10:30:00',
-    isOnline: true,
-    initials: 'AS',
-    avatarColor: 'bg-red-500'
-  },
-  {
-    id: 2,
-    name: 'فاطمة علي الصباح',
-    location: 'الكويت، الجهراء',
-    rating: 4.7,
-    totalRatings: 156,
-    verified: true,
-    joinDate: '2022-07-22',
-    stats: {
-      totalSales: 32,
-      totalItems: 18,
-      completedDeals: 48,
-      responseRate: 95
-    },
-    specialties: ['Chevrolet Corvette', 'فرامل رياضية', 'تيونينق'],
-    lastActive: '2024-12-28T08:15:00',
-    isOnline: false,
-    initials: 'FS',
-    avatarColor: 'bg-pink-500'
-  },
-  {
-    id: 3,
-    name: 'محمد سالم الرشيد',
-    location: 'الكويت، الفروانية',
-    rating: 4.8,
-    totalRatings: 189,
-    verified: false,
-    joinDate: '2023-01-10',
-    stats: {
-      totalSales: 28,
-      totalItems: 31,
-      completedDeals: 35,
-      responseRate: 92
-    },
-    specialties: ['Ford F-150', 'إكسسوارات', 'قطع مستعملة'],
-    lastActive: '2024-12-27T16:45:00',
-    isOnline: false,
-    initials: 'MR',
-    avatarColor: 'bg-blue-500'
-  },
-  {
-    id: 4,
-    name: 'سارة أحمد المطيري',
-    location: 'الكويت، الأحمدي',
-    rating: 4.6,
-    totalRatings: 98,
-    verified: true,
-    joinDate: '2023-05-18',
-    stats: {
-      totalSales: 19,
-      totalItems: 14,
-      completedDeals: 27,
-      responseRate: 89
-    },
-    specialties: ['Camaro SS', 'تعديلات رياضية', 'عوادم'],
-    lastActive: '2024-12-28T12:20:00',
-    isOnline: true,
-    initials: 'SM',
-    avatarColor: 'bg-green-500'
-  },
-  {
-    id: 5,
-    name: 'خالد عبدالله النصار',
-    location: 'الكويت، مبارك الكبير',
-    rating: 4.5,
-    totalRatings: 142,
-    verified: false,
-    joinDate: '2022-11-08',
-    stats: {
-      totalSales: 38,
-      totalItems: 26,
-      completedDeals: 52,
-      responseRate: 94
-    },
-    specialties: ['محركات', 'علب تروس', 'صيانة شاملة'],
-    lastActive: '2024-12-28T09:10:00',
-    isOnline: false,
-    initials: 'KN',
-    avatarColor: 'bg-orange-500'
-  },
-  {
-    id: 6,
-    name: 'نورا يوسف العنزي',
-    location: 'الكويت، الجهراء',
-    rating: 4.9,
-    totalRatings: 203,
-    verified: true,
-    joinDate: '2021-12-03',
-    stats: {
-      totalSales: 56,
-      totalItems: 19,
-      completedDeals: 78,
-      responseRate: 99
-    },
-    specialties: ['قطع أصلية', 'كورفيت كلاسيك', 'ترميم'],
-    lastActive: '2024-12-28T11:55:00',
-    isOnline: true,
-    initials: 'NY',
-    avatarColor: 'bg-purple-500'
-  }
-];
+type UsersApiUser = {
+  id: string;
+  name: string;
+  avatar?: string | null;
+  role: string;
+  status: string;
+  rating: number;
+  verified: boolean;
+  createdAt: string;
+  lastLoginAt?: string | null;
+  shopName?: string | null;
+  shopAddress?: string | null;
+  businessType?: string | null;
+  counts?: { products: number; auctions: number; requests: number };
+};
+
+const initialUsers: UserCard[] = [];
+
+function getInitials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  const first = parts[0]?.[0] || 'U';
+  const second = parts.length > 1 ? parts[1]?.[0] : '';
+  return `${first}${second}`.toUpperCase();
+}
+
+function isOnlineFromLastLogin(lastLoginAt?: string | null) {
+  if (!lastLoginAt) return false;
+  const diff = Date.now() - new Date(lastLoginAt).getTime();
+  return diff >= 0 && diff <= 15 * 60 * 1000;
+}
+
+function pickAvatarColor(index: number) {
+  const colors = ['bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500', 'bg-pink-500'];
+  return colors[index % colors.length];
+}
 
 export default function UsersPage() {
-  const [users, setUsers] = useState<UserCard[]>(sampleUsers);
+  const [users, setUsers] = useState<UserCard[]>(initialUsers);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('');
@@ -165,8 +80,57 @@ export default function UsersPage() {
   const [sortBy, setSortBy] = useState('rating');
   const [showFilters, setShowFilters] = useState(false);
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+        setLoadError(null);
+
+        const res = await fetch('/api/users?role=SELLER,SHOP_OWNER&status=ACTIVE&limit=200');
+        const data = (await res.json()) as { success?: boolean; users?: UsersApiUser[]; error?: string };
+
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || 'فشل تحميل قائمة البائعين');
+        }
+
+        const mapped = (data.users || []).map((u, idx): UserCard => {
+          const lastActive = u.lastLoginAt || u.createdAt;
+          return {
+            id: u.id,
+            name: u.name,
+            location: u.shopAddress || 'الكويت',
+            rating: Number(u.rating || 0),
+            totalRatings: 0,
+            verified: !!u.verified,
+            joinDate: u.createdAt,
+            stats: {
+              totalSales: 0,
+              totalItems: u.counts?.products || 0,
+              completedDeals: 0,
+              responseRate: 0
+            },
+            specialties: [u.businessType || (u.role === 'SHOP_OWNER' ? 'محل' : 'بائع')].filter(Boolean),
+            lastActive,
+            isOnline: isOnlineFromLastLogin(u.lastLoginAt),
+            initials: getInitials(u.name),
+            avatarColor: pickAvatarColor(idx)
+          };
+        });
+
+        setUsers(mapped);
+      } catch (e) {
+        setUsers([]);
+        setLoadError(e instanceof Error ? e.message : 'فشل تحميل قائمة البائعين');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, []);
+
   // Filter and sort users
-  const filteredUsers = users.filter(user => {
+  const filteredUsers = useMemo(() => users.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           user.specialties.some(s => s.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesLocation = !selectedLocation || user.location.includes(selectedLocation);
@@ -178,7 +142,7 @@ export default function UsersPage() {
     
     return matchesSearch && matchesLocation && matchesSpecialty && 
            matchesRating && matchesVerified && matchesOnline;
-  });
+  }), [users, searchTerm, selectedLocation, selectedSpecialty, minRating, verifiedOnly, onlineOnly]);
 
   const sortedUsers = [...filteredUsers].sort((a, b) => {
     switch (sortBy) {
@@ -245,6 +209,16 @@ export default function UsersPage() {
       </header>
 
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-6 sm:py-8">
+        {loading && (
+          <div className="text-center py-12 text-gray-400">جاري تحميل البائعين...</div>
+        )}
+
+        {!loading && loadError && (
+          <div className="bg-red-600/20 border border-red-600/30 text-red-300 px-4 py-3 rounded mb-6">
+            {loadError}
+          </div>
+        )}
+
         {/* Page Header */}
         <div className="mb-6 sm:mb-8 text-center sm:text-right">
           <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">أفضل البائعين والمتخصصين</h2>

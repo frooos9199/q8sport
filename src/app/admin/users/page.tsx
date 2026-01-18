@@ -17,7 +17,7 @@ interface User {
   createdAt: string;
   lastLoginAt?: string;
   productCount: number;
-  orderCount: number;
+  requestsCount: number;
   shopName?: string;
   shopAddress?: string;
   businessType?: string;
@@ -35,13 +35,34 @@ interface UserForm {
   businessType?: string;
 }
 
+interface ApiUser {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  whatsapp: string | null;
+  role: User['role'];
+  status: User['status'];
+  createdAt: string;
+  lastLoginAt?: string | null;
+  shopName?: string | null;
+  shopAddress?: string | null;
+  businessType?: string | null;
+  _count?: {
+    products?: number;
+    requests?: number;
+  };
+}
+
 export default function UserManagement() {
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, token } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [totalUsers, setTotalUsers] = useState(0);
   
   // Modal states
   const [showModal, setShowModal] = useState(false);
@@ -59,84 +80,64 @@ export default function UserManagement() {
   const [confirmPassword, setConfirmPassword] = useState('');
 
   useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearchTerm(searchTerm), 300);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
+
+  useEffect(() => {
     loadUsers();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, filterRole, filterStatus, debouncedSearchTerm]);
 
   const loadUsers = async () => {
     try {
       setLoading(true);
-      // محاكاة بيانات المستخدمين
-      const mockUsers: User[] = [
-        {
-          id: '1',
-          name: 'أحمد محمد الصالح',
-          email: 'ahmed@example.com',
-          phone: '96565001234',
-          role: 'USER',
-          status: 'ACTIVE',
-          createdAt: '2024-01-15',
-          lastLoginAt: '2025-01-28',
-          productCount: 5,
-          orderCount: 12
-        },
-        {
-          id: '2',
-          name: 'فاطمة علي الكندري',
-          email: 'fatima@example.com',
-          phone: '96565005678',
-          role: 'SELLER',
-          status: 'ACTIVE',
-          createdAt: '2024-02-20',
-          lastLoginAt: '2025-01-29',
-          productCount: 23,
-          orderCount: 45
-        },
-        {
-          id: '3',
-          name: 'محمد عبدالله السالم',
-          email: 'mohammed@example.com',
-          phone: '96565009876',
-          whatsapp: '96565009876',
-          role: 'SHOP_OWNER',
-          status: 'ACTIVE',
-          createdAt: '2024-01-10',
-          lastLoginAt: '2025-01-27',
-          productCount: 156,
-          orderCount: 289,
-          shopName: 'محل السالم لقطع الغيار',
-          shopAddress: 'الكويت، حولي، شارع التجار',
-          businessType: 'قطع غيار السيارات'
-        },
-        {
-          id: '4',
-          name: 'خالد أحمد المطيري',
-          email: 'khalid@example.com',
-          phone: '96565004321',
-          whatsapp: '96565004321',
-          role: 'USER',
-          status: 'SUSPENDED',
-          createdAt: '2024-03-05',
-          lastLoginAt: '2025-01-20',
-          productCount: 2,
-          orderCount: 3
-        },
-        {
-          id: '5',
-          name: 'نورا سالم العتيبي',
-          email: 'nora@example.com',
-          phone: '96565008765',
-          whatsapp: '96565008765',
-          role: 'SELLER',
-          status: 'BANNED',
-          createdAt: '2024-04-12',
-          lastLoginAt: '2024-12-15',
-          productCount: 0,
-          orderCount: 1
+      if (!token) {
+        setUsers([]);
+        setTotalUsers(0);
+        return;
+      }
+
+      const params = new URLSearchParams();
+      params.set('limit', '200');
+      if (filterRole) params.set('role', filterRole);
+      if (filterStatus) params.set('status', filterStatus);
+      if (debouncedSearchTerm.trim()) params.set('search', debouncedSearchTerm.trim());
+
+      const res = await fetch(`/api/admin/users?${params.toString()}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
         }
-      ];
-      setUsers(mockUsers);
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        console.error('Load users error:', data);
+        throw new Error(data?.error || 'فشل تحميل المستخدمين');
+      }
+
+      const mapped: User[] = ((data.users || []) as ApiUser[]).map((u) => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        phone: u.phone || undefined,
+        whatsapp: u.whatsapp || undefined,
+        role: u.role,
+        status: u.status,
+        createdAt: u.createdAt,
+        lastLoginAt: u.lastLoginAt || undefined,
+        productCount: u._count?.products || 0,
+        requestsCount: u._count?.requests || 0,
+        shopName: u.shopName || undefined,
+        shopAddress: u.shopAddress || undefined,
+        businessType: u.businessType || undefined
+      }));
+
+      setUsers(mapped);
+      setTotalUsers(data?.pagination?.total || mapped.length);
     } catch (error) {
       console.error('خطأ في تحميل المستخدمين:', error);
+      alert('حدث خطأ في تحميل المستخدمين');
     } finally {
       setLoading(false);
     }
@@ -208,24 +209,38 @@ export default function UserManagement() {
         return;
       }
 
-      const newUser: User = {
-        id: Date.now().toString(),
-        name: userForm.name,
-        email: userForm.email,
-        phone: userForm.phone,
-        whatsapp: userForm.whatsapp,
-        role: userForm.role,
-        status: 'ACTIVE',
-        createdAt: formatDateShort(new Date().toISOString()),
-        productCount: 0,
-        orderCount: 0,
-        shopName: userForm.shopName,
-        shopAddress: userForm.shopAddress,
-        businessType: userForm.businessType
-      };
+      if (!token) {
+        alert('يجب تسجيل الدخول أولاً');
+        return;
+      }
 
-      setUsers(prev => [...prev, newUser]);
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: userForm.name,
+          email: userForm.email,
+          password: userForm.password,
+          phone: userForm.phone || null,
+          whatsapp: userForm.whatsapp || null,
+          role: userForm.role,
+          shopName: userForm.shopName || null,
+          shopAddress: userForm.shopAddress || null,
+          businessType: userForm.businessType || null
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data?.error || 'حدث خطأ في إضافة المستخدم');
+        return;
+      }
+
       closeModal();
+      await loadUsers();
       alert('تم إضافة المستخدم بنجاح');
     } catch (error) {
       console.error('خطأ في إضافة المستخدم:', error);
@@ -241,23 +256,38 @@ export default function UserManagement() {
         return;
       }
 
-      setUsers(prev => prev.map(user => 
-        user.id === selectedUser.id 
-          ? {
-              ...user,
-              name: userForm.name,
-              email: userForm.email,
-              phone: userForm.phone,
-              whatsapp: userForm.whatsapp,
-              role: userForm.role,
-              shopName: userForm.shopName,
-              shopAddress: userForm.shopAddress,
-              businessType: userForm.businessType
-            }
-          : user
-      ));
+      if (!token) {
+        alert('يجب تسجيل الدخول أولاً');
+        return;
+      }
+
+      const res = await fetch('/api/admin/users', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          userId: selectedUser.id,
+          name: userForm.name,
+          email: userForm.email,
+          phone: userForm.phone || null,
+          whatsapp: userForm.whatsapp || null,
+          role: userForm.role,
+          shopName: userForm.shopName || null,
+          shopAddress: userForm.shopAddress || null,
+          businessType: userForm.businessType || null
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data?.error || 'حدث خطأ في تحديث المستخدم');
+        return;
+      }
 
       closeModal();
+      await loadUsers();
       alert('تم تحديث بيانات المستخدم بنجاح');
     } catch (error) {
       console.error('خطأ في تحديث المستخدم:', error);
@@ -283,7 +313,36 @@ export default function UserManagement() {
         return;
       }
 
+      if (!selectedUser) {
+        alert('لم يتم تحديد مستخدم');
+        return;
+      }
+
+      if (!token) {
+        alert('يجب تسجيل الدخول أولاً');
+        return;
+      }
+
+      const res = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          userId: selectedUser.id,
+          password: newPassword
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data?.error || 'حدث خطأ في تغيير كلمة المرور');
+        return;
+      }
+
       closeModal();
+      await loadUsers();
       alert('تم تغيير كلمة المرور بنجاح');
     } catch (error) {
       console.error('خطأ في تغيير كلمة المرور:', error);
@@ -303,9 +362,31 @@ export default function UserManagement() {
     try {
       if (!selectedUser) return;
 
-      setUsers(prev => prev.filter(user => user.id !== selectedUser.id));
+      if (!token) {
+        alert('يجب تسجيل الدخول أولاً');
+        return;
+      }
+
+      const res = await fetch('/api/admin/users', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          userId: selectedUser.id
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data?.error || 'حدث خطأ في حذف المستخدم');
+        return;
+      }
+
       closeModal();
-      alert('تم حذف المستخدم بنجاح');
+      await loadUsers();
+      alert(data?.message || 'تم حذف المستخدم بنجاح');
     } catch (error) {
       console.error('خطأ في حذف المستخدم:', error);
       alert('حدث خطأ في حذف المستخدم');
@@ -318,12 +399,40 @@ export default function UserManagement() {
       return;
     }
     const confirmed = confirm(`هل أنت متأكد من تغيير حالة المستخدم "${user.name}"؟`);
-    if (confirmed) {
-      setUsers(prev => prev.map(u => 
-        u.id === user.id ? { ...u, status: newStatus } : u
-      ));
-      alert('تم تغيير حالة المستخدم بنجاح');
-    }
+    if (!confirmed) return;
+
+    (async () => {
+      try {
+        if (!token) {
+          alert('يجب تسجيل الدخول أولاً');
+          return;
+        }
+
+        const res = await fetch('/api/admin/users', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            userId: user.id,
+            status: newStatus
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          alert(data?.error || 'فشل تغيير حالة المستخدم');
+          return;
+        }
+
+        await loadUsers();
+        alert('تم تغيير حالة المستخدم بنجاح');
+      } catch (e) {
+        console.error('Change status error:', e);
+        alert('حدث خطأ في تغيير حالة المستخدم');
+      }
+    })();
   };
 
   const getRoleText = (role: User['role']) => {
@@ -437,7 +546,7 @@ export default function UserManagement() {
               {/* عدد النتائج */}
               <div className="flex items-center justify-center bg-gray-800 rounded-lg px-3 py-2">
                 <span className="text-white font-medium">
-                  {filteredUsers.length} من {users.length} مستخدم
+                  {filteredUsers.length} من {totalUsers} مستخدم
                 </span>
               </div>
             </div>
@@ -501,7 +610,7 @@ export default function UserManagement() {
                         {user.productCount}
                       </td>
                       <td className="px-6 py-4 text-sm text-white">
-                        {user.orderCount}
+                        {user.requestsCount}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center space-x-2">
@@ -777,8 +886,8 @@ export default function UserManagement() {
                       <p className="mt-1 text-sm text-gray-900">{selectedUser.productCount}</p>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">عدد الطلبات</label>
-                      <p className="mt-1 text-sm text-gray-900">{selectedUser.orderCount}</p>
+                      <label className="block text-sm font-medium text-gray-700">عدد المطلوبات</label>
+                      <p className="mt-1 text-sm text-gray-900">{selectedUser.requestsCount}</p>
                     </div>
                   </div>
 
@@ -880,7 +989,7 @@ export default function UserManagement() {
                       <p className="font-medium">{selectedUser.name}</p>
                       <p className="text-sm text-gray-600">{selectedUser.email}</p>
                       <p className="text-sm text-gray-600">الدور: {getRoleText(selectedUser.role)}</p>
-                      <p className="text-sm text-gray-600">المنتجات: {selectedUser.productCount} | الطلبات: {selectedUser.orderCount}</p>
+                      <p className="text-sm text-gray-600">المنتجات: {selectedUser.productCount} | المطلوبات: {selectedUser.requestsCount}</p>
                     </div>
                   </div>
 

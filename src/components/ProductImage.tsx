@@ -54,7 +54,7 @@ export function getImageUrl(imagePath: string): string {
   }
   
   // تنظيف المسار من التكرار
-  let cleanPath = imagePath.replace(/^\/+uploads\/+/, '').replace(/^uploads\/+/, '')
+  const cleanPath = imagePath.replace(/^\/+uploads\/+/, '').replace(/^uploads\/+/, '')
   
   // إضافة مجلد uploads للمسارات المحلية
   return `/uploads/${cleanPath}`

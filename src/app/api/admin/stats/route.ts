@@ -1,6 +1,20 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 import { requireAdmin, AuthenticatedRequest } from '../../../../lib/auth';
 import { prisma } from '../../../../lib/prisma';
+
+type RecentAuction = Prisma.AuctionGetPayload<{
+  include: {
+    seller: { select: { name: true } };
+    _count: { select: { bids: true } };
+  };
+}>;
+
+type TopBidder = Prisma.UserGetPayload<{
+  include: {
+    _count: { select: { bids: true } };
+  };
+}>;
 
 // GET /api/admin/stats - Get admin dashboard statistics
 export const GET = requireAdmin(async (request: AuthenticatedRequest) => {
@@ -13,6 +27,14 @@ export const GET = requireAdmin(async (request: AuthenticatedRequest) => {
     const [
       totalUsers,
       activeUsers,
+      recentlyActiveUsers,
+      suspendedUsers,
+      bannedUsers,
+      shopOwners,
+      totalProducts,
+      activeProducts,
+      pendingProducts,
+      soldProducts,
       totalAuctions,
       activeAuctions,
       completedAuctions,
@@ -25,12 +47,69 @@ export const GET = requireAdmin(async (request: AuthenticatedRequest) => {
       // Total users
       prisma.user.count(),
       
-      // Active users (last 30 days)
+      // Active users (account status)
       prisma.user.count({
         where: {
+          status: 'ACTIVE'
+        }
+      }),
+
+      // Recently active users (logged in during period)
+      prisma.user.count({
+        where: {
+          status: 'ACTIVE',
           lastLoginAt: {
             gte: startDate
           }
+        }
+      }),
+
+      // Suspended users
+      prisma.user.count({
+        where: {
+          status: 'SUSPENDED'
+        }
+      }),
+
+      // Banned users
+      prisma.user.count({
+        where: {
+          status: 'BANNED'
+        }
+      }),
+
+      // Shop owners
+      prisma.user.count({
+        where: {
+          role: 'SHOP_OWNER'
+        }
+      }),
+
+      // Total products (excluding deleted)
+      prisma.product.count({
+        where: {
+          status: { not: 'DELETED' }
+        }
+      }),
+
+      // Active products
+      prisma.product.count({
+        where: {
+          status: 'ACTIVE'
+        }
+      }),
+
+      // Pending products (this project uses INACTIVE as a moderation/pending state)
+      prisma.product.count({
+        where: {
+          status: 'INACTIVE'
+        }
+      }),
+
+      // Sold products
+      prisma.product.count({
+        where: {
+          status: 'SOLD'
         }
       }),
       
@@ -140,6 +219,16 @@ export const GET = requireAdmin(async (request: AuthenticatedRequest) => {
       overview: {
         totalUsers,
         activeUsers,
+        recentlyActiveUsers,
+        suspendedUsers,
+        bannedUsers,
+        disabledUsers: suspendedUsers + bannedUsers,
+        shopOwners,
+        newUsers: currentUsers,
+        totalProducts,
+        activeProducts,
+        pendingProducts,
+        soldProducts,
         totalAuctions,
         activeAuctions,
         completedAuctions,
@@ -147,16 +236,16 @@ export const GET = requireAdmin(async (request: AuthenticatedRequest) => {
         totalRevenue: totalRevenue._sum.currentPrice || 0,
         userGrowth: `${userGrowth}%`
       },
-      recentAuctions: recentAuctions.map((auction: any) => ({
+      recentAuctions: recentAuctions.map((auction: RecentAuction) => ({
         id: auction.id,
         title: auction.title,
-        seller: auction.seller.name,
+        seller: auction.seller?.name ?? '',
         currentPrice: auction.currentPrice,
         totalBids: auction._count.bids,
         status: auction.status,
         endTime: auction.endTime
       })),
-      topBidders: topBidders.map((user: any) => ({
+      topBidders: topBidders.map((user: TopBidder) => ({
         id: user.id,
         name: user.name,
         totalBids: user._count.bids,

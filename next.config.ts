@@ -35,9 +35,9 @@ const nextConfig: NextConfig = {
   // إعدادات إضافية للـ production
   productionBrowserSourceMaps: false,
   poweredByHeader: false,
-  // تعطيل TypeScript errors للبناء السريع (فقط للتطوير)
+  // لا نتجاهل أخطاء TypeScript في الإنتاج
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
 };
 

@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/prisma'
 
-const prisma = new PrismaClient()
+function safeJsonParse(value: string | null): unknown {
+  if (!value) return null;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
 
 // GET - جلب بيانات مستخدم محدد مع منتجاته
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -32,6 +39,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       phone: user.phone,
       whatsapp: user.whatsapp,
       avatar: user.avatar,
+      role: user.role,
+      status: user.status,
+      lastLoginAt: user.lastLoginAt?.toISOString() || null,
+      shopName: user.shopName,
+      shopAddress: user.shopAddress,
+      businessType: user.businessType,
       rating: user.rating || 4.0,
       verified: user.verified,
       joinDate: user.createdAt.toISOString(),
@@ -48,12 +61,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       price: product.price,
       condition: product.condition,
       category: product.category,
+      carBrand: product.carBrand,
+      carModel: product.carModel,
+      carYear: product.carYear,
       images: product.images,
       status: product.status.toLowerCase(),
       views: product.views,
       soldPrice: product.soldPrice,
       soldDate: product.soldDate?.toISOString(),
-      buyerInfo: product.buyerInfo ? JSON.parse(product.buyerInfo) : null,
+      buyerInfo: safeJsonParse(product.buyerInfo),
       createdAt: product.createdAt.toISOString(),
       user: {
         id: user.id,

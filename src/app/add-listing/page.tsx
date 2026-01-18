@@ -56,18 +56,21 @@ export default function AddListingPage() {
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value, type, checked } = e.target;
-    
-    if (type === 'checkbox' && name === 'preferredContact') {
-      setFormData(prev => ({
+    const target = e.target;
+    const { name, value } = target;
+
+    if (target instanceof HTMLInputElement && target.type === 'checkbox' && name === 'preferredContact') {
+      const checked = target.checked;
+      setFormData((prev) => ({
         ...prev,
-        preferredContact: checked 
+        preferredContact: checked
           ? [...prev.preferredContact, value]
-          : prev.preferredContact.filter(item => item !== value)
+          : prev.preferredContact.filter((item) => item !== value)
       }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
+      return;
     }
+
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleBrandChange = (e: React.ChangeEvent<HTMLSelectElement>) => {

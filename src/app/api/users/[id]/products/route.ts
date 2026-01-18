@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
 
 // GET - جلب منتجات مستخدم محدد
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: userId } = await params
-    
-    console.log('Fetching products for userId:', userId)
-    
+
     const products = await prisma.product.findMany({
       where: {
         userId: userId
@@ -18,8 +14,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         createdAt: 'desc'
       }
     })
-
-    console.log(`Found ${products.length} products for user ${userId}`)
 
     return NextResponse.json({ 
       success: true,

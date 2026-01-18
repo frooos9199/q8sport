@@ -1,13 +1,23 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+import { requireAdmin, AuthenticatedRequest } from '@/lib/auth'
+
+function slugify(input: string) {
+  return `${input}`
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9\-]/g, '')
+}
 
 // PUT - تحديث قسم
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export const PUT = requireAdmin(async (
+  request: AuthenticatedRequest,
+  context: { params: Promise<{ id: string }> }
+) => {
   try {
+    const params = await context.params
     const { name, nameArabic, description } = await request.json()
-    const { id } = params
 
     if (!name || !nameArabic) {
       return NextResponse.json(
@@ -16,19 +26,27 @@ export async function PUT(
       )
     }
 
-    // في التطبيق الحقيقي، سيتم تحديث البيانات في قاعدة البيانات
-    const updatedCategory = {
-      id,
-      name,
-      nameArabic,
-      description: description || '',
-      updatedAt: new Date().toISOString()
-    }
+    const category = await prisma.partCategory.update({
+      where: { id: params.id },
+      data: {
+        name,
+        nameArabic,
+        description: description || null,
+        slug: slugify(name)
+      },
+      select: {
+        id: true,
+        name: true,
+        nameArabic: true,
+        description: true,
+        active: true
+      }
+    })
 
     return NextResponse.json({
       success: true,
       message: 'تم تحديث القسم بنجاح',
-      category: updatedCategory
+      category
     })
   } catch (error) {
     console.error('Error updating category:', error)
@@ -37,21 +55,21 @@ export async function PUT(
       { status: 500 }
     )
   }
-}
+})
 
 // DELETE - حذف قسم
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export const DELETE = requireAdmin(async (
+  request: AuthenticatedRequest,
+  context: { params: Promise<{ id: string }> }
+) => {
   try {
-    const { id } = params
+    const params = await context.params
+    await prisma.partCategory.delete({ where: { id: params.id } })
 
-    // في التطبيق الحقيقي، سيتم حذف القسم من قاعدة البيانات
     return NextResponse.json({
       success: true,
       message: 'تم حذف القسم بنجاح',
-      id
+      id: params.id
     })
   } catch (error) {
     console.error('Error deleting category:', error)
@@ -60,26 +78,33 @@ export async function DELETE(
       { status: 500 }
     )
   }
-}
+})
 
 // PATCH - تحديث حالة القسم (تفعيل/إيقاف)
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export const PATCH = requireAdmin(async (
+  request: AuthenticatedRequest,
+  context: { params: Promise<{ id: string }> }
+) => {
   try {
+    const params = await context.params
     const { active } = await request.json()
-    const { id } = params
 
-    // في التطبيق الحقيقي، سيتم تحديث حالة القسم في قاعدة البيانات
+    const category = await prisma.partCategory.update({
+      where: { id: params.id },
+      data: { active: Boolean(active) },
+      select: {
+        id: true,
+        name: true,
+        nameArabic: true,
+        description: true,
+        active: true
+      }
+    })
+
     return NextResponse.json({
       success: true,
       message: active ? 'تم تفعيل القسم' : 'تم إيقاف القسم',
-      category: {
-        id,
-        active,
-        updatedAt: new Date().toISOString()
-      }
+      category
     })
   } catch (error) {
     console.error('Error updating category status:', error)
@@ -88,4 +113,4 @@ export async function PATCH(
       { status: 500 }
     )
   }
-}
+})

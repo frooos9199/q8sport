@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { Prisma } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 
 export async function PATCH(request: NextRequest) {
   try {
@@ -16,7 +15,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // بناء البيانات المحدثة
-    const updateData: any = {};
+    const updateData: Prisma.AdvertisementUpdateInput = {};
     if (title !== undefined) updateData.title = title;
     if (description !== undefined) updateData.description = description;
     if (imageUrl !== undefined) updateData.imageUrl = imageUrl;

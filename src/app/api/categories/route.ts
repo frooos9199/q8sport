@@ -1,20 +1,29 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+import { requireAdmin, AuthenticatedRequest } from '@/lib/auth'
+
+function slugify(input: string) {
+  return `${input}`
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9\-]/g, '')
+}
 
 export async function GET() {
   try {
-    // الكاتيجوري الافتراضية لقطع السيارات
-    const categories = [
-      { id: 'cat-1', name: 'Engine Parts', nameArabic: 'قطع المحرك', description: 'جميع قطع غيار المحرك', active: true },
-      { id: 'cat-2', name: 'Transmission', nameArabic: 'ناقل الحركة', description: 'قطع غيار ناقل الحركة', active: true },
-      { id: 'cat-3', name: 'Brakes', nameArabic: 'الفرامل', description: 'أجزاء نظام الفرامل', active: true },
-      { id: 'cat-4', name: 'Suspension', nameArabic: 'نظام التعليق', description: 'قطع غيار نظام التعليق', active: true },
-      { id: 'cat-5', name: 'Electrical', nameArabic: 'الكهرباء', description: 'القطع الكهربائية', active: true },
-      { id: 'cat-6', name: 'Body Parts', nameArabic: 'قطع الهيكل', description: 'أجزاء هيكل السيارة', active: true },
-      { id: 'cat-7', name: 'Interior', nameArabic: 'الداخلية', description: 'قطع غيار داخلية', active: true },
-      { id: 'cat-8', name: 'Tires & Wheels', nameArabic: 'الإطارات والجنوط', description: 'الإطارات والجنوط', active: true },
-      { id: 'cat-9', name: 'Fluids & Oils', nameArabic: 'الزيوت والسوائل', description: 'زيوت وسوائل السيارة', active: true },
-      { id: 'cat-10', name: 'Accessories', nameArabic: 'الإكسسوارات', description: 'إكسسوارات السيارة', active: true }
-    ]
+    const categories = await prisma.partCategory.findMany({
+      select: {
+        id: true,
+        name: true,
+        nameArabic: true,
+        description: true,
+        active: true
+      },
+      orderBy: {
+        createdAt: 'asc'
+      }
+    })
 
     return NextResponse.json({
       success: true,
@@ -30,7 +39,7 @@ export async function GET() {
   }
 }
 
-export async function POST(request: NextRequest) {
+export const POST = requireAdmin(async (request: AuthenticatedRequest) => {
   try {
     const { name, nameArabic, description } = await request.json()
 
@@ -41,22 +50,27 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const newCategory = {
-      id: `cat-${Date.now()}`,
-      name,
-      nameArabic,
-      description: description || '',
-      active: true,
-      createdAt: new Date().toISOString()
-    }
-
-    // في التطبيق الحقيقي، سيتم حفظ البيانات في قاعدة البيانات
-    // هنا نرجع فقط البيانات للعرض
+    const category = await prisma.partCategory.create({
+      data: {
+        name,
+        nameArabic,
+        description: description || null,
+        slug: slugify(name),
+        active: true
+      },
+      select: {
+        id: true,
+        name: true,
+        nameArabic: true,
+        description: true,
+        active: true
+      }
+    })
 
     return NextResponse.json({
       success: true,
       message: 'تم إضافة القسم بنجاح',
-      category: newCategory
+      category
     })
   } catch (error) {
     console.error('Error creating category:', error)
@@ -65,4 +79,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+})

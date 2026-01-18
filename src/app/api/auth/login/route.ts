@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,33 +14,6 @@ export async function POST(request: NextRequest) {
         { error: 'البريد الإلكتروني وكلمة المرور مطلوبان' },
         { status: 400 }
       );
-    }
-
-    // Demo admin user for testing
-    if (email === 'summit_kw@hotmail.com' && password === '123123') {
-      const demoAdmin = {
-        id: 'admin-1',
-        email: 'summit_kw@hotmail.com',
-        name: 'Summit Kuwait',
-        role: 'ADMIN',
-        status: 'ACTIVE'
-      };
-
-      const token = jwt.sign(
-        { 
-          userId: demoAdmin.id, 
-          email: demoAdmin.email, 
-          role: demoAdmin.role 
-        },
-        process.env.JWT_SECRET || 'your-secret-key',
-        { expiresIn: '24h' }
-      );
-
-      return NextResponse.json({
-        message: 'تم تسجيل الدخول كأدمن بنجاح',
-        user: demoAdmin,
-        token
-      });
     }
 
     // Find user by email in database

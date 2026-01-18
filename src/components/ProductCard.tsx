@@ -41,7 +41,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   // التبديل التلقائي للصور عند hover
   useEffect(() => {
-    let interval: NodeJS.Timeout
+    let interval: ReturnType<typeof setInterval>
     if (autoSlide && images.length > 1) {
       interval = setInterval(() => {
         setCurrentImageIndex((prev) => (prev + 1) % images.length)

@@ -1,144 +1,105 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import AuthWrapper from '@/components/AuthWrapper';
-import { 
-  MessageCircle, ArrowLeft, Search, Send, MoreVertical,
-  Phone, Video, Info, Paperclip, Image, Smile,
-  Check, CheckCheck, Clock
-} from 'lucide-react';
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import AuthWrapper from "@/components/AuthWrapper";
+import { useAuth } from "@/contexts/AuthContext";
+import { ArrowLeft, MessageCircle, Search } from "lucide-react";
+
+interface MessageUser {
+  id: string;
+  name: string;
+  avatar: string | null;
+}
+
+interface MessageAuction {
+  id: string;
+  title: string;
+  status: string;
+}
+
+interface MessageItem {
+  id: string;
+  content: string;
+  type: string;
+  read: boolean;
+  createdAt: string;
+  senderId: string;
+  receiverId: string;
+  sender: MessageUser;
+  receiver: MessageUser;
+  auction: MessageAuction | null;
+}
+
+interface MessagesApiResponse {
+  messages: MessageItem[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+}
 
 export default function Messages() {
-  const [selectedChat, setSelectedChat] = useState(1);
-  const [newMessage, setNewMessage] = useState('');
+  const { token, user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [messages, setMessages] = useState<MessageItem[]>([]);
 
-  const chats = [
-    {
-      id: 1,
-      name: 'أحمد الخليفي',
-      lastMessage: 'السلام عليكم، هل القطعة ما زالت متوفرة؟',
-      time: '12:30 ص',
-      unread: 2,
-      online: true,
-      avatar: null,
-      isTyping: false
-    },
-    {
-      id: 2,
-      name: 'فاطمة الصباح',
-      lastMessage: 'شكراً لك، سأفكر في الأمر',
-      time: 'أمس',
-      unread: 0,
-      online: false,
-      avatar: null,
-      isTyping: false
-    },
-    {
-      id: 3,
-      name: 'محمد الرشيد',
-      lastMessage: 'متى يمكنني الاستلام؟',
-      time: 'أمس',
-      unread: 1,
-      online: true,
-      avatar: null,
-      isTyping: true
-    },
-    {
-      id: 4,
-      name: 'سارة المطيري',
-      lastMessage: 'تم إرسال الصور',
-      time: 'الأحد',
-      unread: 0,
-      online: false,
-      avatar: null,
-      isTyping: false
-    }
-  ];
+  useEffect(() => {
+    const load = async () => {
+      if (!token) {
+        setLoading(false);
+        setMessages([]);
+        setError(null);
+        return;
+      }
 
-  const messages = [
-    {
-      id: 1,
-      senderId: 2,
-      senderName: 'أحمد الخليفي',
-      content: 'السلام عليكم ورحمة الله وبركاته',
-      time: '12:25 ص',
-      status: 'delivered',
-      type: 'text'
-    },
-    {
-      id: 2,
-      senderId: 1,
-      senderName: 'أنت',
-      content: 'وعليكم السلام ورحمة الله وبركاته، أهلاً وسهلاً بك',
-      time: '12:26 ص',
-      status: 'read',
-      type: 'text'
-    },
-    {
-      id: 3,
-      senderId: 2,
-      senderName: 'أحمد الخليفي',
-      content: 'أريد أن أسألك عن محرك Ford Mustang V8 الذي عرضته للبيع',
-      time: '12:27 ص',
-      status: 'delivered',
-      type: 'text'
-    },
-    {
-      id: 4,
-      senderId: 1,
-      senderName: 'أنت',
-      content: 'نعم، ما زال متوفراً. هل تريد تفاصيل إضافية؟',
-      time: '12:28 ص',
-      status: 'read',
-      type: 'text'
-    },
-    {
-      id: 5,
-      senderId: 2,
-      senderName: 'أحمد الخليفي',
-      content: 'هل يمكنك إرسال صور إضافية للمحرك؟',
-      time: '12:30 ص',
-      status: 'delivered',
-      type: 'text'
-    }
-  ];
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await fetch("/api/messages?limit=50", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-  const currentUser = 1;
-  const selectedChatData = chats.find(chat => chat.id === selectedChat);
+        const data = (await res.json()) as Partial<MessagesApiResponse> & { error?: string };
 
-  const handleSendMessage = () => {
-    if (newMessage.trim()) {
-      // Here you would typically send the message to the server
-      console.log('Sending message:', newMessage);
-      setNewMessage('');
-    }
-  };
+        if (!res.ok) {
+          throw new Error(data.error || "فشل جلب الرسائل");
+        }
 
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
+        setMessages(Array.isArray(data.messages) ? data.messages : []);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "فشل جلب الرسائل");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const renderMessageStatus = (status) => {
-    switch (status) {
-      case 'sent':
-        return <Check className="h-4 w-4 text-gray-400" />;
-      case 'delivered':
-        return <CheckCheck className="h-4 w-4 text-gray-400" />;
-      case 'read':
-        return <CheckCheck className="h-4 w-4 text-blue-500" />;
-      default:
-        return <Clock className="h-4 w-4 text-gray-400" />;
-    }
-  };
+    void load();
+  }, [token]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim();
+    if (!q) return messages;
+
+    return messages.filter((m) => {
+      const other = m.senderId === user?.id ? m.receiver : m.sender;
+      return (
+        m.content.includes(q) ||
+        other?.name?.includes(q) ||
+        (m.auction?.title?.includes(q) ?? false)
+      );
+    });
+  }, [messages, search, user?.id]);
 
   return (
-    <AuthWrapper requireAuth={true}>
+    <AuthWrapper requireAuth>
       <div className="min-h-screen bg-black">
-        {/* Header */}
         <header className="bg-gray-900 border-b border-gray-800">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center py-6">
@@ -154,192 +115,69 @@ export default function Messages() {
           </div>
         </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-gray-900 rounded-lg border border-gray-800 overflow-hidden" style={{ height: '600px' }}>
-          <div className="flex h-full">
-            {/* Sidebar - Chat List */}
-            <div className="w-1/3 border-l border-gray-800 flex flex-col">
-              {/* Search */}
-              <div className="p-4 border-b border-gray-800">
-                <div className="relative">
-                  <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                  <input
-                    type="text"
-                    placeholder="ابحث في المحادثات..."
-                    className="w-full pr-10 pl-4 py-2 border border-gray-700 bg-black rounded-lg focus:ring-2 focus:ring-red-600 focus:border-transparent text-white placeholder-gray-400 font-medium"
-                  />
-                </div>
-              </div>
-
-              {/* Chat List */}
-              <div className="flex-1 overflow-y-auto">
-                {chats.map((chat) => (
-                  <div
-                    key={chat.id}
-                    onClick={() => setSelectedChat(chat.id)}
-                    className={`p-4 border-b border-gray-800 cursor-pointer hover:bg-gray-800 ${
-                      selectedChat === chat.id ? 'bg-gray-800 border-red-600' : ''
-                    }`}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="relative">
-                        <div className="w-12 h-12 bg-red-600/20 rounded-full flex items-center justify-center border border-red-600/30">
-                          <span className="text-red-500 font-medium">
-                            {chat.name.charAt(0)}
-                          </span>
-                        </div>
-                        {chat.online && (
-                          <div className="absolute bottom-0 left-0 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-sm font-medium text-white truncate">
-                            {chat.name}
-                          </h3>
-                          <span className="text-xs text-gray-400">{chat.time}</span>
-                        </div>
-                        <div className="flex items-center justify-between mt-1">
-                          <p className="text-sm text-gray-400 font-medium truncate">
-                            {chat.isTyping ? (
-                              <span className="text-red-500 font-medium">يكتب...</span>
-                            ) : (
-                              chat.lastMessage
-                            )}
-                          </p>
-                          {chat.unread > 0 && (
-                            <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full">
-                              {chat.unread}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-gray-900 rounded-lg border border-gray-800 overflow-hidden">
+            <div className="p-4 border-b border-gray-800">
+              <div className="relative">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="ابحث في الرسائل..."
+                  className="w-full pr-10 pl-4 py-2 border border-gray-700 bg-black rounded-lg focus:ring-2 focus:ring-red-600 focus:border-transparent text-white placeholder-gray-400 font-medium"
+                />
               </div>
             </div>
 
-            {/* Main Chat Area */}
-            <div className="flex-1 flex flex-col">
-              {selectedChatData && (
-                <>
-                  {/* Chat Header */}
-                  <div className="p-4 border-b border-gray-800 bg-gray-900">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="relative">
-                          <div className="w-10 h-10 bg-red-600/20 rounded-full flex items-center justify-center border border-red-600/30">
-                            <span className="text-red-500 font-medium">
-                              {selectedChatData.name.charAt(0)}
+            {loading ? (
+              <div className="p-6 text-gray-300">جاري تحميل الرسائل...</div>
+            ) : error ? (
+              <div className="p-6 text-red-400">{error}</div>
+            ) : filtered.length === 0 ? (
+              <div className="p-6 text-gray-300">لا توجد رسائل بعد.</div>
+            ) : (
+              <div className="divide-y divide-gray-800">
+                {filtered.map((m) => {
+                  const isMeSender = m.senderId === user?.id;
+                  const other = isMeSender ? m.receiver : m.sender;
+                  const createdAt = new Date(m.createdAt);
+
+                  return (
+                    <div key={m.id} className="p-4 hover:bg-gray-800/50 transition">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-white font-semibold truncate">{other?.name || "مستخدم"}</span>
+                            <span className="text-xs text-gray-400">
+                              {isMeSender ? "أرسلت" : "استلمت"}
+                              {!m.read && !isMeSender ? " • غير مقروءة" : ""}
                             </span>
                           </div>
-                          {selectedChatData.online && (
-                            <div className="absolute bottom-0 left-0 w-3 h-3 bg-green-400 rounded-full border-2 border-gray-900"></div>
-                          )}
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-medium text-white">
-                            {selectedChatData.name}
-                          </h3>
-                          <p className="text-xs text-gray-400">
-                            {selectedChatData.online ? 'متصل الآن' : 'غير متصل'}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <button className="p-2 text-gray-400 hover:text-white" title="مكالمة صوتية">
-                          <Phone className="h-5 w-5" />
-                        </button>
-                        <button className="p-2 text-gray-400 hover:text-white" title="مكالمة فيديو">
-                          <Video className="h-5 w-5" />
-                        </button>
-                        <button className="p-2 text-gray-400 hover:text-white" title="معلومات">
-                          <Info className="h-5 w-5" />
-                        </button>
-                        <button className="p-2 text-gray-400 hover:text-white" title="المزيد">
-                          <MoreVertical className="h-5 w-5" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Messages */}
-                  <div className="flex-1 overflow-y-auto p-4 bg-black">
-                    <div className="space-y-4">
-                      {messages.map((message) => (
-                        <div
-                          key={message.id}
-                          className={`flex ${
-                            message.senderId === currentUser ? 'justify-end' : 'justify-start'
-                          }`}
-                        >
-                          <div
-                            className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                              message.senderId === currentUser
-                                ? 'bg-red-600 text-white'
-                                : 'bg-gray-900 text-white border border-gray-800'
-                            }`}
-                          >
-                            <p className="text-sm">{message.content}</p>
-                            <div
-                              className={`flex items-center justify-end mt-1 space-x-1 ${
-                                message.senderId === currentUser ? 'text-red-100' : 'text-gray-500'
-                              }`}
-                            >
-                              <span className="text-xs">{message.time}</span>
-                              {message.senderId === currentUser && renderMessageStatus(message.status)}
+                          <p className="text-gray-300 mt-1">{m.content}</p>
+                          {m.auction ? (
+                            <div className="mt-2">
+                              <Link
+                                href={`/auctions/${m.auction.id}`}
+                                className="text-sm text-red-400 hover:text-red-300"
+                              >
+                                مزاد: {m.auction.title}
+                              </Link>
                             </div>
-                          </div>
+                          ) : null}
                         </div>
-                      ))}
-                    </div>
-                  </div>
 
-                  {/* Message Input */}
-                  <div className="p-4 border-t border-gray-800 bg-gray-900">
-                    <div className="flex items-center space-x-3">
-                      <button className="p-2 text-gray-400 hover:text-white" title="إرفاق ملف">
-                        <Paperclip className="h-5 w-5" />
-                      </button>
-                      <button className="p-2 text-gray-400 hover:text-white" title="إرسال صورة">
-                        <Image className="h-5 w-5" />
-                      </button>
-                      <div className="flex-1 relative">
-                        <input
-                          type="text"
-                          value={newMessage}
-                          onChange={(e) => setNewMessage(e.target.value)}
-                          onKeyPress={handleKeyPress}
-                          placeholder="اكتب رسالتك..."
-                          className="w-full px-4 py-2 border border-gray-700 bg-black text-white rounded-full focus:ring-2 focus:ring-red-600 focus:border-transparent pl-12"
-                        />
-                        <button 
-                          title="إضافة رمز تعبيري"
-                          className="absolute left-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-white"
-                        >
-                          <Smile className="h-5 w-5" />
-                        </button>
+                        <div className="text-xs text-gray-500 whitespace-nowrap">
+                          {Number.isNaN(createdAt.getTime()) ? "" : createdAt.toLocaleString("ar-KW")}
+                        </div>
                       </div>
-                      <button
-                        onClick={handleSendMessage}
-                        disabled={!newMessage.trim()}
-                        className={`p-2 rounded-full ${
-                          newMessage.trim()
-                            ? 'bg-red-600 text-white hover:bg-red-700'
-                            : 'bg-gray-800 text-gray-600 cursor-not-allowed'
-                        }`}
-                      >
-                        <Send className="h-5 w-5" />
-                      </button>
                     </div>
-                  </div>
-                </>
-              )}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        </div>
-      </div>
+        </main>
       </div>
     </AuthWrapper>
   );

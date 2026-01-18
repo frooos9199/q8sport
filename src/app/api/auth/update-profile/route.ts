@@ -1,25 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import bcryptjs from 'bcryptjs';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { Prisma } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
+import { verifyToken } from '@/lib/auth';
 
 export async function PUT(request: NextRequest) {
   try {
-    // Get authorization header
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
+    const authUser = await verifyToken(request);
+    if (!authUser) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
-    }
-
-    const token = authHeader.split(' ')[1];
-    let decoded: any;
-    
-    try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
-    } catch (error) {
-      return NextResponse.json({ error: 'رمز غير صالح' }, { status: 401 });
     }
 
     const { name, phone, whatsapp, email, password } = await request.json();
@@ -30,18 +20,18 @@ export async function PUT(request: NextRequest) {
     }
 
     // Check if email is already taken by another user
-    if (email !== decoded.email) {
+    if (email !== authUser.email) {
       const existingUser = await prisma.user.findUnique({
         where: { email }
       });
 
-      if (existingUser && existingUser.id !== decoded.id) {
+      if (existingUser && existingUser.id !== authUser.userId) {
         return NextResponse.json({ error: 'البريد الإلكتروني مستخدم بالفعل' }, { status: 400 });
       }
     }
 
     // Prepare update data
-    const updateData: any = {
+    const updateData: Prisma.UserUpdateInput = {
       name,
       email,
       phone: phone || null,
@@ -58,7 +48,7 @@ export async function PUT(request: NextRequest) {
 
     // Update user in database
     const updatedUser = await prisma.user.update({
-      where: { id: decoded.id },
+      where: { id: authUser.userId },
       data: updateData,
       select: {
         id: true,
@@ -74,13 +64,12 @@ export async function PUT(request: NextRequest) {
     // Generate new token with updated info
     const newToken = jwt.sign(
       {
-        id: updatedUser.id,
+        userId: updatedUser.id,
         email: updatedUser.email,
-        name: updatedUser.name,
         role: updatedUser.role
       },
-      process.env.JWT_SECRET || 'fallback_secret',
-      { expiresIn: '7d' }
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '24h' }
     );
 
     return NextResponse.json({

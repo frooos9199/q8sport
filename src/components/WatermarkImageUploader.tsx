@@ -110,7 +110,7 @@ export default function WatermarkImageUploader({
             <ImageIcon className="w-4 h-4 ml-2" />
             <span className="font-medium">ملاحظة:</span>
           </div>
-          <p className="mt-1">سيتم إضافة علامة "Q8 MAZAD SPORT" المائية وخلفية مائية متكررة تلقائياً على جميع الصور المرفوعة لحماية المحتوى بشكل كامل</p>
+          <p className="mt-1">سيتم إضافة علامة &quot;Q8 MAZAD SPORT&quot; المائية وخلفية مائية متكررة تلقائياً على جميع الصور المرفوعة لحماية المحتوى بشكل كامل</p>
         </div>
       )}
 

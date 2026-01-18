@@ -49,6 +49,8 @@ model User {
   receivedMessages Message[] @relation("ReceivedMessages")
   notifications Notification[]
   requests Request[] // المطلوبات التي أضافها المستخدم
+
+  favorites Favorite[]
   
   @@map("users")
 }
@@ -93,8 +95,24 @@ model Product {
   // Relations
   userId      String
   user        User          @relation(fields: [userId], references: [id])
+
+  favorites   Favorite[]
   
   @@map("products")
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@map("favorites")
 }
 
 model CarBrand {

@@ -5,9 +5,10 @@ import { prisma } from '../../../../lib/prisma';
 // GET /api/auctions/[id] - Get specific auction
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const params = await context.params;
     const auction = await prisma.auction.findUnique({
       where: { id: params.id },
       include: {

@@ -1,14 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireAuth } from '@/lib/auth';
+import { verifyToken } from '@/lib/auth';
+
+// GET /api/requests/[id] - جلب طلب واحد (عامة)
+export async function GET(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const params = await context.params;
+    const request = await prisma.request.findUnique({
+      where: { id: params.id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            whatsapp: true,
+            rating: true,
+            avatar: true
+          }
+        }
+      }
+    });
+
+    if (!request) {
+      return NextResponse.json(
+        { success: false, error: 'الطلب غير موجود' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ success: true, request });
+  } catch (error) {
+    console.error('Error fetching request:', error);
+    return NextResponse.json(
+      { success: false, error: 'فشل جلب الطلب' },
+      { status: 500 }
+    );
+  }
+}
 
 // PATCH /api/requests/[id] - تعديل طلب
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { user } = await requireAuth(req);
+    const user = await verifyToken(req);
     if (!user) {
       return NextResponse.json(
         { success: false, error: 'يجب تسجيل الدخول أولاً' },
@@ -16,6 +56,7 @@ export async function PATCH(
       );
     }
 
+    const params = await context.params;
     const { id } = params;
     const body = await req.json();
 
@@ -31,14 +72,14 @@ export async function PATCH(
       );
     }
 
-    if (existingRequest.userId !== user.id) {
+    if (existingRequest.userId !== user.userId) {
       return NextResponse.json(
         { success: false, error: 'غير مصرح لك بتعديل هذا الطلب' },
         { status: 403 }
       );
     }
 
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     
     if (body.title !== undefined) updateData.title = body.title;
     if (body.description !== undefined) updateData.description = body.description;
@@ -80,10 +121,10 @@ export async function PATCH(
 // DELETE /api/requests/[id] - حذف طلب
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { user } = await requireAuth(req);
+    const user = await verifyToken(req);
     if (!user) {
       return NextResponse.json(
         { success: false, error: 'يجب تسجيل الدخول أولاً' },
@@ -91,6 +132,7 @@ export async function DELETE(
       );
     }
 
+    const params = await context.params;
     const { id } = params;
 
     // Check ownership
@@ -105,7 +147,7 @@ export async function DELETE(
       );
     }
 
-    if (existingRequest.userId !== user.id && user.role !== 'ADMIN') {
+    if (existingRequest.userId !== user.userId && user.role !== 'ADMIN') {
       return NextResponse.json(
         { success: false, error: 'غير مصرح لك بحذف هذا الطلب' },
         { status: 403 }

@@ -35,74 +35,153 @@ import {
 
 interface DashboardStats {
   totalUsers: number;
+  activeUsers: number;
+  disabledUsers: number;
+  shopOwners: number;
   activeAuctions: number;
   totalRevenue: number;
-  totalParts: number;
+  totalBids: number;
 }
 
 interface RecentAuction {
   id: string;
-  partName: string;
-  carModel: string;
-  currentBid: number;
+  title: string;
+  seller: string;
+  currentPrice: number;
+  totalBids: number;
   endTime: string;
-  status: 'active' | 'ended' | 'pending';
+  status: 'ACTIVE' | 'ENDED' | 'PENDING';
+}
+
+interface AdminStatsApiResponse {
+  overview?: {
+    totalUsers?: number;
+    activeUsers?: number;
+    disabledUsers?: number;
+    shopOwners?: number;
+    activeAuctions?: number;
+    totalRevenue?: number;
+    totalBids?: number;
+  };
+  recentAuctions?: Array<{
+    id: string;
+    title: string;
+    seller: string;
+    currentPrice: number;
+    totalBids: number;
+    status: 'ACTIVE' | 'ENDED' | 'PENDING';
+    endTime: string;
+  }>;
+  error?: string;
 }
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, token, logout } = useAuth();
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
+    activeUsers: 0,
+    disabledUsers: 0,
+    shopOwners: 0,
     activeAuctions: 0,
     totalRevenue: 0,
-    totalParts: 0
+    totalBids: 0
   });
   const [recentAuctions, setRecentAuctions] = useState<RecentAuction[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate loading dashboard data
-    setTimeout(() => {
-      setStats({
-        totalUsers: 247,
-        activeAuctions: 15,
-        totalRevenue: 12500,
-        totalParts: 1250
-      });
-      setRecentAuctions([
-        {
-          id: '1',
-          partName: 'محرك مستعمل',
-          carModel: 'Ford Mustang 2018',
-          currentBid: 2500,
-          endTime: '2025-09-29T15:30:00',
-          status: 'active'
-        },
-        {
-          id: '2',
-          partName: 'جنوط رياضية',
-          carModel: 'Chevrolet Corvette 2020',
-          currentBid: 800,
-          endTime: '2025-09-30T10:00:00',
-          status: 'active'
-        },
-        {
-          id: '3',
-          partName: 'نظام عادم كامل',
-          carModel: 'Ford F-150 2019',
-          currentBid: 1200,
-          endTime: '2025-09-28T20:00:00',
-          status: 'ended'
+    const loadDashboard = async () => {
+      try {
+        setLoading(true);
+
+        if (!token) {
+          // AuthWrapper سيمنع الدخول بدون تسجيل، لكن نخليها آمنة
+          setLoading(false);
+          return;
         }
-      ]);
-      setLoading(false);
-    }, 1000);
-  }, []);
+
+        const res = await fetch('/api/admin/stats?period=30', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        const data = (await res.json()) as AdminStatsApiResponse;
+
+        if (!res.ok) {
+          console.error('Admin stats error:', data);
+          throw new Error(data?.error || 'فشل جلب بيانات لوحة الإدارة');
+        }
+
+        setStats({
+          totalUsers: data.overview?.totalUsers || 0,
+          activeUsers: data.overview?.activeUsers || 0,
+          disabledUsers: data.overview?.disabledUsers || 0,
+          shopOwners: data.overview?.shopOwners || 0,
+          activeAuctions: data.overview?.activeAuctions || 0,
+          totalRevenue: data.overview?.totalRevenue || 0,
+          totalBids: data.overview?.totalBids || 0
+        });
+
+        setRecentAuctions(
+          (data.recentAuctions || []).map((a) => ({
+            id: a.id,
+            title: a.title,
+            seller: a.seller,
+            currentPrice: a.currentPrice,
+            totalBids: a.totalBids,
+            status: a.status,
+            endTime: a.endTime
+          }))
+        );
+      } catch (e) {
+        console.error('Failed to load admin dashboard:', e);
+        setRecentAuctions([]);
+        setStats({ totalUsers: 0, activeUsers: 0, disabledUsers: 0, shopOwners: 0, activeAuctions: 0, totalRevenue: 0, totalBids: 0 });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboard();
+  }, [token]);
 
   const handleLogout = async () => {
     await logout();
     router.push('/auth');
+  };
+
+  const handleDeleteAuction = async (auctionId: string) => {
+    try {
+      if (!token) return;
+
+      const ok = confirm('تأكيد حذف المزاد؟');
+      if (!ok) return;
+
+      const res = await fetch(`/api/auctions/${auctionId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data?.error || 'فشل حذف المزاد');
+        return;
+      }
+
+      // حدّث القائمة محلياً + خفّض العدّاد (تقريبياً)
+      setRecentAuctions((prev) => prev.filter((a) => a.id !== auctionId));
+      setStats((prev) => ({
+        ...prev,
+        activeAuctions: Math.max(0, prev.activeAuctions - 1)
+      }));
+    } catch (e) {
+      console.error('Delete auction failed:', e);
+      alert('حدث خطأ أثناء حذف المزاد');
+    }
   };
 
   const formatCurrency = (amount: number) => {
@@ -111,18 +190,18 @@ export default function AdminDashboard() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'text-green-600 bg-green-100';
-      case 'ended': return 'text-gray-800 bg-gray-100';
-      case 'pending': return 'text-yellow-600 bg-yellow-100';
+      case 'ACTIVE': return 'text-green-600 bg-green-100';
+      case 'ENDED': return 'text-gray-800 bg-gray-100';
+      case 'PENDING': return 'text-yellow-600 bg-yellow-100';
       default: return 'text-gray-800 bg-gray-100';
     }
   };
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'active': return 'نشط';
-      case 'ended': return 'منتهي';
-      case 'pending': return 'معلق';
+      case 'ACTIVE': return 'نشط';
+      case 'ENDED': return 'منتهي';
+      case 'PENDING': return 'معلق';
       default: return 'غير معروف';
     }
   };
@@ -230,8 +309,8 @@ export default function AdminDashboard() {
               <div className="flex items-center">
                 <Package className="h-12 w-12 text-red-600" />
                 <div className="mr-4">
-                  <p className="text-sm text-gray-400">إجمالي قطع الغيار</p>
-                  <p className="text-2xl font-bold text-white">{stats.totalParts}</p>
+                  <p className="text-sm text-gray-400">إجمالي المزايدات</p>
+                  <p className="text-2xl font-bold text-white">{stats.totalBids}</p>
                 </div>
               </div>
             </div>
@@ -292,21 +371,21 @@ export default function AdminDashboard() {
                       <UserCheck className="h-5 w-5 text-green-600 ml-2" />
                       <span className="text-gray-300">مستخدمين نشطين</span>
                     </div>
-                    <span className="text-lg font-bold text-green-600">237</span>
+                    <span className="text-lg font-bold text-green-600">{stats.activeUsers}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <UserX className="h-5 w-5 text-red-600 ml-2" />
                       <span className="text-gray-300">مستخدمين معطلين</span>
                     </div>
-                    <span className="text-lg font-bold text-red-600">10</span>
+                    <span className="text-lg font-bold text-red-600">{stats.disabledUsers}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <Store className="h-5 w-5 text-red-600 ml-2" />
                       <span className="text-gray-300">أصحاب محلات</span>
                     </div>
-                    <span className="text-lg font-bold text-red-600">45</span>
+                    <span className="text-lg font-bold text-red-600">{stats.shopOwners}</span>
                   </div>
                 </div>
                 <div className="mt-6 pt-4 border-t border-gray-800">
@@ -376,8 +455,8 @@ export default function AdminDashboard() {
                     <div key={auction.id} className="border border-gray-800 rounded-lg p-4 bg-black">
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <h3 className="font-semibold text-white">{auction.partName}</h3>
-                          <p className="text-sm text-gray-400">{auction.carModel}</p>
+                          <h3 className="font-semibold text-white">{auction.title}</h3>
+                          <p className="text-sm text-gray-400">البائع: {auction.seller}</p>
                         </div>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(auction.status)}`}>
                           {getStatusText(auction.status)}
@@ -385,16 +464,29 @@ export default function AdminDashboard() {
                       </div>
                       <div className="flex justify-between items-center">
                         <div className="text-lg font-bold text-green-600">
-                          {formatCurrency(auction.currentBid)}
+                          {formatCurrency(auction.currentPrice)}
+                          <span className="text-xs text-gray-400 font-normal mr-2">({auction.totalBids} مزايدات)</span>
                         </div>
                         <div className="flex space-x-2">
-                          <button title="عرض تفاصيل المزاد" className="p-1 text-red-600 hover:bg-gray-800 rounded">
+                          <button
+                            title="عرض تفاصيل المزاد"
+                            onClick={() => router.push(`/auctions/${auction.id}`)}
+                            className="p-1 text-red-600 hover:bg-gray-800 rounded"
+                          >
                             <Eye className="h-4 w-4" />
                           </button>
-                          <button title="تحرير المزاد" className="p-1 text-green-600 hover:bg-gray-800 rounded">
+                          <button
+                            title="فتح صفحة المزاد"
+                            onClick={() => router.push(`/auctions/${auction.id}`)}
+                            className="p-1 text-green-600 hover:bg-gray-800 rounded"
+                          >
                             <Edit className="h-4 w-4" />
                           </button>
-                          <button title="حذف المزاد" className="p-1 text-red-600 hover:bg-gray-800 rounded">
+                          <button
+                            title="حذف المزاد"
+                            onClick={() => handleDeleteAuction(auction.id)}
+                            className="p-1 text-red-600 hover:bg-gray-800 rounded"
+                          >
                             <Trash2 className="h-4 w-4" />
                           </button>
                         </div>

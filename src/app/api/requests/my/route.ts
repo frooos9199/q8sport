@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireAuth } from '@/lib/auth';
+import { verifyToken } from '@/lib/auth';
 
 // GET /api/requests/my - جلب طلباتي
 export async function GET(req: NextRequest) {
   try {
-    const { user } = await requireAuth(req);
+    const user = await verifyToken(req);
     if (!user) {
       return NextResponse.json(
         { success: false, error: 'يجب تسجيل الدخول أولاً' },
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
 
     const requests = await prisma.request.findMany({
       where: {
-        userId: user.id,
+        userId: user.userId,
       },
       orderBy: {
         createdAt: 'desc',

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import AuthWrapper from '@/components/AuthWrapper'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface Category {
   id: string
@@ -12,6 +14,7 @@ interface Category {
 }
 
 export default function AdminCategoriesPage() {
+  const { token } = useAuth()
   const [categories, setCategories] = useState<Category[]>([])
   const [showAddForm, setShowAddForm] = useState(false)
   const [isEditMode, setIsEditMode] = useState(false)
@@ -68,6 +71,7 @@ export default function AdminCategoriesPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
         },
         body: JSON.stringify(newCategory)
       })
@@ -111,6 +115,7 @@ export default function AdminCategoriesPage() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
         },
         body: JSON.stringify(newCategory)
       })
@@ -161,6 +166,7 @@ export default function AdminCategoriesPage() {
   }
 
   return (
+    <AuthWrapper requireAuth={true} requireAdmin={true}>
     <div className="min-h-screen bg-black" dir="rtl">
       <div className="max-w-6xl mx-auto py-8 px-4">
         {/* Header */}
@@ -340,5 +346,6 @@ export default function AdminCategoriesPage() {
         </div>
       </div>
     </div>
+    </AuthWrapper>
   )
 }

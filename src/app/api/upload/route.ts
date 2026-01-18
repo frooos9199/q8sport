@@ -7,7 +7,8 @@ const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'ima
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
-    const files = formData.getAll('images') as File[]
+    const allValues = formData.getAll('images')
+    const files = allValues.filter((v): v is File => v instanceof File)
     
     if (!files || files.length === 0) {
       return NextResponse.json({ error: 'No files to upload' }, { status: 400 })

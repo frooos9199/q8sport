@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, AuthenticatedRequest } from '@/lib/auth';
+import { verifyToken } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(
@@ -26,6 +27,16 @@ export async function GET(
 
     if (!product) {
       return NextResponse.json({ error: 'المنتج غير موجود' }, { status: 404 });
+    }
+
+    // Only allow viewing non-active products for owner/admin
+    if (product.status !== 'ACTIVE') {
+      const user = await verifyToken(request);
+      const canView = user && (user.role === 'ADMIN' || user.userId === product.userId);
+
+      if (!canView) {
+        return NextResponse.json({ error: 'المنتج غير موجود' }, { status: 404 });
+      }
     }
 
     return NextResponse.json(product);
@@ -58,7 +69,7 @@ export const PATCH = requireAuth(async (
       return NextResponse.json({ error: 'المنتج غير موجود' }, { status: 404 });
     }
 
-    if (product.userId !== user.userId) {
+    if (product.userId !== user.userId && user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'غير مصرح لك بتعديل هذا المنتج' }, { status: 403 });
     }
 
@@ -91,9 +102,14 @@ export const PATCH = requireAuth(async (
       const statusMap: { [key: string]: string } = {
         'active': 'ACTIVE',
         'sold': 'SOLD',
-        'pending': 'PENDING'
+        // This project doesn't have PENDING; use INACTIVE to represent pending/moderation
+        'pending': 'INACTIVE',
+        'inactive': 'INACTIVE'
       };
-      updateData.status = statusMap[body.status.toLowerCase()] || body.status.toUpperCase();
+
+      const normalized = typeof body.status === 'string' ? body.status.toLowerCase() : body.status;
+      const mapped = statusMap[normalized] || (typeof body.status === 'string' ? body.status.toUpperCase() : body.status);
+      updateData.status = mapped === 'PENDING' ? 'INACTIVE' : mapped;
     }
     if (body.images) updateData.images = body.images;
 
@@ -137,12 +153,14 @@ export const DELETE = requireAuth(async (
       return NextResponse.json({ error: 'المنتج غير موجود' }, { status: 404 });
     }
 
-    if (product.userId !== user.userId) {
+    if (product.userId !== user.userId && user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'غير مصرح لك بحذف هذا المنتج' }, { status: 403 });
     }
 
-    await prisma.product.delete({
+    // Soft-delete to keep history and allow admin review/unblock flows
+    await prisma.product.update({
       where: { id: productId },
+      data: { status: 'DELETED' },
     });
 
     return NextResponse.json({ 

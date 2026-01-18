@@ -31,16 +31,33 @@ export interface UserPayload {
   }
 }
 
+export function getTokenFromRequest(request: NextRequest): string | null {
+  // دعم أكثر من اسم للهيدر + دعم token في query (مفيد للموبايل/الاختبارات)
+  const authHeader =
+    request.headers.get('authorization') ||
+    request.headers.get('x-authorization') ||
+    request.headers.get('Authorization') ||
+    request.headers.get('X-Authorization');
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    return authHeader.substring(7);
+  }
+
+  try {
+    const { searchParams } = new URL(request.url);
+    return searchParams.get('token');
+  } catch {
+    return null;
+  }
+}
+
 export async function verifyToken(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.log('No valid authorization header found');
+    const token = getTokenFromRequest(request);
+    if (!token) {
+      console.log('No valid authorization token found');
       return null;
     }
-
-    const token = authHeader.substring(7);
     console.log('Verifying token:', token.substring(0, 20) + '...');
     
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
@@ -91,7 +108,7 @@ export function getUserFromToken(request: NextRequest): UserPayload | null {
     const token = request.cookies.get('token')?.value
     if (!token) return null
 
-    const payload = jwt.verify(token, process.env.JWT_SECRET || 'secret') as UserPayload
+    const payload = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as UserPayload
     return payload
   } catch (error) {
     return null

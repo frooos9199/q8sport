@@ -29,6 +29,7 @@ interface ShopForm {
   name: string;
   ownerName: string;
   ownerEmail: string;
+  password: string;
   ownerPhone: string;
   ownerWhatsapp: string;
   businessType: string;
@@ -36,8 +37,27 @@ interface ShopForm {
   description: string;
 }
 
+interface ApiShopOwnerUser {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  whatsapp: string | null;
+  role: string;
+  status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'BANNED';
+  rating: number | null;
+  shopName: string | null;
+  shopAddress: string | null;
+  businessType: string | null;
+  createdAt: string;
+  lastLoginAt: string | null;
+  _count?: {
+    products?: number;
+  };
+}
+
 export default function ShopManagement() {
-  const { user: currentUser } = useAuth();
+  const { token } = useAuth();
   const [shops, setShops] = useState<Shop[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -52,6 +72,7 @@ export default function ShopManagement() {
     name: '',
     ownerName: '',
     ownerEmail: '',
+    password: '',
     ownerPhone: '',
     ownerWhatsapp: '',
     businessType: '',
@@ -66,102 +87,46 @@ export default function ShopManagement() {
   const loadShops = async () => {
     try {
       setLoading(true);
-      // محاكاة بيانات المحلات
-      const mockShops: Shop[] = [
-        {
-          id: '1',
-          name: 'محل السالم لقطع الغيار',
-          ownerName: 'محمد عبدالله السالم',
-          ownerEmail: 'mohammed@salem-parts.com',
-          ownerPhone: '96565009876',
-          ownerWhatsapp: '96565009876',
-          businessType: 'قطع غيار السيارات',
-          address: 'الكويت، حولي، شارع التجار، مجمع الحرفيين',
-          description: 'محل متخصص في قطع غيار السيارات الأوروبية والأمريكية',
-          status: 'ACTIVE',
-          createdAt: '2024-01-10',
-          lastActivity: '2025-01-28',
-          productCount: 156,
-          orderCount: 289,
-          rating: 4.8,
-          reviewCount: 67
-        },
-        {
-          id: '2',
-          name: 'ورشة الفهد للإطارات',
-          ownerName: 'خالد أحمد الفهد',
-          ownerEmail: 'khalid@alfahd-tires.com',
-          ownerPhone: '96565123456',
-          ownerWhatsapp: '96565123456',
-          businessType: 'إطارات وبطاريات',
-          address: 'الكويت، الفروانية، شارع الصناعة',
-          description: 'ورشة متخصصة في الإطارات والبطاريات وخدمات السيارات',
-          status: 'ACTIVE',
-          createdAt: '2024-02-15',
-          lastActivity: '2025-01-29',
-          productCount: 89,
-          orderCount: 145,
-          rating: 4.6,
-          reviewCount: 34
-        },
-        {
-          id: '3',
-          name: 'مركز الشامل للقطع',
-          ownerName: 'أحمد سالم الشامل',
-          ownerEmail: 'ahmed@alshamel-parts.com',
-          ownerPhone: '96565234567',
-          ownerWhatsapp: '96565234567',
-          businessType: 'قطع غيار يابانية',
-          address: 'الكويت، الجهراء، السوق المركزي',
-          description: 'متخصصون في قطع غيار السيارات اليابانية والكورية',
-          status: 'ACTIVE',
-          createdAt: '2024-03-20',
-          lastActivity: '2025-01-27',
-          productCount: 203,
-          orderCount: 178,
-          rating: 4.9,
-          reviewCount: 89
-        },
-        {
-          id: '4',
-          name: 'ورشة النور للصيانة',
-          ownerName: 'عبدالله محمد النور',
-          ownerEmail: 'abdullah@alnoor-service.com',
-          ownerPhone: '96565345678',
-          ownerWhatsapp: '96565345678',
-          businessType: 'صيانة وإصلاح',
-          address: 'الكويت، العاصمة، شارع فهد السالم',
-          description: 'ورشة شاملة للصيانة والإصلاح وخدمات السيارات',
-          status: 'SUSPENDED',
-          createdAt: '2024-04-05',
-          lastActivity: '2025-01-15',
-          productCount: 45,
-          orderCount: 67,
-          rating: 4.2,
-          reviewCount: 23
-        },
-        {
-          id: '5',
-          name: 'معرض الخليج للسيارات',
-          ownerName: 'سالم خالد الخليج',
-          ownerEmail: 'salem@gulf-cars.com',
-          ownerPhone: '96565456789',
-          ownerWhatsapp: '96565456789',
-          businessType: 'بيع وشراء السيارات',
-          address: 'الكويت، الأحمدي، طريق الفحيحيل',
-          description: 'معرض متخصص في بيع وشراء السيارات المستعملة',
-          status: 'BANNED',
-          createdAt: '2024-05-10',
-          lastActivity: '2024-12-20',
-          productCount: 0,
-          orderCount: 12,
-          rating: 3.8,
-          reviewCount: 15
+      if (!token) {
+        setShops([]);
+        return;
+      }
+
+      const res = await fetch('/api/admin/users?role=SHOP_OWNER&limit=200', {
+        headers: {
+          Authorization: `Bearer ${token}`
         }
-      ];
-      setShops(mockShops);
+      });
+
+      const data = (await res.json()) as { users?: ApiShopOwnerUser[]; error?: string };
+
+      if (!res.ok) {
+        throw new Error(data.error || 'فشل تحميل المحلات');
+      }
+
+      const mapped: Shop[] = (data.users || []).map((u) => ({
+        id: u.id,
+        name: u.shopName || u.name,
+        ownerName: u.name,
+        ownerEmail: u.email,
+        ownerPhone: u.phone || undefined,
+        ownerWhatsapp: u.whatsapp || undefined,
+        businessType: u.businessType || '',
+        address: u.shopAddress || '',
+        description: '',
+        status: u.status as Shop['status'],
+        createdAt: u.createdAt,
+        lastActivity: u.lastLoginAt || undefined,
+        productCount: u._count?.products || 0,
+        orderCount: 0,
+        rating: u.rating || 0,
+        reviewCount: 0
+      }));
+
+      setShops(mapped);
     } catch (error) {
       console.error('خطأ في تحميل المحلات:', error);
+      alert(error instanceof Error ? error.message : 'حدث خطأ في تحميل المحلات');
     } finally {
       setLoading(false);
     }
@@ -188,6 +153,7 @@ export default function ShopManagement() {
         name: shop.name,
         ownerName: shop.ownerName,
         ownerEmail: shop.ownerEmail,
+        password: '',
         ownerPhone: shop.ownerPhone || '',
         ownerWhatsapp: shop.ownerWhatsapp || '',
         businessType: shop.businessType,
@@ -199,6 +165,7 @@ export default function ShopManagement() {
         name: '',
         ownerName: '',
         ownerEmail: '',
+        password: '',
         ownerPhone: '',
         ownerWhatsapp: '',
         businessType: '',
@@ -218,6 +185,7 @@ export default function ShopManagement() {
       name: '',
       ownerName: '',
       ownerEmail: '',
+      password: '',
       ownerPhone: '',
       ownerWhatsapp: '',
       businessType: '',
@@ -229,30 +197,48 @@ export default function ShopManagement() {
   // Add Shop
   const handleAddShop = async () => {
     try {
-      if (!shopForm.name || !shopForm.ownerName || !shopForm.ownerEmail || !shopForm.businessType) {
+      if (!token) {
+        alert('يجب تسجيل الدخول أولاً');
+        return;
+      }
+
+      if (!shopForm.name || !shopForm.ownerName || !shopForm.ownerEmail || !shopForm.businessType || !shopForm.address) {
         alert('يرجى ملء جميع الحقول المطلوبة');
         return;
       }
 
-      const newShop: Shop = {
-        id: Date.now().toString(),
-        name: shopForm.name,
-        ownerName: shopForm.ownerName,
-        ownerEmail: shopForm.ownerEmail,
-        ownerPhone: shopForm.ownerPhone,
-        ownerWhatsapp: shopForm.ownerWhatsapp,
-        businessType: shopForm.businessType,
-        address: shopForm.address,
-        description: shopForm.description,
-        status: 'ACTIVE',
-        createdAt: formatDateShort(new Date().toISOString()),
-        productCount: 0,
-        orderCount: 0,
-        rating: 0,
-        reviewCount: 0
-      };
+      if (!shopForm.password || shopForm.password.length < 6) {
+        alert('يرجى إدخال كلمة مرور (6 أحرف/أرقام على الأقل)');
+        return;
+      }
 
-      setShops(prev => [...prev, newShop]);
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: shopForm.ownerName,
+          email: shopForm.ownerEmail,
+          password: shopForm.password,
+          phone: shopForm.ownerPhone || null,
+          whatsapp: shopForm.ownerWhatsapp || shopForm.ownerPhone || null,
+          role: 'SHOP_OWNER',
+          shopName: shopForm.name,
+          shopAddress: shopForm.address,
+          businessType: shopForm.businessType
+        })
+      });
+
+      const data = (await res.json()) as { error?: string };
+
+      if (!res.ok) {
+        alert(data.error || 'حدث خطأ في إضافة المحل');
+        return;
+      }
+
+      await loadShops();
       closeModal();
       alert('تم إضافة المحل بنجاح');
     } catch (error) {
@@ -264,26 +250,44 @@ export default function ShopManagement() {
   // Edit Shop
   const handleEditShop = async () => {
     try {
+      if (!token) {
+        alert('يجب تسجيل الدخول أولاً');
+        return;
+      }
+
       if (!selectedShop || !shopForm.name || !shopForm.ownerName || !shopForm.ownerEmail) {
         alert('يرجى ملء جميع الحقول المطلوبة');
         return;
       }
 
-      setShops(prev => prev.map(shop => 
-        shop.id === selectedShop.id 
-          ? {
-              ...shop,
-              name: shopForm.name,
-              ownerName: shopForm.ownerName,
-              ownerEmail: shopForm.ownerEmail,
-              ownerPhone: shopForm.ownerPhone,
-              ownerWhatsapp: shopForm.ownerWhatsapp,
-              businessType: shopForm.businessType,
-              address: shopForm.address,
-              description: shopForm.description
-            }
-          : shop
-      ));
+      const res = await fetch('/api/admin/users', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          userId: selectedShop.id,
+          name: shopForm.ownerName,
+          email: shopForm.ownerEmail,
+          phone: shopForm.ownerPhone || null,
+          whatsapp: shopForm.ownerWhatsapp || shopForm.ownerPhone || null,
+          role: 'SHOP_OWNER',
+          status: selectedShop.status,
+          shopName: shopForm.name,
+          shopAddress: shopForm.address,
+          businessType: shopForm.businessType
+        })
+      });
+
+      const data = (await res.json()) as { error?: string };
+
+      if (!res.ok) {
+        alert(data.error || 'حدث خطأ في تحديث المحل');
+        return;
+      }
+
+      await loadShops();
 
       closeModal();
       alert('تم تحديث بيانات المحل بنجاح');
@@ -298,7 +302,28 @@ export default function ShopManagement() {
     try {
       if (!selectedShop) return;
 
-      setShops(prev => prev.filter(shop => shop.id !== selectedShop.id));
+      if (!token) {
+        alert('يجب تسجيل الدخول أولاً');
+        return;
+      }
+
+      const res = await fetch('/api/admin/users', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ userId: selectedShop.id, hardDelete: true })
+      });
+
+      const data = (await res.json()) as { error?: string };
+
+      if (!res.ok) {
+        alert(data.error || 'حدث خطأ في حذف المحل');
+        return;
+      }
+
+      await loadShops();
       closeModal();
       alert('تم حذف المحل بنجاح');
     } catch (error) {
@@ -310,6 +335,11 @@ export default function ShopManagement() {
   // Change Shop Status
   const handleChangeShopStatus = async (shop: Shop, newStatus: Shop['status']) => {
     try {
+      if (!token) {
+        alert('يجب تسجيل الدخول أولاً');
+        return;
+      }
+
       const statusText = {
         'ACTIVE': 'تفعيل',
         'SUSPENDED': 'إيقاف مؤقت', 
@@ -319,9 +349,23 @@ export default function ShopManagement() {
       const confirmed = confirm(`هل أنت متأكد من ${statusText[newStatus]} المحل "${shop.name}"؟`);
       if (!confirmed) return;
 
-      setShops(prev => prev.map(s => 
-        s.id === shop.id ? { ...s, status: newStatus } : s
-      ));
+      const res = await fetch('/api/admin/users', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ userId: shop.id, status: newStatus })
+      });
+
+      const data = (await res.json()) as { error?: string };
+
+      if (!res.ok) {
+        alert(data.error || 'حدث خطأ في تغيير حالة المحل');
+        return;
+      }
+
+      await loadShops();
 
       alert(`تم ${statusText[newStatus]} المحل بنجاح`);
     } catch (error) {
@@ -677,6 +721,20 @@ export default function ShopManagement() {
                           placeholder="example@domain.com"
                         />
                       </div>
+
+                      {modalType === 'add' && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-300 mb-1">كلمة المرور *</label>
+                          <input
+                            type="password"
+                            value={shopForm.password}
+                            onChange={(e) => setShopForm(prev => ({ ...prev, password: e.target.value }))}
+                            className="w-full p-2 bg-black border border-gray-700 text-white rounded-lg focus:ring-red-500 focus:border-red-500"
+                            placeholder="******"
+                          />
+                          <p className="text-xs text-gray-400 mt-1">على الأقل 6 أحرف/أرقام</p>
+                        </div>
+                      )}
                       <div>
                         <label className="block text-sm font-medium text-gray-300 mb-1">رقم الهاتف</label>
                         <input

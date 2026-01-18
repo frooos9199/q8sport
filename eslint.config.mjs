@@ -18,7 +18,21 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
+      "Q8SportApp/**",
+      "scripts/**",
+      "prisma/**",
+      "src/examples/**",
+      "src/app/**/page-backup.tsx",
+      "src/app/**/page-old-backup.tsx",
+      "src/app/**/temp-page.tsx",
+      "src/app/auctions/test/**",
+      "*.js",
     ],
+  },
+  {
+    rules: {
+      "@typescript-eslint/no-explicit-any": "warn",
+    },
   },
 ];
 

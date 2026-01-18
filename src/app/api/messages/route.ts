@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 import { requireAuth, AuthenticatedRequest } from '../../../lib/auth';
 import { prisma } from '../../../lib/prisma';
 
@@ -12,18 +13,14 @@ export const GET = requireAuth(async (request: AuthenticatedRequest) => {
     const skip = (page - 1) * limit;
 
     const userId = request.user!.userId;
-    let where: any = {};
-
-    if (type === 'sent') {
-      where.senderId = userId;
-    } else if (type === 'received') {
-      where.receiverId = userId;
-    } else {
-      where.OR = [
-        { senderId: userId },
-        { receiverId: userId }
-      ];
-    }
+    const where: Prisma.MessageWhereInput =
+      type === 'sent'
+        ? { senderId: userId }
+        : type === 'received'
+          ? { receiverId: userId }
+          : {
+            OR: [{ senderId: userId }, { receiverId: userId }]
+          };
 
     const [messages, total] = await Promise.all([
       prisma.message.findMany({

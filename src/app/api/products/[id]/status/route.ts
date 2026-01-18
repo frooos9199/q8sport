@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/prisma'
 
 // PATCH - تحديث حالة المنتج
 export async function PATCH(
@@ -10,7 +8,7 @@ export async function PATCH(
 ) {
   try {
     const { id: productId } = await params
-    const { status, soldPrice, buyerInfo } = await request.json()
+    const { status, soldPrice } = await request.json()
 
     // جلب المنتج أولاً
     const existingProduct = await prisma.product.findUnique({

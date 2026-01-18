@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function TestAuctionsPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -10,34 +12,34 @@ export default function TestAuctionsPage() {
           <p className="text-gray-600 mb-4">صفحة المزادات الآن نشطة وتعمل بشكل صحيح</p>
           
           <div className="grid grid-cols-1 gap-4">
-            <a 
-              href="/auctions/1" 
+            <Link
+              href="/auctions/1"
               className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition"
             >
               مزاد رقم 1
-            </a>
-            <a 
-              href="/auctions/2" 
+            </Link>
+            <Link
+              href="/auctions/2"
               className="bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition"
             >
               مزاد رقم 2  
-            </a>
-            <a 
-              href="/auctions/3" 
+            </Link>
+            <Link
+              href="/auctions/3"
               className="bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition"
             >
               مزاد رقم 3
-            </a>
+            </Link>
           </div>
         </div>
         
         <div className="mt-8">
-          <a 
-            href="/" 
+          <Link
+            href="/"
             className="text-blue-600 hover:text-blue-800 underline"
           >
             ← العودة للصفحة الرئيسية
-          </a>
+          </Link>
         </div>
       </div>
     </div>

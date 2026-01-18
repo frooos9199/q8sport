@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import AuthWrapper from '@/components/AuthWrapper';
+import { useAuth } from '@/contexts/AuthContext';
 import { addWatermarkToImage, isImageFile } from '@/utils/imageWatermark';
 import { 
   ArrowLeft,
@@ -30,8 +31,10 @@ interface Advertisement {
 }
 
 export default function AdvertisementsPage() {
+  const { token } = useAuth();
   const [advertisements, setAdvertisements] = useState<Advertisement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
@@ -44,44 +47,39 @@ export default function AdvertisementsPage() {
   const [imagePreview, setImagePreview] = useState<string>('');
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  // Mock data
-  const mockAdvertisements: Advertisement[] = [
-    {
-      id: '1',
-      title: 'إعلان قطع غيار فورد',
-      description: 'خصم 25% على جميع قطع غيار فورد الأصلية',
-      imageUrl: '/ads/ford-parts.jpg',
-      link: 'https://example.com/ford-parts',
-      isActive: true,
-      position: 'header',
-      createdAt: '2024-01-15',
-      updatedAt: '2024-01-15'
-    }
-  ];
-
   useEffect(() => {
     // جلب الإعلانات من قاعدة البيانات
     const fetchAdvertisements = async () => {
+      if (!token) {
+        setLoading(false);
+        return;
+      }
       try {
-        const response = await fetch('/api/advertisements/admin');
+        setLoadError(null);
+        const response = await fetch('/api/advertisements/admin', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
         if (response.ok) {
           const data = await response.json();
           setAdvertisements(data);
         } else {
-          console.error('Failed to fetch advertisements');
-          // استخدام البيانات الوهمية في حالة الفشل
-          setAdvertisements(mockAdvertisements);
+          const body = (await response.json()) as { error?: string };
+          setLoadError(body?.error || 'فشل جلب الإعلانات');
+          setAdvertisements([]);
         }
       } catch (error) {
         console.error('Error fetching advertisements:', error);
-        setAdvertisements(mockAdvertisements);
+        setLoadError('فشل جلب الإعلانات');
+        setAdvertisements([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchAdvertisements();
-  }, []);
+  }, [token]);
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -346,7 +344,7 @@ export default function AdvertisementsPage() {
 
   if (loading) {
     return (
-      <AuthWrapper>
+      <AuthWrapper requireAuth requireAdmin>
         <div className="min-h-screen bg-black flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
@@ -358,7 +356,7 @@ export default function AdvertisementsPage() {
   }
 
   return (
-    <AuthWrapper>
+    <AuthWrapper requireAuth requireAdmin>
       <div className="min-h-screen bg-black">
         {/* Header */}
         <header className="bg-gradient-to-r from-black via-gray-900 to-black border-b border-red-600">
@@ -387,6 +385,11 @@ export default function AdvertisementsPage() {
 
         {/* Main Content */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {loadError && (
+            <div className="mb-6 bg-red-600/20 border border-red-600/30 text-red-300 px-4 py-3 rounded">
+              {loadError}
+            </div>
+          )}
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
@@ -598,7 +601,7 @@ export default function AdvertisementsPage() {
                     صورة الإعلان *
                   </label>
                   <div className="text-sm text-red-400 mb-3 bg-red-900/20 p-3 rounded-lg border border-red-800">
-                    ✨ <strong>العلامة المائية التلقائية:</strong> سيتم إضافة شعار "Q8 MAZAD SPORT" مع خلفية مائية على جميع الصور لحمايتها
+                    ✨ <strong>العلامة المائية التلقائية:</strong> سيتم إضافة شعار &quot;Q8 MAZAD SPORT&quot; مع خلفية مائية على جميع الصور لحمايتها
                   </div>
                   
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
@@ -710,7 +713,7 @@ export default function AdvertisementsPage() {
                     <option value="between-listings">📋 بين القوائم (ظهور متوسط)</option>
                   </select>
                   <p className="text-xs text-gray-400 mt-1">
-                    💡 اختر "أعلى الصفحة" للحصول على أقصى مشاهدة للإعلان
+                    💡 اختر &quot;أعلى الصفحة&quot; للحصول على أقصى مشاهدة للإعلان
                   </p>
                 </div>
 

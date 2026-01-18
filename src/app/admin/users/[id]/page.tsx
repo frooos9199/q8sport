@@ -38,10 +38,11 @@ interface Product {
 export default function UserDetailsPage() {
   const params = useParams();
   const router = useRouter();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, token } = useAuth();
   const [user, setUser] = useState<User | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPromoteModal, setShowPromoteModal] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -63,60 +64,42 @@ export default function UserDetailsPage() {
   const loadUserData = async () => {
     try {
       setLoading(true);
-      // محاكاة جلب بيانات المستخدم
-      const mockUser: User = {
-        id: params.id as string,
-        name: 'أحمد محمد الصالح',
-        email: 'ahmed@example.com',
-        phone: '96565001234',
-        whatsapp: '96565001234',
-        role: 'USER',
-        status: 'ACTIVE',
-        createdAt: '2024-01-15',
-        lastLoginAt: '2025-01-28',
-        shopName: 'متجر السيارات الرياضية',
-        shopAddress: 'الكويت - الجهراء',
-        businessType: 'قطع غيار'
-      };
+      setLoadError(null);
 
-      const mockProducts: Product[] = [
-        {
-          id: '1',
-          title: 'Ford Mustang 2023',
-          description: 'سيارة رياضية بحالة ممتازة',
-          price: 15000,
-          productType: 'CAR',
-          status: 'ACTIVE',
-          images: JSON.stringify(['/placeholder-car.jpg']),
-          createdAt: '2025-01-15',
-          views: 125
+      if (!token) {
+        setUser(null);
+        setProducts([]);
+        setLoadError('الرجاء تسجيل الدخول مرة أخرى');
+        return;
+      }
+
+      const res = await fetch(`/api/admin/users/${params.id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-        {
-          id: '2',
-          title: 'محرك كامل V8',
-          description: 'محرك أصلي من موستنج',
-          price: 3500,
-          productType: 'PART',
-          status: 'ACTIVE',
-          images: JSON.stringify(['/placeholder-car.jpg']),
-          createdAt: '2025-01-10',
-          views: 89
-        }
-      ];
+      });
 
-      setUser(mockUser);
-      setProducts(mockProducts);
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data?.error || 'فشل تحميل بيانات المستخدم');
+      }
+
+      setUser(data.user);
+      setProducts(data.products || []);
       setEditForm({
-        name: mockUser.name,
-        email: mockUser.email,
-        phone: mockUser.phone || '',
-        whatsapp: mockUser.whatsapp || '',
-        shopName: mockUser.shopName || '',
-        shopAddress: mockUser.shopAddress || '',
-        businessType: mockUser.businessType || ''
+        name: data.user.name,
+        email: data.user.email,
+        phone: data.user.phone || '',
+        whatsapp: data.user.whatsapp || '',
+        shopName: data.user.shopName || '',
+        shopAddress: data.user.shopAddress || '',
+        businessType: data.user.businessType || ''
       });
     } catch (error) {
       console.error('Error loading user data:', error);
+      setUser(null);
+      setProducts([]);
+      setLoadError(error instanceof Error ? error.message : 'فشل تحميل بيانات المستخدم');
     } finally {
       setLoading(false);
     }
@@ -124,27 +107,73 @@ export default function UserDetailsPage() {
 
   const handleUpdateUser = async () => {
     try {
-      // هنا يتم إرسال البيانات للـ API
-      console.log('Updating user:', editForm);
+      if (!token || !user) {
+        alert('غير مصرح');
+        return;
+      }
+
+      const res = await fetch('/api/admin/users', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          name: editForm.name,
+          email: editForm.email,
+          phone: editForm.phone,
+          whatsapp: editForm.whatsapp,
+          shopName: editForm.shopName,
+          shopAddress: editForm.shopAddress,
+          businessType: editForm.businessType,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || 'حدث خطأ أثناء تحديث البيانات');
+      }
+
       alert('تم تحديث بيانات المستخدم بنجاح');
       setShowEditModal(false);
       loadUserData();
     } catch (error) {
       console.error('Error updating user:', error);
-      alert('حدث خطأ أثناء تحديث البيانات');
+      alert(error instanceof Error ? error.message : 'حدث خطأ أثناء تحديث البيانات');
     }
   };
 
   const handlePromoteUser = async (newRole: 'USER' | 'SELLER' | 'SHOP_OWNER') => {
     try {
-      // هنا يتم إرسال البيانات للـ API
-      console.log('Promoting user to:', newRole);
+      if (!token || !user) {
+        alert('غير مصرح');
+        return;
+      }
+
+      const res = await fetch('/api/admin/users', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          role: newRole,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || 'حدث خطأ أثناء ترقية المستخدم');
+      }
+
       alert(`تم ترقية المستخدم إلى ${getRoleLabel(newRole)} بنجاح`);
       setShowPromoteModal(false);
       loadUserData();
     } catch (error) {
       console.error('Error promoting user:', error);
-      alert('حدث خطأ أثناء ترقية المستخدم');
+      alert(error instanceof Error ? error.message : 'حدث خطأ أثناء ترقية المستخدم');
     }
   };
 
@@ -152,13 +181,28 @@ export default function UserDetailsPage() {
     if (!confirm('هل أنت متأكد من حذف هذا المنتج؟')) return;
     
     try {
-      // هنا يتم إرسال الطلب للـ API
-      console.log('Deleting product:', productId);
+      if (!token) {
+        alert('غير مصرح');
+        return;
+      }
+
+      const res = await fetch(`/api/products/${productId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+      if (!res.ok || data?.success === false) {
+        throw new Error(data?.error || 'حدث خطأ أثناء حذف المنتج');
+      }
+
       alert('تم حذف المنتج بنجاح');
       loadUserData();
     } catch (error) {
       console.error('Error deleting product:', error);
-      alert('حدث خطأ أثناء حذف المنتج');
+      alert(error instanceof Error ? error.message : 'حدث خطأ أثناء حذف المنتج');
     }
   };
 
@@ -216,6 +260,24 @@ export default function UserDetailsPage() {
           <p className="text-white mt-4">جاري التحميل...</p>
         </div>
       </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <AuthWrapper requireAuth={true} requireAdmin={true}>
+        <div className="min-h-screen bg-black flex items-center justify-center">
+          <div className="text-center max-w-md">
+            <UserIcon className="h-16 w-16 text-gray-500 mx-auto mb-4" />
+            <p className="text-white font-semibold mb-2">تعذر تحميل بيانات المستخدم</p>
+            <p className="text-gray-400 mb-4">{loadError || 'المستخدم غير موجود'}</p>
+            <Link href="/admin/users" className="inline-flex items-center bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg">
+              <ArrowRight className="h-4 w-4 ml-2" />
+              العودة لقائمة المستخدمين
+            </Link>
+          </div>
+        </div>
+      </AuthWrapper>
     );
   }
 

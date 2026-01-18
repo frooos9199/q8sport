@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { requireAuth, AuthenticatedRequest, canManageUsers, setUserPermissions } from '../../../../lib/auth';
 import { prisma } from '../../../../lib/prisma';
+import bcrypt from 'bcryptjs';
 
 // GET /api/admin/users - Get all users with filters
 export const GET = requireAuth(async (request: AuthenticatedRequest) => {
@@ -72,7 +73,8 @@ export const GET = requireAuth(async (request: AuthenticatedRequest) => {
               auctions: true,
               bids: true,
               products: true,
-              sentMessages: true
+              sentMessages: true,
+              requests: true
             }
           }
         }
@@ -80,8 +82,13 @@ export const GET = requireAuth(async (request: AuthenticatedRequest) => {
       prisma.user.count({ where })
     ]);
 
+    const usersWithBlocked = users.map((u) => ({
+      ...u,
+      blocked: u.status !== 'ACTIVE',
+    }));
+
     return NextResponse.json({
-      users,
+      users: usersWithBlocked,
       pagination: {
         page,
         limit,
@@ -135,7 +142,6 @@ export const POST = requireAuth(async (request: AuthenticatedRequest) => {
     }
 
     // Hash password
-    const bcrypt = require('bcryptjs');
     const hashedPassword = await bcrypt.hash(password, 12);
 
     // Set permissions based on role
@@ -207,7 +213,7 @@ export const PUT = requireAuth(async (request: AuthenticatedRequest) => {
 
   try {
     const body = await request.json();
-    const { userId, role, status, permissions, shopName, shopAddress, businessType } = body;
+    const { userId, name, email, phone, whatsapp, role, status, permissions, shopName, shopAddress, businessType } = body;
 
     if (!userId) {
       return NextResponse.json(
@@ -216,11 +222,52 @@ export const PUT = requireAuth(async (request: AuthenticatedRequest) => {
       );
     }
 
+    const existing = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, phone: true }
+    });
+
+    if (!existing) {
+      return NextResponse.json(
+        { error: 'المستخدم غير موجود' },
+        { status: 404 }
+      );
+    }
+
+    // Uniqueness checks when changing email/phone
+    if (email && email !== existing.email) {
+      const emailOwner = await prisma.user.findUnique({ where: { email } });
+      if (emailOwner && emailOwner.id !== userId) {
+        return NextResponse.json(
+          { error: 'البريد الإلكتروني مستخدم بالفعل' },
+          { status: 409 }
+        );
+      }
+    }
+
+    if (phone !== undefined) {
+      const normalizedPhone = phone ? String(phone) : null;
+      if (normalizedPhone && normalizedPhone !== existing.phone) {
+        const phoneOwner = await prisma.user.findUnique({ where: { phone: normalizedPhone } });
+        if (phoneOwner && phoneOwner.id !== userId) {
+          return NextResponse.json(
+            { error: 'رقم الهاتف مستخدم بالفعل' },
+            { status: 409 }
+          );
+        }
+      }
+    }
+
     // Set permissions based on role
     const rolePermissions = role ? setUserPermissions(role) : {};
     const finalPermissions = permissions ? { ...rolePermissions, ...permissions } : rolePermissions;
 
     const updateData: any = {};
+
+    if (name !== undefined) updateData.name = name;
+    if (email !== undefined) updateData.email = email;
+    if (phone !== undefined) updateData.phone = phone ? String(phone) : null;
+    if (whatsapp !== undefined) updateData.whatsapp = whatsapp ? String(whatsapp) : null;
     
     if (role) updateData.role = role;
     if (status) updateData.status = status;
@@ -264,6 +311,114 @@ export const PUT = requireAuth(async (request: AuthenticatedRequest) => {
     console.error('Error updating user:', error);
     return NextResponse.json(
       { error: 'حدث خطأ أثناء تحديث المستخدم' },
+      { status: 500 }
+    );
+  }
+});
+
+// PATCH /api/admin/users - Reset user password
+export const PATCH = requireAuth(async (request: AuthenticatedRequest) => {
+  const user = request.user;
+
+  if (!canManageUsers(user) && user?.role !== 'ADMIN') {
+    return NextResponse.json(
+      { error: 'ليس لديك صلاحية لتعديل كلمات المرور' },
+      { status: 403 }
+    );
+  }
+
+  try {
+    const body = await request.json();
+    const { userId, password } = body;
+
+    if (!userId || !password) {
+      return NextResponse.json(
+        { error: 'معرف المستخدم وكلمة المرور مطلوبة' },
+        { status: 400 }
+      );
+    }
+
+    if (String(password).length < 6) {
+      return NextResponse.json(
+        { error: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' },
+        { status: 400 }
+      );
+    }
+
+    const hashedPassword = await bcrypt.hash(String(password), 12);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword }
+    });
+
+    return NextResponse.json({
+      message: 'تم تحديث كلمة المرور بنجاح'
+    });
+  } catch (error) {
+    console.error('Password reset error:', error);
+    return NextResponse.json(
+      { error: 'حدث خطأ أثناء تحديث كلمة المرور' },
+      { status: 500 }
+    );
+  }
+});
+
+// DELETE /api/admin/users - Ban (soft delete) or hard delete
+export const DELETE = requireAuth(async (request: AuthenticatedRequest) => {
+  const user = request.user;
+
+  if (!canManageUsers(user) && user?.role !== 'ADMIN') {
+    return NextResponse.json(
+      { error: 'ليس لديك صلاحية لحذف المستخدمين' },
+      { status: 403 }
+    );
+  }
+
+  try {
+    const body = await request.json().catch(() => ({}));
+    const { userId, hardDelete } = body as { userId?: string; hardDelete?: boolean };
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'معرف المستخدم مطلوب' },
+        { status: 400 }
+      );
+    }
+
+    // Prevent self-delete
+    if (user?.userId === userId) {
+      return NextResponse.json(
+        { error: 'لا يمكن حذف حسابك الحالي' },
+        { status: 400 }
+      );
+    }
+
+    if (hardDelete) {
+      await prisma.user.delete({ where: { id: userId } });
+      return NextResponse.json({ message: 'تم حذف المستخدم نهائياً' });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { status: 'BANNED' },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        status: true
+      }
+    });
+
+    return NextResponse.json({
+      message: 'تم حظر المستخدم بنجاح',
+      user: updatedUser
+    });
+  } catch (error) {
+    console.error('User delete/ban error:', error);
+    return NextResponse.json(
+      { error: 'حدث خطأ أثناء حذف المستخدم' },
       { status: 500 }
     );
   }
