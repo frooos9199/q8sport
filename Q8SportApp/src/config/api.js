@@ -47,6 +47,7 @@ const API_CONFIG = {
     ADMIN_PRODUCT_APPROVE: (id) => `/admin/products/${id}/approve`,
     ADMIN_PRODUCT_UNBLOCK: (id) => `/admin/products/${id}/unblock`,
     ADMIN_SETTINGS: '/admin/settings',
+    ADMIN_REQUESTS: '/admin/requests',
   }
 };
 

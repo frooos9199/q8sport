@@ -57,7 +57,7 @@ const AdminDashboardScreen = () => {
   };
 
   const navigateToTab = (tabName, params) => {
-    // AdminDashboard is inside AdminStack (nested in Tab navigator)
+    // Keep helper for other use-cases
     const parentNav = navigation?.getParent?.();
     if (parentNav?.navigate) {
       parentNav.navigate(tabName, params);
@@ -113,13 +113,13 @@ const AdminDashboardScreen = () => {
         <MenuButton
           icon="🔨"
           title="إدارة المزادات"
-          onPress={() => navigateToTab('Auctions')}
+          onPress={() => navigation.navigate('AdminManageAuctions')}
           color="#10B981"
         />
         <MenuButton
           icon="📣"
           title="إدارة المطلوبات"
-          onPress={() => navigateToTab('Requests')}
+          onPress={() => navigation.navigate('AdminManageRequests')}
           color="#F59E0B"
         />
         <MenuButton

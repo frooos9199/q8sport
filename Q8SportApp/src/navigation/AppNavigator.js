@@ -29,6 +29,8 @@ import ManageProductsScreen from '../screens/Admin/ManageProductsScreen';
 import BlockedProductsScreen from '../screens/Admin/BlockedProductsScreen';
 import AdminSettingsScreen from '../screens/Admin/AdminSettingsScreen';
 import AdminReportsScreen from '../screens/Admin/AdminReportsScreen';
+import ManageAuctionsScreen from '../screens/Admin/ManageAuctionsScreen';
+import ManageRequestsScreen from '../screens/Admin/ManageRequestsScreen';
 
 // Messages Screens
 import MessagesScreen from '../screens/Messages/MessagesScreen';
@@ -383,6 +385,24 @@ const AdminStack = () => {
         component={ManageUsersScreen}
         options={{ 
           title: 'إدارة المستخدمين',
+          headerBackTitle: 'رجوع',
+        }}
+      />
+
+      <Stack.Screen
+        name="AdminManageAuctions"
+        component={ManageAuctionsScreen}
+        options={{
+          title: 'إدارة المزادات',
+          headerBackTitle: 'رجوع',
+        }}
+      />
+
+      <Stack.Screen
+        name="AdminManageRequests"
+        component={ManageRequestsScreen}
+        options={{
+          title: 'إدارة المطلوبات',
           headerBackTitle: 'رجوع',
         }}
       />
