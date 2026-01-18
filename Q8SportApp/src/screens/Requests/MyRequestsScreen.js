@@ -132,7 +132,7 @@ const MyRequestsScreen = ({ navigation }) => {
     return digits;
   };
 
-  const APP_PROMO = `\n\n—\nQ8Sport 🏁\nحمّل التطبيق / زور الموقع: https://www.q8sportcar.com`;
+  const APP_PROMO = `\n\n—\nQ8 Sport Car 🏁\nحمّل التطبيق / زور الموقع: https://www.q8sportcar.com`;
 
   const openWhatsApp = async (phone, message) => {
     const normalized = normalizePhone(phone);

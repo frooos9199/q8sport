@@ -35,7 +35,7 @@ const formatViews = (views) => {
 const EnhancedProductCard = ({ item, index, onPress }) => {
   const animValue = useRef(new Animated.Value(0)).current;
 
-  const APP_PROMO = `\n\n—\nQ8Sport 🏁\nحمّل التطبيق / زور الموقع: https://www.q8sportcar.com`;
+  const APP_PROMO = `\n\n—\nQ8 Sport Car 🏁\nحمّل التطبيق / زور الموقع: https://www.q8sportcar.com`;
 
   useEffect(() => {
     Animated.timing(animValue, {

@@ -61,7 +61,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
     return digits;
   };
 
-  const APP_PROMO = `\n\n—\nQ8Sport 🏁\nحمّل التطبيق / زور الموقع: https://www.q8sportcar.com`;
+  const APP_PROMO = `\n\n—\nQ8 Sport Car 🏁\nحمّل التطبيق / زور الموقع: https://www.q8sportcar.com`;
 
   const handleWhatsApp = () => {
     const phone = product.contactPhone || product.phone || product.seller?.phone;
