@@ -134,6 +134,32 @@ const ManageAuctionsScreen = () => {
     ]);
   };
 
+  const activateAuction = (auction) => {
+    Alert.alert('تفعيل المزاد', 'هل تريد تفعيل هذا المزاد؟', [
+      { text: 'إلغاء', style: 'cancel' },
+      {
+        text: 'تفعيل',
+        onPress: async () => {
+          try {
+            const patch = { status: 'ACTIVE' };
+            // If endTime already passed, extend it so it doesn't auto-end immediately
+            const endTimeMs = auction?.endTime ? new Date(auction.endTime).getTime() : NaN;
+            if (!Number.isFinite(endTimeMs) || endTimeMs <= Date.now()) {
+              patch.endTime = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+            }
+
+            await apiClient.put(API_CONFIG.ENDPOINTS.AUCTION_DETAILS(auction.id), patch);
+            Alert.alert('تم', 'تم تفعيل المزاد');
+            fetchAuctions();
+          } catch (error) {
+            const msg = error?.response?.data?.error || 'فشل تفعيل المزاد';
+            Alert.alert('خطأ', msg);
+          }
+        },
+      },
+    ]);
+  };
+
   const deleteAuction = (auctionId) => {
     Alert.alert('حذف المزاد', 'هل تريد حذف هذا المزاد؟', [
       { text: 'إلغاء', style: 'cancel' },
@@ -192,9 +218,15 @@ const ManageAuctionsScreen = () => {
         <TouchableOpacity style={styles.editBtn} onPress={() => openEdit(item)}>
           <Text style={styles.btnText}>✏️ تعديل</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.stopBtn} onPress={() => stopAuction(item.id)}>
-          <Text style={styles.btnText}>⛔ إيقاف</Text>
-        </TouchableOpacity>
+        {item.status === 'CANCELLED' ? (
+          <TouchableOpacity style={styles.activateBtn} onPress={() => activateAuction(item)}>
+            <Text style={styles.btnText}>✅ تفعيل</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity style={styles.stopBtn} onPress={() => stopAuction(item.id)}>
+            <Text style={styles.btnText}>⛔ إيقاف</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity style={styles.deleteBtn} onPress={() => deleteAuction(item.id)}>
           <Text style={styles.btnText}>🗑 حذف</Text>
         </TouchableOpacity>
@@ -424,6 +456,13 @@ const styles = StyleSheet.create({
   stopBtn: {
     flex: 1,
     backgroundColor: '#F59E0B',
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  activateBtn: {
+    flex: 1,
+    backgroundColor: '#10B981',
     padding: 10,
     borderRadius: 8,
     alignItems: 'center',

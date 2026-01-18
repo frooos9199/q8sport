@@ -140,6 +140,27 @@ const ManageRequestsScreen = () => {
     ]);
   };
 
+  const activateRequest = (requestId) => {
+    Alert.alert('تفعيل الطلب', 'هل تريد تفعيل هذا الطلب؟', [
+      { text: 'إلغاء', style: 'cancel' },
+      {
+        text: 'تفعيل',
+        onPress: async () => {
+          try {
+            await apiClient.patch(`/requests/${requestId}`, {
+              status: 'ACTIVE',
+            });
+            Alert.alert('تم', 'تم تفعيل الطلب');
+            fetchRequests();
+          } catch (error) {
+            const msg = error?.response?.data?.error || 'فشل تفعيل الطلب';
+            Alert.alert('خطأ', msg);
+          }
+        },
+      },
+    ]);
+  };
+
   const deleteRequest = (requestId) => {
     Alert.alert('حذف الطلب', 'هل تريد حذف هذا الطلب؟', [
       { text: 'إلغاء', style: 'cancel' },
@@ -198,9 +219,15 @@ const ManageRequestsScreen = () => {
         <TouchableOpacity style={styles.editBtn} onPress={() => openEdit(item)}>
           <Text style={styles.btnText}>✏️ تعديل</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.stopBtn} onPress={() => stopRequest(item.id)}>
-          <Text style={styles.btnText}>⛔ إيقاف</Text>
-        </TouchableOpacity>
+        {item.status === 'CANCELLED' ? (
+          <TouchableOpacity style={styles.activateBtn} onPress={() => activateRequest(item.id)}>
+            <Text style={styles.btnText}>✅ تفعيل</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity style={styles.stopBtn} onPress={() => stopRequest(item.id)}>
+            <Text style={styles.btnText}>⛔ إيقاف</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity style={styles.deleteBtn} onPress={() => deleteRequest(item.id)}>
           <Text style={styles.btnText}>🗑 حذف</Text>
         </TouchableOpacity>
@@ -463,6 +490,13 @@ const styles = StyleSheet.create({
   stopBtn: {
     flex: 1,
     backgroundColor: '#F59E0B',
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  activateBtn: {
+    flex: 1,
+    backgroundColor: '#10B981',
     padding: 10,
     borderRadius: 8,
     alignItems: 'center',
