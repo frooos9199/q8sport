@@ -20,7 +20,13 @@ const AuctionDetailsScreen = ({ route, navigation }) => {
   const [error, setError] = useState(null);
   const [auction, setAuction] = useState(null);
   const [bid, setBid] = useState('');
+  const [buyNowPrice, setBuyNowPrice] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [savingBuyNow, setSavingBuyNow] = useState(false);
+
+  const isEnded = useMemo(() => {
+    return auction?.isExpired || String(auction?.status || '').toUpperCase() === 'ENDED';
+  }, [auction]);
 
   const currentBid = useMemo(() => {
     const v = auction?.currentBid ?? auction?.highestBid ?? auction?.currentPrice ?? auction?.startingPrice ?? auction?.startingBid ?? auction?.startPrice;
@@ -39,7 +45,9 @@ const AuctionDetailsScreen = ({ route, navigation }) => {
       setError(null);
 
       const data = await AuctionsService.getAuctionDetails(auctionId);
-      setAuction(data?.auction || data);
+      const auctionData = data?.auction || data;
+      setAuction(auctionData);
+      setBuyNowPrice(auctionData?.buyNowPrice != null ? String(Math.trunc(Number(auctionData.buyNowPrice))) : '');
 
       const title = data?.auction?.title || data?.title || 'تفاصيل المزاد';
       navigation.setOptions({ title });
@@ -60,6 +68,11 @@ const AuctionDetailsScreen = ({ route, navigation }) => {
   }, [auctionId, load]);
 
   const onSubmitBid = async () => {
+    if (isEnded) {
+      Alert.alert('تنبيه', 'المزاد منتهي');
+      return;
+    }
+
     const amount = Number(bid);
     if (!Number.isFinite(amount) || amount <= 0) {
       Alert.alert('تنبيه', 'أدخل مبلغ مزايدة صحيح');
@@ -84,6 +97,25 @@ const AuctionDetailsScreen = ({ route, navigation }) => {
     }
   };
 
+  const onSaveBuyNow = async () => {
+    try {
+      setSavingBuyNow(true);
+      const trimmed = String(buyNowPrice || '').trim();
+      const nextValue = trimmed === '' ? null : Number(trimmed);
+      if (nextValue !== null && (!Number.isFinite(nextValue) || nextValue <= 0)) {
+        Alert.alert('تنبيه', 'أدخل سعر اشتر الآن صحيح');
+        return;
+      }
+      await AuctionsService.updateAuction(auctionId, { buyNowPrice: nextValue });
+      Alert.alert('تم', 'تم حفظ سعر اشتر الآن');
+      await load();
+    } catch (e) {
+      Alert.alert('خطأ', e instanceof Error ? e.message : 'فشل حفظ سعر اشتر الآن');
+    } finally {
+      setSavingBuyNow(false);
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -104,7 +136,6 @@ const AuctionDetailsScreen = ({ route, navigation }) => {
   }
 
   const endsAt = auction?.endTime ? new Date(auction.endTime).toLocaleString() : '—';
-  const isEnded = auction?.isExpired || String(auction?.status || '').toUpperCase() === 'ENDED';
 
   const normalizePhone = (phone) => {
     if (!phone) return null;
@@ -153,7 +184,53 @@ const AuctionDetailsScreen = ({ route, navigation }) => {
         <Text style={styles.price}>أعلى مزايدة: {formatKwd(auction?.currentBid ?? auction?.highestBid ?? auction?.currentPrice)} د.ك</Text>
         <Text style={styles.meta}>أعلى مزايد: {auction?.highestBidder?.name || '—'}</Text>
         <Text style={styles.meta}>سعر ابتدائي: {formatKwd(auction?.startingPrice ?? auction?.startingBid ?? auction?.startPrice)} د.ك</Text>
+
+        {auction?.buyNowPrice != null && !isEnded && (
+          <Text style={styles.buyNowText}>اشتر الآن: {formatKwd(auction.buyNowPrice)} د.ك</Text>
+        )}
       </View>
+
+      {!isEnded && !isSeller && auction?.buyNowPrice != null && (
+        <View style={styles.buyNowCard}>
+          <Text style={styles.contactTitle}>اشتر الآن</Text>
+          <TouchableOpacity
+            style={styles.buyNowButton}
+            onPress={() =>
+              openWhatsApp(
+                auction?.seller?.whatsapp || auction?.seller?.phone,
+                `السلام عليكم، أرغب بالشراء الآن بسعر ${formatKwd(auction?.buyNowPrice)} د.ك بخصوص مزاد: ${auction?.title || ''}`
+              )
+            }
+            disabled={!auction?.seller?.whatsapp && !auction?.seller?.phone}
+          >
+            <Text style={styles.buyNowButtonText}>اتصال واتساب مع البائع</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {!isEnded && isSeller && (
+        <View style={styles.buyNowCard}>
+          <Text style={styles.contactTitle}>تحديد سعر اشتر الآن</Text>
+          <View style={styles.buyNowRow}>
+            <TextInput
+              value={buyNowPrice}
+              onChangeText={setBuyNowPrice}
+              placeholder="مثال: 250"
+              placeholderTextColor="#666"
+              keyboardType="numeric"
+              style={styles.input}
+            />
+            <TouchableOpacity
+              style={[styles.bidButton, savingBuyNow && styles.bidButtonDisabled]}
+              onPress={onSaveBuyNow}
+              disabled={savingBuyNow}
+            >
+              <Text style={styles.bidButtonText}>{savingBuyNow ? '...' : 'حفظ'}</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.meta}>اتركه فارغ لإلغاء سعر اشتر الآن</Text>
+        </View>
+      )}
 
       {isEnded && (isSeller || isHighestBidder) && (
         <View style={styles.contactCard}>
@@ -204,26 +281,28 @@ const AuctionDetailsScreen = ({ route, navigation }) => {
         )}
       </View>
 
-      <View style={styles.bidCard}>
-        <Text style={styles.bidTitle}>إضافة مزايدة</Text>
-        <View style={styles.bidRow}>
-          <TextInput
-            value={bid}
-            onChangeText={setBid}
-            placeholder="مثال: 25"
-            placeholderTextColor="#666"
-            keyboardType="numeric"
-            style={styles.input}
-          />
-          <TouchableOpacity
-            style={[styles.bidButton, submitting && styles.bidButtonDisabled]}
-            onPress={onSubmitBid}
-            disabled={submitting}
-          >
-            <Text style={styles.bidButtonText}>{submitting ? '...' : 'إرسال'}</Text>
-          </TouchableOpacity>
+      {!isEnded && (
+        <View style={styles.bidCard}>
+          <Text style={styles.bidTitle}>إضافة مزايدة</Text>
+          <View style={styles.bidRow}>
+            <TextInput
+              value={bid}
+              onChangeText={setBid}
+              placeholder="مثال: 25"
+              placeholderTextColor="#666"
+              keyboardType="numeric"
+              style={styles.input}
+            />
+            <TouchableOpacity
+              style={[styles.bidButton, submitting && styles.bidButtonDisabled]}
+              onPress={onSubmitBid}
+              disabled={submitting}
+            >
+              <Text style={styles.bidButtonText}>{submitting ? '...' : 'إرسال'}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      )}
     </ScrollView>
   );
 };
@@ -242,6 +321,7 @@ const styles = StyleSheet.create({
   meta: { color: '#999', fontSize: 12 },
   separator: { height: 1, backgroundColor: '#333', marginVertical: 12 },
   price: { color: '#DC2626', fontSize: 18, fontWeight: 'bold', marginBottom: 6 },
+  buyNowText: { color: '#22c55e', fontSize: 14, fontWeight: 'bold', marginTop: 8 },
 
   endedBanner: { backgroundColor: '#7f1d1d', borderRadius: 12, paddingVertical: 10, paddingHorizontal: 12, borderWidth: 1, borderColor: '#DC2626', marginBottom: 12 },
   endedBannerText: { color: '#fff', fontWeight: 'bold', textAlign: 'center' },
@@ -250,6 +330,11 @@ const styles = StyleSheet.create({
   contactTitle: { color: '#fff', fontSize: 16, fontWeight: 'bold', marginBottom: 10 },
   whatsappButton: { backgroundColor: '#16a34a', paddingVertical: 12, borderRadius: 10, alignItems: 'center', marginBottom: 10 },
   whatsappButtonText: { color: '#fff', fontWeight: 'bold' },
+
+  buyNowCard: { backgroundColor: '#111', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#333', marginBottom: 12 },
+  buyNowRow: { flexDirection: 'row', alignItems: 'center' },
+  buyNowButton: { backgroundColor: '#22c55e', paddingVertical: 12, borderRadius: 10, alignItems: 'center' },
+  buyNowButtonText: { color: '#000', fontWeight: 'bold' },
   bidCard: { backgroundColor: '#111', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#333' },
   bidTitle: { color: '#fff', fontSize: 16, fontWeight: 'bold', marginBottom: 10 },
   bidRow: { flexDirection: 'row' },

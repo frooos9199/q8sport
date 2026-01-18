@@ -21,4 +21,9 @@ export const AuctionsService = {
     const response = await apiClient.post(API_CONFIG.ENDPOINTS.PLACE_BID(id), { amount });
     return response.data;
   },
+
+  updateAuction: async (id, patch) => {
+    const response = await apiClient.put(API_CONFIG.ENDPOINTS.AUCTION_DETAILS(id), patch);
+    return response.data;
+  },
 };

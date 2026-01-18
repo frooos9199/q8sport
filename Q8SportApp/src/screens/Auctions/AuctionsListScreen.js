@@ -7,24 +7,30 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   RefreshControl,
+  Linking,
 } from 'react-native';
 import { AuctionsService } from '../../services/api/auctions';
+import { useAuth } from '../../contexts/AuthContext';
 
 const AuctionsListScreen = ({ navigation }) => {
+  const { user, isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [auctions, setAuctions] = useState([]);
+  const [filter, setFilter] = useState('ALL'); // ALL | ACTIVE | ENDED
 
-  const load = useCallback(async (isRefresh = false) => {
+  const load = useCallback(async (isRefresh = false, nextFilter) => {
     try {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
       setError(null);
 
-      const data = await AuctionsService.getAuctions({ limit: 50 });
+      const effectiveFilter = nextFilter || filter;
+      const statusParam = effectiveFilter === 'ALL' ? undefined : effectiveFilter;
+      const data = await AuctionsService.getAuctions({ status: statusParam, limit: 50 });
       const list = Array.isArray(data?.auctions) ? data.auctions : [];
-      const sorted = [...list].sort((a, b) => {
+      const sorted = effectiveFilter === 'ALL' ? [...list].sort((a, b) => {
         const aEnded = a?.isExpired || String(a?.status || '').toUpperCase() === 'ENDED';
         const bEnded = b?.isExpired || String(b?.status || '').toUpperCase() === 'ENDED';
 
@@ -33,7 +39,7 @@ const AuctionsListScreen = ({ navigation }) => {
         const aEnd = a?.endTime ? new Date(a.endTime).getTime() : 0;
         const bEnd = b?.endTime ? new Date(b.endTime).getTime() : 0;
         return aEnd - bEnd;
-      });
+      }) : list;
       setAuctions(sorted);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'فشل تحميل المزادات');
@@ -41,7 +47,7 @@ const AuctionsListScreen = ({ navigation }) => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [filter]);
 
   useEffect(() => {
     load(false);
@@ -53,9 +59,32 @@ const AuctionsListScreen = ({ navigation }) => {
     return String(Math.trunc(n));
   };
 
+  const normalizePhone = (phone) => {
+    if (!phone) return null;
+    const digits = String(phone).replace(/\D/g, '');
+    if (digits.length === 8) return `965${digits}`;
+    return digits;
+  };
+
+  const openWhatsApp = async (phone, message) => {
+    const normalized = normalizePhone(phone);
+    if (!normalized) return;
+    const url = `https://wa.me/${normalized}?text=${encodeURIComponent(message || '')}`;
+    const supported = await Linking.canOpenURL(url);
+    if (supported) await Linking.openURL(url);
+  };
+
   const renderItem = ({ item }) => {
     const endsAt = item?.endTime ? new Date(item.endTime) : null;
     const endsText = endsAt ? endsAt.toLocaleString() : '—';
+    const isEnded = item?.isExpired || String(item?.status || '').toUpperCase() === 'ENDED';
+    const isSeller = isAuthenticated && user?.id && item?.sellerId && user.id === item.sellerId;
+    const isHighestBidder = isAuthenticated && user?.id && item?.highestBidder?.id && user.id === item.highestBidder.id;
+
+    const canWhatsApp = isEnded && (isSeller || isHighestBidder);
+    const waPhone = isSeller
+      ? (item?.highestBidder?.whatsapp || item?.highestBidder?.phone)
+      : (item?.seller?.whatsapp || item?.seller?.phone);
 
     return (
       <TouchableOpacity
@@ -75,6 +104,15 @@ const AuctionsListScreen = ({ navigation }) => {
         </View>
         <Text style={styles.meta}>أعلى مزايد: {item?.highestBidder?.name || '—'}</Text>
         <Text style={styles.meta}>ينتهي: {endsText}</Text>
+
+        {canWhatsApp && !!waPhone && (
+          <TouchableOpacity
+            style={styles.waButton}
+            onPress={() => openWhatsApp(waPhone, `السلام عليكم، بخصوص مزاد: ${item?.title || ''}`)}
+          >
+            <Text style={styles.waButtonText}>واتساب</Text>
+          </TouchableOpacity>
+        )}
       </TouchableOpacity>
     );
   };
@@ -100,6 +138,27 @@ const AuctionsListScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      <View style={styles.filterRow}>
+        <TouchableOpacity
+          style={[styles.filterButton, filter === 'ACTIVE' && styles.filterButtonActive]}
+          onPress={() => { setFilter('ACTIVE'); load(false, 'ACTIVE'); }}
+        >
+          <Text style={[styles.filterText, filter === 'ACTIVE' && styles.filterTextActive]}>نشط</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.filterButton, filter === 'ENDED' && styles.filterButtonActive]}
+          onPress={() => { setFilter('ENDED'); load(false, 'ENDED'); }}
+        >
+          <Text style={[styles.filterText, filter === 'ENDED' && styles.filterTextActive]}>منتهي</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.filterButton, { marginRight: 0 }, filter === 'ALL' && styles.filterButtonActive]}
+          onPress={() => { setFilter('ALL'); load(false, 'ALL'); }}
+        >
+          <Text style={[styles.filterText, filter === 'ALL' && styles.filterTextActive]}>الكل</Text>
+        </TouchableOpacity>
+      </View>
+
       <FlatList
         data={auctions}
         renderItem={renderItem}
@@ -118,6 +177,11 @@ const AuctionsListScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
+  filterRow: { flexDirection: 'row', paddingHorizontal: 12, paddingTop: 12, paddingBottom: 6 },
+  filterButton: { flex: 1, backgroundColor: '#111', borderRadius: 10, paddingVertical: 10, borderWidth: 1, borderColor: '#333', alignItems: 'center', marginRight: 10 },
+  filterButtonActive: { borderColor: '#DC2626', backgroundColor: '#1a1a1a' },
+  filterText: { color: '#aaa', fontWeight: 'bold' },
+  filterTextActive: { color: '#fff' },
   list: { padding: 12 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000', padding: 20 },
   errorText: { color: '#F87171', fontSize: 16, textAlign: 'center', marginBottom: 12 },
@@ -130,6 +194,8 @@ const styles = StyleSheet.create({
   subtitle: { color: '#aaa', fontSize: 13, marginBottom: 10 },
   metaRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
   meta: { color: '#999', fontSize: 12 },
+  waButton: { marginTop: 10, alignSelf: 'flex-start', backgroundColor: '#16a34a', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10 },
+  waButtonText: { color: '#fff', fontWeight: 'bold' },
   emptyContainer: { paddingTop: 80, alignItems: 'center' },
   emptyText: { color: '#999', fontSize: 16 },
 });

@@ -137,6 +137,24 @@ export const PUT = requireAuth(async (
     }
 
     const body = await request.json();
+
+    // Normalize buyNowPrice updates (allow null/empty to clear)
+    const updateData: any = { ...body };
+    if (Object.prototype.hasOwnProperty.call(body, 'buyNowPrice')) {
+      const raw = body.buyNowPrice;
+      if (raw === null || raw === undefined || String(raw).trim() === '') {
+        updateData.buyNowPrice = null;
+      } else {
+        const n = typeof raw === 'number' ? raw : Number(String(raw).trim());
+        if (!Number.isFinite(n) || n <= 0) {
+          return NextResponse.json(
+            { error: 'سعر اشتر الآن غير صحيح' },
+            { status: 400 }
+          );
+        }
+        updateData.buyNowPrice = n;
+      }
+    }
     
     // Check if auction exists and user is seller or admin
     const auction = await prisma.auction.findUnique({
@@ -168,7 +186,7 @@ export const PUT = requireAuth(async (
     // Update auction
     const updatedAuction = await prisma.auction.update({
       where: { id: auctionId },
-      data: body,
+      data: updateData,
       include: {
         seller: {
           select: {

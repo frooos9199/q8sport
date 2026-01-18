@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth, AuthenticatedRequest } from '../../../lib/auth';
+import { requireAuth, AuthenticatedRequest, verifyToken } from '../../../lib/auth';
 import { prisma } from '../../../lib/prisma';
 
 // GET /api/auctions - Get all auctions with filters
@@ -38,6 +38,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Get auctions with related data
+    const viewer = await verifyToken(request);
+    const viewerId = viewer?.userId;
+
     const [auctions, total] = await Promise.all([
       prisma.auction.findMany({
         where,
@@ -49,7 +52,9 @@ export async function GET(request: NextRequest) {
             select: {
               id: true,
               name: true,
-              rating: true
+              rating: true,
+              phone: true,
+              whatsapp: true
             }
           },
           bids: {
@@ -59,7 +64,9 @@ export async function GET(request: NextRequest) {
               bidder: {
                 select: {
                   id: true,
-                  name: true
+                  name: true,
+                  phone: true,
+                  whatsapp: true
                 }
               }
             }
@@ -76,12 +83,41 @@ export async function GET(request: NextRequest) {
     const now = Date.now();
     const auctionsWithBids = auctions.map((auction: any) => {
       const isExpired = auction.endTime?.getTime ? auction.endTime.getTime() <= now : false;
+
+      const highestBidderRaw = auction.bids[0]?.bidder || null;
+      const canSeeHighestBidderContact =
+        !!viewerId && (viewerId === auction.sellerId || viewerId === highestBidderRaw?.id || viewer?.role === 'ADMIN');
+      const canSeeSellerContact =
+        !!viewerId && (viewerId === auction.sellerId || viewerId === highestBidderRaw?.id || viewer?.role === 'ADMIN');
+
+      const highestBidder = highestBidderRaw
+        ? {
+            id: highestBidderRaw.id,
+            name: highestBidderRaw.name,
+            ...(canSeeHighestBidderContact
+              ? { phone: highestBidderRaw.phone, whatsapp: highestBidderRaw.whatsapp }
+              : {})
+          }
+        : null;
+
+      const seller = auction.seller
+        ? {
+            id: auction.seller.id,
+            name: auction.seller.name,
+            rating: auction.seller.rating,
+            ...(canSeeSellerContact
+              ? { phone: auction.seller.phone, whatsapp: auction.seller.whatsapp }
+              : {})
+          }
+        : null;
+
       return {
-      ...auction,
-      currentBid: auction.bids[0]?.amount || auction.startingPrice,
-      highestBidder: auction.bids[0]?.bidder || null,
-      totalBids: auction._count.bids,
-      isExpired
+        ...auction,
+        seller,
+        currentBid: auction.bids[0]?.amount || auction.startingPrice,
+        highestBidder,
+        totalBids: auction._count.bids,
+        isExpired
       };
     });
 
@@ -117,6 +153,7 @@ export const POST = requireAuth(async (request: AuthenticatedRequest) => {
       partNumber,
       condition,
       startingPrice,
+      buyNowPrice,
       reservePrice,
       duration,
       images
@@ -133,6 +170,25 @@ export const POST = requireAuth(async (request: AuthenticatedRequest) => {
     // Calculate end time
     const endTime = new Date(Date.now() + duration * 60 * 60 * 1000);
 
+    const starting = parseFloat(startingPrice);
+    const buyNow = buyNowPrice !== undefined && buyNowPrice !== null && String(buyNowPrice).trim() !== ''
+      ? parseFloat(buyNowPrice)
+      : null;
+
+    if (!Number.isFinite(starting) || starting <= 0) {
+      return NextResponse.json(
+        { error: 'سعر البداية غير صحيح' },
+        { status: 400 }
+      );
+    }
+
+    if (buyNow !== null && (!Number.isFinite(buyNow) || buyNow <= starting)) {
+      return NextResponse.json(
+        { error: 'سعر اشتر الآن يجب أن يكون أعلى من سعر البداية' },
+        { status: 400 }
+      );
+    }
+
     // Create auction
     const auction = await prisma.auction.create({
       data: {
@@ -143,9 +199,10 @@ export const POST = requireAuth(async (request: AuthenticatedRequest) => {
         carYear: carYear ? parseInt(carYear) : null,
         partNumber,
         condition,
-        startingPrice: parseFloat(startingPrice),
+        startingPrice: starting,
         reservePrice: reservePrice ? parseFloat(reservePrice) : null,
-        currentPrice: parseFloat(startingPrice),
+        currentPrice: starting,
+        buyNowPrice: buyNow,
         endTime,
         images: images || [],
         sellerId: request.user!.userId,
