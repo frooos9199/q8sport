@@ -8,6 +8,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
+import API_CONFIG from '../../config/api';
+import apiClient from '../../services/apiClient';
 
 const MessagesScreen = ({ navigation }) => {
   const { token } = useAuth();
@@ -15,18 +17,17 @@ const MessagesScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchConversations();
+    if (token) {
+      fetchConversations();
+    } else {
+      setLoading(false);
+    }
   }, []);
 
   const fetchConversations = async () => {
     try {
-      const response = await fetch('https://q8sport.vercel.app/api/messages/conversations', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setConversations(data.conversations || []);
-      }
+      const response = await apiClient.get(API_CONFIG.ENDPOINTS.MESSAGES_CONVERSATIONS);
+      setConversations(response.data?.conversations || []);
     } catch (error) {
       console.error('Error:', error);
     } finally {

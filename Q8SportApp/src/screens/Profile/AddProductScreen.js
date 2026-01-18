@@ -14,6 +14,8 @@ import {
 } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { useAuth } from '../../contexts/AuthContext';
+import API_CONFIG from '../../config/api';
+import apiClient from '../../services/apiClient';
 
 const AddProductScreen = ({ navigation }) => {
   const { token, user, isAuthenticated, loading: authLoading } = useAuth();
@@ -42,7 +44,7 @@ const AddProductScreen = ({ navigation }) => {
     model: '',
     year: '',
     partCondition: 'used',
-    phone: user?.phone || '',
+    phone: user?.phone || '', // Keep the phone in state but make it non-editable
   });
 
   const carTypes = [
@@ -183,38 +185,18 @@ const AddProductScreen = ({ navigation }) => {
         images: JSON.stringify(base64Images),
       };
 
-      const response = await fetch('https://www.q8sportcar.com/api/products', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+      await apiClient.post(API_CONFIG.ENDPOINTS.PRODUCTS, productData);
+      console.log('✅ AddProductScreen: Product created successfully!');
+      Alert.alert('✅ نجح', 'تم إضافة المنتج بنجاح', [
+        {
+          text: 'عرض منتجاتي',
+          onPress: () => navigation.navigate('MyProducts'),
         },
-        body: JSON.stringify(productData),
-      });
-
-      console.log('📊 AddProductScreen: Response received');
-      console.log('   Status:', response.status);
-      console.log('   Status Text:', response.statusText);
-
-      const data = await response.json();
-      
-      console.log('📦 AddProductScreen: Response data:', data);
-
-      if (response.ok) {
-        console.log('✅ AddProductScreen: Product created successfully!');
-        Alert.alert('✅ نجح', 'تم إضافة المنتج بنجاح', [
-          {
-            text: 'عرض منتجاتي',
-            onPress: () => navigation.navigate('MyProducts'),
-          },
-        ]);
-      } else {
-        console.error('❌ AddProductScreen: API error -', data.error || data.message);
-        Alert.alert('❌ خطأ (' + response.status + ')', data.error || data.message || 'فشل إضافة المنتج');
-      }
+      ]);
     } catch (error) {
       console.error('❌ AddProductScreen: Network/Parse error:', error);
-      Alert.alert('❌ خطأ', 'حدث خطأ أثناء إضافة المنتج: ' + error.message);
+      const message = error?.response?.data?.error || error?.response?.data?.message || error?.message;
+      Alert.alert('❌ خطأ', 'حدث خطأ أثناء إضافة المنتج: ' + (message || 'غير معروف'));
     } finally {
       setLoading(false);
     }
@@ -430,7 +412,8 @@ const AddProductScreen = ({ navigation }) => {
           placeholder="+965 XXXX XXXX"
           placeholderTextColor="#666"
           value={formData.phone}
-          onChangeText={(text) => setFormData({ ...formData, phone: text })}
+            editable={false}
+            selectTextOnFocus={false}
           keyboardType="phone-pad"
         />
       </View>

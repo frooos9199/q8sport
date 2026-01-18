@@ -55,14 +55,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       tokenPreview: authToken?.substring(0, 20) + '...'
     })
     
-    if (userData) {
+    // IMPORTANT:
+    // If we have a user but no token, treat the session as invalid.
+    // Admin/management pages rely on Authorization header; keeping a user without a token
+    // causes UI to render but API calls silently fail.
+    if (userData && !authToken) {
+      console.warn('User found in localStorage but no token; clearing stale session')
+      localStorage.removeItem('user')
+      localStorage.removeItem('authToken')
+      setUser(null)
+      setToken(null)
+      setLoading(false)
+      return
+    }
+
+    if (userData && authToken) {
       try {
         setUser(JSON.parse(userData))
-        if (authToken) {
-          setToken(authToken)
-        } else {
-          console.warn('User found in localStorage but no token!')
-        }
+        setToken(authToken)
       } catch (error) {
         console.error('Error parsing user data:', error)
         localStorage.removeItem('user')
@@ -103,7 +113,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem('authToken', authToken)
       console.log('Token saved to localStorage')
     } else {
-      console.warn('No auth token provided to login function')
+      // Important: avoid keeping an old token for a new user.
+      console.warn('No auth token provided to login function; clearing any existing token')
+      setToken(null)
+      localStorage.removeItem('authToken')
     }
   }
 
@@ -244,8 +257,8 @@ export const useLogin = () => {
           permissions
         }
 
-        login(userData)
-        return { success: true, user: userData }
+        login(userData, data.token)
+        return { success: true, user: userData, token: data.token }
       } else {
         return { success: false, error: data.error || 'فشل تسجيل الدخول' }
       }

@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { StorageService } from '../utils/storage';
 import { AuthService } from '../services/api/auth';
+import { AuthEvents } from '../services/authEvents';
 
 const AuthContext = createContext({});
 
@@ -12,6 +13,14 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     loadUser();
+
+    const unsubscribe = AuthEvents.onUnauthorized(() => {
+      setToken(null);
+      setUser(null);
+      setIsAuthenticated(false);
+    });
+
+    return unsubscribe;
   }, []);
 
   const loadUser = async () => {

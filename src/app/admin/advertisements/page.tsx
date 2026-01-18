@@ -319,17 +319,67 @@ export default function AdvertisementsPage() {
     }
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('هل أنت متأكد من حذف هذا الإعلان؟')) {
-      setAdvertisements(advertisements.filter(ad => ad.id !== id));
+  const handleDelete = async (id: string) => {
+    if (!token) {
+      alert('يلزم تسجيل الدخول مرة أخرى');
+      return;
+    }
+
+    if (!confirm('هل أنت متأكد من حذف هذا الإعلان؟')) return;
+
+    try {
+      const res = await fetch(`/api/advertisements/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.error || 'فشل حذف الإعلان');
+      }
+
+      setAdvertisements((prev) => prev.filter((ad) => ad.id !== id));
+      alert(data?.message || 'تم حذف الإعلان بنجاح');
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'حدث خطأ في حذف الإعلان');
     }
   };
 
-  const toggleActive = (id: string) => {
-    const updatedAds = advertisements.map(ad => 
-      ad.id === id ? { ...ad, isActive: !ad.isActive } : ad
-    );
-    setAdvertisements(updatedAds);
+  const toggleActive = async (id: string) => {
+    if (!token) {
+      alert('يلزم تسجيل الدخول مرة أخرى');
+      return;
+    }
+
+    const current = advertisements.find((a) => a.id === id);
+    if (!current) return;
+
+    const nextActive = !current.isActive;
+
+    // optimistic UI
+    setAdvertisements((prev) => prev.map((ad) => (ad.id === id ? { ...ad, isActive: nextActive } : ad)));
+
+    try {
+      const res = await fetch(`/api/advertisements/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ active: nextActive })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.error || 'فشل تحديث حالة الإعلان');
+      }
+    } catch (error) {
+      // rollback
+      setAdvertisements((prev) => prev.map((ad) => (ad.id === id ? { ...ad, isActive: current.isActive } : ad)));
+      alert(error instanceof Error ? error.message : 'حدث خطأ في تحديث حالة الإعلان');
+    }
   };
 
   const getPositionText = (position: Advertisement['position']) => {

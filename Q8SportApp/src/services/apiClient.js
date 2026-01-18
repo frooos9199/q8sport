@@ -1,6 +1,7 @@
 import axios from 'axios';
 import API_CONFIG from '../config/api';
 import { StorageService } from '../utils/storage';
+import { AuthEvents } from './authEvents';
 
 const apiClient = axios.create({
   baseURL: API_CONFIG.BASE_URL,
@@ -34,6 +35,7 @@ apiClient.interceptors.response.use(
         error.message = 'يرجى تسجيل الدخول';
       }
       await StorageService.clearAll();
+      AuthEvents.emitUnauthorized();
     }
     return Promise.reject(error);
   }

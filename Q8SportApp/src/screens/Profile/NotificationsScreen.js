@@ -8,6 +8,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
+import API_CONFIG from '../../config/api';
+import apiClient from '../../services/apiClient';
 
 const NotificationsScreen = ({ navigation }) => {
   const { token } = useAuth();
@@ -20,13 +22,8 @@ const NotificationsScreen = ({ navigation }) => {
 
   const fetchNotifications = async () => {
     try {
-      const response = await fetch('https://q8sport.vercel.app/api/user/notifications', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setNotifications(data.notifications || []);
-      }
+      const response = await apiClient.get(API_CONFIG.ENDPOINTS.USER_NOTIFICATIONS);
+      setNotifications(response.data?.notifications || []);
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -36,10 +33,7 @@ const NotificationsScreen = ({ navigation }) => {
 
   const markAsRead = async (notificationId) => {
     try {
-      await fetch(`https://q8sport.vercel.app/api/user/notifications/${notificationId}/read`, {
-        method: 'PATCH',
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await apiClient.patch(API_CONFIG.ENDPOINTS.USER_NOTIFICATION_READ(notificationId));
       setNotifications(
         notifications.map((n) =>
           n.id === notificationId ? { ...n, read: true } : n

@@ -151,18 +151,60 @@ export default function AdminCategoriesPage() {
   }
 
   const toggleCategoryStatus = (id: string) => {
-    setCategories(prev =>
-      prev.map(cat =>
-        cat.id === id ? { ...cat, active: !cat.active } : cat
-      )
-    )
+    const category = categories.find((c) => c.id === id)
+    if (!category) return
+
+    const nextActive = !category.active
+
+    // Optimistic UI
+    setCategories((prev) => prev.map((cat) => (cat.id === id ? { ...cat, active: nextActive } : cat)))
+
+    ;(async () => {
+      try {
+        const res = await fetch(`/api/categories/${id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({ active: nextActive })
+        })
+
+        const data = await res.json()
+        if (!res.ok || !data?.success) {
+          throw new Error(data?.message || 'فشل تحديث حالة القسم')
+        }
+      } catch (error) {
+        // rollback
+        setCategories((prev) => prev.map((cat) => (cat.id === id ? { ...cat, active: category.active } : cat)))
+        alert(error instanceof Error ? error.message : 'حدث خطأ في تحديث حالة القسم')
+      }
+    })()
   }
 
   const deleteCategory = (id: string) => {
-    if (confirm('هل أنت متأكد من حذف هذا القسم؟')) {
-      setCategories(prev => prev.filter(cat => cat.id !== id))
-      alert('تم حذف القسم بنجاح!')
-    }
+    if (!confirm('هل أنت متأكد من حذف هذا القسم؟')) return
+
+    ;(async () => {
+      try {
+        const res = await fetch(`/api/categories/${id}`, {
+          method: 'DELETE',
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          }
+        })
+
+        const data = await res.json()
+        if (!res.ok || !data?.success) {
+          throw new Error(data?.message || 'حدث خطأ في حذف القسم')
+        }
+
+        setCategories((prev) => prev.filter((cat) => cat.id !== id))
+        alert(data?.message || 'تم حذف القسم بنجاح!')
+      } catch (error) {
+        alert(error instanceof Error ? error.message : 'حدث خطأ في حذف القسم')
+      }
+    })()
   }
 
   return (

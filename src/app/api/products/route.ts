@@ -3,6 +3,11 @@ import { prisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth'
 import { getAppSettings } from '@/lib/appSettings'
 
+function normalizePhone(input: unknown) {
+  if (!input) return ''
+  return String(input).replace(/[^0-9]/g, '')
+}
+
 // GET - جلب جميع المنتجات النشطة
 export async function GET() {
   try {
@@ -41,6 +46,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'يجب تسجيل الدخول' }, { status: 401 })
     }
 
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.userId },
+      select: { phone: true }
+    })
+
     const settings = await getAppSettings()
     
     const data = await request.json()
@@ -70,6 +80,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Enforce contact phone matches profile phone
+    const profilePhone = dbUser?.phone || null
+    if (!profilePhone) {
+      return NextResponse.json(
+        { error: 'يرجى إضافة رقم الهاتف في الملف الشخصي أولاً' },
+        { status: 400 }
+      )
+    }
+
+    if (contactPhone) {
+      const provided = normalizePhone(contactPhone)
+      const registered = normalizePhone(profilePhone)
+      if (provided && registered && provided !== registered) {
+        return NextResponse.json(
+          { error: 'رقم الهاتف يجب أن يطابق رقم الهاتف المسجل في الملف الشخصي' },
+          { status: 400 }
+        )
+      }
+    }
+
     // إنشاء المنتج باستخدام userId من token
     const product = await prisma.product.create({
       data: {
@@ -84,7 +114,7 @@ export async function POST(request: NextRequest) {
         carYear: carYear ? parseInt(carYear) : null,
         kilometers: kilometers ? parseInt(kilometers) : null,
         color,
-        contactPhone,
+        contactPhone: profilePhone,
         images: typeof images === 'string' ? images : JSON.stringify(images),
         userId: user.userId,
         // Non-admin products require approval (represented as INACTIVE)

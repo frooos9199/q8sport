@@ -17,6 +17,16 @@ export const AuctionsService = {
     return response.data;
   },
 
+  getMyAuctions: async () => {
+    const response = await apiClient.get(API_CONFIG.ENDPOINTS.AUCTIONS_MY);
+    return response.data;
+  },
+
+  createAuction: async (payload) => {
+    const response = await apiClient.post(API_CONFIG.ENDPOINTS.AUCTIONS, payload);
+    return response.data;
+  },
+
   placeBid: async (id, amount) => {
     const response = await apiClient.post(API_CONFIG.ENDPOINTS.PLACE_BID(id), { amount });
     return response.data;

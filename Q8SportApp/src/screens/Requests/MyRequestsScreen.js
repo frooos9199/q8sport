@@ -8,11 +8,12 @@ import {
   Image,
   RefreshControl,
   Alert,
+  Linking,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-
-const API_URL = 'https://www.q8sportcar.com';
+import API_CONFIG from '../../config/api';
+import apiClient from '../../services/apiClient';
 
 const MyRequestsScreen = ({ navigation }) => {
   const { token } = useAuth();
@@ -22,13 +23,12 @@ const MyRequestsScreen = ({ navigation }) => {
 
   const fetchMyRequests = useCallback(async () => {
     try {
-      const response = await fetch(`${API_URL}/api/requests/my`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await response.json();
-      
-      if (data.success) {
+      const response = await apiClient.get(API_CONFIG.ENDPOINTS.REQUESTS_MY);
+      const data = response.data;
+      if (data?.success) {
         setRequests(data.requests);
+      } else {
+        setRequests([]);
       }
     } catch (error) {
       console.error('Error fetching my requests:', error);
@@ -61,13 +61,10 @@ const MyRequestsScreen = ({ navigation }) => {
           style: 'destructive',
           onPress: async () => {
             try {
-              const response = await fetch(`${API_URL}/api/requests/${id}`, {
-                method: 'DELETE',
-                headers: { Authorization: `Bearer ${token}` },
-              });
-              const data = await response.json();
-              
-              if (data.success) {
+              const response = await apiClient.delete(API_CONFIG.ENDPOINTS.REQUEST_DETAILS(id));
+              const data = response.data;
+
+              if (data?.success) {
                 setRequests(requests.filter(r => r.id !== id));
                 Alert.alert('نجح', 'تم حذف الطلب بنجاح');
               } else {
@@ -75,7 +72,8 @@ const MyRequestsScreen = ({ navigation }) => {
               }
             } catch (error) {
               console.error('Error deleting request:', error);
-              Alert.alert('خطأ', 'حدث خطأ أثناء حذف الطلب');
+              const message = error?.response?.data?.error || 'حدث خطأ أثناء حذف الطلب';
+              Alert.alert('خطأ', message);
             }
           },
         },
@@ -85,23 +83,19 @@ const MyRequestsScreen = ({ navigation }) => {
 
   const handleMarkAsFound = async (id) => {
     try {
-      const response = await fetch(`${API_URL}/api/requests/${id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ status: 'FOUND' }),
+      const response = await apiClient.patch(API_CONFIG.ENDPOINTS.REQUEST_DETAILS(id), {
+        status: 'FOUND',
       });
-      const data = await response.json();
-      
-      if (data.success) {
+      const data = response.data;
+
+      if (data?.success) {
         fetchMyRequests();
         Alert.alert('نجح', 'تم تحديث حالة الطلب');
       }
     } catch (error) {
       console.error('Error updating request:', error);
-      Alert.alert('خطأ', 'حدث خطأ أثناء تحديث الطلب');
+      const message = error?.response?.data?.error || 'حدث خطأ أثناء تحديث الطلب';
+      Alert.alert('خطأ', message);
     }
   };
 
@@ -129,6 +123,21 @@ const MyRequestsScreen = ({ navigation }) => {
       default:
         return 'نشط';
     }
+  };
+
+  const normalizePhone = (phone) => {
+    if (!phone) return null;
+    const digits = String(phone).replace(/\D/g, '');
+    if (digits.length === 8) return `965${digits}`;
+    return digits;
+  };
+
+  const openWhatsApp = async (phone) => {
+    const normalized = normalizePhone(phone);
+    if (!normalized) return;
+    const url = `https://wa.me/${normalized}`;
+    const supported = await Linking.canOpenURL(url);
+    if (supported) await Linking.openURL(url);
   };
 
   const renderRequest = ({ item }) => (
@@ -162,10 +171,15 @@ const MyRequestsScreen = ({ navigation }) => {
           </View>
         )}
 
-        <View style={styles.phoneInfo}>
-          <Ionicons name="call-outline" size={16} color="#DC2626" />
-          <Text style={styles.phoneText}>{item.phone}</Text>
-        </View>
+        {!!(item.contactWhatsapp || item.contactPhone || item.phone) && (
+          <TouchableOpacity
+            style={styles.phoneInfo}
+            onPress={() => openWhatsApp(item.contactWhatsapp || item.contactPhone || item.phone)}
+          >
+            <Ionicons name="logo-whatsapp" size={16} color="#16A34A" />
+            <Text style={styles.phoneText}>{item.contactWhatsapp || item.contactPhone || item.phone}</Text>
+          </TouchableOpacity>
+        )}
 
         <View style={styles.actions}>
           {item.status === 'ACTIVE' && (

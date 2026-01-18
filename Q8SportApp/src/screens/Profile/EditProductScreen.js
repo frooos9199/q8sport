@@ -14,6 +14,8 @@ import {
 } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { useAuth } from '../../contexts/AuthContext';
+import API_CONFIG from '../../config/api';
+import apiClient from '../../services/apiClient';
 
 const EditProductScreen = ({ route, navigation }) => {
   const { product } = route.params;
@@ -41,7 +43,7 @@ const EditProductScreen = ({ route, navigation }) => {
     model: product.carModel || '',
     year: product.carYear?.toString() || '',
     partCondition: product.condition?.toLowerCase() || 'used',
-    phone: product.contactPhone || user?.phone || '',
+    phone: user?.phone || product.contactPhone || '',
   });
 
   const carTypes = [
@@ -137,33 +139,18 @@ const EditProductScreen = ({ route, navigation }) => {
         images: JSON.stringify(imageURIs),
       };
 
-      const response = await fetch(
-        `https://q8sport.vercel.app/api/products/${product.id}`,
+      await apiClient.patch(API_CONFIG.ENDPOINTS.PRODUCT_DETAILS(product.id), productData);
+
+      Alert.alert('✅ نجح', 'تم تحديث المنتج بنجاح', [
         {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify(productData),
-        }
-      );
-
-      const data = await response.json();
-
-      if (response.ok) {
-        Alert.alert('✅ نجح', 'تم تحديث المنتج بنجاح', [
-          {
-            text: 'موافق',
-            onPress: () => navigation.goBack(),
-          },
-        ]);
-      } else {
-        Alert.alert('❌ خطأ', data.error || data.message || 'فشل تحديث المنتج');
-      }
+          text: 'موافق',
+          onPress: () => navigation.goBack(),
+        },
+      ]);
     } catch (error) {
       console.error('Error updating product:', error);
-      Alert.alert('❌ خطأ', 'حدث خطأ أثناء تحديث المنتج');
+      const message = error?.response?.data?.error || error?.response?.data?.message;
+      Alert.alert('❌ خطأ', message || 'حدث خطأ أثناء تحديث المنتج');
     } finally {
       setLoading(false);
     }
@@ -359,7 +346,8 @@ const EditProductScreen = ({ route, navigation }) => {
             <TextInput
               style={styles.input}
               value={formData.phone}
-              onChangeText={(text) => setFormData({ ...formData, phone: text })}
+              editable={false}
+              selectTextOnFocus={false}
               keyboardType="phone-pad"
               placeholder="+965 XXXX XXXX"
               placeholderTextColor="#666"

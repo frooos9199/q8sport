@@ -77,7 +77,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       message: 'تم إنشاء الحساب بنجاح',
       user
-    }, { status: 201 });
+    }, {
+      status: 201,
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
 
   } catch (error) {
     console.error('Registration error:', error);

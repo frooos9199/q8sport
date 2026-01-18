@@ -12,12 +12,10 @@ import {
   ScrollView,
   RefreshControl,
 } from 'react-native';
-import { useAuth } from '../../contexts/AuthContext';
 import apiClient from '../../services/apiClient';
 import API_CONFIG from '../../config/api';
 
 const ManageUsersScreen = () => {
-  const { token } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -126,21 +124,36 @@ const ManageUsersScreen = () => {
     );
   };
 
-  const banUser = (userId) => {
-    Alert.alert('حظر نهائي', 'هل تريد حظر هذا المستخدم نهائياً؟', [
+  const deleteUser = (userId) => {
+    Alert.alert('حذف المستخدم', 'اختر الإجراء المطلوب:', [
       { text: 'إلغاء', style: 'cancel' },
       {
-        text: 'حظر',
-        style: 'destructive',
+        text: 'حظر نهائي',
         onPress: async () => {
           try {
-            await apiClient.delete(API_CONFIG.ENDPOINTS.ADMIN_USERS, {
+            const res = await apiClient.delete(API_CONFIG.ENDPOINTS.ADMIN_USERS, {
               data: { userId },
             });
-            Alert.alert('تم', 'تم حظر المستخدم');
+            Alert.alert('تم', res?.data?.message || 'تم حظر المستخدم');
             fetchUsers();
           } catch (error) {
             const msg = error?.response?.data?.error || 'فشل حظر المستخدم';
+            Alert.alert('خطأ', msg);
+          }
+        },
+      },
+      {
+        text: 'حذف نهائي',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            const res = await apiClient.delete(API_CONFIG.ENDPOINTS.ADMIN_USERS, {
+              data: { userId, hardDelete: true },
+            });
+            Alert.alert('تم', res?.data?.message || 'تم حذف المستخدم نهائياً');
+            fetchUsers();
+          } catch (error) {
+            const msg = error?.response?.data?.error || 'فشل حذف المستخدم نهائياً';
             Alert.alert('خطأ', msg);
           }
         },
@@ -202,7 +215,7 @@ const ManageUsersScreen = () => {
             <Text style={styles.actionText}>⛔ إيقاف</Text>
           </TouchableOpacity>
         )}
-        <TouchableOpacity style={[styles.actionBtn, styles.deleteBtn]} onPress={() => banUser(item.id)}>
+        <TouchableOpacity style={[styles.actionBtn, styles.deleteBtn]} onPress={() => deleteUser(item.id)}>
           <Text style={styles.actionText}>🗑 حذف</Text>
         </TouchableOpacity>
       </View>

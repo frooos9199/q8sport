@@ -13,97 +13,6 @@ import {
 import { ProductService } from '../../services/api/products';
 import EnhancedProductCard from '../../components/EnhancedProductCard';
 
-const DUMMY_PRODUCTS = [
-  {
-    id: 'dummy-1',
-    title: 'قير موستنق 2015',
-    price: 450,
-    condition: 'مستعمل',
-    images: JSON.stringify(['https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=400']),
-    views: 124,
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    status: 'متوفر',
-    phone: '+96599887766',
-  },
-  {
-    id: 'dummy-2',
-    title: 'محرك كامري 2018',
-    price: 1200,
-    condition: 'جديد',
-    images: JSON.stringify(['https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=400']),
-    views: 89,
-    createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-    status: 'متوفر',
-    phone: '+96599887766',
-  },
-  {
-    id: 'dummy-3',
-    title: 'إطارات رياضية',
-    price: 280,
-    condition: 'جديد',
-    images: JSON.stringify(['https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400']),
-    views: 203,
-    createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    status: 'متوفر',
-    phone: '+96599887766',
-  },
-  {
-    id: 'dummy-4',
-    title: 'مقود كورفيت',
-    price: 350,
-    condition: 'مستعمل',
-    images: JSON.stringify(['https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=400']),
-    views: 156,
-    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-    status: 'محجوز',
-    phone: '+96599887766',
-  },
-  {
-    id: 'dummy-5',
-    title: 'شاشة تسلا',
-    price: 890,
-    condition: 'جديد',
-    images: JSON.stringify(['https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?w=400']),
-    views: 312,
-    createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-    status: 'متوفر',
-    phone: '+96599887766',
-  },
-  {
-    id: 'dummy-6',
-    title: 'مصابيح LED',
-    price: 150,
-    condition: 'جديد',
-    images: JSON.stringify(['https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=400']),
-    views: 78,
-    createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-    status: 'متوفر',
-    phone: '+96599887766',
-  },
-  {
-    id: 'dummy-7',
-    title: 'عادم رياضي',
-    price: 520,
-    condition: 'مستعمل',
-    images: JSON.stringify(['https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=400']),
-    views: 145,
-    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    status: 'متوفر',
-    phone: '+96599887766',
-  },
-  {
-    id: 'dummy-8',
-    title: 'مكابح بريمبو',
-    price: 680,
-    condition: 'جديد',
-    images: JSON.stringify(['https://images.unsplash.com/photo-1514316454349-750a7fd3da3a?w=400']),
-    views: 267,
-    createdAt: new Date(Date.now() - 18 * 60 * 60 * 1000).toISOString(),
-    status: 'مباع',
-    phone: '+96599887766',
-  },
-];
-
 const ProductCard = React.memo(({ item, index, onPress }) => {
   return (
     <EnhancedProductCard item={item} index={index} onPress={onPress} />
@@ -111,7 +20,7 @@ const ProductCard = React.memo(({ item, index, onPress }) => {
 });
 
 const GuestHomeScreen = ({ navigation }) => {
-  const [products, setProducts] = useState(DUMMY_PRODUCTS);
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -138,10 +47,10 @@ const GuestHomeScreen = ({ navigation }) => {
     try {
       const response = await ProductService.getProducts();
       const apiProducts = response.products || [];
-      setProducts([...DUMMY_PRODUCTS, ...apiProducts]);
+      setProducts(apiProducts);
     } catch (error) {
       console.error('Error fetching products:', error);
-      setProducts(DUMMY_PRODUCTS);
+      setProducts([]);
     } finally {
       setLoading(false);
       setRefreshing(false);

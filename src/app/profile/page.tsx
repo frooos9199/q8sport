@@ -114,21 +114,27 @@ export default function ProfilePage() {
         console.log('No user ID found')
         return
       }
+
+      if (!token) {
+        console.log('No auth token found')
+        return
+      }
       
       console.log('Fetching products for user:', user.id)
       
       try {
-        const response = await fetch(`/api/users/${user.id}/products`)
+        const response = await fetch('/api/user/products', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
         const data = await response.json()
         
         console.log('API Response:', data)
         
-        if (data.success) {
-          console.log(`Setting ${data.products?.length || 0} products`)
-          setUserItems(data.products || [])
-        } else {
-          console.log('API returned success: false')
-        }
+        const products = Array.isArray(data?.products) ? data.products : []
+        console.log(`Setting ${products.length} products`)
+        setUserItems(products)
       } catch (error) {
         console.error('Error fetching user items:', error)
       }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { verifyToken } from '@/lib/auth'
 
 function safeJsonParse(value: string | null): unknown {
   if (!value) return null;
@@ -31,6 +32,21 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'المستخدم غير موجود' }, { status: 404 })
     }
 
+    // Hide stopped shops/users from public views
+    const viewer = await verifyToken(request)
+    const viewerId = viewer?.userId
+    const isAdmin = viewer?.role === 'ADMIN'
+    const isOwner = !!viewerId && viewerId === user.id
+
+    if (user.status !== 'ACTIVE' && !isAdmin && !isOwner) {
+      return NextResponse.json({ error: 'المستخدم غير موجود' }, { status: 404 })
+    }
+
+    // Public behavior: only show ACTIVE/SOLD products; hide stopped (INACTIVE/DELETED)
+    const visibleProducts = (isAdmin || isOwner)
+      ? user.products
+      : user.products.filter((p) => p.status === 'ACTIVE' || p.status === 'SOLD')
+
     // تحويل البيانات لتتناسب مع واجهة الموقع
     const sellerProfile = {
       id: user.id,
@@ -48,13 +64,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       rating: user.rating || 4.0,
       verified: user.verified,
       joinDate: user.createdAt.toISOString(),
-      totalProducts: user.products.length,
-      activeProducts: user.products.filter(p => p.status === 'ACTIVE').length,
-      soldProducts: user.products.filter(p => p.status === 'SOLD').length
+      totalProducts: visibleProducts.length,
+      activeProducts: visibleProducts.filter(p => p.status === 'ACTIVE').length,
+      soldProducts: visibleProducts.filter(p => p.status === 'SOLD').length
     }
 
     // تحويل المنتجات
-    const products = user.products.map(product => ({
+    const products = visibleProducts.map(product => ({
       id: product.id,
       title: product.title,
       description: product.description,
@@ -83,6 +99,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       success: true,
       seller: sellerProfile,
       products
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
     })
   } catch (error) {
     console.error('Error fetching user:', error)

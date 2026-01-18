@@ -12,8 +12,8 @@ import {
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-
-const API_URL = 'https://www.q8sportcar.com';
+import API_CONFIG from '../../config/api';
+import apiClient from '../../services/apiClient';
 
 const RequestsScreen = ({ navigation }) => {
   const { token } = useAuth();
@@ -23,10 +23,8 @@ const RequestsScreen = ({ navigation }) => {
 
   const fetchRequests = useCallback(async () => {
     try {
-      const response = await fetch(`${API_URL}/api/requests`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      const data = await response.json();
+      const response = await apiClient.get(API_CONFIG.ENDPOINTS.REQUESTS);
+      const data = response.data;
       
       if (data.success) {
         setRequests(data.requests);
@@ -48,18 +46,19 @@ const RequestsScreen = ({ navigation }) => {
     fetchRequests();
   };
 
-  const handleCall = (phone) => {
-    Alert.alert(
-      'اتصال',
-      `هل تريد الاتصال بـ ${phone}؟`,
-      [
-        { text: 'إلغاء', style: 'cancel' },
-        {
-          text: 'اتصال',
-          onPress: () => Linking.openURL(`tel:${phone}`),
-        },
-      ]
-    );
+  const normalizePhone = (phone) => {
+    if (!phone) return null;
+    const digits = String(phone).replace(/\D/g, '');
+    if (digits.length === 8) return `965${digits}`;
+    return digits;
+  };
+
+  const openWhatsApp = async (phone) => {
+    const normalized = normalizePhone(phone);
+    if (!normalized) return;
+    const url = `https://wa.me/${normalized}`;
+    const supported = await Linking.canOpenURL(url);
+    if (supported) await Linking.openURL(url);
   };
 
   const getStatusColor = (status) => {
@@ -133,10 +132,10 @@ const RequestsScreen = ({ navigation }) => {
 
           <TouchableOpacity
             style={styles.callButton}
-            onPress={() => handleCall(item.phone)}
+            onPress={() => openWhatsApp(item.contactWhatsapp || item.contactPhone || item.phone)}
           >
-            <Ionicons name="call" size={18} color="#fff" />
-            <Text style={styles.callButtonText}>اتصال</Text>
+            <Ionicons name="logo-whatsapp" size={18} color="#fff" />
+            <Text style={styles.callButtonText}>واتساب</Text>
           </TouchableOpacity>
         </View>
       </View>

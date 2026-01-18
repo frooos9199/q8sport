@@ -49,6 +49,8 @@ import StoreDetailsScreen from '../screens/Stores/StoreDetailsScreen';
 // Auctions Screens
 import AuctionsListScreen from '../screens/Auctions/AuctionsListScreen';
 import AuctionDetailsScreen from '../screens/Auctions/AuctionDetailsScreen';
+import MyAuctionsScreen from '../screens/Auctions/MyAuctionsScreen';
+import AddAuctionScreen from '../screens/Auctions/AddAuctionScreen';
 
 // Requests Screens
 import RequestsScreen from '../screens/Requests/RequestsScreen';
@@ -170,6 +172,24 @@ const ProfileStack = () => {
               headerBackTitle: 'رجوع',
             }}
           />
+
+          <Stack.Screen
+            name="MyAuctions"
+            component={MyAuctionsScreen}
+            options={{
+              title: 'مزاداتي',
+              headerBackTitle: 'رجوع',
+            }}
+          />
+
+          <Stack.Screen
+            name="AddAuction"
+            component={AddAuctionScreen}
+            options={{
+              title: 'إضافة مزاد',
+              headerBackTitle: 'رجوع',
+            }}
+          />
           <Stack.Screen 
             name="ChangePassword" 
             component={ChangePasswordScreen}
@@ -215,6 +235,15 @@ const ProfileStack = () => {
             component={ProductDetailsScreen}
             options={{ 
               title: 'تفاصيل المنتج',
+              headerBackTitle: 'رجوع',
+            }}
+          />
+
+          <Stack.Screen
+            name="AuctionDetails"
+            component={AuctionDetailsScreen}
+            options={{
+              title: 'تفاصيل المزاد',
               headerBackTitle: 'رجوع',
             }}
           />

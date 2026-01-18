@@ -8,6 +8,8 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
+import API_CONFIG from '../../config/api';
+import apiClient from '../../services/apiClient';
 
 const UserStatsScreen = () => {
   const { token } = useAuth();
@@ -28,13 +30,8 @@ const UserStatsScreen = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('https://q8sport.vercel.app/api/user/stats', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setStats(data);
-      }
+      const response = await apiClient.get(API_CONFIG.ENDPOINTS.USER_STATS);
+      setStats(response.data);
     } catch (error) {
       console.error('Error:', error);
     } finally {

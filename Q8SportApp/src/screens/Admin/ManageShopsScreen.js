@@ -171,20 +171,35 @@ const ManageShopsScreen = () => {
   };
 
   const deleteShopUser = (userId) => {
-    Alert.alert('حذف/حظر', 'هل تريد حذف/حظر هذا المحل؟', [
+    Alert.alert('حذف المحل', 'اختر الإجراء المطلوب:', [
       { text: 'إلغاء', style: 'cancel' },
       {
-        text: 'حذف',
+        text: 'حظر نهائي',
+        onPress: async () => {
+          try {
+            const res = await apiClient.delete(API_CONFIG.ENDPOINTS.ADMIN_USERS, {
+              data: { userId },
+            });
+            Alert.alert('تم', res?.data?.message || 'تم حظر المحل');
+            fetchShops();
+          } catch (error) {
+            const msg = error?.response?.data?.error || 'فشل حظر المحل';
+            Alert.alert('خطأ', msg);
+          }
+        },
+      },
+      {
+        text: 'حذف نهائي',
         style: 'destructive',
         onPress: async () => {
           try {
-            await apiClient.delete(API_CONFIG.ENDPOINTS.ADMIN_USERS, {
-              data: { userId },
+            const res = await apiClient.delete(API_CONFIG.ENDPOINTS.ADMIN_USERS, {
+              data: { userId, hardDelete: true },
             });
-            Alert.alert('تم', 'تم حذف/حظر المحل');
+            Alert.alert('تم', res?.data?.message || 'تم حذف المحل نهائياً');
             fetchShops();
           } catch (error) {
-            const msg = error?.response?.data?.error || 'فشل حذف/حظر المحل';
+            const msg = error?.response?.data?.error || 'فشل حذف المحل نهائياً';
             Alert.alert('خطأ', msg);
           }
         },

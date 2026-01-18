@@ -18,6 +18,8 @@ import {
 import { ProductService } from '../../services/api/products';
 import { CarIcon, PartsIcon, AccessoryIcon, FavoriteIcon } from '../../components/Icons';
 import { useAuth } from '../../contexts/AuthContext';
+import API_CONFIG from '../../config/api';
+import apiClient from '../../services/apiClient';
 
 const SPORT_CARS = {
   Ford: ['Mustang', 'F-150 Raptor', 'GT', 'Shelby GT500'],
@@ -34,84 +36,6 @@ const PRODUCT_TYPES = [
   { label: 'الكل', value: 'ALL', icon: 'apps' },
   { label: 'سيارات', value: 'CAR', icon: 'car' },
   { label: 'قطع غيار', value: 'PART', icon: 'parts' }
-];
-
-const DUMMY_PRODUCTS = [
-  {
-    id: 'dummy-1',
-    title: 'قير موستنق 2015',
-    price: 450,
-    condition: 'مستعمل',
-    productType: 'PART',
-    carBrand: 'Ford',
-    carModel: 'Mustang',
-    images: JSON.stringify(['https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=400']),
-  },
-  {
-    id: 'dummy-2',
-    title: 'محرك كامري 2018',
-    price: 1200,
-    condition: 'جديد',
-    productType: 'PART',
-    carBrand: 'Toyota',
-    carModel: 'Camry',
-    images: JSON.stringify(['https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=400']),
-  },
-  {
-    id: 'dummy-3',
-    title: 'إطارات رياضية',
-    price: 280,
-    condition: 'جديد',
-    productType: 'PART',
-    carBrand: 'BMW',
-    images: JSON.stringify(['https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400']),
-  },
-  {
-    id: 'dummy-4',
-    title: 'مقود كورفيت',
-    price: 350,
-    condition: 'مستعمل',
-    productType: 'PART',
-    carBrand: 'Chevrolet',
-    carModel: 'Corvette',
-    images: JSON.stringify(['https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=400']),
-  },
-  {
-    id: 'dummy-5',
-    title: 'شاشة تسلا',
-    price: 890,
-    condition: 'جديد',
-    productType: 'PART',
-    carBrand: 'Tesla',
-    images: JSON.stringify(['https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?w=400']),
-  },
-  {
-    id: 'dummy-6',
-    title: 'مصابيح LED',
-    price: 150,
-    condition: 'جديد',
-    productType: 'PART',
-    carBrand: 'Mercedes',
-    images: JSON.stringify(['https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=400']),
-  },
-  {
-    id: 'dummy-7',
-    title: 'عادم رياضي',
-    price: 520,
-    condition: 'مستعمل',
-    productType: 'PART',
-    carBrand: 'Porsche',
-    images: JSON.stringify(['https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=400']),
-  },
-  {
-    id: 'dummy-8',
-    title: 'مكابح بريمبو',
-    price: 680,
-    condition: 'جديد',
-    productType: 'PART',
-    carBrand: 'Nissan',
-    images: JSON.stringify(['https://images.unsplash.com/photo-1514316454349-750a7fd3da3a?w=400']),
-  },
 ];
 
 const ProductCard = React.memo(({ item, index, onPress, onFavorite, isFavorite }) => {
@@ -196,8 +120,8 @@ const ProductCard = React.memo(({ item, index, onPress, onFavorite, isFavorite }
 
 const HomeScreen = ({ navigation }) => {
   const { token, isAuthenticated } = useAuth();
-  const [products, setProducts] = useState(DUMMY_PRODUCTS);
-  const [filteredProducts, setFilteredProducts] = useState(DUMMY_PRODUCTS);
+  const [products, setProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -233,10 +157,10 @@ const HomeScreen = ({ navigation }) => {
     try {
       const response = await ProductService.getProducts();
       const apiProducts = response.products || [];
-      setProducts([...DUMMY_PRODUCTS, ...apiProducts]);
+      setProducts(apiProducts);
     } catch (error) {
       console.error('Error fetching products:', error);
-      setProducts(DUMMY_PRODUCTS);
+      setProducts([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -304,20 +228,10 @@ const HomeScreen = ({ navigation }) => {
     try {
       const isFav = favorites.includes(productId);
       if (isFav) {
-        await fetch(`https://q8sport.vercel.app/api/user/favorites/${productId}`, {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        await apiClient.delete(API_CONFIG.ENDPOINTS.USER_FAVORITE_DETAILS(productId));
         setFavorites(favorites.filter(id => id !== productId));
       } else {
-        await fetch('https://q8sport.vercel.app/api/user/favorites', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ productId }),
-        });
+        await apiClient.post(API_CONFIG.ENDPOINTS.USER_FAVORITES, { productId });
         setFavorites([...favorites, productId]);
       }
     } catch (error) {

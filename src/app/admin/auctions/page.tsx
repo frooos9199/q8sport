@@ -57,7 +57,7 @@ export default function AdminAuctionsPage() {
         return;
       }
 
-      const res = await fetch('/api/auctions?limit=200', {
+      const res = await fetch('/api/admin/auctions?limit=200', {
         headers: {
           Authorization: `Bearer ${token}`
         }

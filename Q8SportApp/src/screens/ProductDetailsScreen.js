@@ -14,6 +14,8 @@ import {
   FlatList,
 } from 'react-native';
 
+import { ProductService } from '../services/api/products';
+
 const { width } = Dimensions.get('window');
 
 const ProductDetailsScreen = ({ route, navigation }) => {
@@ -30,23 +32,9 @@ const ProductDetailsScreen = ({ route, navigation }) => {
   const fetchProduct = async () => {
     try {
       console.log('Fetching product:', productId);
-      const response = await fetch(`https://q8sport.vercel.app/api/products/${productId}`);
-      console.log('Response status:', response.status);
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Product data:', data);
-        setProduct(data.product || data);
-      } else {
-        console.error('Failed to fetch product:', response.status);
-        // عرض رسالة خطأ
-        setProduct({
-          title: 'لم يتم العثور على المنتج',
-          price: 0,
-          description: 'عذراً، لم نتمكن من تحميل تفاصيل المنتج.',
-          condition: 'غير متوفر',
-        });
-      }
+      const data = await ProductService.getProductDetails(productId);
+      console.log('Product data:', data);
+      setProduct(data?.product || data);
     } catch (error) {
       console.error('Error fetching product:', error);
       // عرض رسالة خطأ
@@ -66,15 +54,21 @@ const ProductDetailsScreen = ({ route, navigation }) => {
     }
   };
 
-  const handleWhatsApp = () => {
-    const phone = product.contactPhone || product.phone || product.seller?.phone || '+96599887766';
-    const message = `مرحباً، أنا مهتم بـ ${product.title} - السعر: ${product.price} د.ك`;
-    Linking.openURL(`whatsapp://send?phone=${phone}&text=${encodeURIComponent(message)}`);
+  const normalizePhone = (phone) => {
+    if (!phone) return null;
+    const digits = String(phone).replace(/\D/g, '');
+    if (digits.length === 8) return `965${digits}`;
+    return digits;
   };
 
-  const handleCall = () => {
-    const phone = product.contactPhone || product.phone || product.seller?.phone || '+96599887766';
-    Linking.openURL(`tel:${phone}`);
+  const handleWhatsApp = () => {
+    const phone = product.contactPhone || product.phone || product.seller?.phone;
+    const normalized = normalizePhone(phone);
+    if (!normalized) return;
+
+    const message = `مرحباً، أنا مهتم بـ ${product.title} - السعر: ${product.price} د.ك`;
+    const url = `https://wa.me/${normalized}?text=${encodeURIComponent(message)}`;
+    Linking.openURL(url);
   };
 
   const handleShare = async () => {
@@ -192,10 +186,6 @@ const ProductDetailsScreen = ({ route, navigation }) => {
             <TouchableOpacity style={styles.whatsappButton} onPress={handleWhatsApp}>
               <Text style={styles.buttonIcon}>💬</Text>
               <Text style={styles.buttonText}>واتساب</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.callButton} onPress={handleCall}>
-              <Text style={styles.buttonIcon}>📞</Text>
-              <Text style={styles.buttonText}>اتصال</Text>
             </TouchableOpacity>
           </View>
         </View>

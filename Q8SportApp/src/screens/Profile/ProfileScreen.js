@@ -93,6 +93,20 @@ const ProfileScreen = ({ navigation }) => {
           <Ionicons name="search-outline" size={28} color="#F59E0B" />
           <Text style={styles.menuText}>طلباتي</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => navigation.navigate('MyAuctions')}>
+          <Ionicons name="pricetags-outline" size={28} color="#DC2626" />
+          <Text style={styles.menuText}>مزاداتي</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => navigation.navigate('AddAuction')}>
+          <Ionicons name="add-circle-outline" size={28} color="#10B981" />
+          <Text style={styles.menuText}>إضافة مزاد</Text>
+        </TouchableOpacity>
         <TouchableOpacity
           style={styles.menuItem}
           onPress={() => navigation.navigate('Messages')}>

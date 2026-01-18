@@ -10,6 +10,8 @@ import {
   Alert,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
+import API_CONFIG from '../../config/api';
+import apiClient from '../../services/apiClient';
 
 const FavoritesScreen = ({ navigation }) => {
   const { token, isAuthenticated } = useAuth();
@@ -26,13 +28,8 @@ const FavoritesScreen = ({ navigation }) => {
 
   const fetchFavorites = async () => {
     try {
-      const response = await fetch('https://q8sport.vercel.app/api/user/favorites', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setFavorites(data.favorites || []);
-      }
+      const response = await apiClient.get(API_CONFIG.ENDPOINTS.USER_FAVORITES);
+      setFavorites(response.data?.favorites || []);
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -42,17 +39,9 @@ const FavoritesScreen = ({ navigation }) => {
 
   const handleRemoveFavorite = async (productId) => {
     try {
-      const response = await fetch(
-        `https://q8sport.vercel.app/api/user/favorites/${productId}`,
-        {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      if (response.ok) {
-        setFavorites(favorites.filter((f) => f.id !== productId));
-        Alert.alert('تم', 'تم إزالة المنتج من المفضلة');
-      }
+      await apiClient.delete(API_CONFIG.ENDPOINTS.USER_FAVORITE_DETAILS(productId));
+      setFavorites(favorites.filter((f) => f.id !== productId));
+      Alert.alert('تم', 'تم إزالة المنتج من المفضلة');
     } catch (error) {
       Alert.alert('خطأ', 'فشل إزالة المنتج');
     }

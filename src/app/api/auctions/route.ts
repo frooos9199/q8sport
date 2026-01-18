@@ -23,10 +23,16 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit;
 
     // Build where clause
-    const where: any = {};
-    
+    // Public behavior: show ACTIVE/ENDED only. Do not expose CANCELLED/DRAFT to public feeds.
+    const where: any = {
+      status: { in: ['ACTIVE', 'ENDED'] },
+    };
+
     if (status) {
-      where.status = status;
+      const requested = status.toUpperCase();
+      if (requested === 'ACTIVE' || requested === 'ENDED') {
+        where.status = requested;
+      }
     }
     
     if (category) {
@@ -204,7 +210,7 @@ export const POST = requireAuth(async (request: AuthenticatedRequest) => {
         currentPrice: starting,
         buyNowPrice: buyNow,
         endTime,
-        images: images || [],
+        images: typeof images === 'string' ? images : JSON.stringify(images || []),
         sellerId: request.user!.userId,
         status: 'ACTIVE'
       },

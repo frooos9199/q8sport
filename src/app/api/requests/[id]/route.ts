@@ -32,6 +32,20 @@ export async function GET(
       );
     }
 
+    // Hide cancelled requests from public views
+    if (request.status === 'CANCELLED') {
+      const viewer = await verifyToken(req);
+      const isAdmin = viewer?.role === 'ADMIN';
+      const isOwner = !!viewer?.userId && viewer.userId === request.userId;
+
+      if (!isAdmin && !isOwner) {
+        return NextResponse.json(
+          { success: false, error: 'الطلب غير موجود' },
+          { status: 404 }
+        );
+      }
+    }
+
     return NextResponse.json({ success: true, request });
   } catch (error) {
     console.error('Error fetching request:', error);
@@ -86,6 +100,7 @@ export async function PATCH(
     if (body.carBrand !== undefined) updateData.carBrand = body.carBrand || null;
     if (body.carModel !== undefined) updateData.carModel = body.carModel || null;
     if (body.carYear !== undefined) updateData.carYear = body.carYear ? parseInt(body.carYear) : null;
+    if (body.image !== undefined) updateData.image = body.image || null;
     // Request model uses contactPhone/contactWhatsapp (keep backward compat with phone/whatsapp)
     if (body.contactPhone !== undefined) updateData.contactPhone = body.contactPhone || null;
     if (body.contactWhatsapp !== undefined) updateData.contactWhatsapp = body.contactWhatsapp || null;

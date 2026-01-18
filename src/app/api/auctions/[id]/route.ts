@@ -37,6 +37,19 @@ export async function GET(
       );
     }
 
+    // Hide stopped/draft auctions from public views
+    const viewer = await verifyToken(request);
+    const viewerId = viewer?.userId;
+    const isAdmin = viewer?.role === 'ADMIN';
+    const isSeller = !!viewerId && viewerId === auction.sellerId;
+
+    if ((auction.status === 'CANCELLED' || auction.status === 'DRAFT') && !isAdmin && !isSeller) {
+      return NextResponse.json(
+        { error: 'المزاد غير موجود' },
+        { status: 404 }
+      );
+    }
+
     // Calculate time remaining
     const timeRemaining = auction.endTime.getTime() - Date.now();
     const isExpired = timeRemaining <= 0;
@@ -72,8 +85,7 @@ export async function GET(
       }
     });
 
-    const viewer = await verifyToken(request);
-    const viewerId = viewer?.userId;
+    // viewer already loaded above
     const canSeeHighestBidderContact =
       !!viewerId &&
       (viewerId === auction.sellerId || viewerId === highestBid?.bidderId || viewer?.role === 'ADMIN');

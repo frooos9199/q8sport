@@ -10,6 +10,8 @@ import {
   Platform,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
+import API_CONFIG from '../../config/api';
+import apiClient from '../../services/apiClient';
 
 const ChatScreen = ({ route }) => {
   const { conversationId, otherUser } = route.params;
@@ -19,21 +21,17 @@ const ChatScreen = ({ route }) => {
   const flatListRef = useRef();
 
   useEffect(() => {
+    if (!token) return;
+
     fetchMessages();
     const interval = setInterval(fetchMessages, 3000);
     return () => clearInterval(interval);
-  }, []);
+  }, [conversationId, token]);
 
   const fetchMessages = async () => {
     try {
-      const response = await fetch(
-        `https://q8sport.vercel.app/api/messages/${conversationId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (response.ok) {
-        const data = await response.json();
-        setMessages(data.messages || []);
-      }
+      const response = await apiClient.get(API_CONFIG.ENDPOINTS.MESSAGE_THREAD(conversationId));
+      setMessages(response.data?.messages || []);
     } catch (error) {
       console.error('Error:', error);
     }
@@ -42,23 +40,18 @@ const ChatScreen = ({ route }) => {
   const sendMessage = async () => {
     if (!newMessage.trim()) return;
 
+    if (!token) {
+      return;
+    }
+
     try {
-      const response = await fetch('https://q8sport.vercel.app/api/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          conversationId,
-          message: newMessage,
-        }),
+      await apiClient.post(API_CONFIG.ENDPOINTS.MESSAGES, {
+        conversationId,
+        message: newMessage,
       });
 
-      if (response.ok) {
-        setNewMessage('');
-        fetchMessages();
-      }
+      setNewMessage('');
+      fetchMessages();
     } catch (error) {
       console.error('Error:', error);
     }

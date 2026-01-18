@@ -11,6 +11,8 @@ import {
   Alert,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
+import API_CONFIG from '../../config/api';
+import apiClient from '../../services/apiClient';
 
 const MyProductsScreen = ({ navigation }) => {
   const { user, token } = useAuth();
@@ -25,29 +27,14 @@ const MyProductsScreen = ({ navigation }) => {
   const fetchMyProducts = async () => {
     try {
       console.log('Fetching products with token:', token ? 'Token exists' : 'No token');
-      
-      const response = await fetch('https://q8sport.vercel.app/api/user/products', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      
-      console.log('Response status:', response.status);
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Products received:', data.products?.length || 0);
-        setProducts(data.products || []);
-      } else {
-        const errorData = await response.json();
-        console.error('Error response:', errorData);
-        Alert.alert('خطأ', errorData.error || 'فشل تحميل المنتجات');
-      }
+
+      const response = await apiClient.get(API_CONFIG.ENDPOINTS.USER_PRODUCTS);
+      const data = response.data;
+      console.log('Products received:', data?.products?.length || 0);
+      setProducts(data?.products || []);
     } catch (error) {
       console.error('Error fetching products:', error);
-      Alert.alert('خطأ', 'حدث خطأ في تحميل المنتجات');
+      Alert.alert('خطأ', error?.response?.data?.error || 'حدث خطأ في تحميل المنتجات');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -70,24 +57,11 @@ const MyProductsScreen = ({ navigation }) => {
           style: 'destructive',
           onPress: async () => {
             try {
-              const response = await fetch(
-                `https://q8sport.vercel.app/api/products/${productId}`,
-                {
-                  method: 'DELETE',
-                  headers: {
-                    'Authorization': `Bearer ${token}`,
-                  },
-                }
-              );
-
-              if (response.ok) {
-                Alert.alert('تم', 'تم حذف المنتج بنجاح');
-                fetchMyProducts();
-              } else {
-                Alert.alert('خطأ', 'فشل حذف المنتج');
-              }
+              await apiClient.delete(API_CONFIG.ENDPOINTS.PRODUCT_DETAILS(productId));
+              Alert.alert('تم', 'تم حذف المنتج بنجاح');
+              fetchMyProducts();
             } catch (error) {
-              Alert.alert('خطأ', 'حدث خطأ في حذف المنتج');
+              Alert.alert('خطأ', error?.response?.data?.error || 'حدث خطأ في حذف المنتج');
             }
           },
         },
@@ -105,26 +79,13 @@ const MyProductsScreen = ({ navigation }) => {
           text: 'نعم، تم البيع',
           onPress: async () => {
             try {
-              const response = await fetch(
-                `https://q8sport.vercel.app/api/products/${productId}`,
-                {
-                  method: 'PATCH',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                  },
-                  body: JSON.stringify({ status: 'sold' }),
-                }
-              );
-
-              if (response.ok) {
-                Alert.alert('تم', 'تم تحديث حالة المنتج إلى مباع');
-                fetchMyProducts();
-              } else {
-                Alert.alert('خطأ', 'فشل تحديث حالة المنتج');
-              }
+              await apiClient.patch(API_CONFIG.ENDPOINTS.PRODUCT_DETAILS(productId), {
+                status: 'sold',
+              });
+              Alert.alert('تم', 'تم تحديث حالة المنتج إلى مباع');
+              fetchMyProducts();
             } catch (error) {
-              Alert.alert('خطأ', 'حدث خطأ في تحديث المنتج');
+              Alert.alert('خطأ', error?.response?.data?.error || 'حدث خطأ في تحديث المنتج');
             }
           },
         },

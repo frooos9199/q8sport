@@ -10,6 +10,8 @@ import {
   ScrollView,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
+import API_CONFIG from '../../config/api';
+import apiClient from '../../services/apiClient';
 
 const ChangePasswordScreen = ({ navigation }) => {
   const { token } = useAuth();
@@ -21,6 +23,11 @@ const ChangePasswordScreen = ({ navigation }) => {
   });
 
   const handleChangePassword = async () => {
+    if (!token) {
+      Alert.alert('خطأ', 'يرجى تسجيل الدخول');
+      return;
+    }
+
     if (!formData.currentPassword || !formData.newPassword || !formData.confirmPassword) {
       Alert.alert('خطأ', 'جميع الحقول مطلوبة');
       return;
@@ -38,28 +45,17 @@ const ChangePasswordScreen = ({ navigation }) => {
 
     setLoading(true);
     try {
-      const response = await fetch('https://q8sport.vercel.app/api/user/change-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          currentPassword: formData.currentPassword,
-          newPassword: formData.newPassword,
-        }),
+      await apiClient.post(API_CONFIG.ENDPOINTS.USER_CHANGE_PASSWORD, {
+        currentPassword: formData.currentPassword,
+        newPassword: formData.newPassword,
       });
 
-      if (response.ok) {
-        Alert.alert('تم', 'تم تغيير كلمة المرور بنجاح', [
-          { text: 'حسناً', onPress: () => navigation.goBack() },
-        ]);
-      } else {
-        const data = await response.json();
-        Alert.alert('خطأ', data.error || 'فشل تغيير كلمة المرور');
-      }
+      Alert.alert('تم', 'تم تغيير كلمة المرور بنجاح', [
+        { text: 'حسناً', onPress: () => navigation.goBack() },
+      ]);
     } catch (error) {
-      Alert.alert('خطأ', 'حدث خطأ أثناء تغيير كلمة المرور');
+      const message = error?.response?.data?.error || 'فشل تغيير كلمة المرور';
+      Alert.alert('خطأ', message);
     } finally {
       setLoading(false);
     }

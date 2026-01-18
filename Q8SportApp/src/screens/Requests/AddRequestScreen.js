@@ -13,8 +13,8 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { launchImageLibrary } from 'react-native-image-picker';
-
-const API_URL = 'https://www.q8sportcar.com';
+import API_CONFIG from '../../config/api';
+import apiClient from '../../services/apiClient';
 
 const AddRequestScreen = ({ navigation }) => {
   const { token, user, isAuthenticated } = useAuth();
@@ -25,9 +25,41 @@ const AddRequestScreen = ({ navigation }) => {
     carBrand: '',
     carModel: '',
     carYear: '',
-    phone: user?.phone || '',
-    image: null,
+    whatsapp: user?.whatsapp || user?.phone || '',
+    imageAsset: null,
   });
+
+  const normalizePhone = (phone) => {
+    if (!phone) return '';
+    return String(phone).replace(/[^0-9]/g, '');
+  };
+
+  const uploadSelectedImageIfAny = async () => {
+    if (!formData.imageAsset?.uri) return null;
+
+    const uri = formData.imageAsset.uri;
+    const type = formData.imageAsset.type || 'image/jpeg';
+    const name = formData.imageAsset.fileName || `request_${Date.now()}.jpg`;
+
+    const fd = new FormData();
+    fd.append('images', {
+      uri,
+      type,
+      name,
+    });
+
+    const res = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.UPLOAD}`, {
+      method: 'POST',
+      body: fd,
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data?.success || !Array.isArray(data?.files) || !data.files[0]) {
+      throw new Error(data?.error || 'فشل رفع الصورة');
+    }
+
+    return data.files[0];
+  };
 
   const handleImagePick = () => {
     launchImageLibrary(
@@ -47,8 +79,14 @@ const AddRequestScreen = ({ navigation }) => {
         }
         if (response.assets && response.assets[0]) {
           const asset = response.assets[0];
-          const base64 = `data:${asset.type};base64,${asset.base64}`;
-          setFormData({ ...formData, image: base64 });
+          setFormData({
+            ...formData,
+            imageAsset: {
+              uri: asset.uri,
+              type: asset.type,
+              fileName: asset.fileName,
+            },
+          });
         }
       }
     );
@@ -68,55 +106,44 @@ const AddRequestScreen = ({ navigation }) => {
       Alert.alert('خطأ', 'يرجى إدخال وصف الطلب');
       return;
     }
-    if (!formData.phone.trim()) {
-      Alert.alert('خطأ', 'يرجى إدخال رقم الهاتف');
+
+    const registeredWhatsapp = user?.whatsapp || user?.phone || '';
+    const providedWhatsapp = formData.whatsapp || '';
+    if (!registeredWhatsapp) {
+      Alert.alert('خطأ', 'رقم الواتساب غير موجود في حسابك');
+      return;
+    }
+
+    if (normalizePhone(registeredWhatsapp) !== normalizePhone(providedWhatsapp)) {
+      Alert.alert('خطأ', 'رقم الواتساب يجب أن يطابق رقم الواتساب المسجل في الحساب');
       return;
     }
 
     setLoading(true);
     try {
-      // Debug logging
-      console.log('🔍 AddRequestScreen: Starting request submission...');
-      console.log('   Token present:', !!token);
-      console.log('   Token preview:', token ? token.substring(0, 50) + '...' : 'NO TOKEN');
-      console.log('   URL:', `${API_URL}/api/requests`);
-      console.log('   Form data:', formData);
+      const uploadedImage = await uploadSelectedImageIfAny();
 
-      const response = await fetch(`${API_URL}/api/requests`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(formData),
+      await apiClient.post(API_CONFIG.ENDPOINTS.REQUESTS, {
+        title: formData.title,
+        description: formData.description,
+        carBrand: formData.carBrand,
+        carModel: formData.carModel,
+        carYear: formData.carYear,
+        contactWhatsapp: formData.whatsapp,
+        contactPhone: user?.phone || null,
+        image: uploadedImage,
       });
 
-      console.log('📊 AddRequestScreen: Response received');
-      console.log('   Status:', response.status);
-      console.log('   Status Text:', response.statusText);
-
-      const data = await response.json();
-      
-      console.log('📦 AddRequestScreen: Response data:', data);
-
-      if (response.ok && data.success) {
-        console.log('✅ AddRequestScreen: Request created successfully!');
-        Alert.alert('نجح', 'تم إضافة الطلب بنجاح', [
-          {
-            text: 'حسناً',
-            onPress: () => navigation.goBack(),
-          },
-        ]);
-      } else if (!response.ok) {
-        console.error('❌ AddRequestScreen: API error -', data.error);
-        Alert.alert('خطأ (' + response.status + ')', data.error || 'فشل إضافة الطلب');
-      } else {
-        console.error('❌ AddRequestScreen: Success false -', data.error);
-        Alert.alert('خطأ', data.error || 'فشل إضافة الطلب');
-      }
+      Alert.alert('نجح', 'تم إضافة الطلب بنجاح', [
+        {
+          text: 'حسناً',
+          onPress: () => navigation.goBack(),
+        },
+      ]);
     } catch (error) {
       console.error('❌ AddRequestScreen: Network/Parse error:', error);
-      Alert.alert('خطأ', 'حدث خطأ أثناء إضافة الطلب: ' + error.message);
+      const message = error?.response?.data?.error || error?.response?.data?.message || error?.message;
+      Alert.alert('خطأ', 'حدث خطأ أثناء إضافة الطلب: ' + (message || 'غير معروف'));
     } finally {
       setLoading(false);
     }
@@ -167,13 +194,14 @@ const AddRequestScreen = ({ navigation }) => {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>رقم الهاتف *</Text>
+              <Text style={styles.label}>رقم الواتساب *</Text>
               <TextInput
                 style={styles.input}
-                placeholder="رقم الهاتف للتواصل"
+                placeholder="رقم الواتساب للتواصل"
                 placeholderTextColor="#666"
-                value={formData.phone}
-                onChangeText={(text) => setFormData({ ...formData, phone: text })}
+                value={formData.whatsapp}
+                editable={false}
+                selectTextOnFocus={false}
                 keyboardType="phone-pad"
               />
             </View>
@@ -220,12 +248,12 @@ const AddRequestScreen = ({ navigation }) => {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>صورة توضيحية (اختياري)</Text>
         
-        {formData.image ? (
+        {formData.imageAsset?.uri ? (
           <View style={styles.imageContainer}>
-            <Image source={{ uri: formData.image }} style={styles.image} />
+            <Image source={{ uri: formData.imageAsset.uri }} style={styles.image} />
             <TouchableOpacity
               style={styles.removeImageButton}
-              onPress={() => setFormData({ ...formData, image: null })}
+              onPress={() => setFormData({ ...formData, imageAsset: null })}
             >
               <Ionicons name="close-circle" size={30} color="#DC2626" />
             </TouchableOpacity>

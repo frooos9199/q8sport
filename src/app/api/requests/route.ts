@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
 
+function normalizePhone(input: unknown) {
+  if (!input) return '';
+  return String(input).replace(/[^0-9]/g, '');
+}
+
 // GET /api/requests - جلب كل الطلبات (عامة)
 export async function GET(req: NextRequest) {
   try {
@@ -52,8 +57,29 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.userId },
+      select: { phone: true, whatsapp: true },
+    });
+
     const body = await req.json();
-    const { title, description, carBrand, carModel, carYear, category, partName, condition, budget, urgent, contactPhone, contactWhatsapp } = body;
+    const {
+      title,
+      description,
+      carBrand,
+      carModel,
+      carYear,
+      category,
+      partName,
+      condition,
+      budget,
+      urgent,
+      contactPhone,
+      contactWhatsapp,
+      image,
+      phone,
+      whatsapp
+    } = body;
 
     // Validation
     if (!title || !description) {
@@ -61,6 +87,20 @@ export async function POST(req: NextRequest) {
         { success: false, error: 'العنوان والوصف مطلوبان' },
         { status: 400 }
       );
+    }
+
+    // Enforce WhatsApp matches the one used at registration/profile
+    const registeredWhatsapp = dbUser?.whatsapp || dbUser?.phone || null;
+    const providedWhatsappRaw = contactWhatsapp ?? whatsapp ?? null;
+    if (providedWhatsappRaw) {
+      const providedDigits = normalizePhone(providedWhatsappRaw);
+      const registeredDigits = normalizePhone(registeredWhatsapp);
+      if (registeredDigits && providedDigits && providedDigits !== registeredDigits) {
+        return NextResponse.json(
+          { success: false, error: 'رقم الواتساب يجب أن يطابق رقم الواتساب المسجل في الحساب' },
+          { status: 400 }
+        );
+      }
     }
 
     const request = await prisma.request.create({
@@ -72,12 +112,14 @@ export async function POST(req: NextRequest) {
         carBrand: carBrand || null,
         carModel: carModel || null,
         carYear: carYear ? parseInt(carYear) : null,
+        image: image || null,
         partName: partName || null,
         condition: condition || null,
         budget: budget ? parseFloat(budget) : null,
         urgent: urgent || false,
-        contactPhone: contactPhone || null,
-        contactWhatsapp: contactWhatsapp || null,
+        // Keep backward compat: accept phone/whatsapp but store normalized contact fields.
+        contactPhone: contactPhone || phone || dbUser?.phone || null,
+        contactWhatsapp: registeredWhatsapp,
         status: 'ACTIVE',
       },
       include: {

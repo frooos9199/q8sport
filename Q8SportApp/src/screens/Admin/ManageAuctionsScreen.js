@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import apiClient from '../../services/apiClient';
 import API_CONFIG from '../../config/api';
+import { getApiErrorMessage } from '../../utils/apiError';
 
 const STATUS_OPTIONS = ['ACTIVE', 'ENDED', 'CANCELLED', 'DRAFT'];
 
@@ -22,6 +23,8 @@ const ManageAuctionsScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [usingPublicFallback, setUsingPublicFallback] = useState(false);
+  const [warnedMissingAdminEndpoint, setWarnedMissingAdminEndpoint] = useState(false);
 
   const [editing, setEditing] = useState(null);
   const [editTitle, setEditTitle] = useState('');
@@ -31,15 +34,50 @@ const ManageAuctionsScreen = () => {
 
   const fetchAuctions = async () => {
     try {
-      const res = await apiClient.get(API_CONFIG.ENDPOINTS.AUCTIONS, {
+      // Prefer admin endpoint (includes CANCELLED/DRAFT), but production may not have it.
+      const adminRes = await apiClient.get(API_CONFIG.ENDPOINTS.ADMIN_AUCTIONS, {
         params: {
           limit: 200,
+          ...(statusFilter !== 'ALL' ? { status: statusFilter } : {}),
         },
       });
-      setItems(res.data?.auctions || []);
+
+      setUsingPublicFallback(false);
+      setItems(adminRes.data?.auctions || []);
     } catch (error) {
       console.error('Error fetching auctions:', error);
-      Alert.alert('خطأ', 'فشل تحميل المزادات');
+
+      // If admin endpoint doesn't exist on the server (404), fall back to public auctions.
+      if (error?.response?.status === 404) {
+        try {
+          const publicStatus = statusFilter === 'ACTIVE' || statusFilter === 'ENDED' ? statusFilter : undefined;
+          const publicRes = await apiClient.get(API_CONFIG.ENDPOINTS.AUCTIONS, {
+            params: {
+              limit: 200,
+              ...(publicStatus ? { status: publicStatus } : {}),
+            },
+          });
+
+          setUsingPublicFallback(true);
+          setItems(publicRes.data?.auctions || []);
+
+          if (!warnedMissingAdminEndpoint) {
+            setWarnedMissingAdminEndpoint(true);
+            Alert.alert(
+              'تنبيه',
+              'سيرفر الإدارة للمزادات غير متوفر حالياً (404). سيتم عرض المزادات العامة فقط. يلزم تحديث/نشر السيرفر لإظهار CANCELLED/DRAFT.'
+            );
+          }
+          return;
+        } catch (fallbackError) {
+          console.error('Error fetching public auctions fallback:', fallbackError);
+          Alert.alert('خطأ', getApiErrorMessage(fallbackError, 'فشل تحميل المزادات'));
+          setItems([]);
+          return;
+        }
+      }
+
+      Alert.alert('خطأ', getApiErrorMessage(error, 'فشل تحميل المزادات'));
       setItems([]);
     } finally {
       setLoading(false);
@@ -49,7 +87,8 @@ const ManageAuctionsScreen = () => {
 
   useEffect(() => {
     fetchAuctions();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter]);
 
   const onRefresh = () => {
     setRefreshing(true);

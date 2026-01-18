@@ -3,6 +3,11 @@ import { requireAuth, AuthenticatedRequest } from '@/lib/auth';
 import { verifyToken } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
+function normalizePhone(input: unknown) {
+  if (!input) return '';
+  return String(input).replace(/[^0-9]/g, '');
+}
+
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -73,6 +78,11 @@ export const PATCH = requireAuth(async (
       return NextResponse.json({ error: 'غير مصرح لك بتعديل هذا المنتج' }, { status: 403 });
     }
 
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.userId },
+      select: { phone: true },
+    });
+
     const updateData: any = {};
     if (body.title) updateData.title = body.title;
     if (body.description !== undefined) updateData.description = body.description;
@@ -97,7 +107,23 @@ export const PATCH = requireAuth(async (
       };
       updateData.condition = conditionMap[body.condition.toLowerCase()] || body.condition.toUpperCase();
     }
-    if (body.contactPhone !== undefined) updateData.contactPhone = body.contactPhone;
+    if (body.contactPhone !== undefined) {
+      const profilePhone = dbUser?.phone || null;
+      if (!profilePhone) {
+        return NextResponse.json({ error: 'يرجى إضافة رقم الهاتف في الملف الشخصي أولاً' }, { status: 400 });
+      }
+
+      const provided = normalizePhone(body.contactPhone);
+      const registered = normalizePhone(profilePhone);
+      if (provided && registered && provided !== registered) {
+        return NextResponse.json(
+          { error: 'رقم الهاتف يجب أن يطابق رقم الهاتف المسجل في الملف الشخصي' },
+          { status: 400 }
+        );
+      }
+
+      updateData.contactPhone = profilePhone;
+    }
     if (body.status) {
       const statusMap: { [key: string]: string } = {
         'active': 'ACTIVE',
