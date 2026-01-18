@@ -29,6 +29,10 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
+      // Provide a user-friendly message for screens that display `error.message`
+      if (axios.isAxiosError(error)) {
+        error.message = 'يرجى تسجيل الدخول';
+      }
       await StorageService.clearAll();
     }
     return Promise.reject(error);
