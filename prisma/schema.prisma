@@ -314,6 +314,7 @@ model Request {
   carBrand    String?       // ماركة السيارة
   carModel    String?       // موديل السيارة
   carYear     Int?          // سنة الصنع
+  image       String?       // (Legacy) صورة توضيحية - لم تعد مستخدمة في التطبيق
   partName    String?       // اسم القطعة المطلوبة
   condition   String?       // الحالة المطلوبة (جديد/مستعمل)
   budget      Float?        // الميزانية المتوقعة
@@ -331,6 +332,19 @@ model Request {
   user        User          @relation(fields: [userId], references: [id])
   
   @@map("requests")
+}
+
+// App-wide settings are stored in a single-row table created/updated by src/lib/appSettings.ts
+// We model it here to prevent Prisma db push from trying to drop the table in production.
+model AppSettings {
+  id              Int      @id
+  autoApprove     Boolean  @default(false)
+  maintenanceMode Boolean  @default(false)
+  allowRegistrations Boolean @default(true)
+  maxProductsPerUser Int   @default(10)
+  updatedAt       DateTime @default(now())
+
+  @@map("app_settings")
 }
 
 enum UserStatus {
