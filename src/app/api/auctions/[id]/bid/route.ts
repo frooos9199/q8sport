@@ -30,13 +30,21 @@ function normalizeNumberInput(input: unknown): number {
 // POST /api/auctions/[id]/bid - Place a bid
 export const POST = requireAuth(async (
   request: AuthenticatedRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> | { id: string } }
 ) => {
   try {
     const body = await request.json();
     const { amount } = body;
-    const auctionId = params.id;
+    const params = await Promise.resolve(context?.params);
+    const auctionId = params?.id;
     const bidderId = request.user!.userId;
+
+    if (!auctionId) {
+      return NextResponse.json(
+        { error: 'معرف المزاد غير صحيح' },
+        { status: 400 }
+      );
+    }
 
     const bidAmount = normalizeNumberInput(amount);
 

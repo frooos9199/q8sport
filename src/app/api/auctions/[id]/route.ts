@@ -81,14 +81,23 @@ export async function GET(
 // PUT /api/auctions/[id] - Update auction (seller only)
 export const PUT = requireAuth(async (
   request: AuthenticatedRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> | { id: string } }
 ) => {
   try {
+    const params = await Promise.resolve(context?.params);
+    const auctionId = params?.id;
+    if (!auctionId) {
+      return NextResponse.json(
+        { error: 'معرف المزاد غير صحيح' },
+        { status: 400 }
+      );
+    }
+
     const body = await request.json();
     
     // Check if auction exists and user is seller or admin
     const auction = await prisma.auction.findUnique({
-      where: { id: params.id },
+      where: { id: auctionId },
       select: { sellerId: true, status: true }
     });
 
@@ -115,7 +124,7 @@ export const PUT = requireAuth(async (
 
     // Update auction
     const updatedAuction = await prisma.auction.update({
-      where: { id: params.id },
+      where: { id: auctionId },
       data: body,
       include: {
         seller: {
@@ -145,12 +154,21 @@ export const PUT = requireAuth(async (
 // DELETE /api/auctions/[id] - Delete auction (seller/admin only)
 export const DELETE = requireAuth(async (
   request: AuthenticatedRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> | { id: string } }
 ) => {
   try {
+    const params = await Promise.resolve(context?.params);
+    const auctionId = params?.id;
+    if (!auctionId) {
+      return NextResponse.json(
+        { error: 'معرف المزاد غير صحيح' },
+        { status: 400 }
+      );
+    }
+
     // Check if auction exists and user is seller or admin
     const auction = await prisma.auction.findUnique({
-      where: { id: params.id },
+      where: { id: auctionId },
       select: { sellerId: true, status: true, _count: { select: { bids: true } } }
     });
 
@@ -177,7 +195,7 @@ export const DELETE = requireAuth(async (
 
     // Delete auction
     await prisma.auction.delete({
-      where: { id: params.id }
+      where: { id: auctionId }
     });
 
     return NextResponse.json({
