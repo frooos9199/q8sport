@@ -56,6 +56,16 @@ const AdminDashboardScreen = () => {
     fetchStats();
   };
 
+  const navigateToTab = (tabName, params) => {
+    // AdminDashboard is inside AdminStack (nested in Tab navigator)
+    const parentNav = navigation?.getParent?.();
+    if (parentNav?.navigate) {
+      parentNav.navigate(tabName, params);
+      return;
+    }
+    navigation.navigate(tabName, params);
+  };
+
   const StatCard = ({ icon, title, value, color }) => (
     <View style={[styles.statCard, { borderColor: color }]}>
       <Text style={styles.statIcon}>{icon}</Text>
@@ -100,6 +110,18 @@ const AdminDashboardScreen = () => {
       </View>
 
       <View style={styles.menuGrid}>
+        <MenuButton
+          icon="🔨"
+          title="إدارة المزادات"
+          onPress={() => navigateToTab('Auctions')}
+          color="#10B981"
+        />
+        <MenuButton
+          icon="📣"
+          title="إدارة المطلوبات"
+          onPress={() => navigateToTab('Requests')}
+          color="#F59E0B"
+        />
         <MenuButton
           icon="👥"
           title="إدارة المستخدمين"
