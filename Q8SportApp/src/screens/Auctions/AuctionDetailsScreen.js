@@ -144,19 +144,28 @@ const AuctionDetailsScreen = ({ route, navigation }) => {
     return digits;
   };
 
+  const APP_PROMO = `\n\n—\nQ8Sport 🏁\nحمّل التطبيق / زور الموقع: https://www.q8sportcar.com`;
+
   const openWhatsApp = async (phone, message) => {
     const normalized = normalizePhone(phone);
     if (!normalized) {
       Alert.alert('تنبيه', 'رقم واتساب غير متوفر');
       return;
     }
-    const url = `https://wa.me/${normalized}?text=${encodeURIComponent(message || '')}`;
-    const supported = await Linking.canOpenURL(url);
-    if (!supported) {
-      Alert.alert('خطأ', 'لا يمكن فتح واتساب');
-      return;
+
+    const text = encodeURIComponent(String(message || ''));
+    const appUrl = `whatsapp://send?phone=${normalized}${text ? `&text=${text}` : ''}`;
+    const webUrl = `https://wa.me/${normalized}${text ? `?text=${text}` : ''}`;
+
+    try {
+      await Linking.openURL(appUrl);
+    } catch {
+      try {
+        await Linking.openURL(webUrl);
+      } catch {
+        Alert.alert('خطأ', 'تأكد من تثبيت واتساب');
+      }
     }
-    await Linking.openURL(url);
   };
 
   const isSeller = isAuthenticated && user?.id && auction?.sellerId && user.id === auction.sellerId;
@@ -198,7 +207,7 @@ const AuctionDetailsScreen = ({ route, navigation }) => {
             onPress={() =>
               openWhatsApp(
                 auction?.seller?.whatsapp || auction?.seller?.phone,
-                `السلام عليكم، أرغب بالشراء الآن بسعر ${formatKwd(auction?.buyNowPrice)} د.ك بخصوص مزاد: ${auction?.title || ''}`
+                `انا مهتم بالشراء الآن\nالسعر: ${formatKwd(auction?.buyNowPrice)} د.ك\nمزاد: ${auction?.title || ''}${APP_PROMO}`
               )
             }
             disabled={!auction?.seller?.whatsapp && !auction?.seller?.phone}
@@ -241,7 +250,7 @@ const AuctionDetailsScreen = ({ route, navigation }) => {
               onPress={() =>
                 openWhatsApp(
                   auction?.highestBidder?.whatsapp || auction?.highestBidder?.phone,
-                  `السلام عليكم، بخصوص مزاد: ${auction?.title || ''}`
+                  `انا مهتم بإتمام البيع\nمزاد: ${auction?.title || ''}${APP_PROMO}`
                 )
               }
               disabled={!auction?.highestBidder?.whatsapp && !auction?.highestBidder?.phone}
@@ -256,7 +265,7 @@ const AuctionDetailsScreen = ({ route, navigation }) => {
               onPress={() =>
                 openWhatsApp(
                   auction?.seller?.whatsapp || auction?.seller?.phone,
-                  `السلام عليكم، أنا أعلى مزايد بخصوص مزاد: ${auction?.title || ''}`
+                  `انا مهتم بإتمام الشراء (أنا أعلى مزايد)\nمزاد: ${auction?.title || ''}${APP_PROMO}`
                 )
               }
               disabled={!auction?.seller?.whatsapp && !auction?.seller?.phone}

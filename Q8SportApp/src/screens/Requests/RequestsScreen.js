@@ -53,15 +53,18 @@ const RequestsScreen = ({ navigation }) => {
     return digits;
   };
 
-  const openWhatsApp = async (phone) => {
+  const APP_PROMO = `\n\n—\nQ8Sport 🏁\nحمّل التطبيق / زور الموقع: https://www.q8sportcar.com`;
+
+  const openWhatsApp = async (phone, message) => {
     const normalized = normalizePhone(phone);
     if (!normalized) {
       Alert.alert('خطأ', 'رقم الواتساب غير صحيح');
       return;
     }
 
-    const appUrl = `whatsapp://send?phone=${normalized}`;
-    const webUrl = `https://wa.me/${normalized}`;
+    const text = message ? `&text=${encodeURIComponent(String(message))}` : '';
+    const appUrl = `whatsapp://send?phone=${normalized}${text}`;
+    const webUrl = `https://wa.me/${normalized}${message ? `?text=${encodeURIComponent(String(message))}` : ''}`;
 
     try {
       await Linking.openURL(appUrl);
@@ -139,7 +142,8 @@ const RequestsScreen = ({ navigation }) => {
             style={styles.callButton}
             onPress={() =>
               openWhatsApp(
-                item?.user?.whatsapp || item?.user?.phone || item.contactWhatsapp || item.contactPhone || item.phone
+                item?.user?.whatsapp || item?.user?.phone || item.contactWhatsapp || item.contactPhone || item.phone,
+                `انا مهتم بطلبك: ${item?.title || ''}${APP_PROMO}`
               )
             }
           >

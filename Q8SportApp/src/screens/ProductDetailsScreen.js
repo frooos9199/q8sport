@@ -61,12 +61,14 @@ const ProductDetailsScreen = ({ route, navigation }) => {
     return digits;
   };
 
+  const APP_PROMO = `\n\n—\nQ8Sport 🏁\nحمّل التطبيق / زور الموقع: https://www.q8sportcar.com`;
+
   const handleWhatsApp = () => {
     const phone = product.contactPhone || product.phone || product.seller?.phone;
     const normalized = normalizePhone(phone);
     if (!normalized) return;
 
-    const message = `مرحباً، أنا مهتم بـ ${product.title} - السعر: ${product.price} د.ك`;
+    const message = `انا مهتم بـ ${product.title}\nالسعر: ${product.price} د.ك${APP_PROMO}`;
     const url = `https://wa.me/${normalized}?text=${encodeURIComponent(message)}`;
     Linking.openURL(url);
   };

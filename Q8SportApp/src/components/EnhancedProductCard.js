@@ -35,6 +35,8 @@ const formatViews = (views) => {
 const EnhancedProductCard = ({ item, index, onPress }) => {
   const animValue = useRef(new Animated.Value(0)).current;
 
+  const APP_PROMO = `\n\n—\nQ8Sport 🏁\nحمّل التطبيق / زور الموقع: https://www.q8sportcar.com`;
+
   useEffect(() => {
     Animated.timing(animValue, {
       toValue: 1,
@@ -45,7 +47,7 @@ const EnhancedProductCard = ({ item, index, onPress }) => {
   }, []);
 
   const handleWhatsApp = () => {
-    const message = `مرحباً، أنا مهتم بـ ${item.title} - السعر: ${item.price} د.ك`;
+    const message = `انا مهتم بـ ${item.title}\nالسعر: ${item.price} د.ك${APP_PROMO}`;
     const url = `whatsapp://send?phone=${item.phone}&text=${encodeURIComponent(message)}`;
     Linking.openURL(url).catch(() => {
       Alert.alert('خطأ', 'تأكد من تثبيت واتساب');

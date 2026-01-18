@@ -66,12 +66,25 @@ const AuctionsListScreen = ({ navigation }) => {
     return digits;
   };
 
+  const APP_PROMO = `\n\n—\nQ8Sport 🏁\nحمّل التطبيق / زور الموقع: https://www.q8sportcar.com`;
+
   const openWhatsApp = async (phone, message) => {
     const normalized = normalizePhone(phone);
     if (!normalized) return;
-    const url = `https://wa.me/${normalized}?text=${encodeURIComponent(message || '')}`;
-    const supported = await Linking.canOpenURL(url);
-    if (supported) await Linking.openURL(url);
+
+    const text = encodeURIComponent(String(message || ''));
+    const appUrl = `whatsapp://send?phone=${normalized}${text ? `&text=${text}` : ''}`;
+    const webUrl = `https://wa.me/${normalized}${text ? `?text=${text}` : ''}`;
+
+    try {
+      await Linking.openURL(appUrl);
+    } catch {
+      try {
+        await Linking.openURL(webUrl);
+      } catch {
+        // ignore
+      }
+    }
   };
 
   const renderItem = ({ item }) => {
@@ -108,7 +121,12 @@ const AuctionsListScreen = ({ navigation }) => {
         {canWhatsApp && !!waPhone && (
           <TouchableOpacity
             style={styles.waButton}
-            onPress={() => openWhatsApp(waPhone, `السلام عليكم، بخصوص مزاد: ${item?.title || ''}`)}
+            onPress={() =>
+              openWhatsApp(
+                waPhone,
+                `${isSeller ? 'انا مهتم بإتمام البيع' : 'انا مهتم بإتمام الشراء'}\nمزاد: ${item?.title || ''}${APP_PROMO}`
+              )
+            }
           >
             <Text style={styles.waButtonText}>واتساب</Text>
           </TouchableOpacity>
