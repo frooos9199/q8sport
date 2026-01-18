@@ -5,6 +5,15 @@ import { prisma } from '../../../lib/prisma';
 // GET /api/auctions - Get all auctions with filters
 export async function GET(request: NextRequest) {
   try {
+    // Keep statuses reasonably up to date without requiring a background job
+    await prisma.auction.updateMany({
+      where: {
+        status: 'ACTIVE',
+        endTime: { lt: new Date() }
+      },
+      data: { status: 'ENDED' }
+    });
+
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
     const category = searchParams.get('category');
@@ -64,12 +73,17 @@ export async function GET(request: NextRequest) {
     ]);
 
     // Add current highest bid to each auction
-    const auctionsWithBids = auctions.map((auction: any) => ({
+    const now = Date.now();
+    const auctionsWithBids = auctions.map((auction: any) => {
+      const isExpired = auction.endTime?.getTime ? auction.endTime.getTime() <= now : false;
+      return {
       ...auction,
       currentBid: auction.bids[0]?.amount || auction.startingPrice,
       highestBidder: auction.bids[0]?.bidder || null,
-      totalBids: auction._count.bids
-    }));
+      totalBids: auction._count.bids,
+      isExpired
+      };
+    });
 
     return NextResponse.json({
       auctions: auctionsWithBids,

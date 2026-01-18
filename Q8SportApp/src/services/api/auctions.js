@@ -2,9 +2,12 @@ import apiClient from '../apiClient';
 import API_CONFIG from '../../config/api';
 
 export const AuctionsService = {
-  getAuctions: async ({ status = 'ACTIVE', page = 1, limit = 20 } = {}) => {
+  getAuctions: async ({ status, page = 1, limit = 20 } = {}) => {
+    const params = { page, limit };
+    if (status) params.status = status;
+
     const response = await apiClient.get(API_CONFIG.ENDPOINTS.AUCTIONS, {
-      params: { status, page, limit },
+      params,
     });
     return response.data;
   },

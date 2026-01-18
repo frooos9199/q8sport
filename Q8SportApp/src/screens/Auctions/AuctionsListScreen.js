@@ -23,7 +23,18 @@ const AuctionsListScreen = ({ navigation }) => {
       setError(null);
 
       const data = await AuctionsService.getAuctions({ limit: 50 });
-      setAuctions(Array.isArray(data?.auctions) ? data.auctions : []);
+      const list = Array.isArray(data?.auctions) ? data.auctions : [];
+      const sorted = [...list].sort((a, b) => {
+        const aEnded = a?.isExpired || String(a?.status || '').toUpperCase() === 'ENDED';
+        const bEnded = b?.isExpired || String(b?.status || '').toUpperCase() === 'ENDED';
+
+        if (aEnded !== bEnded) return aEnded ? 1 : -1;
+
+        const aEnd = a?.endTime ? new Date(a.endTime).getTime() : 0;
+        const bEnd = b?.endTime ? new Date(b.endTime).getTime() : 0;
+        return aEnd - bEnd;
+      });
+      setAuctions(sorted);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'فشل تحميل المزادات');
     } finally {

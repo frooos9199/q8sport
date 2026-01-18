@@ -8,11 +8,14 @@ import {
   TextInput,
   Alert,
   ScrollView,
+  Linking,
 } from 'react-native';
 import { AuctionsService } from '../../services/api/auctions';
+import { useAuth } from '../../contexts/AuthContext';
 
 const AuctionDetailsScreen = ({ route, navigation }) => {
   const auctionId = route?.params?.auctionId;
+  const { user, isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [auction, setAuction] = useState(null);
@@ -101,9 +104,41 @@ const AuctionDetailsScreen = ({ route, navigation }) => {
   }
 
   const endsAt = auction?.endTime ? new Date(auction.endTime).toLocaleString() : '—';
+  const isEnded = auction?.isExpired || String(auction?.status || '').toUpperCase() === 'ENDED';
+
+  const normalizePhone = (phone) => {
+    if (!phone) return null;
+    const digits = String(phone).replace(/\D/g, '');
+    if (digits.length === 8) return `965${digits}`; // Kuwait local
+    return digits;
+  };
+
+  const openWhatsApp = async (phone, message) => {
+    const normalized = normalizePhone(phone);
+    if (!normalized) {
+      Alert.alert('تنبيه', 'رقم واتساب غير متوفر');
+      return;
+    }
+    const url = `https://wa.me/${normalized}?text=${encodeURIComponent(message || '')}`;
+    const supported = await Linking.canOpenURL(url);
+    if (!supported) {
+      Alert.alert('خطأ', 'لا يمكن فتح واتساب');
+      return;
+    }
+    await Linking.openURL(url);
+  };
+
+  const isSeller = isAuthenticated && user?.id && auction?.sellerId && user.id === auction.sellerId;
+  const isHighestBidder = isAuthenticated && user?.id && auction?.highestBidder?.id && user.id === auction.highestBidder.id;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {isEnded && (
+        <View style={styles.endedBanner}>
+          <Text style={styles.endedBannerText}>تم انتهاء المزاد</Text>
+        </View>
+      )}
+
       <View style={styles.card}>
         <Text style={styles.title}>{auction?.title || 'مزاد'}</Text>
         <Text style={styles.subtitle}>{auction?.description || '—'}</Text>
@@ -119,6 +154,41 @@ const AuctionDetailsScreen = ({ route, navigation }) => {
         <Text style={styles.meta}>أعلى مزايد: {auction?.highestBidder?.name || '—'}</Text>
         <Text style={styles.meta}>سعر ابتدائي: {formatKwd(auction?.startingPrice ?? auction?.startingBid ?? auction?.startPrice)} د.ك</Text>
       </View>
+
+      {isEnded && (isSeller || isHighestBidder) && (
+        <View style={styles.contactCard}>
+          <Text style={styles.contactTitle}>إتمام البيع</Text>
+          {isSeller ? (
+            <TouchableOpacity
+              style={styles.whatsappButton}
+              onPress={() =>
+                openWhatsApp(
+                  auction?.highestBidder?.whatsapp || auction?.highestBidder?.phone,
+                  `السلام عليكم، بخصوص مزاد: ${auction?.title || ''}`
+                )
+              }
+              disabled={!auction?.highestBidder?.whatsapp && !auction?.highestBidder?.phone}
+            >
+              <Text style={styles.whatsappButtonText}>اتصال واتساب مع أعلى مزايد</Text>
+            </TouchableOpacity>
+          ) : null}
+
+          {isHighestBidder ? (
+            <TouchableOpacity
+              style={styles.whatsappButton}
+              onPress={() =>
+                openWhatsApp(
+                  auction?.seller?.whatsapp || auction?.seller?.phone,
+                  `السلام عليكم، أنا أعلى مزايد بخصوص مزاد: ${auction?.title || ''}`
+                )
+              }
+              disabled={!auction?.seller?.whatsapp && !auction?.seller?.phone}
+            >
+              <Text style={styles.whatsappButtonText}>اتصال واتساب مع البائع</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
+      )}
 
       <View style={styles.bidsCard}>
         <Text style={styles.bidsTitle}>المزايدات</Text>
@@ -172,6 +242,14 @@ const styles = StyleSheet.create({
   meta: { color: '#999', fontSize: 12 },
   separator: { height: 1, backgroundColor: '#333', marginVertical: 12 },
   price: { color: '#DC2626', fontSize: 18, fontWeight: 'bold', marginBottom: 6 },
+
+  endedBanner: { backgroundColor: '#7f1d1d', borderRadius: 12, paddingVertical: 10, paddingHorizontal: 12, borderWidth: 1, borderColor: '#DC2626', marginBottom: 12 },
+  endedBannerText: { color: '#fff', fontWeight: 'bold', textAlign: 'center' },
+
+  contactCard: { backgroundColor: '#111', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#333', marginBottom: 12 },
+  contactTitle: { color: '#fff', fontSize: 16, fontWeight: 'bold', marginBottom: 10 },
+  whatsappButton: { backgroundColor: '#16a34a', paddingVertical: 12, borderRadius: 10, alignItems: 'center', marginBottom: 10 },
+  whatsappButtonText: { color: '#fff', fontWeight: 'bold' },
   bidCard: { backgroundColor: '#111', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#333' },
   bidTitle: { color: '#fff', fontSize: 16, fontWeight: 'bold', marginBottom: 10 },
   bidRow: { flexDirection: 'row' },

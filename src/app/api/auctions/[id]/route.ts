@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, AuthenticatedRequest } from '../../../../lib/auth';
+import { verifyToken } from '../../../../lib/auth';
 import { prisma } from '../../../../lib/prisma';
 
 // GET /api/auctions/[id] - Get specific auction
@@ -9,8 +10,10 @@ export async function GET(
 ) {
   try {
     const params = await context.params;
+    const auctionId = params.id;
+
     const auction = await prisma.auction.findUnique({
-      where: { id: params.id },
+      where: { id: auctionId },
       include: {
         seller: {
           select: {
@@ -19,17 +22,6 @@ export async function GET(
             rating: true,
             phone: true,
             whatsapp: true
-          }
-        },
-        bids: {
-          orderBy: { createdAt: 'desc' },
-          include: {
-            bidder: {
-              select: {
-                id: true,
-                name: true
-              }
-            }
           }
         },
         _count: {
@@ -49,11 +41,61 @@ export async function GET(
     const timeRemaining = auction.endTime.getTime() - Date.now();
     const isExpired = timeRemaining <= 0;
 
+    // Load bids for display (latest)
+    const bids = await prisma.bid.findMany({
+      where: { auctionId },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      include: {
+        bidder: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      }
+    });
+
+    // Highest bid (by amount)
+    const highestBid = await prisma.bid.findFirst({
+      where: { auctionId },
+      orderBy: { amount: 'desc' },
+      include: {
+        bidder: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+            whatsapp: true
+          }
+        }
+      }
+    });
+
+    const viewer = await verifyToken(request);
+    const viewerId = viewer?.userId;
+    const canSeeHighestBidderContact =
+      !!viewerId &&
+      (viewerId === auction.sellerId || viewerId === highestBid?.bidderId || viewer?.role === 'ADMIN');
+
+    const highestBidder = highestBid?.bidder
+      ? {
+          id: highestBid.bidder.id,
+          name: highestBid.bidder.name,
+          ...(canSeeHighestBidderContact
+            ? { phone: highestBid.bidder.phone, whatsapp: highestBid.bidder.whatsapp }
+            : {})
+        }
+      : null;
+
     // Update status if expired
     if (isExpired && auction.status === 'ACTIVE') {
       await prisma.auction.update({
-        where: { id: params.id },
-        data: { status: 'ENDED' }
+        where: { id: auctionId },
+        data: {
+          status: 'ENDED',
+          winningBidId: highestBid?.id || null
+        }
       });
       auction.status = 'ENDED';
     }
@@ -62,8 +104,9 @@ export async function GET(
       ...auction,
       timeRemaining: Math.max(0, timeRemaining),
       isExpired,
-      currentBid: auction.bids[0]?.amount || auction.startingPrice,
-      highestBidder: auction.bids[0]?.bidder || null,
+      bids,
+      currentBid: highestBid?.amount || auction.startingPrice,
+      highestBidder,
       totalBids: auction._count.bids
     };
 
