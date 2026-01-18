@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  TextInput,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import apiClient from '../../services/apiClient';
@@ -17,6 +18,8 @@ const BlockedProductsScreen = ({ navigation }) => {
   const { token } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     fetchBlockedProducts();
@@ -30,8 +33,25 @@ const BlockedProductsScreen = ({ navigation }) => {
       console.error('Error:', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchBlockedProducts();
+  };
+
+  const filteredLocal = React.useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return products;
+    return (products || []).filter((p) => {
+      const haystack = [p.title, p.description, p.blockReason, p.seller?.name || '']
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [products, search]);
 
   const handleUnblock = async (productId) => {
     Alert.alert('إلغاء الحظر', 'هل تريد إلغاء حظر هذا المنتج؟', [
@@ -45,6 +65,26 @@ const BlockedProductsScreen = ({ navigation }) => {
             fetchBlockedProducts();
           } catch (error) {
             Alert.alert('خطأ', 'فشل إلغاء الحظر');
+          }
+        },
+      },
+    ]);
+  };
+
+  const deleteProductForever = (productId) => {
+    Alert.alert('حذف نهائي', 'هل تريد حذف هذا المنتج نهائياً؟ لا يمكن التراجع.', [
+      { text: 'إلغاء', style: 'cancel' },
+      {
+        text: 'حذف نهائي',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await apiClient.delete(API_CONFIG.ENDPOINTS.ADMIN_PRODUCT_DELETE(productId));
+            Alert.alert('تم', 'تم حذف المنتج نهائياً');
+            fetchBlockedProducts();
+          } catch (error) {
+            const msg = error?.response?.data?.error || 'فشل حذف المنتج نهائياً';
+            Alert.alert('خطأ', msg);
           }
         },
       },
@@ -83,6 +123,11 @@ const BlockedProductsScreen = ({ navigation }) => {
             <Text style={styles.buttonText}>✓ إلغاء الحظر</Text>
           </TouchableOpacity>
           <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={() => deleteProductForever(item.id)}>
+            <Text style={styles.buttonText}>🗑 حذف نهائي</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
             style={styles.viewButton}
             onPress={() => navigation.navigate('ProductDetails', { productId: item.id })}>
             <Text style={styles.buttonText}>👁 عرض</Text>
@@ -102,11 +147,22 @@ const BlockedProductsScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="بحث في المنتجات المحظورة..."
+          placeholderTextColor="#666"
+          value={search}
+          onChangeText={setSearch}
+        />
+      </View>
       <FlatList
-        data={products}
+        data={filteredLocal}
         renderItem={renderProduct}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
+        onRefresh={onRefresh}
+        refreshing={refreshing}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyIcon}>✅</Text>
@@ -131,6 +187,20 @@ const styles = StyleSheet.create({
   },
   list: {
     padding: 15,
+  },
+  searchContainer: {
+    padding: 15,
+    borderBottomWidth: 2,
+    borderBottomColor: '#DC2626',
+  },
+  searchInput: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 12,
+    padding: 12,
+    color: '#fff',
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#333',
   },
   productCard: {
     backgroundColor: '#1a1a1a',
@@ -194,6 +264,13 @@ const styles = StyleSheet.create({
   viewButton: {
     flex: 1,
     backgroundColor: '#3B82F6',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  deleteButton: {
+    flex: 1,
+    backgroundColor: '#DC2626',
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',

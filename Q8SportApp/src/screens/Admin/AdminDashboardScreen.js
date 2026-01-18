@@ -129,6 +129,12 @@ const AdminDashboardScreen = () => {
           color="#3B82F6"
         />
         <MenuButton
+          icon="🏪"
+          title="إدارة المحلات"
+          onPress={() => navigation.navigate('ManageShops')}
+          color="#06B6D4"
+        />
+        <MenuButton
           icon="📦"
           title="إدارة المنتجات"
           onPress={() => navigation.navigate('ManageProducts')}

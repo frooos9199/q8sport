@@ -8,6 +8,9 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  TextInput,
+  Modal,
+  ScrollView,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import apiClient from '../../services/apiClient';
@@ -17,7 +20,14 @@ const ManageProductsScreen = ({ navigation }) => {
   const { token } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState('ALL');
+  const [search, setSearch] = useState('');
+
+  const [editing, setEditing] = useState(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editPrice, setEditPrice] = useState('');
 
   useEffect(() => {
     fetchProducts();
@@ -25,15 +35,25 @@ const ManageProductsScreen = ({ navigation }) => {
 
   const fetchProducts = async () => {
     try {
-      const res = await apiClient.get(API_CONFIG.ENDPOINTS.ADMIN_PRODUCTS, {
-        params: filter !== 'ALL' ? { status: filter } : undefined,
-      });
+      const params = {
+        limit: 200,
+        ...(filter !== 'ALL' ? { status: filter } : {}),
+        ...(search.trim() ? { search: search.trim() } : {}),
+      };
+
+      const res = await apiClient.get(API_CONFIG.ENDPOINTS.ADMIN_PRODUCTS, { params });
       setProducts(res.data.products || []);
     } catch (error) {
       console.error('Error:', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchProducts();
   };
 
   const handleApprove = async (productId) => {
@@ -67,15 +87,54 @@ const ManageProductsScreen = ({ navigation }) => {
     ]);
   };
 
+  const openEdit = (product) => {
+    setEditing(product);
+    setEditTitle(product?.title || '');
+    setEditDescription(product?.description || '');
+    setEditPrice(product?.price === null || product?.price === undefined ? '' : String(product.price));
+  };
+
+  const closeEdit = () => {
+    setEditing(null);
+    setEditTitle('');
+    setEditDescription('');
+    setEditPrice('');
+  };
+
+  const saveEdit = async () => {
+    if (!editing) return;
+
+    if (!editTitle.trim() || !editDescription.trim()) {
+      Alert.alert('تنبيه', 'العنوان والوصف مطلوبان');
+      return;
+    }
+
+    try {
+      await apiClient.patch(API_CONFIG.ENDPOINTS.PRODUCT_DETAILS(editing.id), {
+        title: editTitle.trim(),
+        description: editDescription.trim(),
+        price: editPrice.trim() ? Number(editPrice.trim()) : undefined,
+      });
+      Alert.alert('تم', 'تم تحديث المنتج');
+      closeEdit();
+      fetchProducts();
+    } catch (error) {
+      const msg = error?.response?.data?.error || 'فشل تحديث المنتج';
+      Alert.alert('خطأ', msg);
+    }
+  };
+
   const handleReject = async (productId) => {
-    Alert.alert('رفض المنتج', 'هل تريد رفض هذا المنتج؟', [
+    Alert.alert('رفض المنتج', 'هل تريد رفض/إيقاف هذا المنتج؟', [
       { text: 'إلغاء', style: 'cancel' },
       {
         text: 'رفض',
         style: 'destructive',
         onPress: async () => {
           try {
-            await apiClient.delete(API_CONFIG.ENDPOINTS.PRODUCT_DETAILS(productId));
+            await apiClient.patch(API_CONFIG.ENDPOINTS.ADMIN_PRODUCT_BLOCK(productId), {
+              blocked: true,
+            });
             Alert.alert('تم', 'تم رفض المنتج');
             fetchProducts();
           } catch (error) {
@@ -85,6 +144,35 @@ const ManageProductsScreen = ({ navigation }) => {
       },
     ]);
   };
+
+  const deleteProductForever = (productId) => {
+    Alert.alert('حذف نهائي', 'هل تريد حذف هذا المنتج نهائياً؟ لا يمكن التراجع.', [
+      { text: 'إلغاء', style: 'cancel' },
+      {
+        text: 'حذف نهائي',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await apiClient.delete(API_CONFIG.ENDPOINTS.ADMIN_PRODUCT_DELETE(productId));
+            Alert.alert('تم', 'تم حذف المنتج نهائياً');
+            fetchProducts();
+          } catch (error) {
+            const msg = error?.response?.data?.error || 'فشل حذف المنتج نهائياً';
+            Alert.alert('خطأ', msg);
+          }
+        },
+      },
+    ]);
+  };
+
+  const filteredLocal = React.useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return products;
+    return (products || []).filter((p) => {
+      const haystack = [p.title, p.description, p.category, p.seller?.name || ''].join(' ').toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [products, search]);
 
   const parseImages = (images) => {
     try {
@@ -111,29 +199,35 @@ const ManageProductsScreen = ({ navigation }) => {
         <Text style={styles.productPrice}>{item.price} د.ك</Text>
         <Text style={styles.productSeller}>البائع: {item.seller?.name || '—'}</Text>
         <View style={styles.actions}>
-          {item.status === 'PENDING' && (
+          <TouchableOpacity style={styles.editButton} onPress={() => openEdit(item)}>
+            <Text style={styles.buttonText}>✏️ تعديل</Text>
+          </TouchableOpacity>
+
+          {item.status === 'PENDING' ? (
             <>
-              <TouchableOpacity
-                style={styles.approveButton}
-                onPress={() => handleApprove(item.id)}>
-                <Text style={styles.buttonText}>✓ موافقة</Text>
+              <TouchableOpacity style={styles.approveButton} onPress={() => handleApprove(item.id)}>
+                <Text style={styles.buttonText}>✅ موافقة</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.rejectButton}
-                onPress={() => handleReject(item.id)}>
-                <Text style={styles.buttonText}>✕ رفض</Text>
+              <TouchableOpacity style={styles.rejectButton} onPress={() => handleReject(item.id)}>
+                <Text style={styles.buttonText}>⛔ رفض</Text>
               </TouchableOpacity>
             </>
-          )}
-          {item.status === 'ACTIVE' && (
+          ) : item.status === 'ACTIVE' ? (
             <TouchableOpacity style={styles.rejectButton} onPress={() => handleBlock(item.id)}>
-              <Text style={styles.buttonText}>🚫 حظر</Text>
+              <Text style={styles.buttonText}>⛔ إيقاف</Text>
             </TouchableOpacity>
-          )}
+          ) : null}
+
           <TouchableOpacity
             style={styles.viewButton}
             onPress={() => navigation.navigate('ProductDetails', { productId: item.id })}>
             <Text style={styles.buttonText}>👁 عرض</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={() => deleteProductForever(item.id)}>
+            <Text style={styles.buttonText}>🗑 حذف نهائي</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -150,6 +244,28 @@ const ManageProductsScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="بحث في المنتجات..."
+          placeholderTextColor="#666"
+          value={search}
+          onChangeText={setSearch}
+          onSubmitEditing={() => {
+            setLoading(true);
+            fetchProducts();
+          }}
+        />
+        <TouchableOpacity
+          style={styles.searchBtn}
+          onPress={() => {
+            setLoading(true);
+            fetchProducts();
+          }}>
+          <Text style={styles.searchBtnText}>بحث</Text>
+        </TouchableOpacity>
+      </View>
+
       <View style={styles.filterContainer}>
         {['ALL', 'PENDING', 'ACTIVE'].map((f) => (
           <TouchableOpacity
@@ -163,11 +279,61 @@ const ManageProductsScreen = ({ navigation }) => {
         ))}
       </View>
       <FlatList
-        data={products}
+        data={filteredLocal}
         renderItem={renderProduct}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
+        onRefresh={onRefresh}
+        refreshing={refreshing}
       />
+
+      <Modal visible={!!editing} transparent animationType="fade" onRequestClose={closeEdit}>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <ScrollView>
+              <Text style={styles.modalTitle}>تعديل المنتج</Text>
+
+              <Text style={styles.label}>العنوان</Text>
+              <TextInput
+                style={styles.input}
+                value={editTitle}
+                onChangeText={setEditTitle}
+                placeholder="عنوان المنتج"
+                placeholderTextColor="#666"
+              />
+
+              <Text style={styles.label}>الوصف</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={editDescription}
+                onChangeText={setEditDescription}
+                placeholder="وصف المنتج"
+                placeholderTextColor="#666"
+                multiline
+              />
+
+              <Text style={styles.label}>السعر (د.ك)</Text>
+              <TextInput
+                style={styles.input}
+                value={editPrice}
+                onChangeText={setEditPrice}
+                placeholder="0"
+                placeholderTextColor="#666"
+                keyboardType="numeric"
+              />
+
+              <View style={styles.modalActions}>
+                <TouchableOpacity style={[styles.modalBtn, styles.cancelBtn]} onPress={closeEdit}>
+                  <Text style={styles.buttonText}>إلغاء</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.modalBtn, styles.saveBtn]} onPress={saveEdit}>
+                  <Text style={styles.buttonText}>حفظ</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -176,6 +342,34 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    gap: 10,
+    padding: 15,
+    borderBottomWidth: 2,
+    borderBottomColor: '#DC2626',
+  },
+  searchInput: {
+    flex: 1,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 12,
+    padding: 12,
+    color: '#fff',
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  searchBtn: {
+    backgroundColor: '#DC2626',
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchBtnText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
   loadingContainer: {
     flex: 1,
@@ -260,6 +454,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
   },
+  editButton: {
+    flex: 1,
+    backgroundColor: '#3B82F6',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
   approveButton: {
     flex: 1,
     backgroundColor: '#10B981',
@@ -281,9 +482,72 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
   },
+  deleteButton: {
+    flex: 1,
+    backgroundColor: '#DC2626',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
   buttonText: {
     color: '#fff',
     fontWeight: 'bold',
+  },
+
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalCard: {
+    backgroundColor: '#111',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#333',
+    maxHeight: '85%',
+  },
+  modalTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  label: {
+    color: '#999',
+    marginTop: 10,
+    marginBottom: 6,
+  },
+  input: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 10,
+    padding: 12,
+    color: '#fff',
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  textArea: {
+    minHeight: 90,
+    textAlignVertical: 'top',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 16,
+  },
+  modalBtn: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  cancelBtn: {
+    backgroundColor: '#374151',
+  },
+  saveBtn: {
+    backgroundColor: '#10B981',
   },
 });
 

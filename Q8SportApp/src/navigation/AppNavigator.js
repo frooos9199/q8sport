@@ -31,6 +31,7 @@ import AdminSettingsScreen from '../screens/Admin/AdminSettingsScreen';
 import AdminReportsScreen from '../screens/Admin/AdminReportsScreen';
 import ManageAuctionsScreen from '../screens/Admin/ManageAuctionsScreen';
 import ManageRequestsScreen from '../screens/Admin/ManageRequestsScreen';
+import ManageShopsScreen from '../screens/Admin/ManageShopsScreen';
 
 // Messages Screens
 import MessagesScreen from '../screens/Messages/MessagesScreen';
@@ -385,6 +386,15 @@ const AdminStack = () => {
         component={ManageUsersScreen}
         options={{ 
           title: 'إدارة المستخدمين',
+          headerBackTitle: 'رجوع',
+        }}
+      />
+
+      <Stack.Screen
+        name="ManageShops"
+        component={ManageShopsScreen}
+        options={{
+          title: 'إدارة المحلات',
           headerBackTitle: 'رجوع',
         }}
       />

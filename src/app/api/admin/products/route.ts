@@ -8,6 +8,7 @@ export const GET = requireAdmin(async (request: AuthenticatedRequest) => {
   try {
     const { searchParams } = new URL(request.url);
     const statusParam = searchParams.get('status');
+    const search = searchParams.get('search');
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '50');
     const skip = (page - 1) * limit;
@@ -24,6 +25,19 @@ export const GET = requireAdmin(async (request: AuthenticatedRequest) => {
     } else {
       // Default: hide deleted
       where.status = { not: 'DELETED' };
+    }
+
+    if (search && search.trim()) {
+      const q = search.trim();
+      where.OR = [
+        { title: { contains: q, mode: 'insensitive' } },
+        { description: { contains: q, mode: 'insensitive' } },
+        { category: { contains: q, mode: 'insensitive' } },
+        { carBrand: { contains: q, mode: 'insensitive' } },
+        { carModel: { contains: q, mode: 'insensitive' } },
+        { user: { name: { contains: q, mode: 'insensitive' } } },
+        { user: { shopName: { contains: q, mode: 'insensitive' } } },
+      ];
     }
 
     const [products, total] = await Promise.all([
