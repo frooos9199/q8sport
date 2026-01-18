@@ -6,13 +6,11 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  Image,
   Alert,
   ActivityIndicator,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { launchImageLibrary } from 'react-native-image-picker';
 import API_CONFIG from '../../config/api';
 import apiClient from '../../services/apiClient';
 
@@ -26,70 +24,11 @@ const AddRequestScreen = ({ navigation }) => {
     carModel: '',
     carYear: '',
     whatsapp: user?.whatsapp || user?.phone || '',
-    imageAsset: null,
   });
 
   const normalizePhone = (phone) => {
     if (!phone) return '';
     return String(phone).replace(/[^0-9]/g, '');
-  };
-
-  const uploadSelectedImageIfAny = async () => {
-    if (!formData.imageAsset?.uri) return null;
-
-    const uri = formData.imageAsset.uri;
-    const type = formData.imageAsset.type || 'image/jpeg';
-    const name = formData.imageAsset.fileName || `request_${Date.now()}.jpg`;
-
-    const fd = new FormData();
-    fd.append('images', {
-      uri,
-      type,
-      name,
-    });
-
-    const res = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.UPLOAD}`, {
-      method: 'POST',
-      body: fd,
-    });
-
-    const data = await res.json();
-    if (!res.ok || !data?.success || !Array.isArray(data?.files) || !data.files[0]) {
-      throw new Error(data?.error || 'فشل رفع الصورة');
-    }
-
-    return data.files[0];
-  };
-
-  const handleImagePick = () => {
-    launchImageLibrary(
-      {
-        mediaType: 'photo',
-        quality: 0.8,
-        maxWidth: 1200,
-        maxHeight: 1200,
-      },
-      (response) => {
-        if (response.didCancel) {
-          return;
-        }
-        if (response.errorCode) {
-          Alert.alert('خطأ', 'فشل اختيار الصورة');
-          return;
-        }
-        if (response.assets && response.assets[0]) {
-          const asset = response.assets[0];
-          setFormData({
-            ...formData,
-            imageAsset: {
-              uri: asset.uri,
-              type: asset.type,
-              fileName: asset.fileName,
-            },
-          });
-        }
-      }
-    );
   };
 
   const handleSubmit = async () => {
@@ -121,8 +60,6 @@ const AddRequestScreen = ({ navigation }) => {
 
     setLoading(true);
     try {
-      const uploadedImage = await uploadSelectedImageIfAny();
-
       await apiClient.post(API_CONFIG.ENDPOINTS.REQUESTS, {
         title: formData.title,
         description: formData.description,
@@ -131,7 +68,6 @@ const AddRequestScreen = ({ navigation }) => {
         carYear: formData.carYear,
         contactWhatsapp: formData.whatsapp,
         contactPhone: user?.phone || null,
-        image: uploadedImage,
       });
 
       Alert.alert('نجح', 'تم إضافة الطلب بنجاح', [
@@ -245,27 +181,6 @@ const AddRequestScreen = ({ navigation }) => {
         </View>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>صورة توضيحية (اختياري)</Text>
-        
-        {formData.imageAsset?.uri ? (
-          <View style={styles.imageContainer}>
-            <Image source={{ uri: formData.imageAsset.uri }} style={styles.image} />
-            <TouchableOpacity
-              style={styles.removeImageButton}
-              onPress={() => setFormData({ ...formData, imageAsset: null })}
-            >
-              <Ionicons name="close-circle" size={30} color="#DC2626" />
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <TouchableOpacity style={styles.imagePickerButton} onPress={handleImagePick}>
-            <Ionicons name="camera-outline" size={40} color="#DC2626" />
-            <Text style={styles.imagePickerText}>اضغط لاختيار صورة</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
           <TouchableOpacity
             style={[styles.submitButton, loading && styles.submitButtonDisabled]}
             onPress={handleSubmit}
@@ -325,22 +240,6 @@ const styles = StyleSheet.create({
   textArea: {
     height: 120,
     paddingTop: 12,
-  },
-  imagePickerButton: {
-    backgroundColor: '#1a1a1a',
-    borderWidth: 2,
-    borderColor: '#DC2626',
-    borderStyle: 'dashed',
-    borderRadius: 12,
-    padding: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  imagePickerText: {
-    color: '#DC2626',
-    fontSize: 16,
-    fontWeight: '600',
-    marginTop: 10,
   },
   imageContainer: {
     position: 'relative',

@@ -88,7 +88,6 @@ export async function POST(req: NextRequest) {
       urgent,
       contactPhone,
       contactWhatsapp,
-      image,
       phone,
       whatsapp
     } = body;
@@ -124,7 +123,6 @@ export async function POST(req: NextRequest) {
         carBrand: carBrand || null,
         carModel: carModel || null,
         carYear: carYear ? parseInt(carYear) : null,
-        image: image || null,
         partName: partName || null,
         condition: condition || null,
         budget: budget ? parseFloat(budget) : null,

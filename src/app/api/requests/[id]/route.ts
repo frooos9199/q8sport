@@ -109,7 +109,6 @@ export async function PATCH(
     if (body.carBrand !== undefined) updateData.carBrand = body.carBrand || null;
     if (body.carModel !== undefined) updateData.carModel = body.carModel || null;
     if (body.carYear !== undefined) updateData.carYear = body.carYear ? parseInt(body.carYear) : null;
-    if (body.image !== undefined) updateData.image = body.image || null;
     // Request model uses contactPhone/contactWhatsapp (keep backward compat with phone/whatsapp)
     if (body.contactPhone !== undefined) updateData.contactPhone = body.contactPhone || null;
     if (body.contactWhatsapp !== undefined) updateData.contactWhatsapp = body.contactWhatsapp || null;

@@ -314,7 +314,6 @@ model Request {
   carBrand    String?       // ماركة السيارة
   carModel    String?       // موديل السيارة
   carYear     Int?          // سنة الصنع
-  image       String?       // صورة توضيحية (URL أو base64)
   partName    String?       // اسم القطعة المطلوبة
   condition   String?       // الحالة المطلوبة (جديد/مستعمل)
   budget      Float?        // الميزانية المتوقعة

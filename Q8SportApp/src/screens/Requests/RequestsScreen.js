@@ -89,14 +89,6 @@ const RequestsScreen = ({ navigation }) => {
 
   const renderRequest = ({ item }) => (
     <View style={styles.requestCard}>
-      {item.image && (
-        <Image
-          source={{ uri: item.image }}
-          style={styles.requestImage}
-          resizeMode="cover"
-        />
-      )}
-      
       <View style={styles.requestContent}>
         <View style={styles.requestHeader}>
           <Text style={styles.requestTitle}>{item.title}</Text>
