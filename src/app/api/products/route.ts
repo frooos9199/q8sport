@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     
     const data = await request.json()
     
-    const { 
+    const {
       title, description, price, condition, category, images,
       productType, carBrand, carModel, carYear, kilometers, color, contactPhone
     } = data
@@ -100,6 +100,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const imagesJson = (() => {
+      if (typeof images === 'string') {
+        const trimmed = images.trim()
+        return trimmed.length ? trimmed : JSON.stringify([])
+      }
+      if (Array.isArray(images)) return JSON.stringify(images)
+      if (!images) return JSON.stringify([])
+      return JSON.stringify([images])
+    })()
+
     // إنشاء المنتج باستخدام userId من token
     const product = await prisma.product.create({
       data: {
@@ -115,7 +125,7 @@ export async function POST(request: NextRequest) {
         kilometers: kilometers ? parseInt(kilometers) : null,
         color,
         contactPhone: profilePhone,
-        images: typeof images === 'string' ? images : JSON.stringify(images),
+        images: imagesJson,
         userId: user.userId,
         // Non-admin products require approval (represented as INACTIVE)
         status: user.role === 'ADMIN' || settings.autoApprove ? 'ACTIVE' : 'INACTIVE'

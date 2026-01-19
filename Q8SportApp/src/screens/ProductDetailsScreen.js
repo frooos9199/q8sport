@@ -104,11 +104,13 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                   setCurrentImageIndex(index);
                 }}
                 renderItem={({ item }) => (
-                  <Image
-                    source={{ uri: item }}
-                    style={styles.mainImage}
-                    resizeMode="cover"
-                  />
+                  <View style={styles.mainImageFrame}>
+                    <Image
+                      source={{ uri: item }}
+                      style={styles.mainImage}
+                      resizeMode="contain"
+                    />
+                  </View>
                 )}
                 keyExtractor={(item, index) => index.toString()}
                 ListEmptyComponent={
@@ -220,10 +222,16 @@ const styles = StyleSheet.create({
   imageGallery: {
     position: 'relative',
   },
-  mainImage: {
+  mainImageFrame: {
     width: width,
     height: width,
     backgroundColor: '#1a1a1a',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mainImage: {
+    width: width,
+    height: width,
   },
   pagination: {
     position: 'absolute',

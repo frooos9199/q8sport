@@ -20,7 +20,7 @@ import apiClient from '../../services/apiClient';
 const AddProductScreen = ({ navigation }) => {
   const { token, user, isAuthenticated, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [images, setImages] = useState([]);
+  const [images, setImages] = useState([]); // { uri, type, name }
   const [currentStep, setCurrentStep] = useState(1);
 
   // تتبع حالة المصادقة
@@ -71,7 +71,7 @@ const AddProductScreen = ({ navigation }) => {
       maxHeight: 1200,
       quality: 0.85,
       selectionLimit: 5 - images.length,
-      includeBase64: true,
+      includeBase64: false,
     };
 
     launchImageLibrary(options, (response) => {
@@ -81,11 +81,16 @@ const AddProductScreen = ({ navigation }) => {
         return;
       }
       if (response.assets) {
-        const newImages = response.assets.map(asset => ({
-          uri: asset.uri,
-          base64: `data:image/jpeg;base64,${asset.base64}`,
-        }));
-        setImages([...images, ...newImages]);
+        const newImages = response.assets
+          .filter((asset) => asset?.uri)
+          .map((asset) => ({
+            uri: asset.uri,
+            type: asset.type || 'image/jpeg',
+            name:
+              asset.fileName ||
+              `product_${Date.now()}_${Math.random().toString(16).slice(2)}.jpg`,
+          }));
+        setImages((prev) => [...prev, ...newImages].slice(0, 5));
       }
     });
   };
@@ -94,13 +99,20 @@ const AddProductScreen = ({ navigation }) => {
     setImages(images.filter((_, i) => i !== index));
   };
 
+  const setAsMainImage = (index) => {
+    setImages((prev) => {
+      if (index <= 0 || index >= prev.length) return prev;
+      const next = [...prev];
+      const [picked] = next.splice(index, 1);
+      next.unshift(picked);
+      return next;
+    });
+  };
+
   const validateStep = (step) => {
     switch (step) {
       case 1:
-        if (images.length === 0) {
-          Alert.alert('تنبيه', 'يرجى إضافة صورة واحدة على الأقل');
-          return false;
-        }
+        // الصور اختيارية للمنتجات (مثل المزادات)
         return true;
       case 2:
         if (!formData.title.trim()) {
@@ -118,13 +130,44 @@ const AddProductScreen = ({ navigation }) => {
   };
 
   const nextStep = () => {
-    if (validateStep(currentStep)) {
-      setCurrentStep(currentStep + 1);
+    if (currentStep === 1 && images.length === 0) {
+      Alert.alert('بدون صور؟', 'يمكنك الإكمال بدون صور، لكن يُفضّل إضافة صور لزيادة فرص البيع.', [
+        { text: 'رجوع', style: 'cancel' },
+        { text: 'إكمال', onPress: () => setCurrentStep(2) },
+      ]);
+      return;
     }
+
+    if (validateStep(currentStep)) setCurrentStep(currentStep + 1);
   };
 
   const prevStep = () => {
     setCurrentStep(currentStep - 1);
+  };
+
+  const uploadImages = async () => {
+    if (!images.length) return [];
+
+    const fd = new FormData();
+    for (const img of images) {
+      fd.append('images', {
+        uri: img.uri,
+        type: img.type || 'image/jpeg',
+        name: img.name || `product_${Date.now()}.jpg`,
+      });
+    }
+
+    const res = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.UPLOAD}`, {
+      method: 'POST',
+      body: fd,
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data?.success || !Array.isArray(data?.files)) {
+      throw new Error(data?.error || 'فشل رفع الصور');
+    }
+
+    return data.files;
   };
 
   const handleSubmit = async () => {
@@ -157,7 +200,7 @@ const AddProductScreen = ({ navigation }) => {
     setLoading(true);
 
     try {
-      const base64Images = images.map(img => img.base64);
+      const uploaded = await uploadImages();
 
       const typeMap = {
         'car': 'CAR',
@@ -182,7 +225,7 @@ const AddProductScreen = ({ navigation }) => {
         carYear: formData.year ? parseInt(formData.year) : null,
         condition: conditionMap[formData.partCondition] || 'USED',
         contactPhone: formData.phone || null,
-        images: JSON.stringify(base64Images),
+        images: uploaded,
       };
 
       await apiClient.post(API_CONFIG.ENDPOINTS.PRODUCTS, productData);
@@ -228,21 +271,30 @@ const AddProductScreen = ({ navigation }) => {
 
   const renderStep1 = () => (
     <View style={styles.stepContent}>
-      <Text style={styles.stepTitle}>📷 أضف صور المنتج</Text>
+      <Text style={styles.stepTitle}>📷 أضف صور المنتج (اختياري)</Text>
       <Text style={styles.stepDescription}>
         أضف حتى 5 صور واضحة للمنتج من زوايا مختلفة
       </Text>
 
       <View style={styles.imagesGrid}>
         {images.map((image, index) => (
-          <View key={index} style={styles.imageWrapper}>
+          <TouchableOpacity
+            key={index}
+            style={styles.imageWrapper}
+            activeOpacity={0.85}
+            onPress={() => setAsMainImage(index)}>
             <Image source={{ uri: image.uri }} style={styles.imagePreview} />
+            {index === 0 && (
+              <View style={styles.mainImageBadge}>
+                <Text style={styles.mainImageBadgeText}>الرئيسية</Text>
+              </View>
+            )}
             <TouchableOpacity
               style={styles.removeImageButton}
               onPress={() => removeImage(index)}>
               <Text style={styles.removeImageText}>✕</Text>
             </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
         ))}
         {images.length < 5 && (
           <TouchableOpacity
@@ -258,6 +310,9 @@ const AddProductScreen = ({ navigation }) => {
         <Text style={styles.imageCounterText}>
           {images.length} / 5 صور
         </Text>
+        {!!images.length && (
+          <Text style={[styles.imageCounterText, { opacity: 0.8, marginTop: 4 }]}>اضغط على صورة لتكون الرئيسية</Text>
+        )}
       </View>
     </View>
   );
@@ -573,6 +628,20 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 12,
     backgroundColor: '#1a1a1a',
+  },
+  mainImageBadge: {
+    position: 'absolute',
+    left: 6,
+    bottom: 6,
+    backgroundColor: 'rgba(220, 38, 38, 0.92)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  mainImageBadgeText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '700',
   },
   removeImageButton: {
     position: 'absolute',

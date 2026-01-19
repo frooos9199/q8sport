@@ -32,7 +32,7 @@ const EditProductScreen = ({ route, navigation }) => {
     }
   };
 
-  const [images, setImages] = useState(parseExistingImages(product.images));
+  const [images, setImages] = useState(parseExistingImages(product.images)); // { uri, id, type?, name? }
   const [formData, setFormData] = useState({
     title: product.title || '',
     description: product.description || '',
@@ -70,7 +70,7 @@ const EditProductScreen = ({ route, navigation }) => {
       maxHeight: 1200,
       quality: 0.85,
       selectionLimit: 5 - images.length,
-      includeBase64: true,
+      includeBase64: false,
     };
 
     launchImageLibrary(options, (response) => {
@@ -80,18 +80,64 @@ const EditProductScreen = ({ route, navigation }) => {
         return;
       }
       if (response.assets) {
-        const newImages = response.assets.map((asset, index) => ({
-          uri: asset.uri,
-          base64: `data:image/jpeg;base64,${asset.base64}`,
-          id: Date.now() + index,
-        }));
-        setImages([...images, ...newImages]);
+        const newImages = response.assets
+          .filter((asset) => asset?.uri)
+          .map((asset, index) => ({
+            uri: asset.uri,
+            type: asset.type || 'image/jpeg',
+            name:
+              asset.fileName ||
+              `product_${Date.now()}_${Math.random().toString(16).slice(2)}.jpg`,
+            id: Date.now() + index,
+          }));
+        setImages((prev) => [...prev, ...newImages].slice(0, 5));
       }
     });
   };
 
   const removeImage = (id) => {
     setImages(images.filter(img => img.id !== id));
+  };
+
+  const setAsMainImage = (id) => {
+    setImages((prev) => {
+      const idx = prev.findIndex((x) => x.id === id);
+      if (idx <= 0) return prev;
+      const next = [...prev];
+      const [picked] = next.splice(idx, 1);
+      next.unshift(picked);
+      return next;
+    });
+  };
+
+  const isLocalUri = (uri) => {
+    if (!uri) return false;
+    return uri.startsWith('file:') || uri.startsWith('content:');
+  };
+
+  const uploadImages = async (localImages) => {
+    if (!localImages.length) return [];
+
+    const fd = new FormData();
+    for (const img of localImages) {
+      fd.append('images', {
+        uri: img.uri,
+        type: img.type || 'image/jpeg',
+        name: img.name || `product_${Date.now()}.jpg`,
+      });
+    }
+
+    const res = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.UPLOAD}`, {
+      method: 'POST',
+      body: fd,
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data?.success || !Array.isArray(data?.files)) {
+      throw new Error(data?.error || 'فشل رفع الصور');
+    }
+
+    return data.files;
   };
 
   const handleSubmit = async () => {
@@ -103,15 +149,16 @@ const EditProductScreen = ({ route, navigation }) => {
       Alert.alert('تنبيه', 'يرجى إدخال سعر صحيح');
       return;
     }
-    if (images.length === 0) {
-      Alert.alert('تنبيه', 'يرجى إضافة صورة واحدة على الأقل');
-      return;
-    }
-
     setLoading(true);
 
     try {
-      const imageURIs = images.map(img => img.base64 || img.uri);
+      const local = images.filter((img) => isLocalUri(img.uri));
+      const remoteOrData = images
+        .filter((img) => !isLocalUri(img.uri))
+        .map((img) => img.uri);
+
+      const uploaded = await uploadImages(local);
+      const imageURIs = [...remoteOrData, ...uploaded];
 
       const typeMap = {
         'car': 'CAR',
@@ -136,7 +183,7 @@ const EditProductScreen = ({ route, navigation }) => {
         carYear: formData.year ? parseInt(formData.year) : null,
         condition: conditionMap[formData.partCondition] || 'USED',
         contactPhone: formData.phone || null,
-        images: JSON.stringify(imageURIs),
+        images: imageURIs,
       };
 
       await apiClient.patch(API_CONFIG.ENDPOINTS.PRODUCT_DETAILS(product.id), productData);
@@ -174,15 +221,24 @@ const EditProductScreen = ({ route, navigation }) => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>📷 الصور</Text>
           <View style={styles.imagesGrid}>
-            {images.map((image) => (
-              <View key={image.id} style={styles.imageWrapper}>
+            {images.map((image, index) => (
+              <TouchableOpacity
+                key={image.id}
+                style={styles.imageWrapper}
+                activeOpacity={0.85}
+                onPress={() => setAsMainImage(image.id)}>
                 <Image source={{ uri: image.uri }} style={styles.imagePreview} />
+                {index === 0 && (
+                  <View style={styles.mainImageBadge}>
+                    <Text style={styles.mainImageBadgeText}>الرئيسية</Text>
+                  </View>
+                )}
                 <TouchableOpacity
                   style={styles.removeImageButton}
                   onPress={() => removeImage(image.id)}>
                   <Text style={styles.removeImageText}>✕</Text>
                 </TouchableOpacity>
-              </View>
+              </TouchableOpacity>
             ))}
             {images.length < 5 && (
               <TouchableOpacity 
@@ -194,6 +250,7 @@ const EditProductScreen = ({ route, navigation }) => {
             )}
           </View>
           <Text style={styles.helperText}>{images.length} / 5 صور</Text>
+          {!!images.length && <Text style={styles.helperText}>اضغط على صورة لتكون الرئيسية</Text>}
         </View>
 
         {/* Basic Info */}
@@ -432,6 +489,20 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 12,
     backgroundColor: '#1a1a1a',
+  },
+  mainImageBadge: {
+    position: 'absolute',
+    left: 6,
+    bottom: 6,
+    backgroundColor: 'rgba(14, 165, 233, 0.92)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  mainImageBadgeText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '700',
   },
   removeImageButton: {
     position: 'absolute',
