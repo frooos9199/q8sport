@@ -9,9 +9,15 @@ import {
   Alert,
   ScrollView,
   Linking,
+  Image,
+  FlatList,
+  Dimensions,
 } from 'react-native';
 import { AuctionsService } from '../../services/api/auctions';
 import { useAuth } from '../../contexts/AuthContext';
+import API_CONFIG from '../../config/api';
+
+const { width } = Dimensions.get('window');
 
 const AuctionDetailsScreen = ({ route, navigation }) => {
   const auctionId = route?.params?.auctionId;
@@ -91,7 +97,8 @@ const AuctionDetailsScreen = ({ route, navigation }) => {
       Alert.alert('تم', 'تم إرسال المزايدة بنجاح');
       await load();
     } catch (e) {
-      Alert.alert('خطأ', e instanceof Error ? e.message : 'فشل إرسال المزايدة');
+      const serverMessage = e?.response?.data?.error || e?.response?.data?.message;
+      Alert.alert('خطأ', serverMessage || (e instanceof Error ? e.message : 'فشل إرسال المزايدة'));
     } finally {
       setSubmitting(false);
     }
@@ -137,6 +144,34 @@ const AuctionDetailsScreen = ({ route, navigation }) => {
 
   const endsAt = auction?.endTime ? new Date(auction.endTime).toLocaleString() : '—';
 
+  const parseImages = (value) => {
+    if (!value) return [];
+    if (Array.isArray(value)) return value.filter(Boolean);
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+      } catch {
+        // Some data might come as a single URL string
+        return value.trim() ? [value.trim()] : [];
+      }
+    }
+    return [];
+  };
+
+  const resolveImageUrl = (uri) => {
+    const raw = String(uri || '').trim();
+    if (!raw) return null;
+    if (/^https?:\/\//i.test(raw)) return raw;
+    // API_CONFIG.BASE_URL includes /api; strip it to get the site root
+    const siteRoot = String(API_CONFIG.BASE_URL || '').replace(/\/api\/?$/i, '');
+    if (!siteRoot) return raw;
+    if (raw.startsWith('/')) return `${siteRoot}${raw}`;
+    return `${siteRoot}/${raw}`;
+  };
+
+  const images = parseImages(auction?.images).map(resolveImageUrl).filter(Boolean);
+
   const normalizePhone = (phone) => {
     if (!phone) return null;
     const digits = String(phone).replace(/\D/g, '');
@@ -173,6 +208,28 @@ const AuctionDetailsScreen = ({ route, navigation }) => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <View style={styles.galleryWrap}>
+        <FlatList
+          data={images}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          keyExtractor={(item, idx) => `${item}-${idx}`}
+          renderItem={({ item }) => (
+            <Image
+              source={{ uri: item }}
+              style={styles.galleryImage}
+              resizeMode="cover"
+            />
+          )}
+          ListEmptyComponent={
+            <View style={styles.galleryPlaceholder}>
+              <Text style={styles.galleryPlaceholderText}>لا توجد صور</Text>
+            </View>
+          }
+        />
+      </View>
+
       {isEnded && (
         <View style={styles.endedBanner}>
           <Text style={styles.endedBannerText}>تم انتهاء المزاد</Text>
@@ -319,6 +376,10 @@ const AuctionDetailsScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
   content: { padding: 12 },
+  galleryWrap: { marginBottom: 12, borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: '#222' },
+  galleryImage: { width: width - 24, height: 220, backgroundColor: '#111' },
+  galleryPlaceholder: { width: width - 24, height: 220, backgroundColor: '#111', justifyContent: 'center', alignItems: 'center' },
+  galleryPlaceholderText: { color: '#777', fontWeight: 'bold' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000', padding: 20 },
   errorText: { color: '#F87171', fontSize: 16, textAlign: 'center', marginBottom: 12 },
   retryButton: { backgroundColor: '#DC2626', paddingHorizontal: 18, paddingVertical: 10, borderRadius: 10 },
