@@ -45,6 +45,7 @@ import NotificationsScreen from '../screens/Profile/NotificationsScreen';
 // Stores Screens
 import StoresScreen from '../screens/Stores/StoresScreen';
 import StoreDetailsScreen from '../screens/Stores/StoreDetailsScreen';
+import EditStoreScreen from '../screens/Stores/EditStoreScreen';
 
 // Auctions Screens
 import AuctionsListScreen from '../screens/Auctions/AuctionsListScreen';
@@ -298,6 +299,14 @@ const StoresStack = () => {
         options={{ 
           title: 'المحلات',
           headerShown: true,
+        }}
+      />
+      <Stack.Screen
+        name="EditStore"
+        component={EditStoreScreen}
+        options={{
+          title: 'تعديل المحل',
+          headerBackTitle: 'رجوع',
         }}
       />
       <Stack.Screen

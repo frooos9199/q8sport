@@ -55,6 +55,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       phone: user.phone,
       whatsapp: user.whatsapp,
       avatar: user.avatar,
+      shopImage: (user as any).shopImage,
       role: user.role,
       status: user.status,
       lastLoginAt: user.lastLoginAt?.toISOString() || null,

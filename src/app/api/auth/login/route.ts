@@ -25,6 +25,8 @@ export async function POST(request: NextRequest) {
         name: true,
         phone: true,
         whatsapp: true,
+        avatar: true,
+        shopImage: true,
         password: true,
         role: true,
         status: true,

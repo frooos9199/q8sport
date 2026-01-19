@@ -30,6 +30,7 @@ model User {
   shopAddress String?   // عنوان المحل
   shopLicense String?   // رخصة المحل
   businessType String?  // نوع النشاط التجاري
+  shopImage   String?   // صورة/شعار المحل
   
   // Permissions for sellers and shop owners
   canManageProducts Boolean @default(false)

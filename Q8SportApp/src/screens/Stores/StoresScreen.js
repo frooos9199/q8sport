@@ -6,18 +6,37 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import apiClient from '../../services/apiClient';
 import API_CONFIG from '../../config/api';
 import { StoreIcon } from '../../components/Icons';
+import { useAuth } from '../../contexts/AuthContext';
 
 const StoresScreen = ({ navigation }) => {
+  const { user, isAuthenticated } = useAuth();
   const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchStores();
   }, []);
+
+  useEffect(() => {
+    const canEdit = !!isAuthenticated && (user?.role === 'SHOP_OWNER' || user?.permissions?.canManageShop);
+    navigation.setOptions({
+      headerRight: canEdit
+        ? () => (
+            <TouchableOpacity
+              style={styles.headerBtn}
+              onPress={() => navigation.navigate('EditStore')}
+            >
+              <Text style={styles.headerBtnText}>تعديل محلي</Text>
+            </TouchableOpacity>
+          )
+        : undefined,
+    });
+  }, [navigation, isAuthenticated, user?.role, user?.permissions?.canManageShop]);
 
   const fetchStores = async () => {
     try {
@@ -32,6 +51,7 @@ const StoresScreen = ({ navigation }) => {
         id: u.id,
         name: u.shopName || u.name,
         address: u.shopAddress || 'العنوان غير محدد',
+        image: u.shopImage || u.avatar || null,
         rating: typeof u.rating === 'number' ? u.rating : Number(u.rating || 0),
         productsCount: u.counts?.products ?? 0,
         verified: !!u.verified,
@@ -51,9 +71,11 @@ const StoresScreen = ({ navigation }) => {
       onPress={() => navigation.navigate('StoreDetails', { storeId: item.id, title: item.name })}>
       <View style={styles.storeHeader}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {item.name?.charAt(0)?.toUpperCase() || 'M'}
-          </Text>
+          {item.image ? (
+            <Image source={{ uri: item.image }} style={styles.avatarImage} />
+          ) : (
+            <Text style={styles.avatarText}>{item.name?.charAt(0)?.toUpperCase() || 'M'}</Text>
+          )}
         </View>
         <View style={styles.storeInfo}>
           <Text style={styles.storeName}>{item.name}</Text>
@@ -118,6 +140,20 @@ const styles = StyleSheet.create({
   list: {
     padding: 15,
   },
+  headerBtn: {
+    marginRight: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#DC2626',
+    backgroundColor: '#0b0b0b',
+  },
+  headerBtnText: {
+    color: '#DC2626',
+    fontWeight: '800',
+    fontSize: 12,
+  },
   storeCard: {
     backgroundColor: '#1a1a1a',
     borderRadius: 12,
@@ -139,6 +175,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
   avatarText: {
     fontSize: 20,

@@ -22,6 +22,7 @@ export const GET = requireAuth(async (request: AuthenticatedRequest) => {
         email: true,
         role: true,
         status: true,
+        avatar: true,
         canManageProducts: true,
         canManageUsers: true,
         canViewReports: true,
@@ -29,7 +30,8 @@ export const GET = requireAuth(async (request: AuthenticatedRequest) => {
         canManageShop: true,
         shopName: true,
         shopAddress: true,
-        businessType: true
+        businessType: true,
+        shopImage: true
       }
     });
 
@@ -55,7 +57,8 @@ export const GET = requireAuth(async (request: AuthenticatedRequest) => {
       shopInfo: {
         shopName: userData.shopName,
         shopAddress: userData.shopAddress,
-        businessType: userData.businessType
+        businessType: userData.businessType,
+        shopImage: userData.shopImage
       }
     });
 

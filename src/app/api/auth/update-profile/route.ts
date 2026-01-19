@@ -12,7 +12,18 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
     }
 
-    const { name, phone, whatsapp, email, password } = await request.json();
+    const {
+      name,
+      phone,
+      whatsapp,
+      email,
+      password,
+      shopName,
+      shopAddress,
+      businessType,
+      shopImage,
+      avatar,
+    } = await request.json();
 
     // Validate required fields
     if (!name || !email) {
@@ -38,6 +49,12 @@ export async function PUT(request: NextRequest) {
       whatsapp: whatsapp || null,
     };
 
+    if (shopName !== undefined) updateData.shopName = shopName || null;
+    if (shopAddress !== undefined) updateData.shopAddress = shopAddress || null;
+    if (businessType !== undefined) updateData.businessType = businessType || null;
+    if (shopImage !== undefined) updateData.shopImage = shopImage || null;
+    if (avatar !== undefined) updateData.avatar = avatar || null;
+
     // Hash password if provided
     if (password) {
       if (password.length < 6) {
@@ -56,8 +73,19 @@ export async function PUT(request: NextRequest) {
         email: true,
         phone: true,
         whatsapp: true,
+        avatar: true,
+        status: true,
         role: true,
-        createdAt: true
+        createdAt: true,
+        canManageProducts: true,
+        canManageUsers: true,
+        canViewReports: true,
+        canManageOrders: true,
+        canManageShop: true,
+        shopName: true,
+        shopAddress: true,
+        businessType: true,
+        shopImage: true,
       }
     });
 
@@ -74,7 +102,22 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      user: updatedUser,
+      user: {
+        ...updatedUser,
+        permissions: {
+          canManageProducts: updatedUser.canManageProducts,
+          canManageUsers: updatedUser.canManageUsers,
+          canViewReports: updatedUser.canViewReports,
+          canManageOrders: updatedUser.canManageOrders,
+          canManageShop: updatedUser.canManageShop,
+        },
+        shopInfo: {
+          shopName: updatedUser.shopName,
+          shopAddress: updatedUser.shopAddress,
+          businessType: updatedUser.businessType,
+          shopImage: updatedUser.shopImage,
+        },
+      },
       token: newToken
     });
 
