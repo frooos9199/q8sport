@@ -164,58 +164,58 @@ export default function SupportPage() {
         </div>
 
         {/* Contact Form */}
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">
+        <div className="bg-gray-900 border border-red-600 rounded-lg shadow-2xl p-8">
+          <h2 className="text-2xl font-bold text-white mb-6">
             أرسل لنا رسالة
           </h2>
           <form className="space-y-4">
             <div>
-              <label className="block text-gray-700 font-medium mb-2">
+              <label className="block text-gray-300 font-medium mb-2">
                 الاسم
               </label>
               <input
                 type="text"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-red-600 focus:border-transparent"
                 placeholder="اسمك الكامل"
               />
             </div>
             
             <div>
-              <label className="block text-gray-700 font-medium mb-2">
+              <label className="block text-gray-300 font-medium mb-2">
                 البريد الإلكتروني
               </label>
               <input
                 type="email"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-red-600 focus:border-transparent"
                 placeholder="email@example.com"
               />
             </div>
             
             <div>
-              <label className="block text-gray-700 font-medium mb-2">
+              <label className="block text-gray-300 font-medium mb-2">
                 الموضوع
               </label>
               <input
                 type="text"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-red-600 focus:border-transparent"
                 placeholder="موضوع الرسالة"
               />
             </div>
             
             <div>
-              <label className="block text-gray-700 font-medium mb-2">
+              <label className="block text-gray-300 font-medium mb-2">
                 الرسالة
               </label>
               <textarea
                 rows={5}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg focus:ring-2 focus:ring-red-600 focus:border-transparent"
                 placeholder="اكتب رسالتك هنا..."
               />
             </div>
             
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+              className="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors"
             >
               إرسال الرسالة
             </button>
@@ -223,7 +223,7 @@ export default function SupportPage() {
           
           <p className="text-sm text-gray-500 text-center mt-4">
             أو راسلنا مباشرة على: 
-            <a href="mailto:support@q8sportcar.com" className="text-blue-600 hover:underline mx-1">
+            <a href="mailto:support@q8sportcar.com" className="text-red-500 hover:text-red-400 hover:underline mx-1">
               support@q8sportcar.com
             </a>
           </p>
