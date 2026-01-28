@@ -4,12 +4,11 @@ import { verifyToken } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
   try {
-    const token = req.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
+    const decoded = await verifyToken(req);
+    if (!decoded) {
       return NextResponse.json({ success: false, error: 'غير مصرح' }, { status: 401 });
     }
 
-    const decoded = verifyToken(token);
     const { rating, comment, productId, reviewedUserId, type = 'PRODUCT' } = await req.json();
 
     if (!rating || rating < 1 || rating > 5) {
