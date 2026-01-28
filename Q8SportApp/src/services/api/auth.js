@@ -10,12 +10,13 @@ export const AuthService = {
     return response.data;
   },
 
-  register: async (name, email, password, phone) => {
+  register: async (name, email, password, phone, whatsapp) => {
     const response = await apiClient.post(API_CONFIG.ENDPOINTS.REGISTER, {
       name,
       email,
       password,
-      phone,
+      phone: phone?.trim() || null,
+      whatsapp: whatsapp?.trim() || null,
     });
     return response.data;
   },

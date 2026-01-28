@@ -6,10 +6,10 @@ import {
   TouchableOpacity,
   Image,
   Animated,
-  Linking,
   Share,
   Alert,
 } from 'react-native';
+import { openWhatsApp } from '../utils/whatsapp';
 
 // دالة لحساب الوقت منذ النشر
 const getTimeAgo = (dateString) => {
@@ -48,10 +48,8 @@ const EnhancedProductCard = ({ item, index, onPress }) => {
 
   const handleWhatsApp = () => {
     const message = `انا مهتم بـ ${item.title}\nالسعر: ${item.price} د.ك${APP_PROMO}`;
-    const url = `whatsapp://send?phone=${item.phone}&text=${encodeURIComponent(message)}`;
-    Linking.openURL(url).catch(() => {
-      Alert.alert('خطأ', 'تأكد من تثبيت واتساب');
-    });
+    const phone = item?.whatsapp || item?.contactWhatsapp || item?.contactPhone || item?.phone;
+    openWhatsApp({ phone, message });
   };
 
   const handleShare = async () => {

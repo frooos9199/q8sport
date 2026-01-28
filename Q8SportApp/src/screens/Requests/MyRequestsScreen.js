@@ -8,12 +8,12 @@ import {
   Image,
   RefreshControl,
   Alert,
-  Linking,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import API_CONFIG from '../../config/api';
 import apiClient from '../../services/apiClient';
+import { openWhatsApp } from '../../utils/whatsapp';
 
 const MyRequestsScreen = ({ navigation }) => {
   const { token } = useAuth();
@@ -125,36 +125,7 @@ const MyRequestsScreen = ({ navigation }) => {
     }
   };
 
-  const normalizePhone = (phone) => {
-    if (!phone) return null;
-    const digits = String(phone).replace(/\D/g, '');
-    if (digits.length === 8) return `965${digits}`;
-    return digits;
-  };
-
   const APP_PROMO = `\n\n—\nQ8 Sport Car 🏁\nحمّل التطبيق / زور الموقع: https://www.q8sportcar.com`;
-
-  const openWhatsApp = async (phone, message) => {
-    const normalized = normalizePhone(phone);
-    if (!normalized) {
-      Alert.alert('خطأ', 'رقم الواتساب غير صحيح');
-      return;
-    }
-
-    const text = message ? `&text=${encodeURIComponent(String(message))}` : '';
-    const appUrl = `whatsapp://send?phone=${normalized}${text}`;
-    const webUrl = `https://wa.me/${normalized}${message ? `?text=${encodeURIComponent(String(message))}` : ''}`;
-
-    try {
-      await Linking.openURL(appUrl);
-    } catch (error) {
-      try {
-        await Linking.openURL(webUrl);
-      } catch {
-        Alert.alert('خطأ', 'تأكد من تثبيت واتساب');
-      }
-    }
-  };
 
   const renderRequest = ({ item }) => (
     <View style={styles.requestCard}>
@@ -183,10 +154,10 @@ const MyRequestsScreen = ({ navigation }) => {
           <TouchableOpacity
             style={styles.phoneInfo}
             onPress={() =>
-              openWhatsApp(
-                item?.user?.whatsapp || item?.user?.phone || item.contactWhatsapp || item.contactPhone || item.phone,
-                `انا مهتم بطلب: ${item?.title || ''}${APP_PROMO}`
-              )
+              openWhatsApp({
+                phone: item?.user?.whatsapp || item?.user?.phone || item.contactWhatsapp || item.contactPhone || item.phone,
+                message: `انا مهتم بطلب: ${item?.title || ''}${APP_PROMO}`,
+              })
             }
           >
             <Ionicons name="logo-whatsapp" size={16} color="#16A34A" />

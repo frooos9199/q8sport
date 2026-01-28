@@ -55,7 +55,7 @@ const SplashScreen = ({ onFinish }) => {
         duration: 400,
         useNativeDriver: true,
       }).start(() => onFinish());
-    }, 3000);
+    }, 1000); // تقليل مدة شاشة التحميل إلى ثانية واحدة فقط
 
     return () => clearTimeout(timer);
   }, []);

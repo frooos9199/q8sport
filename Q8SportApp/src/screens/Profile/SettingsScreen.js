@@ -178,6 +178,19 @@ const SettingsScreen = ({ navigation }) => {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>الدعم</Text>
+        <TouchableOpacity
+          style={styles.whatsappButton}
+          onPress={() => {
+            const { openWhatsApp } = require('../../utils/whatsapp');
+            openWhatsApp('+96550540999', 'مرحبا، أحتاج للمساعدة');
+          }}>
+          <Text style={styles.whatsappIcon}>💬</Text>
+          <View style={styles.whatsappTextContainer}>
+            <Text style={styles.whatsappTitle}>تواصل مع الإدارة</Text>
+            <Text style={styles.whatsappSubtitle}>WhatsApp: +965 50540999</Text>
+          </View>
+          <Text style={styles.arrow}>←</Text>
+        </TouchableOpacity>
         <SettingItem
           icon="❓"
           title="المساعدة والدعم"
@@ -290,6 +303,33 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  whatsappButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#25D366',
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 8,
+    borderWidth: 2,
+    borderColor: '#1DA851',
+  },
+  whatsappIcon: {
+    fontSize: 28,
+    marginRight: 15,
+  },
+  whatsappTextContainer: {
+    flex: 1,
+  },
+  whatsappTitle: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  whatsappSubtitle: {
+    fontSize: 13,
+    color: '#E8F5E9',
+    marginTop: 2,
   },
 });
 

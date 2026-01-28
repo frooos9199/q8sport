@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Prisma, UserRole, UserStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 
+
 function parseIntSafe(value: string | null, defaultValue: number) {
   if (!value) return defaultValue;
   const parsed = Number.parseInt(value, 10);

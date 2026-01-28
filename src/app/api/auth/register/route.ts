@@ -16,10 +16,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { name, email, password, phone, whatsapp } = body;
 
-    // Validate input
-    if (!name || !email || !password || !phone) {
+    // Validate input (make phone optional to comply with privacy guidelines)
+    if (!name || !email || !password) {
       return NextResponse.json(
-        { error: 'الاسم، البريد الإلكتروني، كلمة المرور، ورقم الهاتف مطلوبة' },
+        { error: 'الاسم، البريد الإلكتروني، وكلمة المرور مطلوبة' },
         { status: 400 }
       );
     }
@@ -36,16 +36,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if phone already exists
-    const existingUserByPhone = await prisma.user.findUnique({
-      where: { phone }
-    });
+    // Check if phone already exists (only when provided)
+    if (phone) {
+      const existingUserByPhone = await prisma.user.findUnique({
+        where: { phone }
+      });
 
-    if (existingUserByPhone) {
-      return NextResponse.json(
-        { error: 'رقم الهاتف مستخدم بالفعل' },
-        { status: 409 }
-      );
+      if (existingUserByPhone) {
+        return NextResponse.json(
+          { error: 'رقم الهاتف مستخدم بالفعل' },
+          { status: 409 }
+        );
+      }
     }
 
     // Hash password
@@ -57,8 +59,8 @@ export async function POST(request: NextRequest) {
         name,
         email,
         password: hashedPassword,
-        phone: phone,
-        whatsapp: whatsapp || phone,
+        phone: phone || null,
+        whatsapp: whatsapp || phone || null,
         role: 'USER',
         status: 'ACTIVE'
       },

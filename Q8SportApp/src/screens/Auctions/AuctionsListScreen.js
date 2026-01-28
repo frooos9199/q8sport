@@ -7,10 +7,10 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   RefreshControl,
-  Linking,
 } from 'react-native';
 import { AuctionsService } from '../../services/api/auctions';
 import { useAuth } from '../../contexts/AuthContext';
+import { openWhatsApp } from '../../utils/whatsapp';
 
 const AuctionsListScreen = ({ navigation }) => {
   const { user, isAuthenticated } = useAuth();
@@ -59,33 +59,7 @@ const AuctionsListScreen = ({ navigation }) => {
     return String(Math.trunc(n));
   };
 
-  const normalizePhone = (phone) => {
-    if (!phone) return null;
-    const digits = String(phone).replace(/\D/g, '');
-    if (digits.length === 8) return `965${digits}`;
-    return digits;
-  };
-
   const APP_PROMO = `\n\n—\nQ8 Sport Car 🏁\nحمّل التطبيق / زور الموقع: https://www.q8sportcar.com`;
-
-  const openWhatsApp = async (phone, message) => {
-    const normalized = normalizePhone(phone);
-    if (!normalized) return;
-
-    const text = encodeURIComponent(String(message || ''));
-    const appUrl = `whatsapp://send?phone=${normalized}${text ? `&text=${text}` : ''}`;
-    const webUrl = `https://wa.me/${normalized}${text ? `?text=${text}` : ''}`;
-
-    try {
-      await Linking.openURL(appUrl);
-    } catch {
-      try {
-        await Linking.openURL(webUrl);
-      } catch {
-        // ignore
-      }
-    }
-  };
 
   const renderItem = ({ item }) => {
     const endsAt = item?.endTime ? new Date(item.endTime) : null;
@@ -101,7 +75,7 @@ const AuctionsListScreen = ({ navigation }) => {
 
     return (
       <TouchableOpacity
-        style={styles.card}
+        style={[styles.card, isEnded ? styles.cardEnded : styles.cardActive]}
         onPress={() => navigation.navigate('AuctionDetails', { auctionId: item.id })}
       >
         <View style={styles.cardHeader}>
@@ -112,20 +86,31 @@ const AuctionsListScreen = ({ navigation }) => {
         <Text style={styles.subtitle} numberOfLines={2}>{item.description || '—'}</Text>
 
         <View style={styles.metaRow}>
-          <Text style={styles.meta}>سعر ابتدائي: {formatKwd(item.startingPrice ?? item.startingBid ?? item.startPrice)} د.ك</Text>
-          <Text style={styles.meta}>أعلى مزايدة: {formatKwd(item.currentBid ?? item.highestBid ?? item.currentPrice)} د.ك</Text>
+          <View style={styles.priceColumn}>
+            <Text style={styles.priceLabel}>سعر ابتدائي</Text>
+            <Text style={styles.priceValueRed}>{formatKwd(item.startingPrice ?? item.startingBid ?? item.startPrice)} د.ك</Text>
+          </View>
+          <View style={styles.priceColumn}>
+            <Text style={styles.priceLabel}>أعلى مزايد</Text>
+            <Text style={styles.priceValueGreen}>{item?.highestBidder?.name || '—'}</Text>
+          </View>
         </View>
-        <Text style={styles.meta}>أعلى مزايد: {item?.highestBidder?.name || '—'}</Text>
-        <Text style={styles.meta}>ينتهي: {endsText}</Text>
+        
+        <View style={styles.currentBidContainer}>
+          <Text style={styles.currentBidLabel}>سعر المزايدة الحالي</Text>
+          <Text style={styles.currentBidValue}>{formatKwd(item.currentBid ?? item.highestBid ?? item.currentPrice)} د.ك</Text>
+        </View>
+        
+        <Text style={styles.endTime}>ينتهي: {endsText}</Text>
 
         {canWhatsApp && !!waPhone && (
           <TouchableOpacity
             style={styles.waButton}
             onPress={() =>
-              openWhatsApp(
-                waPhone,
-                `${isSeller ? 'انا مهتم بإتمام البيع' : 'انا مهتم بإتمام الشراء'}\nمزاد: ${item?.title || ''}${APP_PROMO}`
-              )
+              openWhatsApp({
+                phone: waPhone,
+                message: `${isSeller ? 'انا مهتم بإتمام البيع' : 'انا مهتم بإتمام الشراء'}\nمزاد: ${item?.title || ''}${APP_PROMO}`,
+              })
             }
           >
             <Text style={styles.waButtonText}>واتساب</Text>
@@ -207,16 +192,43 @@ const styles = StyleSheet.create({
   errorText: { color: '#F87171', fontSize: 16, textAlign: 'center', marginBottom: 12 },
   retryButton: { backgroundColor: '#DC2626', paddingHorizontal: 18, paddingVertical: 10, borderRadius: 10 },
   retryText: { color: '#fff', fontWeight: 'bold' },
-  card: { backgroundColor: '#1a1a1a', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#333', marginBottom: 12 },
+  card: { 
+    backgroundColor: '#1a1a1a', 
+    borderRadius: 12, 
+    padding: 16, 
+    borderWidth: 2, 
+    borderColor: '#333', 
+    marginBottom: 12,
+    overflow: 'hidden',
+    width: '100%',
+  },
+  cardActive: { borderColor: '#16a34a' },
+  cardEnded: { borderColor: '#DC2626', backgroundColor: '#2a1313' },
   cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   title: { color: '#fff', fontSize: 16, fontWeight: 'bold', flex: 1, marginRight: 10 },
   badge: { color: '#fff', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, fontSize: 11 },
   badgeActive: { backgroundColor: '#16a34a' },
   badgeEnded: { backgroundColor: '#DC2626' },
-  subtitle: { color: '#aaa', fontSize: 13, marginBottom: 10 },
-  metaRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  meta: { color: '#999', fontSize: 12 },
-  waButton: { marginTop: 10, alignSelf: 'flex-start', backgroundColor: '#16a34a', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10 },
+  subtitle: { color: '#aaa', fontSize: 13, marginBottom: 12 },
+  metaRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+  priceColumn: { flex: 1 },
+  priceLabel: { color: '#999', fontSize: 12, marginBottom: 4 },
+  priceValueRed: { color: '#DC2626', fontSize: 16, fontWeight: 'bold' },
+  priceValueGreen: { color: '#16a34a', fontSize: 14, fontWeight: '600' },
+  currentBidContainer: { 
+    backgroundColor: '#2a2a2a', 
+    borderRadius: 8, 
+    padding: 12, 
+    marginBottom: 10, 
+    borderWidth: 1, 
+    borderColor: '#FFD600',
+    width: '100%',
+    alignSelf: 'stretch',
+  },
+  currentBidLabel: { color: '#FFD600', fontSize: 13, fontWeight: '600', marginBottom: 4, textAlign: 'center' },
+  currentBidValue: { color: '#FFD600', fontSize: 20, fontWeight: 'bold', textAlign: 'center' },
+  endTime: { color: '#DC2626', fontSize: 12, marginBottom: 4 },
+  waButton: { marginTop: 6, alignSelf: 'flex-start', backgroundColor: '#16a34a', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10 },
   waButtonText: { color: '#fff', fontWeight: 'bold' },
   emptyContainer: { paddingTop: 80, alignItems: 'center' },
   emptyText: { color: '#999', fontSize: 16 },

@@ -14,13 +14,52 @@ import API_CONFIG from '../../config/api';
 import apiClient from '../../services/apiClient';
 
 const ChangePasswordScreen = ({ navigation }) => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const [formData, setFormData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   });
+
+  const handleForgotPassword = async () => {
+    if (!user?.email) {
+      Alert.alert('خطأ', 'لا يوجد بريد إلكتروني مسجل في حسابك');
+      return;
+    }
+
+    Alert.alert(
+      'إعادة تعيين كلمة المرور',
+      `سيتم إرسال رابط إعادة تعيين كلمة المرور إلى:\n${user.email}`,
+      [
+        { text: 'إلغاء', style: 'cancel' },
+        { 
+          text: 'إرسال', 
+          onPress: async () => {
+            setResetLoading(true);
+            try {
+              await apiClient.post('/api/auth/forgot-password', {
+                email: user.email
+              });
+              
+              Alert.alert(
+                'تم الإرسال ✅',
+                `تم إرسال رابط إعادة تعيين كلمة المرور إلى:\n${user.email}\n\nيرجى التحقق من بريدك الإلكتروني (وصندوق الرسائل غير المرغوب فيها)`,
+                [{ text: 'حسناً' }]
+              );
+            } catch (error) {
+              console.error('Reset password error:', error);
+              const errorMessage = error?.response?.data?.error || 'فشل إرسال البريد الإلكتروني';
+              Alert.alert('خطأ', errorMessage);
+            } finally {
+              setResetLoading(false);
+            }
+          }
+        }
+      ]
+    );
+  };
 
   const handleChangePassword = async () => {
     if (!token) {
@@ -78,6 +117,17 @@ const ChangePasswordScreen = ({ navigation }) => {
             secureTextEntry
           />
         </View>
+
+        <TouchableOpacity 
+          style={styles.forgotButton}
+          onPress={handleForgotPassword}
+          disabled={resetLoading}>
+          {resetLoading ? (
+            <ActivityIndicator size="small" color="#DC2626" />
+          ) : (
+            <Text style={styles.forgotText}>📧 نسيت كلمة السر؟</Text>
+          )}
+        </TouchableOpacity>
 
         <View style={styles.inputGroup}>
           <Text style={styles.label}>كلمة المرور الجديدة *</Text>
@@ -156,6 +206,17 @@ const styles = StyleSheet.create({
     padding: 14,
     color: '#fff',
     fontSize: 16,
+  },
+  forgotButton: {
+    alignSelf: 'flex-end',
+    marginTop: -10,
+    marginBottom: 20,
+    padding: 8,
+  },
+  forgotText: {
+    color: '#DC2626',
+    fontSize: 14,
+    fontWeight: '600',
   },
   saveButton: {
     backgroundColor: '#DC2626',

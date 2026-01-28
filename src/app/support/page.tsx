@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'الدعم والمساعدة - Q8 Sport Car',
@@ -7,55 +8,68 @@ export const metadata: Metadata = {
 
 export default function SupportPage() {
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8" dir="rtl">
+    <div className="min-h-screen bg-black py-12 px-4 sm:px-6 lg:px-8" dir="rtl">
       <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4 text-center">
+        {/* Back to Home Button */}
+        <div className="mb-6">
+          <Link 
+            href="/" 
+            className="inline-flex items-center text-red-600 hover:text-red-500 transition-colors"
+          >
+            <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            العودة للرئيسية
+          </Link>
+        </div>
+
+        <div className="bg-gray-900 border border-red-600 rounded-lg shadow-2xl p-8 mb-8">
+          <h1 className="text-4xl font-bold text-white mb-4 text-center">
             الدعم والمساعدة
           </h1>
-          <p className="text-center text-gray-600 mb-8">
+          <p className="text-center text-gray-400 mb-8">
             نحن هنا لمساعدتك! تواصل معنا في أي وقت
           </p>
 
           {/* Contact Information */}
           <div className="grid md:grid-cols-2 gap-6 mb-8">
-            <div className="bg-blue-50 p-6 rounded-lg">
-              <h3 className="text-xl font-semibold text-blue-900 mb-4">
+            <div className="bg-gray-800 border border-red-600/30 p-6 rounded-lg">
+              <h3 className="text-xl font-semibold text-red-600 mb-4">
                 📧 البريد الإلكتروني
               </h3>
-              <div className="space-y-2">
+              <div className="space-y-2 text-gray-300">
                 <p>
-                  <strong>الدعم الفني:</strong>
+                  <strong className="text-white">الدعم الفني:</strong>
                   <br />
-                  <a href="mailto:support@q8sportcar.com" className="text-blue-600 hover:underline">
+                  <a href="mailto:support@q8sportcar.com" className="text-red-500 hover:text-red-400 hover:underline">
                     support@q8sportcar.com
                   </a>
                 </p>
                 <p>
-                  <strong>الاستفسارات العامة:</strong>
+                  <strong className="text-white">الاستفسارات العامة:</strong>
                   <br />
-                  <a href="mailto:info@q8sportcar.com" className="text-blue-600 hover:underline">
+                  <a href="mailto:info@q8sportcar.com" className="text-red-500 hover:text-red-400 hover:underline">
                     info@q8sportcar.com
                   </a>
                 </p>
                 <p>
-                  <strong>الشكاوى:</strong>
+                  <strong className="text-white">الشكاوى:</strong>
                   <br />
-                  <a href="mailto:complaints@q8sportcar.com" className="text-blue-600 hover:underline">
+                  <a href="mailto:complaints@q8sportcar.com" className="text-red-500 hover:text-red-400 hover:underline">
                     complaints@q8sportcar.com
                   </a>
                 </p>
               </div>
             </div>
 
-            <div className="bg-green-50 p-6 rounded-lg">
-              <h3 className="text-xl font-semibold text-green-900 mb-4">
+            <div className="bg-gray-800 border border-red-600/30 p-6 rounded-lg">
+              <h3 className="text-xl font-semibold text-red-600 mb-4">
                 ⏱️ أوقات العمل
               </h3>
-              <div className="space-y-2">
-                <p><strong>الأحد - الخميس:</strong> 9:00 ص - 6:00 م</p>
-                <p><strong>الجمعة - السبت:</strong> مغلق</p>
-                <p className="text-sm text-gray-600 mt-4">
+              <div className="space-y-2 text-gray-300">
+                <p><strong className="text-white">الأحد - الخميس:</strong> 9:00 ص - 6:00 م</p>
+                <p><strong className="text-white">الجمعة - السبت:</strong> مغلق</p>
+                <p className="text-sm text-gray-500 mt-4">
                   وقت الاستجابة: 24-48 ساعة عمل
                 </p>
               </div>
@@ -64,13 +78,13 @@ export default function SupportPage() {
 
           {/* FAQ Section */}
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+            <h2 className="text-2xl font-bold text-white mb-6">
               الأسئلة الشائعة
             </h2>
             
             <div className="space-y-4">
-              <details className="bg-gray-50 p-4 rounded-lg">
-                <summary className="font-semibold cursor-pointer text-gray-900">
+              <details className="bg-gray-800 border border-gray-700 p-4 rounded-lg">
+                <summary className="font-semibold cursor-pointer text-white hover:text-red-500">
                   كيف أقوم بإضافة منتج جديد؟
                 </summary>
                 <p className="mt-2 text-gray-700">
@@ -131,18 +145,18 @@ export default function SupportPage() {
           </div>
 
           {/* Quick Links */}
-          <div className="border-t pt-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          <div className="border-t border-gray-800 pt-6">
+            <h3 className="text-lg font-semibold text-white mb-4">
               روابط مفيدة
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <a href="/privacy" className="text-blue-600 hover:underline">
+              <a href="/privacy" className="text-red-500 hover:text-red-400 hover:underline">
                 سياسة الخصوصية
               </a>
-              <a href="/terms" className="text-blue-600 hover:underline">
+              <a href="/terms" className="text-red-500 hover:text-red-400 hover:underline">
                 شروط الخدمة
               </a>
-              <a href="/" className="text-blue-600 hover:underline">
+              <a href="/" className="text-red-500 hover:text-red-400 hover:underline">
                 الصفحة الرئيسية
               </a>
             </div>

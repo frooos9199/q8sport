@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "YOUR_PROJECT_NUMBER",
+    "project_id": "q8sportcar",
+    "storage_bucket": "q8sportcar.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "YOUR_ANDROID_APP_ID",
+        "android_client_info": {
+          "package_name": "com.q8sportapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "YOUR_API_KEY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

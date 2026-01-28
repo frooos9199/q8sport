@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Image,
+  RefreshControl,
 } from 'react-native';
 import apiClient from '../../services/apiClient';
 import API_CONFIG from '../../config/api';
@@ -17,10 +18,17 @@ const StoresScreen = ({ navigation }) => {
   const { user, isAuthenticated } = useAuth();
   const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    fetchStores();
-  }, []);
+    fetchStores(false);
+
+    const unsubscribe = navigation.addListener('focus', () => {
+      fetchStores(true);
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   useEffect(() => {
     const canEdit = !!isAuthenticated && (user?.role === 'SHOP_OWNER' || user?.permissions?.canManageShop);
@@ -38,8 +46,9 @@ const StoresScreen = ({ navigation }) => {
     });
   }, [navigation, isAuthenticated, user?.role, user?.permissions?.canManageShop]);
 
-  const fetchStores = async () => {
+  const fetchStores = async (isRefresh = false) => {
     try {
+      if (isRefresh) setRefreshing(true);
       const res = await apiClient.get(API_CONFIG.ENDPOINTS.USERS, {
         params: { role: 'SHOP_OWNER', status: 'ACTIVE', limit: 200 },
       });
@@ -62,6 +71,7 @@ const StoresScreen = ({ navigation }) => {
       console.error('Error:', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -115,6 +125,14 @@ const StoresScreen = ({ navigation }) => {
         renderItem={renderStore}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => fetchStores(true)}
+            tintColor="#DC2626"
+            colors={["#DC2626"]}
+          />
+        }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <StoreIcon size={80} color="#666" />

@@ -8,7 +8,6 @@ import {
   TextInput,
   Alert,
   ScrollView,
-  Linking,
   Image,
   FlatList,
   Dimensions,
@@ -16,6 +15,7 @@ import {
 import { AuctionsService } from '../../services/api/auctions';
 import { useAuth } from '../../contexts/AuthContext';
 import API_CONFIG from '../../config/api';
+import { openWhatsApp } from '../../utils/whatsapp';
 
 const { width } = Dimensions.get('window');
 
@@ -172,36 +172,7 @@ const AuctionDetailsScreen = ({ route, navigation }) => {
 
   const images = parseImages(auction?.images).map(resolveImageUrl).filter(Boolean);
 
-  const normalizePhone = (phone) => {
-    if (!phone) return null;
-    const digits = String(phone).replace(/\D/g, '');
-    if (digits.length === 8) return `965${digits}`; // Kuwait local
-    return digits;
-  };
-
   const APP_PROMO = `\n\n—\nQ8 Sport Car 🏁\nحمّل التطبيق / زور الموقع: https://www.q8sportcar.com`;
-
-  const openWhatsApp = async (phone, message) => {
-    const normalized = normalizePhone(phone);
-    if (!normalized) {
-      Alert.alert('تنبيه', 'رقم واتساب غير متوفر');
-      return;
-    }
-
-    const text = encodeURIComponent(String(message || ''));
-    const appUrl = `whatsapp://send?phone=${normalized}${text ? `&text=${text}` : ''}`;
-    const webUrl = `https://wa.me/${normalized}${text ? `?text=${text}` : ''}`;
-
-    try {
-      await Linking.openURL(appUrl);
-    } catch {
-      try {
-        await Linking.openURL(webUrl);
-      } catch {
-        Alert.alert('خطأ', 'تأكد من تثبيت واتساب');
-      }
-    }
-  };
 
   const isSeller = isAuthenticated && user?.id && auction?.sellerId && user.id === auction.sellerId;
   const isHighestBidder = isAuthenticated && user?.id && auction?.highestBidder?.id && user.id === auction.highestBidder.id;
@@ -262,10 +233,10 @@ const AuctionDetailsScreen = ({ route, navigation }) => {
           <TouchableOpacity
             style={styles.buyNowButton}
             onPress={() =>
-              openWhatsApp(
-                auction?.seller?.whatsapp || auction?.seller?.phone,
-                `انا مهتم بالشراء الآن\nالسعر: ${formatKwd(auction?.buyNowPrice)} د.ك\nمزاد: ${auction?.title || ''}${APP_PROMO}`
-              )
+              openWhatsApp({
+                phone: auction?.seller?.whatsapp || auction?.seller?.phone,
+                message: `انا مهتم بالشراء الآن\nالسعر: ${formatKwd(auction?.buyNowPrice)} د.ك\nمزاد: ${auction?.title || ''}${APP_PROMO}`,
+              })
             }
             disabled={!auction?.seller?.whatsapp && !auction?.seller?.phone}
           >
@@ -305,10 +276,10 @@ const AuctionDetailsScreen = ({ route, navigation }) => {
             <TouchableOpacity
               style={styles.whatsappButton}
               onPress={() =>
-                openWhatsApp(
-                  auction?.highestBidder?.whatsapp || auction?.highestBidder?.phone,
-                  `انا مهتم بإتمام البيع\nمزاد: ${auction?.title || ''}${APP_PROMO}`
-                )
+                openWhatsApp({
+                  phone: auction?.highestBidder?.whatsapp || auction?.highestBidder?.phone,
+                  message: `انا مهتم بإتمام البيع\nمزاد: ${auction?.title || ''}${APP_PROMO}`,
+                })
               }
               disabled={!auction?.highestBidder?.whatsapp && !auction?.highestBidder?.phone}
             >
@@ -320,10 +291,10 @@ const AuctionDetailsScreen = ({ route, navigation }) => {
             <TouchableOpacity
               style={styles.whatsappButton}
               onPress={() =>
-                openWhatsApp(
-                  auction?.seller?.whatsapp || auction?.seller?.phone,
-                  `انا مهتم بإتمام الشراء (أنا أعلى مزايد)\nمزاد: ${auction?.title || ''}${APP_PROMO}`
-                )
+                openWhatsApp({
+                  phone: auction?.seller?.whatsapp || auction?.seller?.phone,
+                  message: `انا مهتم بإتمام الشراء (أنا أعلى مزايد)\nمزاد: ${auction?.title || ''}${APP_PROMO}`,
+                })
               }
               disabled={!auction?.seller?.whatsapp && !auction?.seller?.phone}
             >

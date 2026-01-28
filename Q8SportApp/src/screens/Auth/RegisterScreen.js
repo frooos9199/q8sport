@@ -19,13 +19,14 @@ const RegisterScreen = ({ navigation }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [whatsapp, setWhatsapp] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
-    if (!name || !email || !phone || !password) {
-      Alert.alert('خطأ', 'يرجى ملء جميع الحقول');
+    if (!name || !email || !password) {
+      Alert.alert('خطأ', 'يرجى إدخال الاسم، البريد الإلكتروني، وكلمة المرور. رقم الهاتف والواتساب اختياريان.');
       return;
     }
 
@@ -40,7 +41,7 @@ const RegisterScreen = ({ navigation }) => {
     }
 
     setLoading(true);
-    const result = await register(name, email, password, phone);
+    const result = await register(name, email, password, phone, whatsapp);
     setLoading(false);
 
     if (!result.success) {
@@ -91,10 +92,21 @@ const RegisterScreen = ({ navigation }) => {
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="رقم الهاتف"
+              placeholder="رقم الهاتف (اختياري)"
               placeholderTextColor="#555"
               value={phone}
               onChangeText={setPhone}
+              keyboardType="phone-pad"
+            />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="رقم الواتساب (اختياري)"
+              placeholderTextColor="#555"
+              value={whatsapp}
+              onChangeText={setWhatsapp}
               keyboardType="phone-pad"
             />
           </View>

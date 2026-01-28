@@ -30,10 +30,13 @@ const UserStatsScreen = () => {
 
   const fetchStats = async () => {
     try {
+      console.log('📊 Fetching stats from:', API_CONFIG.BASE_URL + API_CONFIG.ENDPOINTS.USER_STATS);
       const response = await apiClient.get(API_CONFIG.ENDPOINTS.USER_STATS);
+      console.log('✅ Stats response:', response.data);
       setStats(response.data);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('❌ Stats Error:', error);
+      console.error('❌ Error details:', error.response?.status, error.response?.data);
     } finally {
       setLoading(false);
       setRefreshing(false);

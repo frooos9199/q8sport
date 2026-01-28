@@ -12,9 +12,11 @@ import {
   Image,
   StatusBar,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import BiometricService from '../../services/BiometricService';
+import apiClient from '../../services/apiClient';
 
 const LoginScreen = ({ navigation }) => {
   const { login } = useAuth();
@@ -25,6 +27,9 @@ const LoginScreen = ({ navigation }) => {
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [biometricType, setBiometricType] = useState(null);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
 
   useEffect(() => {
     checkBiometric();
@@ -107,6 +112,31 @@ const LoginScreen = ({ navigation }) => {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!resetEmail || !resetEmail.includes('@')) {
+      Alert.alert('خطأ', 'يرجى إدخال بريد إلكتروني صحيح');
+      return;
+    }
+
+    setResetLoading(true);
+    try {
+      await apiClient.post('/api/auth/forgot-password', { email: resetEmail });
+      
+      Alert.alert(
+        'تم الإرسال ✅',
+        `تم إرسال رابط إعادة تعيين كلمة المرور إلى:\n${resetEmail}\n\nيرجى التحقق من بريدك`,
+        [{ text: 'حسناً', onPress: () => {
+          setShowForgotModal(false);
+          setResetEmail('');
+        }}]
+      );
+    } catch (error) {
+      Alert.alert('خطأ', error?.response?.data?.error || 'فشل إرسال البريد');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -165,6 +195,60 @@ const LoginScreen = ({ navigation }) => {
             </Text>
           </TouchableOpacity>
 
+          <TouchableOpacity
+            style={styles.forgotPassword}
+            onPress={() => setShowForgotModal(true)}
+            activeOpacity={0.7}>
+            <Text style={styles.forgotPasswordText}>📧 نسيت كلمة السر؟</Text>
+          </TouchableOpacity>
+
+          <Modal
+            visible={showForgotModal}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setShowForgotModal(false)}>
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>🔒 إعادة تعيين كلمة المرور</Text>
+                <Text style={styles.modalSubtitle}>
+                  أدخل بريدك الإلكتروني وسنرسل لك رابط إعادة التعيين
+                </Text>
+                
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="البريد الإلكتروني"
+                  placeholderTextColor="#666"
+                  value={resetEmail}
+                  onChangeText={setResetEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.modalButtonCancel]}
+                    onPress={() => {
+                      setShowForgotModal(false);
+                      setResetEmail('');
+                    }}>
+                    <Text style={styles.modalButtonTextCancel}>إلغاء</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.modalButtonSend]}
+                    onPress={handleForgotPassword}
+                    disabled={resetLoading}>
+                    {resetLoading ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <Text style={styles.modalButtonTextSend}>إرسال</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </Modal>
+
           {/* زر المصادقة البيومترية - يظهر فقط إذا كانت متوفرة ومفعلة */}
           {biometricAvailable && biometricEnabled && (
             <TouchableOpacity
@@ -218,10 +302,10 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   logo: {
-    width: 100,
-    height: 100,
+    width: '100%',
+    height: 250,
     alignSelf: 'center',
-    marginBottom: 24,
+    marginBottom: 32,
   },
   title: {
     fontSize: 36,
@@ -311,6 +395,81 @@ const styles = StyleSheet.create({
   },
   linkTextBold: {
     color: '#DC2626',
+    fontWeight: '700',
+  },
+  forgotPassword: {
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  forgotPasswordText: {
+    color: '#DC2626',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: '#111',
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  modalInput: {
+    backgroundColor: '#1a1a1a',
+    color: '#fff',
+    padding: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#333',
+    textAlign: 'right',
+    fontSize: 15,
+    marginBottom: 20,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  modalButtonCancel: {
+    backgroundColor: '#333',
+  },
+  modalButtonSend: {
+    backgroundColor: '#DC2626',
+  },
+  modalButtonTextCancel: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  modalButtonTextSend: {
+    color: '#fff',
+    fontSize: 15,
     fontWeight: '700',
   },
 });

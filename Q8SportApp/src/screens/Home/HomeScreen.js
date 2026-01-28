@@ -123,7 +123,7 @@ const HomeScreen = ({ navigation }) => {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [favorites, setFavorites] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedType, setSelectedType] = useState('ALL');
   const [selectedBrand, setSelectedBrand] = useState('');
@@ -154,6 +154,9 @@ const HomeScreen = ({ navigation }) => {
   }, [products, selectedType, selectedBrand, selectedModel]);
 
   const fetchProducts = async () => {
+    if (!refreshing) {
+      setLoading(true);
+    }
     try {
       const response = await ProductService.getProducts();
       const apiProducts = response.products || [];

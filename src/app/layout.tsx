@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/contexts/AuthContext";
 import GoogleAdSenseScript from "@/components/ads/GoogleAdSenseScript";
+import { Analytics } from '@vercel/analytics/react';
 import "./globals.css";
 
 const geistSans = Geist({
@@ -42,6 +43,7 @@ export default function RootLayout({
             {children}
           </div>
         </AuthProvider>
+        <Analytics />
       </body>
     </html>
   );

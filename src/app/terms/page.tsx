@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'شروط الخدمة - Q8 Sport Car',
@@ -7,19 +8,32 @@ export const metadata: Metadata = {
 
 export default function TermsOfService() {
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8" dir="rtl">
-      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-8 text-center">
+    <div className="min-h-screen bg-black py-12 px-4 sm:px-6 lg:px-8" dir="rtl">
+      {/* Back to Home Button */}
+      <div className="max-w-4xl mx-auto mb-6">
+        <Link 
+          href="/" 
+          className="inline-flex items-center text-red-600 hover:text-red-500 transition-colors"
+        >
+          <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          العودة للرئيسية
+        </Link>
+      </div>
+
+      <div className="max-w-4xl mx-auto bg-gray-900 border border-red-600 rounded-lg shadow-2xl p-8">
+        <h1 className="text-4xl font-bold text-white mb-8 text-center">
           شروط وأحكام الخدمة
         </h1>
         
-        <div className="text-gray-700 space-y-6 leading-relaxed">
+        <div className="text-gray-300 space-y-6 leading-relaxed">
           <p className="text-sm text-gray-500 mb-8">
             آخر تحديث: 28 يناير 2026
           </p>
 
           <section className="space-y-4">
-            <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">
+            <h2 className="text-2xl font-bold text-red-600 mt-8 mb-4">
               1. مقدمة وقبول الشروط
             </h2>
             <p>
