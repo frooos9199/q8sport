@@ -87,56 +87,56 @@ export default function SupportPage() {
                 <summary className="font-semibold cursor-pointer text-white hover:text-red-500">
                   كيف أقوم بإضافة منتج جديد؟
                 </summary>
-                <p className="mt-2 text-gray-700">
+                <p className="mt-2 text-gray-300">
                   من الصفحة الرئيسية، اضغط على زر "+" أو "إضافة منتج"، ثم املأ البيانات 
                   المطلوبة (النوع، السعر، الوصف، الصور) واضغط على "نشر".
                 </p>
               </details>
 
-              <details className="bg-gray-50 p-4 rounded-lg">
-                <summary className="font-semibold cursor-pointer text-gray-900">
+              <details className="bg-gray-800 border border-gray-700 p-4 rounded-lg">
+                <summary className="font-semibold cursor-pointer text-white hover:text-red-500">
                   كيف يمكنني تعديل معلومات حسابي؟
                 </summary>
-                <p className="mt-2 text-gray-700">
+                <p className="mt-2 text-gray-300">
                   من القائمة الرئيسية، اختر "الملف الشخصي"، ثم "تعديل الملف الشخصي". 
                   يمكنك تحديث الاسم، الصورة، رقم الهاتف، والمعلومات الأخرى.
                 </p>
               </details>
 
-              <details className="bg-gray-50 p-4 rounded-lg">
-                <summary className="font-semibold cursor-pointer text-gray-900">
+              <details className="bg-gray-800 border border-gray-700 p-4 rounded-lg">
+                <summary className="font-semibold cursor-pointer text-white hover:text-red-500">
                   نسيت كلمة المرور، ماذا أفعل؟
                 </summary>
-                <p className="mt-2 text-gray-700">
+                <p className="mt-2 text-gray-300">
                   في صفحة تسجيل الدخول، اضغط على "نسيت كلمة المرور"، ثم أدخل بريدك 
                   الإلكتروني. سنرسل لك رابط إعادة تعيين كلمة المرور.
                 </p>
               </details>
 
-              <details className="bg-gray-50 p-4 rounded-lg">
-                <summary className="font-semibold cursor-pointer text-gray-900">
+              <details className="bg-gray-800 border border-gray-700 p-4 rounded-lg">
+                <summary className="font-semibold cursor-pointer text-white hover:text-red-500">
                   كيف أحذف حسابي؟
                 </summary>
-                <p className="mt-2 text-gray-700">
+                <p className="mt-2 text-gray-300">
                   اتصل بنا على support@q8sportcar.com وسنقوم بحذف حسابك وجميع بياناتك 
                   خلال 30 يوماً.
                 </p>
               </details>
 
-              <details className="bg-gray-50 p-4 rounded-lg">
-                <summary className="font-semibold cursor-pointer text-gray-900">
+              <details className="bg-gray-800 border border-gray-700 p-4 rounded-lg">
+                <summary className="font-semibold cursor-pointer text-white hover:text-red-500">
                   هل يمكنني البيع من خارج الكويت؟
                 </summary>
-                <p className="mt-2 text-gray-700">
+                <p className="mt-2 text-gray-300">
                   التطبيق مخصص للمستخدمين في دولة الكويت فقط حالياً.
                 </p>
               </details>
 
-              <details className="bg-gray-50 p-4 rounded-lg">
-                <summary className="font-semibold cursor-pointer text-gray-900">
+              <details className="bg-gray-800 border border-gray-700 p-4 rounded-lg">
+                <summary className="font-semibold cursor-pointer text-white hover:text-red-500">
                   كيف أبلغ عن محتوى مخالف؟
                 </summary>
-                <p className="mt-2 text-gray-700">
+                <p className="mt-2 text-gray-300">
                   يمكنك الإبلاغ عن أي محتوى مخالف من خلال زر "الإبلاغ" في صفحة المنتج، 
                   أو التواصل معنا مباشرة على complaints@q8sportcar.com
                 </p>
