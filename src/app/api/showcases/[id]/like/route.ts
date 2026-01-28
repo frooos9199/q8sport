@@ -4,15 +4,14 @@ import { verifyToken } from '@/lib/auth'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: showcaseId } = await params;
     const user = await verifyToken(request)
     if (!user) {
       return NextResponse.json({ error: 'يجب تسجيل الدخول' }, { status: 401 })
     }
-
-    const showcaseId = params.id
 
     await prisma.showcaseLike.create({
       data: {
@@ -35,15 +34,14 @@ export async function POST(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: showcaseId } = await params;
     const user = await verifyToken(request)
     if (!user) {
       return NextResponse.json({ error: 'يجب تسجيل الدخول' }, { status: 401 })
     }
-
-    const showcaseId = params.id
 
     await prisma.showcaseLike.deleteMany({
       where: {
