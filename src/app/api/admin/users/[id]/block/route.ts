@@ -8,22 +8,17 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const token = req.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const decoded = verifyToken(token);
-    if (!decoded || decoded.role !== 'ADMIN') {
+    const user = await verifyToken(req);
+    if (!user || user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-    const user = await prisma.user.update({
+    const updatedUser = await prisma.user.update({
       where: { id },
       data: { status: 'BANNED' }
     });
 
-    return NextResponse.json({ message: 'User blocked successfully', user });
+    return NextResponse.json({ message: 'User blocked successfully', user: updatedUser });
   } catch (error) {
     console.error('Block user error:', error);
     return NextResponse.json({ error: 'Failed to block user' }, { status: 500 });
@@ -36,22 +31,17 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const token = req.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const decoded = verifyToken(token);
-    if (!decoded || decoded.role !== 'ADMIN') {
+    const user = await verifyToken(req);
+    if (!user || user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-    const user = await prisma.user.update({
+    const updatedUser = await prisma.user.update({
       where: { id },
       data: { status: 'ACTIVE' }
     });
 
-    return NextResponse.json({ message: 'User unblocked successfully', user });
+    return NextResponse.json({ message: 'User unblocked successfully', user: updatedUser });
   } catch (error) {
     console.error('Unblock user error:', error);
     return NextResponse.json({ error: 'Failed to unblock user' }, { status: 500 });
