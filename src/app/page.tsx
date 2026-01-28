@@ -368,11 +368,55 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 border-t border-red-600 py-8 mt-20">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-gray-400">
-            © 2026 Q8 Motors - جميع الحقوق محفوظة
-          </p>
+      <footer className="bg-gray-900 border-t border-red-600 py-12 mt-20">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+            {/* About */}
+            <div>
+              <h3 className="text-xl font-bold text-white mb-4">Q8 Sport Car</h3>
+              <p className="text-gray-400 text-sm">
+                منصة بيع السيارات الرياضية الأمريكية وقطع الغيار الأصلية في الكويت
+              </p>
+            </div>
+
+            {/* Quick Links */}
+            <div>
+              <h3 className="text-xl font-bold text-white mb-4">روابط سريعة</h3>
+              <ul className="space-y-2">
+                <li>
+                  <Link href="/privacy" className="text-gray-400 hover:text-white transition-colors text-sm">
+                    سياسة الخصوصية
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/terms" className="text-gray-400 hover:text-white transition-colors text-sm">
+                    شروط الخدمة
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/support" className="text-gray-400 hover:text-white transition-colors text-sm">
+                    الدعم والمساعدة
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Contact */}
+            <div>
+              <h3 className="text-xl font-bold text-white mb-4">تواصل معنا</h3>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li>📧 support@q8sportcar.com</li>
+                <li>📱 الكويت</li>
+                <li>🌐 www.q8sportcar.com</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-800 pt-6 text-center">
+            <p className="text-gray-400 text-sm">
+              © 2026 Q8 Sport Car - جميع الحقوق محفوظة
+            </p>
+          </div>
         </div>
       </footer>
     </div>
