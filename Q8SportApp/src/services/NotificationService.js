@@ -23,12 +23,19 @@ class NotificationService {
 
   async getToken() {
     try {
-      await messaging().registerDeviceForRemoteMessages();
+      // تحقق من التسجيل أولاً
+      const isRegistered = await messaging().isDeviceRegisteredForRemoteMessages;
+      if (!isRegistered) {
+        await messaging().registerDeviceForRemoteMessages();
+      }
+      
       const token = await messaging().getToken();
-      await AsyncStorage.setItem('fcm_token', token);
+      if (token) {
+        await AsyncStorage.setItem('fcm_token', token);
+      }
       return token;
     } catch (error) {
-      console.error('Get token error:', error);
+      console.log('Get token error (normal in simulator):', error.message);
       return null;
     }
   }
