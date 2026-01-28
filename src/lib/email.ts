@@ -1,8 +1,12 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 export const sendWelcomeEmail = async (email: string, name: string) => {
+  if (!resend) {
+    console.warn('Resend not configured, skipping email');
+    return;
+  }
   try {
     await resend.emails.send({
       from: process.env.EMAIL_FROM || 'Q8Sport <noreply@q8sportcar.com>',
@@ -30,6 +34,10 @@ export const sendWelcomeEmail = async (email: string, name: string) => {
 };
 
 export const sendProductApprovedEmail = async (email: string, productTitle: string) => {
+  if (!resend) {
+    console.warn('Resend not configured, skipping email');
+    return;
+  }
   try {
     await resend.emails.send({
       from: process.env.EMAIL_FROM || 'Q8Sport <noreply@q8sportcar.com>',
@@ -52,6 +60,10 @@ export const sendProductApprovedEmail = async (email: string, productTitle: stri
 };
 
 export const sendProductSoldEmail = async (email: string, productTitle: string, price: number) => {
+  if (!resend) {
+    console.warn('Resend not configured, skipping email');
+    return;
+  }
   try {
     await resend.emails.send({
       from: process.env.EMAIL_FROM || 'Q8Sport <noreply@q8sportcar.com>',
@@ -72,6 +84,10 @@ export const sendProductSoldEmail = async (email: string, productTitle: string, 
 };
 
 export const sendPasswordResetEmail = async (email: string, resetToken: string) => {
+  if (!resend) {
+    console.warn('Resend not configured, skipping email');
+    return;
+  }
   try {
     const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password?token=${resetToken}`;
     await resend.emails.send({
