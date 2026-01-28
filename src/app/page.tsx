@@ -123,7 +123,7 @@ export default function Home() {
         <div className="container mx-auto px-4 py-6">
           <div className="flex justify-between items-center">
             <h1 className="text-4xl font-bold text-white">
-              Q8 <span className="text-red-600">Sport Car</span>
+              أحلى سيارات <span className="text-red-600">الكويت</span>
             </h1>
             <nav className="flex items-center gap-6">
               <div className="hidden md:flex items-center gap-4">
@@ -132,9 +132,6 @@ export default function Home() {
                 </Link>
                 <Link href="/requests" className="text-gray-200 hover:text-white font-semibold transition-colors">
                   المطلوبات
-                </Link>
-                <Link href="/shops" className="text-gray-200 hover:text-white font-semibold transition-colors">
-                  المحلات
                 </Link>
                 <Link href="/users" className="text-gray-200 hover:text-white font-semibold transition-colors">
                   البائعين
@@ -373,7 +370,7 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
             {/* About */}
             <div>
-              <h3 className="text-xl font-bold text-white mb-4">Q8 Sport Car</h3>
+              <h3 className="text-xl font-bold text-white mb-4">أحلى سيارات الكويت</h3>
               <p className="text-gray-400 text-sm">
                 منصة بيع السيارات الرياضية الأمريكية وقطع الغيار الأصلية في الكويت
               </p>
@@ -414,7 +411,7 @@ export default function Home() {
 
           <div className="border-t border-gray-800 pt-6 text-center">
             <p className="text-gray-400 text-sm">
-              © 2026 Q8 Sport Car - جميع الحقوق محفوظة
+              © 2026 أحلى سيارات الكويت - جميع الحقوق محفوظة
             </p>
           </div>
         </div>
