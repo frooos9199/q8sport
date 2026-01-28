@@ -4,9 +4,10 @@ import { verifyToken } from '@/lib/auth';
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const token = req.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -18,7 +19,7 @@ export async function POST(
     }
 
     const user = await prisma.user.update({
-      where: { id: params.id },
+      where: { id },
       data: { status: 'BANNED' }
     });
 
@@ -31,9 +32,10 @@ export async function POST(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const token = req.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -45,7 +47,7 @@ export async function DELETE(
     }
 
     const user = await prisma.user.update({
-      where: { id: params.id },
+      where: { id },
       data: { status: 'ACTIVE' }
     });
 
