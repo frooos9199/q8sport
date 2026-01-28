@@ -23,6 +23,7 @@ class NotificationService {
 
   async getToken() {
     try {
+      await messaging().registerDeviceForRemoteMessages();
       const token = await messaging().getToken();
       await AsyncStorage.setItem('fcm_token', token);
       return token;

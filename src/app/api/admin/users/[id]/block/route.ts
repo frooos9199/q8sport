@@ -1,41 +1,57 @@
-import { NextResponse } from 'next/server';
-import { requireAdmin, AuthenticatedRequest } from '../../../../../../lib/auth';
-import { prisma } from '../../../../../../lib/prisma';
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { verifyToken } from '@/lib/auth';
 
-// PATCH /api/admin/users/:id/block - Block/unblock a user
-// Body: { blocked: boolean }
-export const PATCH = requireAdmin(async (
-  request: AuthenticatedRequest,
-  context: { params: Promise<{ id: string }> }
-) => {
+export async function POST(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    const { id } = await context.params;
-    const body = await request.json().catch(() => ({}));
-    const blocked = Boolean(body?.blocked);
+    const token = req.headers.get('authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    const status = blocked ? 'SUSPENDED' : 'ACTIVE';
+    const decoded = verifyToken(token);
+    if (!decoded || decoded.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+    }
 
     const user = await prisma.user.update({
-      where: { id },
-      data: { status },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        status: true,
-      },
+      where: { id: params.id },
+      data: { status: 'BANNED' }
     });
 
-    return NextResponse.json({
-      success: true,
-      user: {
-        ...user,
-        blocked: user.status !== 'ACTIVE',
-      },
-    });
+    return NextResponse.json({ message: 'User blocked successfully', user });
   } catch (error) {
-    console.error('Admin block user error:', error);
-    return NextResponse.json({ error: 'فشل تحديث حالة المستخدم' }, { status: 500 });
+    console.error('Block user error:', error);
+    return NextResponse.json({ error: 'Failed to block user' }, { status: 500 });
   }
-});
+}
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const token = req.headers.get('authorization')?.replace('Bearer ', '');
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const decoded = verifyToken(token);
+    if (!decoded || decoded.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+    }
+
+    const user = await prisma.user.update({
+      where: { id: params.id },
+      data: { status: 'ACTIVE' }
+    });
+
+    return NextResponse.json({ message: 'User unblocked successfully', user });
+  } catch (error) {
+    console.error('Unblock user error:', error);
+    return NextResponse.json({ error: 'Failed to unblock user' }, { status: 500 });
+  }
+}

@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile } from 'fs/promises';
-import { join } from 'path';
+import { v2 as cloudinary } from 'cloudinary';
 import sharp from 'sharp';
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,21 +20,24 @@ export async function POST(req: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // تحسين الصورة باستخدام sharp
+    // تحسين الصورة
     const optimizedBuffer = await sharp(buffer)
       .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
       .webp({ quality: 85 })
       .toBuffer();
 
-    const filename = `${Date.now()}-${file.name.replace(/\.[^/.]+$/, '')}.webp`;
-    const filepath = join(process.cwd(), 'public', 'uploads', filename);
-    
-    await writeFile(filepath, optimizedBuffer);
+    // رفع على Cloudinary
+    const base64Image = `data:image/webp;base64,${optimizedBuffer.toString('base64')}`;
+    const result = await cloudinary.uploader.upload(base64Image, {
+      folder: process.env.CLOUDINARY_FOLDER || 'q8sport',
+      transformation: [{ quality: 'auto' }, { fetch_format: 'auto' }]
+    });
 
     return NextResponse.json({
       success: true,
-      url: `/uploads/${filename}`,
-      size: optimizedBuffer.length,
+      url: result.secure_url,
+      publicId: result.public_id,
+      size: result.bytes,
     });
   } catch (error) {
     console.error('Error uploading image:', error);

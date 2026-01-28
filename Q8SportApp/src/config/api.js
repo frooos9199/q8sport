@@ -45,6 +45,11 @@ const API_CONFIG = {
     MESSAGES_CONVERSATIONS: '/messages/conversations',
     MESSAGE_THREAD: (conversationId) => `/messages/${conversationId}`,
 
+    // Showcases
+    SHOWCASES: '/showcases',
+    SHOWCASE_DETAILS: (id) => `/showcases/${id}`,
+    SHOWCASE_LIKE: (id) => `/showcases/${id}/like`,
+    
     // Users / Stores (Shops)
     USERS: '/users',
     USER_DETAILS: (id) => `/users/${id}`,

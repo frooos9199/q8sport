@@ -54,6 +54,9 @@ model User {
   favorites Favorite[]
   reviews Review[] @relation("UserReviews")
   receivedReviews Review[] @relation("ReceivedReviews")
+  showcases Showcase[]
+  showcaseLikes ShowcaseLike[]
+  showcaseComments ShowcaseComment[]
   
   @@map("users")
 }
@@ -439,4 +442,64 @@ model Review {
 enum ReviewType {
   PRODUCT  // تقييم منتج
   SELLER   // تقييم بائع
+}
+
+// عروض السيارات (Showcases)
+model Showcase {
+  id          String          @id @default(cuid())
+  carBrand    String          // ماركة السيارة
+  carModel    String          // موديل السيارة
+  carYear     Int             // سنة الصنع
+  horsepower  Int?            // قوة المحرك
+  description String          // وصف السيارة والتعديلات
+  images      String          // JSON array of images
+  status      ShowcaseStatus  @default(PENDING)
+  featured    Boolean         @default(false)
+  likes       Int             @default(0)
+  views       Int             @default(0)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  
+  // Relations
+  userId      String
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  showcaseLikes    ShowcaseLike[]
+  showcaseComments ShowcaseComment[]
+  
+  @@map("showcases")
+}
+
+model ShowcaseLike {
+  id          String    @id @default(cuid())
+  createdAt   DateTime  @default(now())
+  
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  showcaseId  String
+  showcase    Showcase  @relation(fields: [showcaseId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, showcaseId])
+  @@map("showcase_likes")
+}
+
+model ShowcaseComment {
+  id          String    @id @default(cuid())
+  comment     String
+  createdAt   DateTime  @default(now())
+  
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  showcaseId  String
+  showcase    Showcase  @relation(fields: [showcaseId], references: [id], onDelete: Cascade)
+  
+  @@map("showcase_comments")
+}
+
+enum ShowcaseStatus {
+  PENDING   // في انتظار الموافقة
+  APPROVED  // تمت الموافقة
+  REJECTED  // مرفوض
 }

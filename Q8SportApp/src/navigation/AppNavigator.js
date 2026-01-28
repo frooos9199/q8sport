@@ -31,7 +31,7 @@ import AdminSettingsScreen from '../screens/Admin/AdminSettingsScreen';
 import AdminReportsScreen from '../screens/Admin/AdminReportsScreen';
 import ManageAuctionsScreen from '../screens/Admin/ManageAuctionsScreen';
 import ManageRequestsScreen from '../screens/Admin/ManageRequestsScreen';
-import ManageShopsScreen from '../screens/Admin/ManageShopsScreen';
+import ManageShowcasesScreen from '../screens/Admin/ManageShowcasesScreen';
 
 // Messages Screens
 import MessagesScreen from '../screens/Messages/MessagesScreen';
@@ -43,9 +43,9 @@ import UserStatsScreen from '../screens/Profile/UserStatsScreen';
 import NotificationsScreen from '../screens/Profile/NotificationsScreen';
 
 // Stores Screens
-import StoresScreen from '../screens/Stores/StoresScreen';
-import StoreDetailsScreen from '../screens/Stores/StoreDetailsScreen';
-import EditStoreScreen from '../screens/Stores/EditStoreScreen';
+import ShowcasesScreen from '../screens/Stores/ShowcasesScreen';
+import ShowcaseDetailsScreen from '../screens/Stores/ShowcaseDetailsScreen';
+import AddShowcaseScreen from '../screens/Stores/AddShowcaseScreen';
 
 // Auctions Screens
 import AuctionsListScreen from '../screens/Auctions/AuctionsListScreen';
@@ -295,25 +295,22 @@ const StoresStack = () => {
       }}>
       <Stack.Screen 
         name="StoresMain" 
-        component={StoresScreen}
-        options={{ 
-          title: 'المحلات',
-          headerShown: true,
-        }}
+        component={ShowcasesScreen}
+        options={{ headerShown: false }}
       />
-      <Stack.Screen
-        name="EditStore"
-        component={EditStoreScreen}
-        options={{
-          title: 'تعديل المحل',
+      <Stack.Screen 
+        name="ShowcaseDetails" 
+        component={ShowcaseDetailsScreen}
+        options={{ 
+          title: 'تفاصيل العرض',
           headerBackTitle: 'رجوع',
         }}
       />
-      <Stack.Screen
-        name="StoreDetails"
-        component={StoreDetailsScreen}
-        options={{
-          title: 'تفاصيل المحل',
+      <Stack.Screen 
+        name="AddShowcase" 
+        component={AddShowcaseScreen}
+        options={{ 
+          title: 'إضافة عرض',
           headerBackTitle: 'رجوع',
         }}
       />
@@ -429,10 +426,18 @@ const AdminStack = () => {
       />
 
       <Stack.Screen
-        name="ManageShops"
-        component={ManageShopsScreen}
+        name="ManageShowcases"
+        component={ManageShowcasesScreen}
         options={{
-          title: 'إدارة المحلات',
+          title: 'مراجعة العروض',
+          headerBackTitle: 'رجوع',
+        }}
+      />
+      <Stack.Screen 
+        name="ShowcaseDetails" 
+        component={ShowcaseDetailsScreen}
+        options={{ 
+          title: 'تفاصيل العرض',
           headerBackTitle: 'رجوع',
         }}
       />
@@ -533,9 +538,9 @@ const MainTabNavigator = () => {
         name="Stores"
         component={StoresStack}
         options={{
-          title: 'المحلات',
+          title: 'العروض',
           tabBarIcon: ({ color, size }) => (
-            <StoreIcon size={size} color={color} />
+            <Ionicons name="car-sport" size={size} color={color} />
           ),
           headerShown: false,
         }}

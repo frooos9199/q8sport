@@ -13,6 +13,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import apiClient from '../../services/apiClient';
+import AdminService from '../../services/AdminService';
 import API_CONFIG from '../../config/api';
 
 const ManageUsersScreen = () => {
@@ -110,13 +111,15 @@ const ManageUsersScreen = () => {
           text: 'تأكيد',
           onPress: async () => {
             try {
-              await apiClient.patch(API_CONFIG.ENDPOINTS.ADMIN_USER_BLOCK(userId), {
-                blocked: !isBlocked,
-              });
-              Alert.alert('تم', 'تم تحديث حالة المستخدم');
+              if (isBlocked) {
+                await AdminService.unblockUser(userId);
+              } else {
+                await AdminService.blockUser(userId);
+              }
+              Alert.alert('✅', 'تم تحديث حالة المستخدم بنجاح');
               fetchUsers();
             } catch (error) {
-              Alert.alert('خطأ', 'فشل تحديث المستخدم');
+              Alert.alert('❌', 'فشل تحديث المستخدم');
             }
           },
         },

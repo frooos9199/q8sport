@@ -4,6 +4,8 @@ import { AuthProvider } from './src/contexts/AuthContext';
 import { NotificationProvider } from './src/contexts/NotificationContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import SplashScreen from './src/screens/SplashScreen';
+import ErrorBoundary from './src/components/ErrorBoundary';
+import OfflineBanner from './src/components/OfflineBanner';
 import './src/utils/logConfig';
 
 const App = () => {
@@ -14,12 +16,15 @@ const App = () => {
   }
 
   return (
-    <AuthProvider>
-      <NotificationProvider>
-        <StatusBar barStyle="light-content" backgroundColor="#000" />
-        <AppNavigator />
-      </NotificationProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <NotificationProvider>
+          <StatusBar barStyle="light-content" backgroundColor="#000" />
+          <OfflineBanner />
+          <AppNavigator />
+        </NotificationProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 };
 

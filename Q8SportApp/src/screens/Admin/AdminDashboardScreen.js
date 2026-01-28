@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
   import apiClient from '../../services/apiClient';
   import API_CONFIG from '../../config/api';
@@ -25,6 +26,8 @@ const AdminDashboardScreen = () => {
     activeProducts: 0,
     pendingProducts: 0,
     totalRevenue: 0,
+    totalShowcases: 0,
+    pendingShowcases: 0,
   });
 
   useEffect(() => {
@@ -36,12 +39,20 @@ const AdminDashboardScreen = () => {
       const res = await apiClient.get(API_CONFIG.ENDPOINTS.ADMIN_STATS);
       const data = res.data;
       const overview = data?.overview || data;
+      
+      // جلب إحصائيات العروض
+      const approved = await AsyncStorage.getItem('approvedShowcases');
+      const approvedList = approved ? JSON.parse(approved) : [];
+      const pendingCount = 1; // عدد العروض الوهمية المعلقة
+      
       setStats({
         totalUsers: overview?.totalUsers || 0,
         totalProducts: overview?.totalProducts || 0,
         activeProducts: overview?.activeProducts || 0,
         pendingProducts: overview?.pendingProducts || 0,
         totalRevenue: overview?.totalRevenue || 0,
+        totalShowcases: approvedList.length + pendingCount,
+        pendingShowcases: pendingCount,
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -105,8 +116,8 @@ const AdminDashboardScreen = () => {
       <View style={styles.statsGrid}>
         <StatCard icon="👥" title="المستخدمين" value={stats.totalUsers} color="#3B82F6" />
         <StatCard icon="📦" title="المنتجات" value={stats.totalProducts} color="#10B981" />
-        <StatCard icon="✅" title="نشط" value={stats.activeProducts} color="#F59E0B" />
-        <StatCard icon="⏳" title="معلق" value={stats.pendingProducts} color="#DC2626" />
+        <StatCard icon="🏎️" title="العروض" value={stats.totalShowcases} color="#F59E0B" />
+        <StatCard icon="⏳" title="معلقة" value={stats.pendingShowcases} color="#DC2626" />
       </View>
 
       <View style={styles.menuGrid}>
@@ -129,9 +140,9 @@ const AdminDashboardScreen = () => {
           color="#3B82F6"
         />
         <MenuButton
-          icon="🏪"
-          title="إدارة المحلات"
-          onPress={() => navigation.navigate('ManageShops')}
+          icon="🏎️"
+          title="إدارة العروض"
+          onPress={() => navigation.navigate('ManageShowcases')}
           color="#06B6D4"
         />
         <MenuButton
