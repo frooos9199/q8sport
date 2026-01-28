@@ -233,8 +233,8 @@ const ShowcasesScreen = ({ navigation }) => {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>
-          <Text style={styles.headerTitleRed}>🔥 عروض </Text>
-          <Text style={styles.headerTitleWhite}>السيارات</Text>
+          <Text style={styles.headerTitleRed}>Car </Text>
+          <Text style={styles.headerTitleWhite}>Show</Text>
         </Text>
         <Text style={styles.headerSubtitle}>أجمل وأقوى السيارات في الكويت</Text>
       </View>
