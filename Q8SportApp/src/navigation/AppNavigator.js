@@ -538,9 +538,9 @@ const MainTabNavigator = () => {
         name="Stores"
         component={StoresStack}
         options={{
-          title: 'العروض',
+          title: 'VIP',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="car-sport" size={size} color={color} />
+            <Ionicons name="star" size={size} color={color} />
           ),
           headerShown: false,
         }}
