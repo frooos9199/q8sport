@@ -1,9 +1,7 @@
 // API Configuration
 const API_CONFIG = {
-  BASE_URL: 'https://www.q8sportcar.com/api',  // Production (Custom Domain)
-  // Alternative: 'https://q8sport.vercel.app/api'
-  // For local testing on physical device, use your computer's IP:
-  // BASE_URL: 'http://192.168.x.x:3000/api'
+  BASE_URL: 'https://www.q8sportcar.com/api',  // Production
+  // For local testing: 'http://192.168.8.4:3000/api'
   
   TIMEOUT: 30000, // 30 seconds
   

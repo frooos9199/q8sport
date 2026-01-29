@@ -15,6 +15,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import apiClient from '../../services/apiClient';
 import API_CONFIG from '../../config/api';
+import BurnoutLoader from '../../components/BurnoutLoader';
 
 const ManageProductsScreen = ({ navigation }) => {
   const { token } = useAuth();
@@ -42,7 +43,8 @@ const ManageProductsScreen = ({ navigation }) => {
       };
 
       const res = await apiClient.get(API_CONFIG.ENDPOINTS.ADMIN_PRODUCTS, { params });
-      setProducts(res.data.products || []);
+      const fetchedProducts = res.data.products || [];
+      setProducts(fetchedProducts);
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -64,27 +66,6 @@ const ManageProductsScreen = ({ navigation }) => {
     } catch (error) {
       Alert.alert('خطأ', 'فشل الموافقة على المنتج');
     }
-  };
-
-  const handleBlock = async (productId) => {
-    Alert.alert('حظر المنتج', 'هل تريد حظر هذا المنتج؟', [
-      { text: 'إلغاء', style: 'cancel' },
-      {
-        text: 'حظر',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await apiClient.patch(API_CONFIG.ENDPOINTS.ADMIN_PRODUCT_BLOCK(productId), {
-              blocked: true,
-            });
-            Alert.alert('تم', 'تم حظر المنتج');
-            fetchProducts();
-          } catch (error) {
-            Alert.alert('خطأ', 'فشل حظر المنتج');
-          }
-        },
-      },
-    ]);
   };
 
   const openEdit = (product) => {
@@ -124,41 +105,19 @@ const ManageProductsScreen = ({ navigation }) => {
     }
   };
 
-  const handleReject = async (productId) => {
-    Alert.alert('رفض المنتج', 'هل تريد رفض/إيقاف هذا المنتج؟', [
-      { text: 'إلغاء', style: 'cancel' },
-      {
-        text: 'رفض',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await apiClient.patch(API_CONFIG.ENDPOINTS.ADMIN_PRODUCT_BLOCK(productId), {
-              blocked: true,
-            });
-            Alert.alert('تم', 'تم رفض المنتج');
-            fetchProducts();
-          } catch (error) {
-            Alert.alert('خطأ', 'فشل رفض المنتج');
-          }
-        },
-      },
-    ]);
-  };
-
   const deleteProductForever = (productId) => {
-    Alert.alert('حذف نهائي', 'هل تريد حذف هذا المنتج نهائياً؟ لا يمكن التراجع.', [
+    Alert.alert('حذف المنتج', 'هل تريد حذف هذا المنتج؟', [
       { text: 'إلغاء', style: 'cancel' },
       {
-        text: 'حذف نهائي',
+        text: 'حذف',
         style: 'destructive',
         onPress: async () => {
           try {
             await apiClient.delete(API_CONFIG.ENDPOINTS.ADMIN_PRODUCT_DELETE(productId));
-            Alert.alert('تم', 'تم حذف المنتج نهائياً');
-            fetchProducts();
+            setProducts(prev => prev.filter(p => p.id !== productId));
+            Alert.alert('تم', 'تم حذف المنتج');
           } catch (error) {
-            const msg = error?.response?.data?.error || 'فشل حذف المنتج نهائياً';
-            Alert.alert('خطأ', msg);
+            Alert.alert('خطأ', 'فشل حذف المنتج');
           }
         },
       },
@@ -208,38 +167,26 @@ const ManageProductsScreen = ({ navigation }) => {
               <TouchableOpacity style={styles.approveButton} onPress={() => handleApprove(item.id)}>
                 <Text style={styles.buttonText}>✅ موافقة</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.rejectButton} onPress={() => handleReject(item.id)}>
-                <Text style={styles.buttonText}>⛔ رفض</Text>
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={() => deleteProductForever(item.id)}>
+                <Text style={styles.buttonText}>🗑 حذف</Text>
               </TouchableOpacity>
             </>
           ) : item.status === 'ACTIVE' ? (
-            <TouchableOpacity style={styles.rejectButton} onPress={() => handleBlock(item.id)}>
-              <Text style={styles.buttonText}>⛔ إيقاف</Text>
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={() => deleteProductForever(item.id)}>
+              <Text style={styles.buttonText}>🗑 حذف</Text>
             </TouchableOpacity>
           ) : null}
-
-          <TouchableOpacity
-            style={styles.viewButton}
-            onPress={() => navigation.navigate('ProductDetails', { productId: item.id })}>
-            <Text style={styles.buttonText}>👁 عرض</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={() => deleteProductForever(item.id)}>
-            <Text style={styles.buttonText}>🗑 حذف نهائي</Text>
-          </TouchableOpacity>
         </View>
       </View>
     </View>
   );
 
   if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#DC2626" />
-      </View>
-    );
+    return <BurnoutLoader text="جاري تحميل المنتجات..." />;
   }
 
   return (

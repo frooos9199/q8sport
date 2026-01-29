@@ -9,9 +9,12 @@ import {
   Alert,
   RefreshControl,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../../contexts/AuthContext';
+import apiClient from '../../services/apiClient';
+import API_CONFIG from '../../config/api';
 
 const ManageShowcasesScreen = ({ navigation }) => {
+  const { token } = useAuth();
   const [showcases, setShowcases] = useState([]);
   const [allShowcases, setAllShowcases] = useState([]);
   const [filter, setFilter] = useState('PENDING'); // PENDING, APPROVED, ALL
@@ -24,35 +27,15 @@ const ManageShowcasesScreen = ({ navigation }) => {
 
   const fetchPendingShowcases = async () => {
     try {
-      // جلب العروض المعتمدة
-      const approved = await AsyncStorage.getItem('approvedShowcases');
-      const approvedList = approved ? JSON.parse(approved) : [];
-      
-      // البيانات الوهمية المعلقة
-      const pendingData = [
-        {
-          id: '5',
-          carBrand: 'Porsche',
-          carModel: '911 Turbo S',
-          carYear: 2024,
-          horsepower: 640,
-          description: 'بورش 911 تيربو معدلة بالكامل',
-          images: JSON.stringify([
-            'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800'
-          ]),
-          status: 'PENDING',
-          user: {
-            name: 'سعود الشمري',
-            avatar: 'https://i.pravatar.cc/150?img=15'
-          },
-          createdAt: new Date().toISOString()
-        }
-      ];
-
-      const all = [...pendingData, ...approvedList];
+      console.log('🔍 Fetching showcases with token:', !!token);
+      const res = await apiClient.get(API_CONFIG.ENDPOINTS.SHOWCASES);
+      console.log('✅ Showcases response:', res.data);
+      const all = res.data.showcases || [];
+      console.log('Total showcases:', all.length);
+      console.log('PENDING:', all.filter(s => s.status === 'PENDING').length);
+      console.log('APPROVED:', all.filter(s => s.status === 'APPROVED').length);
       setAllShowcases(all);
       
-      // تطبيق الفلتر
       if (filter === 'PENDING') {
         setShowcases(all.filter(s => s.status === 'PENDING'));
       } else if (filter === 'APPROVED') {
@@ -61,7 +44,8 @@ const ManageShowcasesScreen = ({ navigation }) => {
         setShowcases(all);
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('❌ Error fetching showcases:', error);
+      console.error('Error response:', error?.response?.data);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -78,15 +62,10 @@ const ManageShowcasesScreen = ({ navigation }) => {
           text: 'موافقة',
           onPress: async () => {
             try {
-              // حفظ العرض في AsyncStorage
-              const approved = await AsyncStorage.getItem('approvedShowcases');
-              const approvedList = approved ? JSON.parse(approved) : [];
-              const newItem = { ...item, status: 'APPROVED' };
-              approvedList.push(newItem);
-              await AsyncStorage.setItem('approvedShowcases', JSON.stringify(approvedList));
-              
-              // حذف من القائمة
-              setShowcases(showcases.filter(s => s.id !== item.id));
+              await apiClient.patch(`${API_CONFIG.ENDPOINTS.SHOWCASES}/${item.id}`, {
+                status: 'APPROVED'
+              });
+              fetchPendingShowcases();
               Alert.alert('✅', 'تمت الموافقة على العرض بنجاح');
             } catch (error) {
               Alert.alert('خطأ', 'حدث خطأ أثناء الموافقة');
@@ -106,9 +85,14 @@ const ManageShowcasesScreen = ({ navigation }) => {
         {
           text: 'رفض',
           style: 'destructive',
-          onPress: () => {
-            setShowcases(showcases.filter(s => s.id !== id));
-            Alert.alert('❌', 'تم رفض العرض');
+          onPress: async () => {
+            try {
+              await apiClient.delete(`${API_CONFIG.ENDPOINTS.SHOWCASES}/${id}`);
+              fetchPendingShowcases();
+              Alert.alert('❌', 'تم رفض العرض');
+            } catch (error) {
+              Alert.alert('خطأ', 'حدث خطأ أثناء الرفض');
+            }
           }
         }
       ]
@@ -126,13 +110,8 @@ const ManageShowcasesScreen = ({ navigation }) => {
           style: 'destructive',
           onPress: async () => {
             try {
-              const approved = await AsyncStorage.getItem('approvedShowcases');
-              if (approved) {
-                const approvedList = JSON.parse(approved);
-                const updated = approvedList.filter(s => s.id !== id);
-                await AsyncStorage.setItem('approvedShowcases', JSON.stringify(updated));
-              }
-              setShowcases(showcases.filter(s => s.id !== id));
+              await apiClient.delete(`${API_CONFIG.ENDPOINTS.SHOWCASES}/${id}`);
+              fetchPendingShowcases();
               Alert.alert('✅', 'تم حذف العرض');
             } catch (error) {
               Alert.alert('خطأ', 'حدث خطأ أثناء الحذف');

@@ -2,11 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth'
 
-// GET - جلب جميع العروض المعتمدة
-export async function GET() {
+// GET - جلب جميع العروض (للأدمن) أو المعتمدة فقط (للمستخدمين)
+export async function GET(request: NextRequest) {
   try {
+    const user = await verifyToken(request)
+    const isAdmin = user?.role === 'ADMIN'
+
     const showcases = await prisma.showcase.findMany({
-      where: {
+      where: isAdmin ? {} : {
         status: 'APPROVED'
       },
       include: {

@@ -21,17 +21,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 const ProfileScreen = ({ navigation }) => {
   const { user, logout } = useAuth();
 
-  useEffect(() => {
-    console.log('👤 ProfileScreen: User data:', {
-      hasUser: !!user,
-      userName: user?.name,
-      userEmail: user?.email,
-      userRole: user?.role
-    });
-  }, [user]);
-
   const handleLogout = async () => {
-    console.log('🚪 ProfileScreen: Logging out...');
     await logout();
   };
 

@@ -59,37 +59,23 @@ const AddShowcaseScreen = ({ navigation }) => {
     setLoading(true);
 
     try {
-      // رفع الصور
-      const formData = new FormData();
-      images.forEach((image, index) => {
-        formData.append('images', {
-          uri: image,
-          type: 'image/jpeg',
-          name: `showcase_${Date.now()}_${index}.jpg`,
-        });
-      });
-
-      const uploadResponse = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.UPLOAD}`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      const uploadData = await uploadResponse.json();
-      if (!uploadData.success) {
-        throw new Error('فشل رفع الصور');
-      }
-
-      // إرسال العرض
+      console.log('📤 Sending showcase data...');
+      console.log('Images:', images);
+      
       const showcaseData = {
         carBrand: carBrand || customBrand,
         carModel,
         carYear: parseInt(carYear),
         horsepower: horsepower ? parseInt(horsepower) : null,
         description,
-        images: JSON.stringify(uploadData.files || []),
+        images: JSON.stringify(images),
       };
 
-      await apiClient.post(API_CONFIG.ENDPOINTS.SHOWCASES, showcaseData);
+      console.log('Showcase data:', showcaseData);
+
+      const response = await apiClient.post(API_CONFIG.ENDPOINTS.SHOWCASES, showcaseData);
+      
+      console.log('✅ Response:', response.data);
 
       setLoading(false);
       Alert.alert(
@@ -104,8 +90,9 @@ const AddShowcaseScreen = ({ navigation }) => {
       );
     } catch (error) {
       setLoading(false);
-      console.error('Error:', error);
-      Alert.alert('خطأ', error.message || 'حدث خطأ أثناء الإرسال');
+      console.error('❌ Error:', error);
+      console.error('Error response:', error?.response?.data);
+      Alert.alert('خطأ', error?.response?.data?.error || error.message || 'حدث خطأ أثناء الإرسال');
     }
   };
 

@@ -15,6 +15,7 @@ import {
   Modal,
   Pressable,
 } from 'react-native';
+import BurnoutLoader from '../../components/BurnoutLoader';
 import { ProductService } from '../../services/api/products';
 import { CarIcon, PartsIcon, AccessoryIcon, FavoriteIcon } from '../../components/Icons';
 import { useAuth } from '../../contexts/AuthContext';
@@ -253,12 +254,7 @@ const HomeScreen = ({ navigation }) => {
   );
 
   if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#DC2626" />
-        <Text style={styles.loadingText}>جاري التحميل...</Text>
-      </View>
-    );
+    return <BurnoutLoader text="جاري تحميل السيارات..." />;
   }
 
   return (

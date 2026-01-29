@@ -19,12 +19,14 @@ export const GET = requireAdmin(async (request: AuthenticatedRequest) => {
       if (statusParam === 'PENDING') {
         // This project doesn't have a PENDING status in Prisma. We treat INACTIVE as pending/moderation.
         where.status = 'INACTIVE';
+      } else if (statusParam === 'ACTIVE') {
+        where.status = 'ACTIVE';
       } else {
         where.status = statusParam as any;
       }
     } else {
-      // Default: hide deleted
-      where.status = { not: 'DELETED' };
+      // Default: show ACTIVE and INACTIVE (PENDING), hide DELETED and SOLD
+      where.status = { in: ['ACTIVE', 'INACTIVE'] };
     }
 
     if (search && search.trim()) {
