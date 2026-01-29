@@ -66,22 +66,41 @@ const AddShowcaseScreen = ({ navigation }) => {
       for (let i = 0; i < images.length; i++) {
         const imageUri = images[i];
         console.log(`📤 Uploading image ${i + 1}/${images.length}...`);
+        console.log('Image URI:', imageUri);
         
         const formData = new FormData();
-        formData.append('file', {
+        
+        // React Native FormData format
+        const imageData = {
           uri: imageUri,
           type: 'image/jpeg',
           name: `showcase_${Date.now()}_${i}.jpg`,
-        });
+        };
+        
+        console.log('Image data to upload:', imageData);
+        formData.append('file', imageData);
 
         try {
+          console.log('Sending request to:', `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.UPLOAD}`);
+          
           const uploadResponse = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.UPLOAD}`, {
             method: 'POST',
             body: formData,
             // لا تضع Content-Type header - سيتم تعيينه تلقائياً
           });
 
-          const uploadResult = await uploadResponse.json();
+          console.log('Upload response status:', uploadResponse.status);
+          const responseText = await uploadResponse.text();
+          console.log('Upload response text:', responseText);
+          
+          let uploadResult;
+          try {
+            uploadResult = JSON.parse(responseText);
+          } catch (parseError) {
+            console.error('Failed to parse response:', parseError);
+            throw new Error('استجابة غير صحيحة من السيرفر');
+          }
+          
           console.log('Upload result:', uploadResult);
           
           if (uploadResult.success && uploadResult.url) {
