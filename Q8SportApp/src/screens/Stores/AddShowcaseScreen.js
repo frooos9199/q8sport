@@ -11,10 +11,14 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
+import { useAuth } from '../../contexts/AuthContext';
+import apiClient from '../../services/apiClient';
+import API_CONFIG from '../../config/api';
 
 const CAR_BRANDS = ['Ford', 'Chevrolet', 'Dodge', 'BMW', 'Mercedes', 'Porsche', 'Toyota', 'Nissan'];
 
 const AddShowcaseScreen = ({ navigation }) => {
+  const { token } = useAuth();
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState([]);
   const [carBrand, setCarBrand] = useState('');
@@ -54,8 +58,39 @@ const AddShowcaseScreen = ({ navigation }) => {
 
     setLoading(true);
 
-    // محاكاة الإرسال - سيتم استبداله بـ API call
-    setTimeout(() => {
+    try {
+      // رفع الصور
+      const formData = new FormData();
+      images.forEach((image, index) => {
+        formData.append('images', {
+          uri: image,
+          type: 'image/jpeg',
+          name: `showcase_${Date.now()}_${index}.jpg`,
+        });
+      });
+
+      const uploadResponse = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.UPLOAD}`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const uploadData = await uploadResponse.json();
+      if (!uploadData.success) {
+        throw new Error('فشل رفع الصور');
+      }
+
+      // إرسال العرض
+      const showcaseData = {
+        carBrand: carBrand || customBrand,
+        carModel,
+        carYear: parseInt(carYear),
+        horsepower: horsepower ? parseInt(horsepower) : null,
+        description,
+        images: JSON.stringify(uploadData.files || []),
+      };
+
+      await apiClient.post(API_CONFIG.ENDPOINTS.SHOWCASES, showcaseData);
+
       setLoading(false);
       Alert.alert(
         'تم الإرسال بنجاح! ✅',
@@ -67,7 +102,11 @@ const AddShowcaseScreen = ({ navigation }) => {
           }
         ]
       );
-    }, 1500);
+    } catch (error) {
+      setLoading(false);
+      console.error('Error:', error);
+      Alert.alert('خطأ', error.message || 'حدث خطأ أثناء الإرسال');
+    }
   };
 
   return (
