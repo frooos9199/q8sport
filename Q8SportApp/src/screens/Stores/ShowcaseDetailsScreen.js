@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,9 +9,15 @@ import {
   TouchableOpacity,
   FlatList,
   Alert,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  Share,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import AdminService from '../../services/AdminService';
+import apiClient from '../../services/apiClient';
+import API_CONFIG from '../../config/api';
 
 const { width } = Dimensions.get('window');
 
@@ -21,15 +27,64 @@ const ShowcaseDetailsScreen = ({ route, navigation }) => {
   const images = showcase.images ? JSON.parse(showcase.images) : [];
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [liked, setLiked] = useState(false);
+  const [comments, setComments] = useState(showcase.showcaseComments || []);
+  const [newComment, setNewComment] = useState('');
+  const [showCommentInput, setShowCommentInput] = useState(false);
   const isAdmin = user?.role === 'ADMIN';
   const isPending = showcase.status === 'PENDING';
 
-  const handleLike = () => {
+  const handleLike = async () => {
     if (!isAuthenticated) {
       navigation.navigate('Auth');
       return;
     }
-    setLiked(!liked);
+    
+    try {
+      if (liked) {
+        await apiClient.delete(`${API_CONFIG.ENDPOINTS.SHOWCASES}/${showcase.id}/like`);
+      } else {
+        await apiClient.post(`${API_CONFIG.ENDPOINTS.SHOWCASES}/${showcase.id}/like`);
+      }
+      setLiked(!liked);
+    } catch (error) {
+      Alert.alert('خطأ', 'فشل الإعجاب');
+    }
+  };
+
+  const handleComment = () => {
+    if (!isAuthenticated) {
+      navigation.navigate('Auth');
+      return;
+    }
+    setShowCommentInput(true);
+  };
+
+  const handleAddComment = async () => {
+    if (!newComment.trim()) return;
+    
+    try {
+      const response = await apiClient.post(
+        `${API_CONFIG.ENDPOINTS.SHOWCASES}/${showcase.id}/comments`,
+        { comment: newComment }
+      );
+      setComments([response.data.comment, ...comments]);
+      setNewComment('');
+      setShowCommentInput(false);
+      Alert.alert('✅', 'تم إضافة التعليق');
+    } catch (error) {
+      Alert.alert('خطأ', 'فشل إضافة التعليق');
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: `شاهد ${showcase.carBrand} ${showcase.carModel} ${showcase.carYear} على تطبيق Q8Sport!`,
+        url: `https://www.q8sportcar.com/showcases/${showcase.id}`,
+      });
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const handleApprove = () => {
@@ -209,8 +264,37 @@ const ShowcaseDetailsScreen = ({ route, navigation }) => {
         {/* التعليقات */}
         <View style={styles.commentsSection}>
           <Text style={styles.sectionTitle}>💬 التعليقات</Text>
-          {showcase.showcaseComments && showcase.showcaseComments.length > 0 ? (
-            showcase.showcaseComments.map((comment) => (
+          
+          {showCommentInput && (
+            <View style={styles.commentInputContainer}>
+              <TextInput
+                style={styles.commentInput}
+                placeholder="اكتب تعليقك..."
+                placeholderTextColor="#666"
+                value={newComment}
+                onChangeText={setNewComment}
+                multiline
+              />
+              <View style={styles.commentInputActions}>
+                <TouchableOpacity
+                  style={styles.commentCancelBtn}
+                  onPress={() => {
+                    setShowCommentInput(false);
+                    setNewComment('');
+                  }}>
+                  <Text style={styles.commentCancelText}>إلغاء</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.commentSendBtn}
+                  onPress={handleAddComment}>
+                  <Text style={styles.commentSendText}>إرسال</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+          
+          {comments && comments.length > 0 ? (
+            comments.map((comment) => (
               <View key={comment.id} style={styles.commentItem}>
                 <View style={styles.commentHeader}>
                   <Text style={styles.commentUser}>{comment.user?.name}</Text>
@@ -260,12 +344,12 @@ const ShowcaseDetailsScreen = ({ route, navigation }) => {
             <Text style={styles.actionBtnText}>إعجاب</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionBtn}>
+          <TouchableOpacity style={styles.actionBtn} onPress={handleComment}>
             <Text style={styles.actionBtnIcon}>💬</Text>
             <Text style={styles.actionBtnText}>تعليق</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionBtn}>
+          <TouchableOpacity style={styles.actionBtn} onPress={handleShare}>
             <Text style={styles.actionBtnIcon}>📤</Text>
             <Text style={styles.actionBtnText}>مشاركة</Text>
           </TouchableOpacity>
@@ -479,6 +563,49 @@ const styles = StyleSheet.create({
   },
   deleteCommentIcon: {
     fontSize: 18,
+  },
+  commentInputContainer: {
+    backgroundColor: '#1a1a1a',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  commentInput: {
+    backgroundColor: '#0a0a0a',
+    borderRadius: 8,
+    padding: 12,
+    color: '#fff',
+    fontSize: 14,
+    minHeight: 80,
+    textAlignVertical: 'top',
+    marginBottom: 12,
+  },
+  commentInputActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 8,
+  },
+  commentCancelBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: '#333',
+  },
+  commentCancelText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  commentSendBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: '#DC2626',
+  },
+  commentSendText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   actionsBar: {
     position: 'absolute',
