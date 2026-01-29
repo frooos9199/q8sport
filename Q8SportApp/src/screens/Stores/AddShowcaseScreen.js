@@ -59,8 +59,36 @@ const AddShowcaseScreen = ({ navigation }) => {
     setLoading(true);
 
     try {
-      console.log('📤 Sending showcase data...');
-      console.log('Images:', images);
+      console.log('📤 Uploading images first...');
+      
+      // رفع الصور أولاً
+      const uploadedImageUrls = [];
+      for (const imageUri of images) {
+        const formData = new FormData();
+        formData.append('file', {
+          uri: imageUri,
+          type: 'image/jpeg',
+          name: `showcase_${Date.now()}.jpg`,
+        });
+
+        const uploadResponse = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.UPLOAD}`, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+
+        const uploadResult = await uploadResponse.json();
+        if (uploadResult.success && uploadResult.url) {
+          uploadedImageUrls.push(uploadResult.url);
+          console.log('✅ Image uploaded:', uploadResult.url);
+        } else {
+          throw new Error('فشل رفع الصورة');
+        }
+      }
+
+      console.log('📤 Sending showcase data with uploaded images...');
       
       const showcaseData = {
         carBrand: carBrand || customBrand,
@@ -68,7 +96,7 @@ const AddShowcaseScreen = ({ navigation }) => {
         carYear: parseInt(carYear),
         horsepower: horsepower ? parseInt(horsepower) : null,
         description,
-        images: JSON.stringify(images),
+        images: JSON.stringify(uploadedImageUrls),
       };
 
       console.log('Showcase data:', showcaseData);

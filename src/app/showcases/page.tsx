@@ -47,6 +47,12 @@ export default function ShowcasesPage() {
       const imageArray = JSON.parse(images);
       const firstImage = imageArray[0] || '/placeholder-car.jpg';
       
+      // تحقق من صحة الرابط
+      if (!firstImage || firstImage.includes('file:///') || firstImage.includes('var/mobile')) {
+        // رابط محلي من الموبايل - استخدم صورة افتراضية
+        return 'https://via.placeholder.com/400x300/1a1a1a/DC2626?text=Car+Show';
+      }
+      
       // إذا كان الرابط من Cloudinary أو رابط خارجي، أرجعه مباشرة
       if (firstImage.startsWith('http://') || firstImage.startsWith('https://')) {
         return firstImage;
@@ -60,7 +66,7 @@ export default function ShowcasesPage() {
       // للمسارات المحلية
       return firstImage.startsWith('/') ? firstImage : `/uploads/${firstImage}`;
     } catch {
-      return '/placeholder-car.jpg';
+      return 'https://via.placeholder.com/400x300/1a1a1a/DC2626?text=Car+Show';
     }
   };
 

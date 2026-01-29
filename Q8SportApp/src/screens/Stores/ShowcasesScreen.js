@@ -29,7 +29,15 @@ const ShowcaseCard = ({ item, onPress }) => {
     images = [];
   }
   
-  // إضافة صورة افتراضية إذا لم توجد صور
+  // تصفية الصور غير الصالحة (المسارات المحلية)
+  images = images.filter(img => 
+    img && 
+    !img.includes('file:///') && 
+    !img.includes('var/mobile') &&
+    (img.startsWith('http://') || img.startsWith('https://') || img.startsWith('data:image/'))
+  );
+  
+  // إضافة صورة افتراضية إذا لم توجد صور صالحة
   if (!images || images.length === 0) {
     images = ['https://via.placeholder.com/400x500/1a1a1a/DC2626?text=No+Image'];
   }
