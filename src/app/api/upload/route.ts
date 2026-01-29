@@ -78,23 +78,6 @@ export async function POST(req: NextRequest) {
         }, { status: 500 });
       }
     }
-        .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
-        .webp({ quality: 85 })
-        .toBuffer();
-
-      // رفع على Cloudinary
-      const base64Image = `data:image/webp;base64,${optimizedBuffer.toString('base64')}`;
-      const result = await cloudinary.uploader.upload(base64Image, {
-        folder: process.env.CLOUDINARY_FOLDER || 'q8sport',
-        transformation: [{ quality: 'auto' }, { fetch_format: 'auto' }]
-      });
-
-      results.push({
-        url: result.secure_url,
-        publicId: result.public_id,
-        size: result.bytes,
-      });
-    }
 
     return NextResponse.json({
       success: true,
