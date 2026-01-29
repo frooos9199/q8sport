@@ -130,6 +130,9 @@ export default function Home() {
                 <Link href="/auctions" className="text-gray-200 hover:text-white font-semibold transition-colors">
                   المزادات
                 </Link>
+                <Link href="/showcases" className="text-gray-200 hover:text-white font-semibold transition-colors">
+                  Car Show
+                </Link>
                 <Link href="/requests" className="text-gray-200 hover:text-white font-semibold transition-colors">
                   المطلوبات
                 </Link>
