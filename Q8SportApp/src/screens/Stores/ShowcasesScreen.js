@@ -9,10 +9,9 @@ import {
   Dimensions,
   ActivityIndicator,
   RefreshControl,
-  ScrollView,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import API_CONFIG from '../../config/api';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
@@ -71,114 +70,22 @@ const ShowcasesScreen = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    // بيانات وهمية للعرض
-    const dummyData = [
-      {
-        id: '1',
-        carBrand: 'Ford',
-        carModel: 'Mustang GT',
-        carYear: 2024,
-        horsepower: 500,
-        description: 'سيارة معدلة بالكامل مع تيربو وعادم كامل',
-        images: JSON.stringify([
-          'https://images.unsplash.com/photo-1584345604476-8ec5f5d3e0c0?w=800',
-          'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800'
-        ]),
-        status: 'APPROVED',
-        likes: 234,
-        views: 1520,
-        user: {
-          id: '1',
-          name: 'أحمد الكويتي',
-          avatar: 'https://i.pravatar.cc/150?img=12'
-        },
-        showcaseComments: [{}, {}, {}]
-      },
-      {
-        id: '2',
-        carBrand: 'Chevrolet',
-        carModel: 'Corvette C8',
-        carYear: 2023,
-        horsepower: 650,
-        description: 'كورفيت C8 معدلة بالكامل',
-        images: JSON.stringify([
-          'https://images.unsplash.com/photo-1617531653332-bd46c24f2068?w=800'
-        ]),
-        status: 'APPROVED',
-        likes: 189,
-        views: 890,
-        user: {
-          id: '2',
-          name: 'محمد العنزي',
-          avatar: 'https://i.pravatar.cc/150?img=33'
-        },
-        showcaseComments: [{}, {}]
-      },
-      {
-        id: '3',
-        carBrand: 'Dodge',
-        carModel: 'Challenger SRT',
-        carYear: 2024,
-        horsepower: 717,
-        description: 'تشالنجر هيلكات معدلة',
-        images: JSON.stringify([
-          'https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=800'
-        ]),
-        status: 'APPROVED',
-        likes: 456,
-        views: 2340,
-        user: {
-          id: '3',
-          name: 'خالد المطيري',
-          avatar: 'https://i.pravatar.cc/150?img=52'
-        },
-        showcaseComments: [{}, {}, {}, {}, {}]
-      },
-      {
-        id: '4',
-        carBrand: 'BMW',
-        carModel: 'M4 Competition',
-        carYear: 2023,
-        horsepower: 510,
-        description: 'M4 كومبتيشن مع كت كامل',
-        images: JSON.stringify([
-          'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800'
-        ]),
-        status: 'APPROVED',
-        likes: 312,
-        views: 1670,
-        user: {
-          id: '4',
-          name: 'فهد الدوسري',
-          avatar: 'https://i.pravatar.cc/150?img=68'
-        },
-        showcaseComments: [{}]
-      }
-    ];
-    
-    // جلب العروض المعتمدة من AsyncStorage
-    const loadApprovedShowcases = async () => {
-      try {
-        const approved = await AsyncStorage.getItem('approvedShowcases');
-        if (approved) {
-          const approvedList = JSON.parse(approved);
-          setShowcases([...dummyData, ...approvedList]);
-        } else {
-          setShowcases(dummyData);
-        }
-      } catch (error) {
-        setShowcases(dummyData);
-      }
-      setLoading(false);
-      setRefreshing(false);
-    };
-    
-    loadApprovedShowcases();
+    fetchShowcases();
   }, []);
 
   const fetchShowcases = async () => {
-    // سيتم استبدالها بـ API call لاحقاً
-    setRefreshing(false);
+    try {
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SHOWCASES}`);
+      if (response.ok) {
+        const data = await response.json();
+        setShowcases(data.showcases || []);
+      }
+    } catch (error) {
+      console.error('Error fetching showcases:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   };
 
   const onRefresh = () => {
