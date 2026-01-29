@@ -13,12 +13,13 @@ import {
 import { launchImageLibrary } from 'react-native-image-picker';
 import { Picker } from '@react-native-picker/picker';
 
-const CAR_BRANDS = ['Ford', 'Chevrolet', 'Dodge', 'BMW', 'Mercedes', 'Porsche', 'Toyota', 'Nissan'];
+const CAR_BRANDS = ['Ford', 'Chevrolet', 'Dodge', 'BMW', 'Mercedes', 'Porsche', 'Toyota', 'Nissan', 'أخرى'];
 
 const AddShowcaseScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState([]);
   const [carBrand, setCarBrand] = useState('');
+  const [customBrand, setCustomBrand] = useState('');
   const [carModel, setCarModel] = useState('');
   const [carYear, setCarYear] = useState('');
   const [horsepower, setHorsepower] = useState('');
@@ -49,6 +50,11 @@ const AddShowcaseScreen = ({ navigation }) => {
 
     if (!carBrand || !carModel || !carYear || !description) {
       Alert.alert('تنبيه', 'يرجى ملء جميع الحقول المطلوبة');
+      return;
+    }
+
+    if (carBrand === 'أخرى' && !customBrand.trim()) {
+      Alert.alert('تنبيه', 'يرجى كتابة اسم الماركة');
       return;
     }
 
@@ -113,7 +119,12 @@ const AddShowcaseScreen = ({ navigation }) => {
           <View style={styles.pickerContainer}>
             <Picker
               selectedValue={carBrand}
-              onValueChange={setCarBrand}
+              onValueChange={(value) => {
+                setCarBrand(value);
+                if (value !== 'أخرى') {
+                  setCustomBrand('');
+                }
+              }}
               style={styles.picker}>
               <Picker.Item label="اختر الماركة" value="" />
               {CAR_BRANDS.map(brand => (
@@ -121,6 +132,16 @@ const AddShowcaseScreen = ({ navigation }) => {
               ))}
             </Picker>
           </View>
+          
+          {carBrand === 'أخرى' && (
+            <TextInput
+              style={[styles.input, { marginTop: 12 }]}
+              placeholder="اكتب اسم الماركة"
+              placeholderTextColor="#666"
+              value={customBrand}
+              onChangeText={setCustomBrand}
+            />
+          )}
         </View>
 
         {/* موديل السيارة */}
