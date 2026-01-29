@@ -395,6 +395,9 @@ const AddProductScreen = ({ navigation }) => {
           placeholderTextColor="#666"
           value={formData.brand}
           onChangeText={(text) => setFormData({ ...formData, brand: text })}
+          editable={true}
+          autoCapitalize="words"
+          returnKeyType="next"
         />
         <View style={styles.brandsChips}>
           {popularBrands.slice(0, 6).map((brand) => (
