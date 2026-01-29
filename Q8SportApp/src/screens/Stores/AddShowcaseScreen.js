@@ -63,28 +63,37 @@ const AddShowcaseScreen = ({ navigation }) => {
       
       // رفع الصور أولاً
       const uploadedImageUrls = [];
-      for (const imageUri of images) {
+      for (let i = 0; i < images.length; i++) {
+        const imageUri = images[i];
+        console.log(`📤 Uploading image ${i + 1}/${images.length}...`);
+        
         const formData = new FormData();
         formData.append('file', {
           uri: imageUri,
           type: 'image/jpeg',
-          name: `showcase_${Date.now()}.jpg`,
+          name: `showcase_${Date.now()}_${i}.jpg`,
         });
 
-        const uploadResponse = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.UPLOAD}`, {
-          method: 'POST',
-          body: formData,
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
+        try {
+          const uploadResponse = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.UPLOAD}`, {
+            method: 'POST',
+            body: formData,
+            // لا تضع Content-Type header - سيتم تعيينه تلقائياً
+          });
 
-        const uploadResult = await uploadResponse.json();
-        if (uploadResult.success && uploadResult.url) {
-          uploadedImageUrls.push(uploadResult.url);
-          console.log('✅ Image uploaded:', uploadResult.url);
-        } else {
-          throw new Error('فشل رفع الصورة');
+          const uploadResult = await uploadResponse.json();
+          console.log('Upload result:', uploadResult);
+          
+          if (uploadResult.success && uploadResult.url) {
+            uploadedImageUrls.push(uploadResult.url);
+            console.log(`✅ Image ${i + 1} uploaded:`, uploadResult.url);
+          } else {
+            console.error('Upload failed:', uploadResult);
+            throw new Error(uploadResult.error || 'فشل رفع الصورة');
+          }
+        } catch (uploadError) {
+          console.error('Upload error:', uploadError);
+          throw new Error(`فشل رفع الصورة ${i + 1}: ${uploadError.message}`);
         }
       }
 
