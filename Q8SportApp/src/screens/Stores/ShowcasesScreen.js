@@ -29,12 +29,11 @@ const ShowcaseCard = ({ item, onPress }) => {
     images = [];
   }
   
-  // تصفية الصور غير الصالحة (المسارات المحلية)
+  // تصفية الصور غير الصالحة (المسارات المحلية من الموبايل فقط)
   images = images.filter(img => 
     img && 
     !img.includes('file:///') && 
-    !img.includes('var/mobile') &&
-    (img.startsWith('http://') || img.startsWith('https://') || img.startsWith('data:image/'))
+    !img.includes('var/mobile')
   );
   
   // إضافة صورة افتراضية إذا لم توجد صور صالحة
