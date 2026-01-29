@@ -73,10 +73,31 @@ const RequestsScreen = ({ navigation }) => {
     }
   };
 
-  const renderRequest = ({ item }) => (
-    <View style={styles.requestCard}>
-      <View style={styles.requestContent}>
-        <View style={styles.requestHeader}>
+  const renderRequest = ({ item }) => {
+    // Parse images safely
+    let images = [];
+    try {
+      if (item.images) {
+        images = typeof item.images === 'string' ? JSON.parse(item.images) : item.images;
+      }
+    } catch (error) {
+      console.error('Error parsing images:', error);
+    }
+    
+    const hasImage = images && images.length > 0 && images[0];
+    
+    return (
+      <View style={styles.requestCard}>
+        {hasImage && (
+          <Image
+            source={{ uri: images[0] }}
+            style={styles.requestImage}
+            defaultSource={require('../../../assets/images/icon.png')}
+            resizeMode="cover"
+          />
+        )}
+        <View style={styles.requestContent}>
+          <View style={styles.requestHeader}>
           <Text style={styles.requestTitle}>{item.title}</Text>
           <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
             <Text style={styles.statusText}>{getStatusText(item.status)}</Text>
@@ -123,7 +144,8 @@ const RequestsScreen = ({ navigation }) => {
         </View>
       </View>
     </View>
-  );
+    );
+  };
 
   const EmptyState = () => (
     <View style={styles.emptyContainer}>

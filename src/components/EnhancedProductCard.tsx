@@ -56,8 +56,17 @@ export default function EnhancedProductCard({ product }: EnhancedProductCardProp
   }
 
   const getImageUrl = (imageData: string) => {
+    // إذا كان الرابط من Cloudinary أو رابط خارجي، أرجعه مباشرة
+    if (imageData.startsWith('http://') || imageData.startsWith('https://')) {
+      return imageData
+    }
+    
+    // إذا كان base64
     if (imageData.startsWith('data:')) return imageData
+    
+    // للمسارات المحلية
     if (imageData.startsWith('/')) return imageData
+    
     return `/uploads/${imageData}`
   }
 

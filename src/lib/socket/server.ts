@@ -27,7 +27,12 @@ export class SocketManager {
           throw new Error('No token provided');
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+        const secret = process.env.JWT_SECRET;
+        if (!secret) {
+          throw new Error('JWT_SECRET is not configured');
+        }
+
+        const decoded = jwt.verify(token, secret) as { userId: string };
         const user = await prisma.user.findUnique({
           where: { id: decoded.userId },
           select: { id: true, email: true, name: true, role: true, status: true }
@@ -47,18 +52,14 @@ export class SocketManager {
 
   private setupEventHandlers() {
     this.io.on('connection', (socket) => {
-      console.log(`User connected: ${socket.data.user.email}`);
-
       // Join auction room
       socket.on('join_auction', (auctionId: string) => {
         socket.join(`auction_${auctionId}`);
-        console.log(`User ${socket.data.user.email} joined auction ${auctionId}`);
       });
 
       // Leave auction room
       socket.on('leave_auction', (auctionId: string) => {
         socket.leave(`auction_${auctionId}`);
-        console.log(`User ${socket.data.user.email} left auction ${auctionId}`);
       });
 
       // Handle new bid
@@ -126,10 +127,10 @@ export class SocketManager {
             }
           });
 
-          console.log(`New bid placed: ${amount} by ${socket.data.user.email} on auction ${auctionId}`);
-
         } catch (error) {
-          console.error('Bid error:', error);
+          if (process.env.NODE_ENV === 'development') {
+            console.error('Bid error:', error instanceof Error ? error.message : 'Unknown error');
+          }
           socket.emit('bid_error', { message: 'حدث خطأ في قبول المزايدة' });
         }
       });
@@ -150,7 +151,7 @@ export class SocketManager {
 
       // Handle disconnect
       socket.on('disconnect', () => {
-        console.log(`User disconnected: ${socket.data.user.email}`);
+        // User disconnected - cleanup if needed
       });
     });
   }
@@ -190,17 +191,17 @@ export class SocketManager {
         seller: auction.seller
       });
 
-      console.log(`Auction ${auctionId} ended`);
-
       // TODO: Send WhatsApp notifications to winner and seller
 
     } catch (error) {
-      console.error('Error ending auction:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error ending auction:', error instanceof Error ? error.message : 'Unknown error');
+      }
     }
   }
 
   // Send notification to specific user
-  public sendNotificationToUser(userId: string, notification: any) {
+  public sendNotificationToUser(userId: string, notification: Record<string, unknown>) {
     this.io.emit('user_notification', notification);
   }
 

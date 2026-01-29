@@ -91,7 +91,8 @@ export async function POST(req: NextRequest) {
       contactPhone,
       contactWhatsapp,
       phone,
-      whatsapp
+      whatsapp,
+      images
     } = body;
 
     // Validation
@@ -129,6 +130,7 @@ export async function POST(req: NextRequest) {
         condition: condition || null,
         budget: budget ? parseFloat(budget) : null,
         urgent: urgent || false,
+        images: images ? (typeof images === 'string' ? images : JSON.stringify(images)) : null,
         // Keep backward compat: accept phone/whatsapp but store normalized contact fields.
         contactPhone: contactPhone || phone || dbUser?.phone || null,
         contactWhatsapp: registeredWhatsapp,

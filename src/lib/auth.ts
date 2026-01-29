@@ -51,17 +51,30 @@ export function getTokenFromRequest(request: NextRequest): string | null {
   }
 }
 
+interface DecodedToken {
+  userId: string;
+  email: string;
+  iat?: number;
+  exp?: number;
+}
+
 export async function verifyToken(request: NextRequest) {
   try {
     const token = getTokenFromRequest(request);
     if (!token) {
-      console.log('No valid authorization token found');
       return null;
     }
-    console.log('Verifying token:', token.substring(0, 20) + '...');
+
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      throw new Error('JWT_SECRET is not configured');
+    }
     
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
-    console.log('Token decoded successfully, userId:', decoded.userId);
+    const decoded = jwt.verify(token, secret) as DecodedToken;
+    
+    if (!decoded.userId) {
+      return null;
+    }
     
     // Verify user still exists and is active
     const user = await prisma.user.findUnique({
@@ -80,11 +93,8 @@ export async function verifyToken(request: NextRequest) {
     });
 
     if (!user || user.status !== 'ACTIVE') {
-      console.log('User not found or not active');
       return null;
     }
-
-    console.log('Token verified successfully for user:', user.email);
     
     return {
       userId: user.id,
@@ -99,6 +109,9 @@ export async function verifyToken(request: NextRequest) {
       }
     };
   } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Auth error:', error instanceof Error ? error.message : 'Unknown error');
+    }
     return null;
   }
 }
@@ -108,9 +121,17 @@ export function getUserFromToken(request: NextRequest): UserPayload | null {
     const token = request.cookies.get('token')?.value
     if (!token) return null
 
-    const payload = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as UserPayload
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      throw new Error('JWT_SECRET is not configured');
+    }
+
+    const payload = jwt.verify(token, secret) as UserPayload
     return payload
   } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Get user from token error:', error instanceof Error ? error.message : 'Unknown error');
+    }
     return null
   }
 }
@@ -118,20 +139,14 @@ export function getUserFromToken(request: NextRequest): UserPayload | null {
 // دالة للتحقق من token string مباشرة
 export async function verifyTokenString(tokenString: string): Promise<{ userId: string; email: string } | null> {
   try {
-    console.log('🔐 Verifying token:', tokenString.substring(0, 30) + '...');
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      throw new Error('JWT_SECRET is not configured');
+    }
     
-    const secret = process.env.JWT_SECRET || 'your-secret-key';
-    console.log('🔑 Using JWT_SECRET:', secret ? `${secret.substring(0, 20)}...` : 'NOT SET');
-    
-    const decoded = jwt.verify(tokenString, secret) as any;
-    
-    console.log('✅ Token decoded successfully:', {
-      userId: decoded.userId,
-      email: decoded.email
-    });
+    const decoded = jwt.verify(tokenString, secret) as DecodedToken;
     
     if (!decoded.userId) {
-      console.error('❌ Token missing userId');
       return null;
     }
     
@@ -140,21 +155,28 @@ export async function verifyTokenString(tokenString: string): Promise<{ userId: 
       email: decoded.email
     };
   } catch (error) {
-    console.error('❌ Error verifying token:', error instanceof Error ? error.message : String(error));
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Verify token string error:', error instanceof Error ? error.message : 'Unknown error');
+    }
     return null;
   }
 }
 
-export function hasPermission(user: any, permission: string): boolean {
+interface UserWithPermissions {
+  role: string;
+  permissions?: Record<string, boolean>;
+}
+
+export function hasPermission(user: UserWithPermissions | null, permission: string): boolean {
   if (!user) return false
   
   // Admin has all permissions
   if (user.role === 'ADMIN') return true
   
-  return user.permissions && user.permissions[permission]
+  return user.permissions ? user.permissions[permission] === true : false
 }
 
-export function canAccessAdminPanel(user: any): boolean {
+export function canAccessAdminPanel(user: UserWithPermissions | null): boolean {
   if (!user) return false
   
   return user.role === 'ADMIN' || 
@@ -163,23 +185,23 @@ export function canAccessAdminPanel(user: any): boolean {
          hasPermission(user, 'canViewReports')
 }
 
-export function canManageProducts(user: any): boolean {
+export function canManageProducts(user: UserWithPermissions | null): boolean {
   return hasPermission(user, 'canManageProducts')
 }
 
-export function canManageUsers(user: any): boolean {
+export function canManageUsers(user: UserWithPermissions | null): boolean {
   return hasPermission(user, 'canManageUsers')
 }
 
-export function canViewReports(user: any): boolean {
+export function canViewReports(user: UserWithPermissions | null): boolean {
   return hasPermission(user, 'canViewReports')
 }
 
-export function canManageOrders(user: any): boolean {
+export function canManageOrders(user: UserWithPermissions | null): boolean {
   return hasPermission(user, 'canManageOrders')
 }
 
-export function canManageShop(user: any): boolean {
+export function canManageShop(user: UserWithPermissions | null): boolean {
   return hasPermission(user, 'canManageShop')
 }
 

@@ -102,7 +102,20 @@ export default function Home() {
   const getImageUrl = (images: string) => {
     try {
       const imageArray = JSON.parse(images);
-      return imageArray[0] || '/placeholder-car.jpg';
+      const firstImage = imageArray[0] || '/placeholder-car.jpg';
+      
+      // إذا كان الرابط من Cloudinary أو رابط خارجي، أرجعه مباشرة
+      if (firstImage.startsWith('http://') || firstImage.startsWith('https://')) {
+        return firstImage;
+      }
+      
+      // إذا كان base64
+      if (firstImage.startsWith('data:image/')) {
+        return firstImage;
+      }
+      
+      // للمسارات المحلية
+      return firstImage.startsWith('/') ? firstImage : `/uploads/${firstImage}`;
     } catch {
       return '/placeholder-car.jpg';
     }
