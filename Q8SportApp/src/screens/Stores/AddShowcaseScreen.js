@@ -11,9 +11,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
-import { Picker } from '@react-native-picker/picker';
 
-const CAR_BRANDS = ['Ford', 'Chevrolet', 'Dodge', 'BMW', 'Mercedes', 'Porsche', 'Toyota', 'Nissan', 'أخرى'];
+const CAR_BRANDS = ['Ford', 'Chevrolet', 'Dodge', 'BMW', 'Mercedes', 'Porsche', 'Toyota', 'Nissan'];
 
 const AddShowcaseScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
@@ -50,11 +49,6 @@ const AddShowcaseScreen = ({ navigation }) => {
 
     if (!carBrand || !carModel || !carYear || !description) {
       Alert.alert('تنبيه', 'يرجى ملء جميع الحقول المطلوبة');
-      return;
-    }
-
-    if (carBrand === 'أخرى' && !customBrand.trim()) {
-      Alert.alert('تنبيه', 'يرجى كتابة اسم الماركة');
       return;
     }
 
@@ -116,32 +110,39 @@ const AddShowcaseScreen = ({ navigation }) => {
         {/* ماركة السيارة */}
         <View style={styles.section}>
           <Text style={styles.label}>🚗 ماركة السيارة *</Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={carBrand}
-              onValueChange={(value) => {
-                setCarBrand(value);
-                if (value !== 'أخرى') {
+          <TextInput
+            style={styles.input}
+            placeholder="مثال: Ford"
+            placeholderTextColor="#666"
+            value={carBrand === 'أخرى' ? customBrand : carBrand}
+            onChangeText={(text) => {
+              setCarBrand(text);
+              setCustomBrand(text);
+            }}
+            editable={true}
+            autoCapitalize="words"
+            returnKeyType="next"
+          />
+          <Text style={styles.hint}>أو اختر من القائمة:</Text>
+          <View style={styles.brandsRow}>
+            {CAR_BRANDS.filter(b => b !== 'أخرى').map(brand => (
+              <TouchableOpacity
+                key={brand}
+                style={[
+                  styles.brandChip,
+                  carBrand === brand && styles.brandChipActive
+                ]}
+                onPress={() => {
+                  setCarBrand(brand);
                   setCustomBrand('');
-                }
-              }}
-              style={styles.picker}>
-              <Picker.Item label="اختر الماركة" value="" />
-              {CAR_BRANDS.map(brand => (
-                <Picker.Item key={brand} label={brand} value={brand} />
-              ))}
-            </Picker>
+                }}>
+                <Text style={[
+                  styles.brandChipText,
+                  carBrand === brand && styles.brandChipTextActive
+                ]}>{brand}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
-          
-          {carBrand === 'أخرى' && (
-            <TextInput
-              style={[styles.input, { marginTop: 12 }]}
-              placeholder="اكتب اسم الماركة"
-              placeholderTextColor="#666"
-              value={customBrand}
-              onChangeText={setCustomBrand}
-            />
-          )}
         </View>
 
         {/* موديل السيارة */}
@@ -255,6 +256,33 @@ const styles = StyleSheet.create({
     color: '#999',
     fontSize: 12,
     marginBottom: 12,
+    marginTop: 8,
+  },
+  brandsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
+  },
+  brandChip: {
+    backgroundColor: '#1a1a1a',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  brandChipActive: {
+    backgroundColor: '#DC2626',
+    borderColor: '#DC2626',
+  },
+  brandChipText: {
+    color: '#999',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  brandChipTextActive: {
+    color: '#fff',
   },
   imagesScroll: {
     marginTop: 8,
@@ -306,15 +334,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   pickerContainer: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#333',
-    overflow: 'hidden',
+    display: 'none',
   },
   picker: {
-    color: '#fff',
-    height: 50,
+    display: 'none',
   },
   input: {
     backgroundColor: '#1a1a1a',
