@@ -345,6 +345,11 @@ export default function AdminDashboard() {
                 <span className="text-white font-medium">إدارة الإعلانات</span>
               </Link>
               
+              <Link href="/admin/showcases" className="flex items-center justify-center p-4 bg-black border border-gray-800 hover:border-red-600 rounded-lg transition-colors">
+                <Car className="h-6 w-6 text-red-600 ml-2" />
+                <span className="text-white font-medium">إدارة Car Show</span>
+              </Link>
+              
               <Link href="/admin/shops" className="flex items-center justify-center p-4 bg-black border border-gray-800 hover:border-red-600 rounded-lg transition-colors">
                 <Store className="h-6 w-6 text-red-600 ml-2" />
                 <span className="text-white font-medium">إدارة أصحاب المحلات</span>
