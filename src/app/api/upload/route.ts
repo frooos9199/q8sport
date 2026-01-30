@@ -21,6 +21,22 @@ export async function POST(req: NextRequest) {
     const singleFile = formData.get('file') as File | null;
     
     console.log(`Files received - images: ${files.length}, file: ${singleFile ? 'yes' : 'no'}`);
+    
+    // Log file details
+    if (singleFile) {
+      console.log('Single file details:', {
+        name: singleFile.name,
+        type: singleFile.type,
+        size: singleFile.size
+      });
+    }
+    files.forEach((f, i) => {
+      console.log(`File ${i} details:`, {
+        name: f.name,
+        type: f.type,
+        size: f.size
+      });
+    });
 
     const uploadFiles = files.length > 0 ? files : singleFile ? [singleFile] : [];
 
@@ -71,10 +87,13 @@ export async function POST(req: NextRequest) {
         
         console.log(`✅ Image uploaded successfully: ${result.secure_url}`);
       } catch (fileError) {
-        console.error('Error processing file:', fileError);
+        console.error('❌ Error processing file:', fileError);
+        console.error('Error type:', typeof fileError);
+        console.error('Error stack:', fileError instanceof Error ? fileError.stack : 'No stack');
+        const errorMessage = fileError instanceof Error ? fileError.message : JSON.stringify(fileError);
         return NextResponse.json({ 
           success: false, 
-          error: `خطأ في معالجة الصورة: ${fileError instanceof Error ? fileError.message : 'خطأ غير معروف'}` 
+          error: `خطأ في معالجة الصورة: ${errorMessage}` 
         }, { status: 500 });
       }
     }
