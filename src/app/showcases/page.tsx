@@ -70,6 +70,13 @@ export default function ShowcasesPage() {
     }
   };
 
+  const getUserAvatar = (avatar?: string) => {
+    if (!avatar) {
+      return 'https://ui-avatars.com/api/?name=User&background=DC2626&color=fff&size=128';
+    }
+    return avatar;
+  };
+
   return (
     <div className="min-h-screen bg-black">
       {/* Header */}
@@ -133,15 +140,13 @@ export default function ShowcasesPage() {
 
                   <div className="p-5">
                     <div className="flex items-center mb-3">
-                      {showcase.user.avatar && (
-                        <Image
-                          src={showcase.user.avatar}
-                          alt={showcase.user.name}
-                          width={32}
-                          height={32}
-                          className="rounded-full border-2 border-red-600 mr-2"
-                        />
-                      )}
+                      <Image
+                        src={getUserAvatar(showcase.user.avatar)}
+                        alt={showcase.user.name}
+                        width={32}
+                        height={32}
+                        className="rounded-full border-2 border-red-600 mr-2"
+                      />
                       <span className="text-gray-400 text-sm">{showcase.user.name}</span>
                     </div>
 

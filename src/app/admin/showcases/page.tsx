@@ -97,6 +97,10 @@ export default function AdminShowcasesPage() {
     }
   };
 
+  const getUserAvatar = (name: string) => {
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=DC2626&color=fff&size=128`;
+  };
+
   const filteredShowcases = filter === 'ALL' 
     ? showcases 
     : showcases.filter(s => s.status === filter);
