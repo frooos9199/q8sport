@@ -210,10 +210,18 @@ const ShowcaseDetailsScreen = ({ route, navigation }) => {
 
         {/* معلومات المالك */}
         <View style={styles.ownerSection}>
-          <Image
-            source={{ uri: showcase.user?.avatar }}
-            style={styles.ownerAvatar}
-          />
+          {showcase.user?.avatar ? (
+            <Image
+              source={{ uri: showcase.user.avatar }}
+              style={styles.ownerAvatar}
+            />
+          ) : (
+            <View style={[styles.ownerAvatar, { backgroundColor: '#2a2a2a', justifyContent: 'center', alignItems: 'center' }]}>
+              <Text style={{ color: '#DC2626', fontSize: 24, fontWeight: 'bold' }}>
+                {showcase.user?.name?.charAt(0) || 'U'}
+              </Text>
+            </View>
+          )}
           <View style={styles.ownerInfo}>
             <Text style={styles.ownerName}>{showcase.user?.name}</Text>
             <Text style={styles.ownerLabel}>مالك السيارة</Text>
@@ -297,7 +305,21 @@ const ShowcaseDetailsScreen = ({ route, navigation }) => {
             comments.map((comment) => (
               <View key={comment.id} style={styles.commentItem}>
                 <View style={styles.commentHeader}>
-                  <Text style={styles.commentUser}>{comment.user?.name}</Text>
+                  <View style={styles.commentUserRow}>
+                    {comment.user?.avatar ? (
+                      <Image
+                        source={{ uri: comment.user.avatar }}
+                        style={styles.commentAvatar}
+                      />
+                    ) : (
+                      <View style={[styles.commentAvatar, { backgroundColor: '#2a2a2a', justifyContent: 'center', alignItems: 'center' }]}>
+                        <Text style={{ color: '#DC2626', fontSize: 10, fontWeight: 'bold' }}>
+                          {comment.user?.name?.charAt(0) || 'U'}
+                        </Text>
+                      </View>
+                    )}
+                    <Text style={styles.commentUser}>{comment.user?.name}</Text>
+                  </View>
                   {isAdmin && (
                     <TouchableOpacity
                       onPress={() => handleDeleteComment(comment.id)}
@@ -547,6 +569,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
+  },
+  commentUserRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  commentAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#DC2626',
   },
   commentUser: {
     color: '#DC2626',
