@@ -8,18 +8,21 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const files = formData.getAll('images') as File[]
+    const singleFile = formData.get('file') as File | null
     
-    if (!files || files.length === 0) {
+    const allFiles = files.length > 0 ? files : singleFile ? [singleFile] : []
+    
+    if (!allFiles || allFiles.length === 0) {
       return NextResponse.json({ error: 'No files to upload' }, { status: 400 })
     }
 
-    if (files.length > 8) {
+    if (allFiles.length > 8) {
       return NextResponse.json({ error: 'Maximum 8 files allowed' }, { status: 400 })
     }
 
     const uploadedFiles: string[] = []
 
-    for (const file of files) {
+    for (const file of allFiles) {
       if (!ALLOWED_TYPES.includes(file.type)) {
         return NextResponse.json({ 
           error: `File type ${file.type} not allowed`
