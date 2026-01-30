@@ -103,9 +103,9 @@ const AddShowcaseScreen = ({ navigation }) => {
           
           console.log('Upload result:', uploadResult);
           
-          if (uploadResult.success && uploadResult.url) {
-            uploadedImageUrls.push(uploadResult.url);
-            console.log(`✅ Image ${i + 1} uploaded:`, uploadResult.url);
+          if (uploadResult.success && uploadResult.files && uploadResult.files.length > 0) {
+            uploadedImageUrls.push(uploadResult.files[0]);
+            console.log(`✅ Image ${i + 1} uploaded:`, uploadResult.files[0]);
           } else {
             console.error('Upload failed:', uploadResult);
             throw new Error(uploadResult.error || 'فشل رفع الصورة');
