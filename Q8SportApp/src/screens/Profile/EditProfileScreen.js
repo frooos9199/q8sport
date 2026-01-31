@@ -133,15 +133,12 @@ const EditProfileScreen = ({ navigation }) => {
     <ScrollView style={styles.container}>
       <View style={styles.avatarSection}>
         <TouchableOpacity onPress={handleImagePick} activeOpacity={0.7}>
-          {avatar ? (
+          {avatar?.uri ? (
             <Image source={{ uri: avatar.uri }} style={styles.avatar} />
-          ) : user?.avatar && typeof user.avatar === 'string' && user.avatar.trim() ? (
+          ) : user?.avatar && typeof user.avatar === 'string' && user.avatar.trim() && (user.avatar.startsWith('http') || user.avatar.startsWith('data:')) ? (
             <Image 
-              source={{ uri: user.avatar.startsWith('http') ? user.avatar : `https://www.q8sportcar.com${user.avatar}` }} 
+              source={{ uri: user.avatar }} 
               style={styles.avatar}
-              onError={(e) => {
-                console.log('⚠️ Avatar image load error:', e.nativeEvent.error);
-              }}
             />
           ) : (
             <View style={styles.avatar}>
