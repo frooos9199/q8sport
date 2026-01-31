@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
   },
   dotsContainer: {
     position: 'absolute',
-    bottom: 8,
+    bottom: 4,
     left: 0,
     right: 0,
     flexDirection: 'row',
