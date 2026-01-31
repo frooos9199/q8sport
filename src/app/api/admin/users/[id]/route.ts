@@ -8,7 +8,7 @@ export const GET = requireAuth(async (
 ) => {
   const currentUser = request.user;
 
-  if (!canManageUsers(currentUser) && currentUser?.role !== 'ADMIN') {
+  if (!currentUser || (!canManageUsers(currentUser) && currentUser.role !== 'ADMIN')) {
     return NextResponse.json({ error: 'ليس لديك صلاحية لعرض المستخدم' }, { status: 403 });
   }
 
