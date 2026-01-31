@@ -138,8 +138,8 @@ export const AuthProvider = ({ children }) => {
         console.log('📦 AuthContext: User data received:', {
           name: response.user.name,
           email: response.user.email,
-          avatar: response.user.avatar,
           hasAvatar: !!response.user.avatar,
+          avatarType: response.user.avatar?.startsWith('data:') ? 'base64' : response.user.avatar?.startsWith('http') ? 'url' : 'none'
         });
         
         await StorageService.saveToken(response.token);
