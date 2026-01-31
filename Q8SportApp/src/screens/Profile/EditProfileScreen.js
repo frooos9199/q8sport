@@ -29,16 +29,38 @@ const EditProfileScreen = ({ navigation }) => {
     launchImageLibrary(
       {
         mediaType: 'photo',
-        maxWidth: 500,
-        maxHeight: 500,
-        quality: 0.8,
+        maxWidth: 800,
+        maxHeight: 800,
+        quality: 0.7,
         includeBase64: true,
       },
       (response) => {
+        if (response.didCancel) {
+          console.log('📷 User cancelled image picker');
+          return;
+        }
+        
+        if (response.errorCode) {
+          console.error('📷 ImagePicker Error:', response.errorMessage);
+          Alert.alert('خطأ', 'فشل اختيار الصورة');
+          return;
+        }
+        
         if (response.assets && response.assets[0]) {
+          const imageData = response.assets[0];
+          const base64Data = `data:image/jpeg;base64,${imageData.base64}`;
+          
+          // Check size (max 5MB for base64)
+          if (base64Data.length > 5 * 1024 * 1024) {
+            Alert.alert('خطأ', 'الصورة كبيرة جداً. يرجى اختيار صورة أصغر.');
+            return;
+          }
+          
+          console.log('✅ Image selected, size:', Math.round(base64Data.length / 1024), 'KB');
+          
           setAvatar({
-            uri: response.assets[0].uri,
-            base64: `data:image/jpeg;base64,${response.assets[0].base64}`,
+            uri: imageData.uri,
+            base64: base64Data,
           });
         }
       }
@@ -55,20 +77,36 @@ const EditProfileScreen = ({ navigation }) => {
     try {
       if (!updateProfile) {
         Alert.alert('خطأ', 'ميزة تحديث الملف الشخصي غير متوفرة');
+        setLoading(false);
         return;
       }
 
-      const result = await updateProfile({
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        whatsapp: formData.whatsapp,
-      });
+      // تحضير البيانات للإرسال - السيرفر يحتاج email حتى لو ما تغير
+      const updateData = {
+        name: formData.name.trim(),
+        email: user?.email, // إرسال email الحالي (مطلوب من السيرفر)
+        phone: formData.phone?.trim() || null,
+        whatsapp: formData.whatsapp?.trim() || null,
+      };
+
+      // إضافة الصورة إذا تم اختيارها
+      if (avatar?.base64) {
+        updateData.avatar = avatar.base64;
+        console.log('📸 Sending avatar, size:', avatar.base64.length);
+      }
+
+      console.log('📤 Sending update data:', { ...updateData, avatar: updateData.avatar ? '[BASE64_DATA]' : undefined });
+
+      const result = await updateProfile(updateData);
 
       if (!result?.success) {
+        console.error('❌ Update failed:', result?.error);
         Alert.alert('خطأ', result?.error || 'حدث خطأ أثناء التحديث');
         return;
       }
+
+      console.log('✅ Profile updated successfully');
+      console.log('📸 New avatar:', result?.user?.avatar || 'No avatar returned');
 
       // Keep any local-only fields in sync (e.g., bio)
       if (updateUser) {
@@ -77,12 +115,15 @@ const EditProfileScreen = ({ navigation }) => {
         });
       }
 
-      Alert.alert('تم', 'تم تحديث الملف الشخصي بنجاح', [
+      // Clear selected avatar since it's been uploaded
+      setAvatar(null);
+
+      Alert.alert('تم ✅', 'تم تحديث الملف الشخصي بنجاح', [
         { text: 'حسناً', onPress: () => navigation.goBack() },
       ]);
     } catch (error) {
       console.error('Error updating profile:', error);
-      Alert.alert('خطأ', 'حدث خطأ أثناء التحديث');
+      Alert.alert('خطأ', error?.message || 'حدث خطأ أثناء التحديث');
     } finally {
       setLoading(false);
     }
@@ -91,9 +132,17 @@ const EditProfileScreen = ({ navigation }) => {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.avatarSection}>
-        <TouchableOpacity onPress={handleImagePick}>
+        <TouchableOpacity onPress={handleImagePick} activeOpacity={0.7}>
           {avatar ? (
             <Image source={{ uri: avatar.uri }} style={styles.avatar} />
+          ) : user?.avatar && typeof user.avatar === 'string' && user.avatar.trim() ? (
+            <Image 
+              source={{ uri: user.avatar.startsWith('http') ? user.avatar : `https://www.q8sportcar.com${user.avatar}` }} 
+              style={styles.avatar}
+              onError={(e) => {
+                console.log('⚠️ Avatar image load error:', e.nativeEvent.error);
+              }}
+            />
           ) : (
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>
@@ -105,7 +154,9 @@ const EditProfileScreen = ({ navigation }) => {
             <Text style={styles.editBadgeText}>✏️</Text>
           </View>
         </TouchableOpacity>
-        <Text style={styles.changePhotoText}>تغيير الصورة</Text>
+        <Text style={styles.changePhotoText}>
+          {avatar ? '✅ صورة جديدة محددة' : 'اضغط لتغيير الصورة'}
+        </Text>
       </View>
 
       <View style={styles.form}>

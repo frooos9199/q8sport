@@ -13,6 +13,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Share,
+  RefreshControl,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import AdminService from '../../services/AdminService';
@@ -24,12 +25,33 @@ const { width } = Dimensions.get('window');
 const ShowcaseDetailsScreen = ({ route, navigation }) => {
   const { showcase } = route.params;
   const { isAuthenticated, user } = useAuth();
-  const images = showcase.images ? JSON.parse(showcase.images) : [];
+  
+  // ✅ Safe parse images with validation
+  const parseShowcaseImages = (imgs) => {
+    try {
+      if (!imgs) return [];
+      const parsed = typeof imgs === 'string' ? JSON.parse(imgs) : imgs;
+      if (!Array.isArray(parsed)) return [];
+      // Filter out invalid URIs
+      return parsed.filter(img => 
+        img && 
+        typeof img === 'string' && 
+        img.trim() && 
+        (img.startsWith('http') || img.startsWith('data:'))
+      );
+    } catch (error) {
+      console.error('⚠️ ShowcaseDetailsScreen: Error parsing images:', error);
+      return [];
+    }
+  };
+  
+  const images = parseShowcaseImages(showcase.images);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [liked, setLiked] = useState(false);
   const [comments, setComments] = useState(showcase.showcaseComments || []);
   const [newComment, setNewComment] = useState('');
   const [showCommentInput, setShowCommentInput] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const isAdmin = user?.role === 'ADMIN';
   const isPending = showcase.status === 'PENDING';
 
@@ -50,7 +72,19 @@ const ShowcaseDetailsScreen = ({ route, navigation }) => {
       Alert.alert('خطأ', 'فشل الإعجاب');
     }
   };
-
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      // Reload showcase data if needed
+      const response = await apiClient.get(`${API_CONFIG.ENDPOINTS.SHOWCASES}/${showcase.id}`);
+      if (response.data?.showcase) {
+        setComments(response.data.showcase.showcaseComments || []);
+      }
+    } catch (error) {
+      console.error('Error refreshing:', error);
+    }
+    setRefreshing(false);
+  };
   const handleComment = () => {
     if (!isAuthenticated) {
       navigation.navigate('Auth');
@@ -169,7 +203,16 @@ const ShowcaseDetailsScreen = ({ route, navigation }) => {
 
   return (
     <View style={styles.container}>
-      <ScrollView>
+      <ScrollView
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#DC2626"
+            colors={['#DC2626']}
+          />
+        }
+      >
         {/* شارة PENDING */}
         {isPending && (
           <View style={styles.pendingBanner}>
@@ -210,9 +253,13 @@ const ShowcaseDetailsScreen = ({ route, navigation }) => {
 
         {/* معلومات المالك */}
         <View style={styles.ownerSection}>
-          {showcase.user?.avatar ? (
+          {showcase.user?.avatar && typeof showcase.user.avatar === 'string' && showcase.user.avatar.trim() ? (
             <Image
-              source={{ uri: showcase.user.avatar }}
+              source={{ 
+                uri: showcase.user.avatar.startsWith('http') || showcase.user.avatar.startsWith('data:')
+                  ? showcase.user.avatar
+                  : `https://www.q8sportcar.com${showcase.user.avatar}`
+              }}
               style={styles.ownerAvatar}
             />
           ) : (
@@ -306,9 +353,13 @@ const ShowcaseDetailsScreen = ({ route, navigation }) => {
               <View key={comment.id} style={styles.commentItem}>
                 <View style={styles.commentHeader}>
                   <View style={styles.commentUserRow}>
-                    {comment.user?.avatar ? (
+                    {comment.user?.avatar && typeof comment.user.avatar === 'string' && comment.user.avatar.trim() ? (
                       <Image
-                        source={{ uri: comment.user.avatar }}
+                        source={{ 
+                          uri: comment.user.avatar.startsWith('http') || comment.user.avatar.startsWith('data:')
+                            ? comment.user.avatar
+                            : `https://www.q8sportcar.com${comment.user.avatar}`
+                        }}
                         style={styles.commentAvatar}
                       />
                     ) : (

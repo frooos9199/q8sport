@@ -131,23 +131,44 @@ export const AuthProvider = ({ children }) => {
 
   const updateProfile = async (data) => {
     try {
+      console.log('🔄 AuthContext: Updating profile...');
       const response = await AuthService.updateProfile(data);
 
       if (response?.token && response?.user) {
+        console.log('📦 AuthContext: User data received:', {
+          name: response.user.name,
+          email: response.user.email,
+          avatar: response.user.avatar,
+          hasAvatar: !!response.user.avatar,
+        });
+        
         await StorageService.saveToken(response.token);
         await StorageService.saveUser(response.user);
         setToken(response.token);
         setUser(response.user);
         setIsAuthenticated(true);
+        console.log('✅ AuthContext: Profile updated successfully');
         return { success: true, user: response.user };
       }
 
+      console.log('⚠️ AuthContext: Update response missing token/user:', response);
       return { success: false, error: response?.error || 'فشل تحديث الملف الشخصي' };
     } catch (error) {
       console.error('❌ AuthContext: Update profile error:', error);
+      console.error('❌ Error details:', {
+        message: error?.message,
+        response: error?.response?.data,
+        status: error?.response?.status,
+      });
+      
+      const errorMessage = error?.response?.data?.error || 
+                          error?.response?.data?.message ||
+                          error?.message ||
+                          'حدث خطأ أثناء تحديث الملف الشخصي';
+      
       return {
         success: false,
-        error: error?.response?.data?.error || 'حدث خطأ أثناء تحديث الملف الشخصي',
+        error: errorMessage,
       };
     }
   };
@@ -162,6 +183,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     updateUser,
     updateProfile,
+    setUser, // ✅ Export setUser to allow manual refresh
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -7,7 +7,7 @@ import bcrypt from 'bcryptjs';
 export const GET = requireAuth(async (request: AuthenticatedRequest) => {
   const user = request.user;
   
-  if (!user || (!canManageUsers(user) && user.role !== 'ADMIN')) {
+  if (!canManageUsers(user) && user?.role !== 'ADMIN') {
     return NextResponse.json(
       { error: 'ليس لديك صلاحية لعرض المستخدمين' },
       { status: 403 }
@@ -110,7 +110,7 @@ export const GET = requireAuth(async (request: AuthenticatedRequest) => {
 export const POST = requireAuth(async (request: AuthenticatedRequest) => {
   const user = request.user;
   
-  if (!user || (!canManageUsers(user) && user.role !== 'ADMIN')) {
+  if (!canManageUsers(user) && user?.role !== 'ADMIN') {
     return NextResponse.json(
       { error: 'ليس لديك صلاحية لإنشاء مستخدمين' },
       { status: 403 }
@@ -204,7 +204,7 @@ export const POST = requireAuth(async (request: AuthenticatedRequest) => {
 export const PUT = requireAuth(async (request: AuthenticatedRequest) => {
   const user = request.user;
   
-  if (!user || (!canManageUsers(user) && user.role !== 'ADMIN')) {
+  if (!canManageUsers(user) && user?.role !== 'ADMIN') {
     return NextResponse.json(
       { error: 'ليس لديك صلاحية لتعديل المستخدمين' },
       { status: 403 }
@@ -320,7 +320,7 @@ export const PUT = requireAuth(async (request: AuthenticatedRequest) => {
 export const PATCH = requireAuth(async (request: AuthenticatedRequest) => {
   const user = request.user;
 
-  if (!user || (!canManageUsers(user) && user.role !== 'ADMIN')) {
+  if (!canManageUsers(user) && user?.role !== 'ADMIN') {
     return NextResponse.json(
       { error: 'ليس لديك صلاحية لتعديل كلمات المرور' },
       { status: 403 }
@@ -368,7 +368,7 @@ export const PATCH = requireAuth(async (request: AuthenticatedRequest) => {
 export const DELETE = requireAuth(async (request: AuthenticatedRequest) => {
   const user = request.user;
 
-  if (!user || (!canManageUsers(user) && user.role !== 'ADMIN')) {
+  if (!canManageUsers(user) && user?.role !== 'ADMIN') {
     return NextResponse.json(
       { error: 'ليس لديك صلاحية لحذف المستخدمين' },
       { status: 403 }

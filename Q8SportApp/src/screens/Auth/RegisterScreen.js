@@ -26,7 +26,14 @@ const RegisterScreen = ({ navigation }) => {
 
   const handleRegister = async () => {
     if (!name || !email || !password) {
-      Alert.alert('خطأ', 'يرجى إدخال الاسم، البريد الإلكتروني، وكلمة المرور. رقم الهاتف والواتساب اختياريان.');
+      Alert.alert('خطأ', 'يرجى إدخال الاسم، البريد الإلكتروني، وكلمة المرور');
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      Alert.alert('خطأ', 'يرجى إدخال بريد إلكتروني صحيح');
       return;
     }
 
@@ -70,7 +77,7 @@ const RegisterScreen = ({ navigation }) => {
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="الاسم الكامل"
+              placeholder="👤 الاسم الكامل"
               placeholderTextColor="#555"
               value={name}
               onChangeText={setName}
@@ -80,20 +87,21 @@ const RegisterScreen = ({ navigation }) => {
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="البريد الإلكتروني"
+              placeholder="📧 البريد الإلكتروني"
               placeholderTextColor="#555"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(text) => setEmail(text.trim())}
               keyboardType="email-address"
               autoCapitalize="none"
+              autoCorrect={false}
             />
           </View>
 
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="رقم الهاتف (اختياري)"
-              placeholderTextColor="#555"
+              placeholder="📱 رقم الهاتف (اختياري)"
+              placeholderTextColor="#666"
               value={phone}
               onChangeText={setPhone}
               keyboardType="phone-pad"
@@ -103,8 +111,8 @@ const RegisterScreen = ({ navigation }) => {
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="رقم الواتساب (اختياري)"
-              placeholderTextColor="#555"
+              placeholder="💬 رقم الواتساب (اختياري)"
+              placeholderTextColor="#666"
               value={whatsapp}
               onChangeText={setWhatsapp}
               keyboardType="phone-pad"
@@ -114,22 +122,26 @@ const RegisterScreen = ({ navigation }) => {
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="كلمة المرور"
+              placeholder="🔒 كلمة المرور (6 أحرف على الأقل)"
               placeholderTextColor="#555"
               value={password}
               onChangeText={setPassword}
               secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
             />
           </View>
 
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="تأكيد كلمة المرور"
+              placeholder="🔒 تأكيد كلمة المرور"
               placeholderTextColor="#555"
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
             />
           </View>
 

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,8 +6,11 @@ import {
   TouchableOpacity,
   ScrollView,
   Image,
+  RefreshControl,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../contexts/AuthContext';
+import { StorageService } from '../../utils/storage';
 import {
   ProductIcon,
   FavoriteIcon,
@@ -19,25 +22,84 @@ import {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const ProfileScreen = ({ navigation }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, setUser } = useAuth();
+  const [refreshing, setRefreshing] = useState(false);
+
+  // 🔄 Refresh user data when screen gains focus
+  useFocusEffect(
+    React.useCallback(() => {
+      const refreshUserData = async () => {
+        try {
+          const storedUser = await StorageService.getUser();
+          if (storedUser) {
+            console.log('🔄 ProfileScreen: Refreshed user data from storage');
+            console.log('📸 Avatar in storage:', storedUser.avatar ? 'Exists' : 'Missing');
+            setUser(storedUser);
+          }
+        } catch (error) {
+          console.error('❌ ProfileScreen: Error refreshing user data:', error);
+        }
+      };
+
+      refreshUserData();
+    }, [setUser])
+  );
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      const storedUser = await StorageService.getUser();
+      if (storedUser) {
+        setUser(storedUser);
+      }
+    } catch (error) {
+      console.error('Error refreshing:', error);
+    }
+    setRefreshing(false);
+  };
 
   const handleLogout = async () => {
     await logout();
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView 
+      style={styles.container}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor="#DC2626"
+          colors={['#DC2626']}
+        />
+      }
+    >
       <View style={styles.header}>
         <Image
           source={require('../../../assets/images/icon.png')}
           style={styles.headerLogo}
           resizeMode="contain"
         />
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {user?.name?.charAt(0)?.toUpperCase() || '👤'}
-          </Text>
-        </View>
+        {user?.avatar && typeof user.avatar === 'string' && user.avatar.trim() ? (
+          <Image
+            source={{ 
+              uri: user.avatar.startsWith('http') || user.avatar.startsWith('data:')
+                ? user.avatar 
+                : `https://www.q8sportcar.com${user.avatar}` 
+            }}
+            style={styles.avatar}
+            onError={(e) => {
+              console.log('⚠️ Avatar image load error:', e.nativeEvent.error);
+              console.log('⚠️ Avatar URI was:', user.avatar.substring(0, 100));
+            }}
+          />
+        ) : (
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>
+              {user?.name?.charAt(0)?.toUpperCase() || '👤'}
+            </Text>
+          </View>
+        )}
         <Text style={styles.name}>{user?.name}</Text>
         <Text style={styles.email}>{user?.email}</Text>
         {user?.role && (

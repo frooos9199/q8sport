@@ -81,8 +81,17 @@ const StoresScreen = ({ navigation }) => {
       onPress={() => navigation.navigate('StoreDetails', { storeId: item.id, title: item.name })}>
       <View style={styles.storeHeader}>
         <View style={styles.avatar}>
-          {item.image ? (
-            <Image source={{ uri: item.image }} style={styles.avatarImage} />
+          {item.image && typeof item.image === 'string' && item.image.trim() &&
+           (item.image.startsWith('http') || item.image.startsWith('data:') || item.image.startsWith('/')) ? (
+            <Image 
+              source={{ 
+                uri: item.image.startsWith('http') || item.image.startsWith('data:')
+                  ? item.image
+                  : `https://www.q8sportcar.com${item.image}`
+              }} 
+              style={styles.avatarImage}
+              onError={(e) => console.log('⚠️ StoresScreen: Image load error')}
+            />
           ) : (
             <Text style={styles.avatarText}>{item.name?.charAt(0)?.toUpperCase() || 'M'}</Text>
           )}

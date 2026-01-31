@@ -7,8 +7,9 @@ class NotificationService {
     try {
       if (Platform.OS === 'ios') {
         const authStatus = await messaging().requestPermission();
-        return authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-               authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+        const { AuthorizationStatus } = messaging;
+        return authStatus === AuthorizationStatus.AUTHORIZED ||
+               authStatus === AuthorizationStatus.PROVISIONAL;
       } else {
         const granted = await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
@@ -23,12 +24,7 @@ class NotificationService {
 
   async getToken() {
     try {
-      // تحقق من التسجيل أولاً
-      const isRegistered = await messaging().isDeviceRegisteredForRemoteMessages;
-      if (!isRegistered) {
-        await messaging().registerDeviceForRemoteMessages();
-      }
-      
+      // لا حاجة للتحقق من التسجيل - يتم تلقائياً
       const token = await messaging().getToken();
       if (token) {
         await AsyncStorage.setItem('fcm_token', token);
@@ -49,7 +45,8 @@ class NotificationService {
 
     const token = await this.getToken();
     
-    messaging().onTokenRefresh(async (newToken) => {
+    // استخدام onTokenRefresh مباشرة
+    const unsubscribeTokenRefresh = messaging().onTokenRefresh(async (newToken) => {
       await AsyncStorage.setItem('fcm_token', newToken);
     });
 
@@ -63,7 +60,7 @@ class NotificationService {
   }
 
   onNotificationOpenedApp(callback) {
-    messaging().onNotificationOpenedApp((remoteMessage) => {
+    return messaging().onNotificationOpenedApp((remoteMessage) => {
       callback(remoteMessage);
     });
   }

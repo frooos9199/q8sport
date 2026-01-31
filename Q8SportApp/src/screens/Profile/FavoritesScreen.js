@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Image,
   Alert,
+  RefreshControl,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import API_CONFIG from '../../config/api';
@@ -17,6 +18,7 @@ const FavoritesScreen = ({ navigation }) => {
   const { token, isAuthenticated } = useAuth();
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated && token) {
@@ -34,7 +36,13 @@ const FavoritesScreen = ({ navigation }) => {
       console.error('Error:', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchFavorites();
   };
 
   const handleRemoveFavorite = async (productId) => {
@@ -116,6 +124,14 @@ const FavoritesScreen = ({ navigation }) => {
         keyExtractor={(item) => item.id}
         numColumns={2}
         contentContainerStyle={styles.list}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#DC2626"
+            colors={['#DC2626']}
+          />
+        }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyIcon}>💔</Text>

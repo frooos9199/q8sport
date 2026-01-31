@@ -1,67 +1,46 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { put } from '@vercel/blob'
+import { NextRequest, NextResponse } from 'next/server';
+import { v2 as cloudinary } from 'cloudinary';
+import sharp from 'sharp';
 
-const MAX_FILE_SIZE = 4500000 // 4.5MB (Vercel Blob server upload limit)
-const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const formData = await request.formData()
-    const files = formData.getAll('images') as File[]
-    const singleFile = formData.get('file') as File | null
+    const formData = await req.formData();
+    const file = formData.get('file') as File;
     
-    const allFiles = files.length > 0 ? files : singleFile ? [singleFile] : []
-    
-    if (!allFiles || allFiles.length === 0) {
-      return NextResponse.json({ error: 'No files to upload' }, { status: 400 })
+    if (!file) {
+      return NextResponse.json({ success: false, error: 'لم يتم رفع ملف' }, { status: 400 });
     }
 
-    if (allFiles.length > 8) {
-      return NextResponse.json({ error: 'Maximum 8 files allowed' }, { status: 400 })
-    }
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
 
-    const uploadedFiles: string[] = []
+    // تحسين الصورة
+    const optimizedBuffer = await sharp(buffer)
+      .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 85 })
+      .toBuffer();
 
-    for (const file of allFiles) {
-      if (!ALLOWED_TYPES.includes(file.type)) {
-        return NextResponse.json({ 
-          error: `File type ${file.type} not allowed`
-        }, { status: 400 })
-      }
+    // رفع على Cloudinary
+    const base64Image = `data:image/webp;base64,${optimizedBuffer.toString('base64')}`;
+    const result = await cloudinary.uploader.upload(base64Image, {
+      folder: process.env.CLOUDINARY_FOLDER || 'q8sport',
+      transformation: [{ quality: 'auto' }, { fetch_format: 'auto' }]
+    });
 
-      if (file.size > MAX_FILE_SIZE) {
-        return NextResponse.json({ 
-          error: `File ${file.name} is too large. Maximum: 4.5MB for server uploads` 
-        }, { status: 400 })
-      }
-
-      try {
-        // Upload to Vercel Blob
-        const blob = await put(file.name, file, {
-          access: 'public',
-        })
-
-        uploadedFiles.push(blob.url)
-      } catch (blobError) {
-        console.error('Blob upload error:', blobError)
-        // Fallback to base64 if Blob fails
-        const bytes = await file.arrayBuffer()
-        const buffer = Buffer.from(bytes)
-        const base64 = `data:${file.type};base64,${buffer.toString('base64')}`
-        uploadedFiles.push(base64)
-      }
-    }
-
-    return NextResponse.json({ 
-      success: true, 
-      files: uploadedFiles,
-      message: `Successfully uploaded ${uploadedFiles.length} file(s)`
-    })
-
+    return NextResponse.json({
+      success: true,
+      url: result.secure_url,
+      publicId: result.public_id,
+      size: result.bytes,
+    });
   } catch (error) {
-    console.error('Error uploading files:', error)
-    return NextResponse.json({ 
-      error: 'Upload failed: ' + (error instanceof Error ? error.message : 'Unknown error')
-    }, { status: 500 })
+    console.error('Error uploading image:', error);
+    return NextResponse.json({ success: false, error: 'خطأ في رفع الصورة' }, { status: 500 });
   }
 }

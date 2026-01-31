@@ -73,31 +73,10 @@ const RequestsScreen = ({ navigation }) => {
     }
   };
 
-  const renderRequest = ({ item }) => {
-    // Parse images safely
-    let images = [];
-    try {
-      if (item.images) {
-        images = typeof item.images === 'string' ? JSON.parse(item.images) : item.images;
-      }
-    } catch (error) {
-      console.error('Error parsing images:', error);
-    }
-    
-    const hasImage = images && images.length > 0 && images[0];
-    
-    return (
-      <View style={styles.requestCard}>
-        {hasImage && (
-          <Image
-            source={{ uri: images[0] }}
-            style={styles.requestImage}
-            defaultSource={require('../../../assets/images/icon.png')}
-            resizeMode="cover"
-          />
-        )}
-        <View style={styles.requestContent}>
-          <View style={styles.requestHeader}>
+  const renderRequest = ({ item }) => (
+    <View style={styles.requestCard}>
+      <View style={styles.requestContent}>
+        <View style={styles.requestHeader}>
           <Text style={styles.requestTitle}>{item.title}</Text>
           <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
             <Text style={styles.statusText}>{getStatusText(item.status)}</Text>
@@ -119,8 +98,17 @@ const RequestsScreen = ({ navigation }) => {
 
         <View style={styles.requestFooter}>
           <View style={styles.userInfo}>
-            {item.user.avatar ? (
-              <Image source={{ uri: item.user.avatar }} style={styles.userAvatar} />
+            {item.user?.avatar && typeof item.user.avatar === 'string' && item.user.avatar.trim() &&
+             (item.user.avatar.startsWith('http') || item.user.avatar.startsWith('data:') || item.user.avatar.startsWith('/')) ? (
+              <Image 
+                source={{ 
+                  uri: item.user.avatar.startsWith('http') || item.user.avatar.startsWith('data:')
+                    ? item.user.avatar
+                    : `https://www.q8sportcar.com${item.user.avatar}`
+                }} 
+                style={styles.userAvatar}
+                onError={(e) => console.log('⚠️ RequestsScreen: Avatar load error')}
+              />
             ) : (
               <View style={styles.userAvatarPlaceholder}>
                 <Ionicons name="person" size={16} color="#DC2626" />
@@ -144,8 +132,7 @@ const RequestsScreen = ({ navigation }) => {
         </View>
       </View>
     </View>
-    );
-  };
+  );
 
   const EmptyState = () => (
     <View style={styles.emptyContainer}>

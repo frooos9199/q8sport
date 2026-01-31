@@ -123,14 +123,25 @@ const ManageShowcasesScreen = ({ navigation }) => {
   };
 
   const renderShowcase = ({ item }) => {
-    const images = JSON.parse(item.images);
+    const images = item.images ? JSON.parse(item.images) : [];
+    const firstImage = images.length > 0 ? images[0] : null;
     
     return (
       <View style={styles.card}>
         <TouchableOpacity
           onPress={() => navigation.navigate('ShowcaseDetails', { showcase: item })}
           activeOpacity={0.9}>
-          <Image source={{ uri: images[0] }} style={styles.cardImage} />
+          {firstImage ? (
+            <Image 
+              source={{ uri: firstImage }} 
+              style={styles.cardImage}
+              onError={(e) => console.log('⚠️ ManageShowcasesScreen: Image load error')}
+            />
+          ) : (
+            <View style={[styles.cardImage, { backgroundColor: '#1a1a1a', justifyContent: 'center', alignItems: 'center' }]}>
+              <Text style={{ color: '#DC2626', fontSize: 40 }}>🚗</Text>
+            </View>
+          )}
           <View style={styles.previewBadge}>
             <Text style={styles.previewText}>👁️ معاينة</Text>
           </View>
@@ -138,7 +149,24 @@ const ManageShowcasesScreen = ({ navigation }) => {
         
         <View style={styles.cardContent}>
           <View style={styles.userRow}>
-            <Image source={{ uri: item.user.avatar }} style={styles.avatar} />
+            {item.user?.avatar && typeof item.user.avatar === 'string' && item.user.avatar.trim() &&
+             (item.user.avatar.startsWith('http') || item.user.avatar.startsWith('data:') || item.user.avatar.startsWith('/')) ? (
+              <Image 
+                source={{ 
+                  uri: item.user.avatar.startsWith('http') || item.user.avatar.startsWith('data:')
+                    ? item.user.avatar
+                    : `https://www.q8sportcar.com${item.user.avatar}`
+                }} 
+                style={styles.avatar}
+                onError={(e) => console.log('⚠️ ManageShowcasesScreen: Avatar load error')}
+              />
+            ) : (
+              <View style={[styles.avatar, { backgroundColor: '#1a1a1a', justifyContent: 'center', alignItems: 'center' }]}>
+                <Text style={{ color: '#DC2626', fontSize: 14, fontWeight: 'bold' }}>
+                  {item.user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                </Text>
+              </View>
+            )}
             <Text style={styles.userName}>{item.user.name}</Text>
           </View>
 

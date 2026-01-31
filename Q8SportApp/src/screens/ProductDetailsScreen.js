@@ -12,6 +12,7 @@ import {
   Animated,
   ActivityIndicator,
   FlatList,
+  RefreshControl,
 } from 'react-native';
 
 import { ProductService } from '../services/api/products';
@@ -22,6 +23,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
   const { productId } = route.params;
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -52,6 +54,12 @@ const ProductDetailsScreen = ({ route, navigation }) => {
         useNativeDriver: true,
       }).start();
     }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchProduct();
+    setRefreshing(false);
   };
 
   const normalizePhone = (phone) => {
@@ -89,7 +97,17 @@ const ProductDetailsScreen = ({ route, navigation }) => {
 
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#DC2626"
+            colors={['#DC2626']}
+          />
+        }
+      >
         {product && (
           <>
             {/* معرض الصور */}

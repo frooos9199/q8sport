@@ -28,15 +28,43 @@ const AddShowcaseScreen = ({ navigation }) => {
   const [horsepower, setHorsepower] = useState('');
   const [description, setDescription] = useState('');
 
-  const pickImages = () => {
+  const pickImages = async () => {
     launchImageLibrary({
       mediaType: 'photo',
       selectionLimit: 10,
-      quality: 0.8,
-    }, (response) => {
-      if (response.assets) {
-        const newImages = response.assets.map(asset => asset.uri);
-        setImages([...images, ...newImages].slice(0, 10));
+      quality: 0.7, // ✅ تقليل الجودة لتصغير الحجم
+      maxWidth: 1200,
+      maxHeight: 1200,
+      includeBase64: true, // ✅ طلب base64 مباشرة
+    }, async (response) => {
+      if (response.assets && response.assets.length > 0) {
+        try {
+          const processedImages = [];
+          
+          for (const asset of response.assets) {
+            // ✅ استخدام base64 من الـ asset مباشرة
+            const base64 = asset.base64 
+              ? `data:${asset.type};base64,${asset.base64}`
+              : null;
+            
+            if (base64) {
+              processedImages.push({
+                uri: asset.uri, // للعرض المحلي
+                base64, // للرفع
+              });
+              console.log(`✅ Processed image ${processedImages.length}/${response.assets.length}`);
+            } else {
+              console.warn('⚠️ Image without base64, skipping');
+            }
+          }
+          
+          const totalImages = [...images, ...processedImages].slice(0, 10);
+          setImages(totalImages);
+          console.log(`📸 Total images: ${totalImages.length}`);
+        } catch (error) {
+          console.error('❌ Error in pickImages:', error);
+          Alert.alert('خطأ', 'فشل معالجة الصور');
+        }
       }
     });
   };
@@ -59,64 +87,11 @@ const AddShowcaseScreen = ({ navigation }) => {
     setLoading(true);
 
     try {
-      console.log('📤 Uploading images first...');
+      console.log('📤 Sending showcase data...');
+      console.log(`📸 Total images to upload: ${images.length}`);
       
-      // رفع الصور أولاً
-      const uploadedImageUrls = [];
-      for (let i = 0; i < images.length; i++) {
-        const imageUri = images[i];
-        console.log(`📤 Uploading image ${i + 1}/${images.length}...`);
-        console.log('Image URI:', imageUri);
-        
-        const formData = new FormData();
-        
-        // React Native FormData format
-        const imageData = {
-          uri: imageUri,
-          type: 'image/jpeg',
-          name: `showcase_${Date.now()}_${i}.jpg`,
-        };
-        
-        console.log('Image data to upload:', imageData);
-        formData.append('file', imageData);
-
-        try {
-          console.log('Sending request to:', `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.UPLOAD}`);
-          
-          const uploadResponse = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.UPLOAD}`, {
-            method: 'POST',
-            body: formData,
-            // لا تضع Content-Type header - سيتم تعيينه تلقائياً
-          });
-
-          console.log('Upload response status:', uploadResponse.status);
-          const responseText = await uploadResponse.text();
-          console.log('Upload response text:', responseText);
-          
-          let uploadResult;
-          try {
-            uploadResult = JSON.parse(responseText);
-          } catch (parseError) {
-            console.error('Failed to parse response:', parseError);
-            throw new Error('استجابة غير صحيحة من السيرفر');
-          }
-          
-          console.log('Upload result:', uploadResult);
-          
-          if (uploadResult.success && uploadResult.files && uploadResult.files.length > 0) {
-            uploadedImageUrls.push(uploadResult.files[0]);
-            console.log(`✅ Image ${i + 1} uploaded:`, uploadResult.files[0]);
-          } else {
-            console.error('Upload failed:', uploadResult);
-            throw new Error(uploadResult.error || 'فشل رفع الصورة');
-          }
-        } catch (uploadError) {
-          console.error('Upload error:', uploadError);
-          throw new Error(`فشل رفع الصورة ${i + 1}: ${uploadError.message}`);
-        }
-      }
-
-      console.log('📤 Sending showcase data with uploaded images...');
+      // ✅ استخراج base64 من كل صورة
+      const base64Images = images.map(img => img.base64);
       
       const showcaseData = {
         carBrand: carBrand || customBrand,
@@ -124,10 +99,10 @@ const AddShowcaseScreen = ({ navigation }) => {
         carYear: parseInt(carYear),
         horsepower: horsepower ? parseInt(horsepower) : null,
         description,
-        images: JSON.stringify(uploadedImageUrls),
+        images: JSON.stringify(base64Images), // ✅ إرسال base64 بدل URIs
       };
 
-      console.log('Showcase data:', showcaseData);
+      console.log('Showcase data prepared (images count):', base64Images.length);
 
       const response = await apiClient.post(API_CONFIG.ENDPOINTS.SHOWCASES, showcaseData);
       
@@ -169,9 +144,9 @@ const AddShowcaseScreen = ({ navigation }) => {
           <Text style={styles.hint}>الحد الأدنى: 3 صور | الحد الأقصى: 10 صور</Text>
           
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imagesScroll}>
-            {images.map((uri, index) => (
+            {images.map((img, index) => (
               <View key={index} style={styles.imageContainer}>
-                <Image source={{ uri }} style={styles.imagePreview} />
+                <Image source={{ uri: img.uri }} style={styles.imagePreview} />
                 <TouchableOpacity
                   style={styles.removeButton}
                   onPress={() => removeImage(index)}>

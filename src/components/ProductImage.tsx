@@ -43,7 +43,7 @@ export function getImageUrl(imagePath: string): string {
     return imagePath
   }
   
-  // إذا كان الرابط خارجي (http/https) - مباشرةً من Cloudinary أو أي CDN
+  // إذا كان الرابط خارجي (http/https)
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
     return imagePath
   }

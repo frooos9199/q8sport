@@ -321,8 +321,7 @@ model Request {
   carBrand    String?       // ماركة السيارة
   carModel    String?       // موديل السيارة
   carYear     Int?          // سنة الصنع
-  image       String?       // (Legacy) صورة توضيحية - لم تعد مستخدمة
-  images      String?       // صور توضيحية (JSON array)
+  image       String?       // (Legacy) صورة توضيحية - لم تعد مستخدمة في التطبيق
   partName    String?       // اسم القطعة المطلوبة
   condition   String?       // الحالة المطلوبة (جديد/مستعمل)
   budget      Float?        // الميزانية المتوقعة

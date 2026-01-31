@@ -8,18 +8,15 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
-  Image,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import API_CONFIG from '../../config/api';
 import apiClient from '../../services/apiClient';
-import { launchImageLibrary } from 'react-native-image-picker';
 
 const AddRequestScreen = ({ navigation }) => {
   const { token, user, isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [images, setImages] = useState([]);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -32,31 +29,6 @@ const AddRequestScreen = ({ navigation }) => {
   const normalizePhone = (phone) => {
     if (!phone) return '';
     return String(phone).replace(/[^0-9]/g, '');
-  };
-
-  const handlePickImages = () => {
-    const options = {
-      mediaType: 'photo',
-      selectionLimit: 5,
-      quality: 0.8,
-    };
-
-    launchImageLibrary(options, (response) => {
-      if (response.didCancel) {
-        return;
-      }
-      if (response.error) {
-        Alert.alert('خطأ', 'فشل اختيار الصور');
-        return;
-      }
-      if (response.assets) {
-        setImages(response.assets.map(asset => asset.uri));
-      }
-    });
-  };
-
-  const removeImage = (index) => {
-    setImages(images.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async () => {
@@ -88,29 +60,6 @@ const AddRequestScreen = ({ navigation }) => {
 
     setLoading(true);
     try {
-      // Upload images first if any
-      let uploadedImages = [];
-      if (images.length > 0) {
-        for (const imageUri of images) {
-          const uploadFormData = new FormData();
-          uploadFormData.append('file', {
-            uri: imageUri,
-            type: 'image/jpeg',
-            name: 'request-image.jpg',
-          });
-
-          const uploadResponse = await apiClient.post(API_CONFIG.ENDPOINTS.UPLOAD, uploadFormData, {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
-          });
-
-          if (uploadResponse.data.url) {
-            uploadedImages.push(uploadResponse.data.url);
-          }
-        }
-      }
-
       await apiClient.post(API_CONFIG.ENDPOINTS.REQUESTS, {
         title: formData.title,
         description: formData.description,
@@ -119,7 +68,6 @@ const AddRequestScreen = ({ navigation }) => {
         carYear: formData.carYear,
         contactWhatsapp: formData.whatsapp,
         contactPhone: user?.phone || null,
-        images: uploadedImages.length > 0 ? JSON.stringify(uploadedImages) : null,
       });
 
       Alert.alert('نجح', 'تم إضافة الطلب بنجاح', [
@@ -192,30 +140,6 @@ const AddRequestScreen = ({ navigation }) => {
                 selectTextOnFocus={false}
                 keyboardType="phone-pad"
               />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>الصور (اختياري)</Text>
-              <TouchableOpacity style={styles.imagePickerButton} onPress={handlePickImages}>
-                <Ionicons name="images-outline" size={24} color="#DC2626" />
-                <Text style={styles.imagePickerText}>اختر الصور (حتى 5)</Text>
-              </TouchableOpacity>
-              
-              {images.length > 0 && (
-                <View style={styles.imagesPreview}>
-                  {images.map((uri, index) => (
-                    <View key={index} style={styles.imagePreviewContainer}>
-                      <Image source={{ uri }} style={styles.imagePreview} />
-                      <TouchableOpacity
-                        style={styles.removeImageButton}
-                        onPress={() => removeImage(index)}
-                      >
-                        <Ionicons name="close-circle" size={24} color="#DC2626" />
-                      </TouchableOpacity>
-                    </View>
-                  ))}
-                </View>
-              )}
             </View>
           </View>
 
@@ -317,41 +241,6 @@ const styles = StyleSheet.create({
     height: 120,
     paddingTop: 12,
   },
-  imagePickerButton: {
-    backgroundColor: '#1a1a1a',
-    borderWidth: 2,
-    borderColor: '#DC2626',
-    borderStyle: 'dashed',
-    borderRadius: 12,
-    padding: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-  },
-  imagePickerText: {
-    color: '#DC2626',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  imagesPreview: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 12,
-    gap: 10,
-  },
-  imagePreviewContainer: {
-    width: 100,
-    height: 100,
-    position: 'relative',
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  imagePreview: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 12,
-  },
   imageContainer: {
     position: 'relative',
     borderRadius: 12,
@@ -364,10 +253,10 @@ const styles = StyleSheet.create({
   },
   removeImageButton: {
     position: 'absolute',
-    top: 5,
-    right: 5,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    borderRadius: 12,
+    top: 10,
+    right: 10,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: 15,
   },
   submitButton: {
     backgroundColor: '#DC2626',

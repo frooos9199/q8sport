@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,6 @@ import {
   Dimensions,
   ActivityIndicator,
   RefreshControl,
-  Animated,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import API_CONFIG from '../../config/api';
@@ -18,127 +17,65 @@ const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
 
 const ShowcaseCard = ({ item, onPress }) => {
-  // Parse images safely with fallback
-  let images = [];
-  try {
-    if (item.images) {
-      images = typeof item.images === 'string' ? JSON.parse(item.images) : item.images;
+  // ✅ Safe parse images with validation
+  const parseImages = (imgs) => {
+    try {
+      if (!imgs) return [];
+      const parsed = typeof imgs === 'string' ? JSON.parse(imgs) : imgs;
+      if (!Array.isArray(parsed)) return [];
+      return parsed.filter(img => 
+        img && 
+        typeof img === 'string' && 
+        img.trim() &&
+        (img.startsWith('http') || img.startsWith('data:'))
+      );
+    } catch {
+      return [];
     }
-  } catch (error) {
-    console.error('Error parsing images:', error);
-    images = [];
-  }
+  };
   
-  // تصفية الصور غير الصالحة (المسارات المحلية من الموبايل فقط)
-  images = images.filter(img => 
-    img && 
-    !img.includes('file:///') && 
-    !img.includes('var/mobile')
-  );
-  
-  // إضافة صورة افتراضية إذا لم توجد صور صالحة
-  if (!images || images.length === 0) {
-    images = ['https://via.placeholder.com/400x500/1a1a1a/DC2626?text=No+Image'];
-  }
-  
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const fadeAnim = useRef(new Animated.Value(1)).current;
-  const slideAnim = useRef(new Animated.Value(0)).current;
-  
-  // Auto-rotate images with smooth animation
-  useEffect(() => {
-    if (images.length <= 1) return;
-    
-    const interval = setInterval(() => {
-      // Fade out & slide animation
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(slideAnim, {
-          toValue: -20,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        // Change image
-        setCurrentImageIndex((prev) => (prev + 1) % images.length);
-        
-        // Reset position
-        slideAnim.setValue(20);
-        
-        // Fade in & slide back
-        Animated.parallel([
-          Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 400,
-            useNativeDriver: true,
-          }),
-          Animated.spring(slideAnim, {
-            toValue: 0,
-            friction: 7,
-            tension: 40,
-            useNativeDriver: true,
-          }),
-        ]).start();
-      });
-    }, 3000); // تغيير كل 3 ثواني
-    
-    return () => clearInterval(interval);
-  }, [images.length]);
-  
+  const images = parseImages(item.images);
   const isPending = item.status === 'PENDING';
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // ✅ Auto-rotate images every 3 seconds
+  useEffect(() => {
+    if (images.length > 1) {
+      const interval = setInterval(() => {
+        setCurrentImageIndex((prevIndex) => 
+          prevIndex === images.length - 1 ? 0 : prevIndex + 1
+        );
+      }, 3000);
+
+      return () => clearInterval(interval);
+    }
+  }, [images.length]);
 
   return (
     <TouchableOpacity
       style={styles.card}
       onPress={() => onPress(item)}
       activeOpacity={0.9}>
+      {images.length > 0 ? (
+        <Image
+          source={{ uri: images[currentImageIndex] || images[0] }}
+          style={styles.cardImage}
+          onError={(e) => console.log('⚠️ ShowcasesScreen: Image load error')}
+        />
+      ) : (
+        <View style={[styles.cardImage, { backgroundColor: '#1a1a1a', justifyContent: 'center', alignItems: 'center' }]}>
+          <Text style={{ color: '#DC2626', fontSize: 40 }}>🚗</Text>
+        </View>
+      )}
       
-      {/* Animated Image Carousel */}
-      <View style={styles.imageContainer}>
-        <Animated.View
-          style={[
-            styles.imageWrapper,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateX: slideAnim }],
-            },
-          ]}>
-          <Image
-            source={{ uri: images[currentImageIndex] }}
-            style={styles.cardImage}
-            defaultSource={require('../../../assets/images/icon.png')}
-            onError={(e) => console.log('Image load error:', e.nativeEvent.error)}
-          />
-        </Animated.View>
-        
-        {/* Image Indicators */}
-        {images.length > 1 && (
-          <View style={styles.indicators}>
-            {images.map((_, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.indicator,
-                  currentImageIndex === index && styles.indicatorActive,
-                ]}
-              />
-            ))}
-          </View>
-        )}
-        
-        {/* Image Counter Badge */}
-        {images.length > 1 && (
-          <View style={styles.imageCountBadge}>
-            <Text style={styles.imageCountText}>
-              📸 {currentImageIndex + 1}/{images.length}
-            </Text>
-          </View>
-        )}
-      </View>
+      {/* ✅ Image counter indicator */}
+      {images.length > 1 && (
+        <View style={styles.imageCounter}>
+          <Text style={styles.imageCounterText}>
+            {currentImageIndex + 1}/{images.length}
+          </Text>
+        </View>
+      )}
       
       {isPending && (
         <View style={styles.pendingOverlay}>
@@ -150,20 +87,24 @@ const ShowcaseCard = ({ item, onPress }) => {
 
       <View style={styles.cardInfo}>
         <View style={styles.userRow}>
-          {item.user?.avatar ? (
+          {item.user?.avatar && typeof item.user.avatar === 'string' && item.user.avatar.trim() ? (
             <Image
-              source={{ uri: item.user.avatar }}
+              source={{ 
+                uri: item.user.avatar.startsWith('http') || item.user.avatar.startsWith('data:')
+                  ? item.user.avatar
+                  : `https://www.q8sportcar.com${item.user.avatar}`
+              }}
               style={styles.smallAvatar}
             />
           ) : (
-            <View style={[styles.smallAvatar, { backgroundColor: '#2a2a2a', justifyContent: 'center', alignItems: 'center' }]}>
+            <View style={[styles.smallAvatar, { backgroundColor: '#1a1a1a', justifyContent: 'center', alignItems: 'center' }]}>
               <Text style={{ color: '#DC2626', fontSize: 10, fontWeight: 'bold' }}>
-                {item.user?.name?.charAt(0) || 'U'}
+                {item.user?.name?.charAt(0)?.toUpperCase() || 'U'}
               </Text>
             </View>
           )}
           <Text style={styles.userName} numberOfLines={1}>
-            {item.user?.name || 'مستخدم'}
+            {item.user?.name}
           </Text>
         </View>
         
@@ -359,58 +300,23 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     backgroundColor: '#1a1a1a',
-    shadowColor: '#DC2626',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  imageContainer: {
-    width: '100%',
-    height: CARD_WIDTH * 1.3,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  imageWrapper: {
-    width: '100%',
-    height: '100%',
   },
   cardImage: {
     width: '100%',
-    height: '100%',
+    height: CARD_WIDTH * 1.1,
     backgroundColor: '#2a2a2a',
+    resizeMode: 'cover', // ✅ ملء الخلفية بالكامل
   },
-  indicators: {
+  imageCounter: {
     position: 'absolute',
-    bottom: 10,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  indicator: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
-  },
-  indicatorActive: {
-    backgroundColor: '#DC2626',
-    width: 20,
-  },
-  imageCountBadge: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
+    top: 6,
+    right: 6,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#DC2626',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 10,
   },
-  imageCountText: {
+  imageCounterText: {
     color: '#fff',
     fontSize: 10,
     fontWeight: 'bold',

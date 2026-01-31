@@ -75,6 +75,13 @@ const LoginScreen = ({ navigation }) => {
       return;
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      Alert.alert('خطأ', 'يرجى إدخال بريد إلكتروني صحيح');
+      return;
+    }
+
     setLoading(true);
     const result = await login(email, password);
     setLoading(false);
@@ -158,23 +165,26 @@ const LoginScreen = ({ navigation }) => {
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="البريد الإلكتروني"
+              placeholder="📧 البريد الإلكتروني"
               placeholderTextColor="#555"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(text) => setEmail(text.trim())}
               keyboardType="email-address"
               autoCapitalize="none"
+              autoCorrect={false}
             />
           </View>
 
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="كلمة المرور"
+              placeholder="🔒 كلمة المرور"
               placeholderTextColor="#555"
               value={password}
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              autoCorrect={false}
             />
             <TouchableOpacity
               style={styles.eyeIcon}

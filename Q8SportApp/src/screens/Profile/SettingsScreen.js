@@ -7,12 +7,50 @@ import {
   TouchableOpacity,
   Switch,
   Alert,
+  Image,
+  RefreshControl,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../contexts/AuthContext';
+import { StorageService } from '../../utils/storage';
 import BiometricService from '../../services/BiometricService';
 
 const SettingsScreen = ({ navigation }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, setUser } = useAuth();
+  const [refreshing, setRefreshing] = useState(false);
+
+  // 🔄 Refresh user data when screen gains focus
+  useFocusEffect(
+    React.useCallback(() => {
+      const refreshUserData = async () => {
+        try {
+          const storedUser = await StorageService.getUser();
+          if (storedUser) {
+            console.log('🔄 SettingsScreen: Refreshed user data');
+            setUser(storedUser);
+          }
+        } catch (error) {
+          console.error('❌ SettingsScreen: Error refreshing user data:', error);
+        }
+      };
+
+      refreshUserData();
+    }, [setUser])
+  );
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      const storedUser = await StorageService.getUser();
+      if (storedUser) {
+        setUser(storedUser);
+      }
+    } catch (error) {
+      console.error('Error refreshing:', error);
+    }
+    setRefreshing(false);
+  };
+
   const [notifications, setNotifications] = useState(true);
   const [emailAlerts, setEmailAlerts] = useState(true);
   const [darkMode, setDarkMode] = useState(true);
@@ -54,7 +92,7 @@ const SettingsScreen = ({ navigation }) => {
       // تعطيل البيومترية
       Alert.alert(
         '⚠️ تعطيل المصادقة البيومترية',
-        'هل أنت متأكد من تعطيل المصادقة البيومترية؟',
+        'سيتم حذف بيانات المصادقة المحفوظة من جهازك. يمكنك إعادة تفعيلها لاحقاً من خلال تسجيل الدخول.',
         [
           { text: 'إلغاء', style: 'cancel' },
           {
@@ -64,7 +102,7 @@ const SettingsScreen = ({ navigation }) => {
               const disabled = await BiometricService.disableBiometric();
               if (disabled) {
                 setBiometricEnabled(false);
-                Alert.alert('✅ تم', 'تم تعطيل المصادقة البيومترية');
+                Alert.alert('✅ تم', 'تم تعطيل المصادقة البيومترية بنجاح');
               }
             },
           },
@@ -119,7 +157,44 @@ const SettingsScreen = ({ navigation }) => {
   );
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView 
+      style={styles.container}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor="#DC2626"
+          colors={['#DC2626']}
+        />
+      }
+    >
+      {/* Profile Header with Avatar */}
+      <View style={styles.profileHeader}>
+        {user?.avatar && typeof user.avatar === 'string' && user.avatar.trim() && 
+         (user.avatar.startsWith('http') || user.avatar.startsWith('data:') || user.avatar.startsWith('/')) ? (
+          <Image
+            source={{ 
+              uri: user.avatar.startsWith('http') || user.avatar.startsWith('data:')
+                ? user.avatar 
+                : `https://www.q8sportcar.com${user.avatar}` 
+            }}
+            style={styles.profileAvatar}
+            defaultSource={require('../../../assets/images/icon.png')}
+            onError={(e) => {
+              console.log('⚠️ SettingsScreen: Avatar load error');
+            }}
+          />
+        ) : (
+          <View style={styles.profileAvatar}>
+            <Text style={styles.profileAvatarText}>
+              {user?.name?.charAt(0)?.toUpperCase() || '👤'}
+            </Text>
+          </View>
+        )}
+        <Text style={styles.profileName}>{user?.name || 'مستخدم'}</Text>
+        <Text style={styles.profileEmail}>{user?.email || ''}</Text>
+      </View>
+
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>الحساب</Text>
         <SettingItem
@@ -238,6 +313,29 @@ const SettingsScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
+      <View style={styles.section}>
+        <TouchableOpacity 
+          style={[styles.dangerButton, { backgroundColor: '#DC2626' }]} 
+          onPress={async () => {
+            Alert.alert(
+              '👋 تسجيل الخروج',
+              'هل تريد تسجيل الخروج من التطبيق؟',
+              [
+                { text: 'إلغاء', style: 'cancel' },
+                {
+                  text: 'تسجيل الخروج',
+                  style: 'destructive',
+                  onPress: async () => {
+                    await logout();
+                  },
+                },
+              ]
+            );
+          }}>
+          <Text style={styles.dangerButtonText}>🚪 تسجيل الخروج</Text>
+        </TouchableOpacity>
+      </View>
+
       <View style={{ height: 30 }} />
     </ScrollView>
   );
@@ -247,6 +345,40 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
+  },
+  profileHeader: {
+    alignItems: 'center',
+    paddingVertical: 30,
+    paddingHorizontal: 20,
+    backgroundColor: '#0a0a0a',
+    borderBottomWidth: 2,
+    borderBottomColor: '#DC2626',
+  },
+  profileAvatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#1a1a1a',
+    borderWidth: 3,
+    borderColor: '#DC2626',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  profileAvatarText: {
+    fontSize: 40,
+    color: '#DC2626',
+    fontWeight: 'bold',
+  },
+  profileName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 4,
+  },
+  profileEmail: {
+    fontSize: 14,
+    color: '#999',
   },
   section: {
     marginTop: 20,

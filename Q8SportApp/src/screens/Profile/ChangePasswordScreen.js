@@ -39,7 +39,7 @@ const ChangePasswordScreen = ({ navigation }) => {
           onPress: async () => {
             setResetLoading(true);
             try {
-              await apiClient.post('/api/auth/forgot-password', {
+              await apiClient.post('/auth/forgot-password', {
                 email: user.email
               });
               

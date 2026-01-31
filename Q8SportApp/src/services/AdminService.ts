@@ -1,32 +1,25 @@
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_URL } from '../config/api';
+import apiClient from './apiClient';
+import API_CONFIG from '../config/api';
 
 class AdminService {
   async blockUser(userId: string) {
-    const token = await AsyncStorage.getItem('token');
-    const response = await axios.post(
-      `${API_URL}/admin/users/${userId}/block`,
-      {},
-      { headers: { Authorization: `Bearer ${token}` } }
+    const response = await apiClient.post(
+      API_CONFIG.ENDPOINTS.ADMIN_USER_BLOCK(userId),
+      {}
     );
     return response.data;
   }
 
   async unblockUser(userId: string) {
-    const token = await AsyncStorage.getItem('token');
-    const response = await axios.delete(
-      `${API_URL}/admin/users/${userId}/block`,
-      { headers: { Authorization: `Bearer ${token}` } }
+    const response = await apiClient.delete(
+      API_CONFIG.ENDPOINTS.ADMIN_USER_BLOCK(userId)
     );
     return response.data;
   }
 
   async deleteComment(commentId: string) {
-    const token = await AsyncStorage.getItem('token');
-    const response = await axios.delete(
-      `${API_URL}/admin/comments/${commentId}`,
-      { headers: { Authorization: `Bearer ${token}` } }
+    const response = await apiClient.delete(
+      `/admin/comments/${commentId}`
     );
     return response.data;
   }
