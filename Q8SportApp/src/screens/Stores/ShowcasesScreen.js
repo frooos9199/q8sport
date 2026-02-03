@@ -57,28 +57,11 @@ const ShowcaseCard = ({ item, onPress }) => {
       onPress={() => onPress(item)}
       activeOpacity={0.9}>
       {images.length > 0 ? (
-        <>
-          <Image
-            source={{ uri: images[currentImageIndex] || images[0] }}
-            style={styles.cardImage}
-            onError={(e) => console.log('⚠️ ShowcasesScreen: Image load error')}
-          />
-          
-          {/* ✅ Image dots indicator */}
-          {images.length > 1 && (
-            <View style={styles.dotsContainer}>
-              {images.map((_, index) => (
-                <View
-                  key={index}
-                  style={[
-                    styles.dot,
-                    currentImageIndex === index && styles.dotActive
-                  ]}
-                />
-              ))}
-            </View>
-          )}
-        </>
+        <Image
+          source={{ uri: images[currentImageIndex] || images[0] }}
+          style={styles.cardImage}
+          onError={(e) => console.log('⚠️ ShowcasesScreen: Image load error')}
+        />
       ) : (
         <View style={[styles.cardImage, { backgroundColor: '#1a1a1a', justifyContent: 'center', alignItems: 'center' }]}>
           <Text style={{ color: '#DC2626', fontSize: 40 }}>🚗</Text>
@@ -103,6 +86,21 @@ const ShowcaseCard = ({ item, onPress }) => {
       )}
 
       <View style={styles.cardInfo}>
+        {/* ✅ Image dots indicator - moved above user name */}
+        {images.length > 1 && (
+          <View style={styles.dotsContainer}>
+            {images.map((_, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.dot,
+                  currentImageIndex === index && styles.dotActive
+                ]}
+              />
+            ))}
+          </View>
+        )}
+        
         <View style={styles.userRow}>
           {item.user?.avatar && typeof item.user.avatar === 'string' && item.user.avatar.trim() ? (
             <Image
@@ -325,14 +323,11 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   dotsContainer: {
-    position: 'absolute',
-    bottom: 4,
-    left: 0,
-    right: 0,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     gap: 6,
+    marginBottom: 8,
   },
   dot: {
     width: 6,

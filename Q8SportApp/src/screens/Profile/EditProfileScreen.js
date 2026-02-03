@@ -92,10 +92,7 @@ const EditProfileScreen = ({ navigation }) => {
       // إضافة الصورة إذا تم اختيارها
       if (avatar?.base64) {
         updateData.avatar = avatar.base64;
-        console.log('📸 Sending avatar, size:', avatar.base64.length);
       }
-
-      console.log('📤 Sending update data:', { ...updateData, avatar: updateData.avatar ? '[BASE64_DATA]' : undefined });
 
       const result = await updateProfile(updateData);
 
@@ -104,9 +101,6 @@ const EditProfileScreen = ({ navigation }) => {
         Alert.alert('خطأ', result?.error || 'حدث خطأ أثناء التحديث');
         return;
       }
-
-      console.log('✅ Profile updated successfully');
-      console.log('📸 New avatar:', result?.user?.avatar || 'No avatar returned');
 
       // Keep any local-only fields in sync (e.g., bio)
       if (updateUser) {

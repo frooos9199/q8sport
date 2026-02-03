@@ -26,7 +26,6 @@ const SettingsScreen = ({ navigation }) => {
         try {
           const storedUser = await StorageService.getUser();
           if (storedUser) {
-            console.log('🔄 SettingsScreen: Refreshed user data');
             setUser(storedUser);
           }
         } catch (error) {
@@ -180,9 +179,6 @@ const SettingsScreen = ({ navigation }) => {
             }}
             style={styles.profileAvatar}
             defaultSource={require('../../../assets/images/icon.png')}
-            onError={(e) => {
-              console.log('⚠️ SettingsScreen: Avatar load error');
-            }}
           />
         ) : (
           <View style={styles.profileAvatar}>

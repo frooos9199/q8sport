@@ -25,30 +25,21 @@ export const AuthProvider = ({ children }) => {
 
   const loadUser = async () => {
     try {
-      console.log('🔍 AuthContext: Loading user from storage...');
-      const savedToken = await StorageService.getToken();
-      const savedUser = await StorageService.getUser();
-      
-      console.log('📦 AuthContext: Retrieved from storage:', {
-        hasToken: !!savedToken,
-        hasUser: !!savedUser,
-        userName: savedUser?.name,
-        tokenPreview: savedToken ? `${savedToken.substring(0, 30)}...` : 'null'
-      });
+      // تحسين: قراءة متوازية للبيانات
+      const [savedToken, savedUser] = await Promise.all([
+        StorageService.getToken(),
+        StorageService.getUser()
+      ]);
       
       if (savedToken && savedUser) {
         setToken(savedToken);
         setUser(savedUser);
         setIsAuthenticated(true);
-        console.log('✅ AuthContext: User authenticated successfully');
-      } else {
-        console.log('⚠️ AuthContext: No saved credentials found');
       }
     } catch (error) {
       console.error('❌ AuthContext: Error loading user:', error);
     } finally {
       setLoading(false);
-      console.log('🏁 AuthContext: Loading complete');
     }
   };
 
@@ -131,23 +122,14 @@ export const AuthProvider = ({ children }) => {
 
   const updateProfile = async (data) => {
     try {
-      console.log('🔄 AuthContext: Updating profile...');
       const response = await AuthService.updateProfile(data);
 
       if (response?.token && response?.user) {
-        console.log('📦 AuthContext: User data received:', {
-          name: response.user.name,
-          email: response.user.email,
-          hasAvatar: !!response.user.avatar,
-          avatarType: response.user.avatar?.startsWith('data:') ? 'base64' : response.user.avatar?.startsWith('http') ? 'url' : 'none'
-        });
-        
         await StorageService.saveToken(response.token);
         await StorageService.saveUser(response.user);
         setToken(response.token);
         setUser(response.user);
         setIsAuthenticated(true);
-        console.log('✅ AuthContext: Profile updated successfully');
         return { success: true, user: response.user };
       }
 

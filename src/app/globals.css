@@ -150,3 +150,154 @@ html {
 .progress-bar[data-width="75%"] { --progress-width: 75%; }
 .progress-bar[data-width="50%"] { --progress-width: 50%; }
 .progress-bar[data-width="25%"] { --progress-width: 25%; }
+
+/* تحسينات الموبايل - Responsive Design */
+@media (max-width: 768px) {
+  /* تصغير العناوين على الموبايل */
+  h1 {
+    font-size: 1.75rem !important;
+  }
+  
+  h2 {
+    font-size: 1.5rem !important;
+  }
+  
+  h3 {
+    font-size: 1.25rem !important;
+  }
+  
+  /* تحسين الأزرار على الموبايل */
+  button, .btn {
+    padding: 0.75rem 1rem !important;
+    font-size: 0.875rem !important;
+  }
+  
+  /* تحسين المسافات */
+  .container {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+  
+  /* إخفاء القائمة الكبيرة على الموبايل */
+  .desktop-menu {
+    display: none !important;
+  }
+  
+  /* تحسين الـ Grid على الموبايل */
+  .grid {
+    gap: 1rem !important;
+  }
+  
+  /* تحسين الكروت */
+  .card {
+    margin-bottom: 1rem;
+  }
+  
+  /* تحسين الصور على الموبايل */
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+  
+  /* تحسين الجداول على الموبايل */
+  table {
+    font-size: 0.875rem;
+  }
+  
+  /* تحسين النماذج على الموبايل */
+  input, select, textarea {
+    font-size: 16px !important; /* منع الزوم التلقائي في iOS */
+  }
+  
+  /* تحسين الـ Stats Cards */
+  .stats-card {
+    padding: 1rem !important;
+  }
+  
+  .stats-card h2, .stats-card p {
+    font-size: 0.875rem !important;
+  }
+  
+  /* تحسين الأيقونات */
+  .icon {
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+  }
+}
+
+/* تحسينات للأجهزة الصغيرة جداً */
+@media (max-width: 480px) {
+  body {
+    font-size: 14px;
+  }
+  
+  h1 {
+    font-size: 1.5rem !important;
+  }
+  
+  h2 {
+    font-size: 1.25rem !important;
+  }
+  
+  /* تحسين التباعد */
+  .py-8 {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+  
+  .py-12 {
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
+  }
+  
+  .py-16 {
+    padding-top: 2rem !important;
+    padding-bottom: 2rem !important;
+  }
+}
+
+/* تحسين الـ Touch للموبايل */
+@media (hover: none) and (pointer: coarse) {
+  button, a, .clickable {
+    min-height: 44px; /* حجم مناسب للمس */
+    min-width: 44px;
+  }
+}
+
+/* Menu Mobile Styles */
+.mobile-menu {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-menu {
+    display: block;
+  }
+  
+  .mobile-menu-open {
+    overflow: hidden;
+  }
+  
+  .mobile-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 40;
+  }
+  
+  .mobile-menu-content {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 80%;
+    max-width: 300px;
+    background: linear-gradient(to bottom, #000, #1a1a1a);
+    z-index: 50;
+    overflow-y: auto;
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.5);
+  }
+}

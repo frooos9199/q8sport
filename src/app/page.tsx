@@ -120,78 +120,141 @@ export default function Home() {
     <div className="min-h-screen">
       {/* Header */}
       <header className="bg-gradient-to-r from-black via-gray-900 to-black border-b border-red-600 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-6">
+        <div className="container mx-auto px-4 py-4 md:py-6">
           <div className="flex justify-between items-center">
-            <h1 className="text-4xl font-bold text-white">
+            {/* Logo */}
+            <h1 className="text-2xl md:text-4xl font-bold text-white">
               أحلى سيارات <span className="text-red-600">الكويت</span>
             </h1>
-            <nav className="flex items-center gap-6">
-              <div className="hidden md:flex items-center gap-4">
-                <Link href="/auctions" className="text-gray-200 hover:text-white font-semibold transition-colors">
-                  المزادات
-                </Link>
-                <Link href="/showcases" className="text-gray-200 hover:text-white font-semibold transition-colors">
-                  Car Show
-                </Link>
-                <Link href="/requests" className="text-gray-200 hover:text-white font-semibold transition-colors">
-                  المطلوبات
-                </Link>
-                <Link href="/users" className="text-gray-200 hover:text-white font-semibold transition-colors">
-                  البائعين
-                </Link>
-              </div>
+            
+            {/* Desktop Navigation */}
+            <nav className="hidden lg:flex items-center gap-4">
+              <Link href="/auctions" className="text-gray-200 hover:text-white font-semibold transition-colors text-sm">
+                المزادات
+              </Link>
+              <Link href="/showcases" className="text-gray-200 hover:text-white font-semibold transition-colors text-sm">
+                Car Show
+              </Link>
+              <Link href="/requests" className="text-gray-200 hover:text-white font-semibold transition-colors text-sm">
+                المطلوبات
+              </Link>
+              <Link href="/users" className="text-gray-200 hover:text-white font-semibold transition-colors text-sm">
+                البائعين
+              </Link>
               {user ? (
-                <div className="flex gap-4">
-                  <Link href="/add-listing" className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold transition-all">
+                <>
+                  <Link href="/add-listing" className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold transition-all text-sm">
                     أضف إعلانك
                   </Link>
                   {canAccessAdminPanel() && (
-                    <Link href="/admin" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-all">
+                    <Link href="/admin" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition-all text-sm">
+                      الإدارة
+                    </Link>
+                  )}
+                  <Link href="/profile" className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-semibold transition-all text-sm">
+                    الملف
+                  </Link>
+                  <button 
+                    onClick={handleLogout}
+                    className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-semibold transition-all text-sm"
+                  >
+                    خروج
+                  </button>
+                </>
+              ) : (
+                <Link href="/auth" className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-semibold transition-all text-sm">
+                  دخول
+                </Link>
+              )}
+            </nav>
+
+            {/* Mobile Menu Button */}
+            <div className="lg:hidden flex items-center gap-2">
+              {user && (
+                <Link href="/add-listing" className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg font-semibold transition-all text-sm">
+                  إعلان
+                </Link>
+              )}
+              <button 
+                className="text-white p-2 hover:bg-gray-800 rounded-lg transition-colors"
+                onClick={() => {
+                  const menu = document.getElementById('mobile-menu');
+                  if (menu) {
+                    menu.classList.toggle('hidden');
+                  }
+                }}
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          {/* Mobile Menu */}
+          <div id="mobile-menu" className="hidden lg:hidden mt-4 pb-4 border-t border-gray-700 pt-4">
+            <div className="flex flex-col gap-3">
+              <Link href="/auctions" className="text-gray-200 hover:text-white font-semibold transition-colors py-2 px-4 hover:bg-gray-800 rounded-lg">
+                المزادات
+              </Link>
+              <Link href="/showcases" className="text-gray-200 hover:text-white font-semibold transition-colors py-2 px-4 hover:bg-gray-800 rounded-lg">
+                Car Show
+              </Link>
+              <Link href="/requests" className="text-gray-200 hover:text-white font-semibold transition-colors py-2 px-4 hover:bg-gray-800 rounded-lg">
+                المطلوبات
+              </Link>
+              <Link href="/users" className="text-gray-200 hover:text-white font-semibold transition-colors py-2 px-4 hover:bg-gray-800 rounded-lg">
+                البائعين
+              </Link>
+              {user ? (
+                <>
+                  {canAccessAdminPanel() && (
+                    <Link href="/admin" className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-semibold transition-all text-center">
                       لوحة الإدارة
                     </Link>
                   )}
-                  <Link href="/profile" className="bg-gray-800 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-semibold transition-all">
+                  <Link href="/profile" className="bg-gray-800 hover:bg-gray-700 text-white py-2 px-4 rounded-lg font-semibold transition-all text-center">
                     الملف الشخصي
                   </Link>
                   <button 
                     onClick={handleLogout}
-                    className="bg-gray-700 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-semibold transition-all"
+                    className="bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-lg font-semibold transition-all"
                   >
                     تسجيل الخروج
                   </button>
-                </div>
+                </>
               ) : (
-                <Link href="/auth" className="bg-gray-800 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-semibold transition-all">
+                <Link href="/auth" className="bg-gray-800 hover:bg-gray-700 text-white py-2 px-4 rounded-lg font-semibold transition-all text-center">
                   تسجيل الدخول
                 </Link>
               )}
-            </nav>
+            </div>
           </div>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-b from-gray-900 to-black py-16 border-b border-red-600">
+      <section className="bg-gradient-to-b from-gray-900 to-black py-8 md:py-16 border-b border-red-600">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-5xl font-bold text-white mb-4">
+          <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">
             أفضل السيارات الرياضية في الكويت
           </h2>
-          <p className="text-xl text-gray-300 mb-8">
+          <p className="text-base md:text-xl text-gray-300 mb-8">
             اشتري وبيع السيارات الرياضية وقطع الغيار بكل سهولة
           </p>
         </div>
       </section>
 
       {/* Filters Section */}
-      <section className="bg-gray-900 py-8 border-b border-gray-800">
+      <section className="bg-gray-900 py-6 md:py-8 border-b border-gray-800">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
             <div>
-              <label className="block text-white mb-2 font-semibold">النوع</label>
+              <label className="block text-white mb-2 font-semibold text-sm">النوع</label>
               <select
                 value={selectedType}
                 onChange={(e) => setSelectedType(e.target.value as any)}
-                className="w-full px-4 py-3 bg-black text-white border border-gray-700 rounded-lg focus:border-red-600 focus:outline-none"
+                className="w-full px-3 md:px-4 py-2 md:py-3 bg-black text-white border border-gray-700 rounded-lg focus:border-red-600 focus:outline-none text-sm"
               >
                 <option value="ALL">الكل</option>
                 <option value="CAR">سيارات</option>
@@ -200,11 +263,11 @@ export default function Home() {
             </div>
 
             <div>
-              <label className="block text-white mb-2 font-semibold">الماركة</label>
+              <label className="block text-white mb-2 font-semibold text-sm">الماركة</label>
               <select
                 value={selectedBrand}
                 onChange={(e) => handleBrandChange(e.target.value)}
-                className="w-full px-4 py-3 bg-black text-white border border-gray-700 rounded-lg focus:border-red-600 focus:outline-none"
+                className="w-full px-3 md:px-4 py-2 md:py-3 bg-black text-white border border-gray-700 rounded-lg focus:border-red-600 focus:outline-none text-sm"
               >
                 <option value="">جميع الماركات</option>
                 {Object.keys(SPORT_CARS).map(brand => (
@@ -214,12 +277,12 @@ export default function Home() {
             </div>
 
             <div>
-              <label className="block text-white mb-2 font-semibold">الموديل</label>
+              <label className="block text-white mb-2 font-semibold text-sm">الموديل</label>
               <select
                 value={selectedModel}
                 onChange={(e) => setSelectedModel(e.target.value)}
                 disabled={!selectedBrand}
-                className="w-full px-4 py-3 bg-black text-white border border-gray-700 rounded-lg focus:border-red-600 focus:outline-none disabled:opacity-50"
+                className="w-full px-3 md:px-4 py-2 md:py-3 bg-black text-white border border-gray-700 rounded-lg focus:border-red-600 focus:outline-none disabled:opacity-50 text-sm"
               >
                 <option value="">جميع الموديلات</option>
                 {selectedBrand && SPORT_CARS[selectedBrand as keyof typeof SPORT_CARS]?.map(model => (
@@ -235,7 +298,7 @@ export default function Home() {
                   setSelectedBrand('');
                   setSelectedModel('');
                 }}
-                className="w-full px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all"
+                className="w-full px-4 md:px-6 py-2 md:py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all text-sm"
               >
                 إعادة تعيين
               </button>

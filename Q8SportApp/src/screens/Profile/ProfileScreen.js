@@ -32,8 +32,6 @@ const ProfileScreen = ({ navigation }) => {
         try {
           const storedUser = await StorageService.getUser();
           if (storedUser) {
-            console.log('🔄 ProfileScreen: Refreshed user data from storage');
-            console.log('📸 Avatar in storage:', storedUser.avatar ? 'Exists' : 'Missing');
             setUser(storedUser);
           }
         } catch (error) {
@@ -75,11 +73,6 @@ const ProfileScreen = ({ navigation }) => {
       }
     >
       <View style={styles.header}>
-        <Image
-          source={require('../../../assets/images/icon.png')}
-          style={styles.headerLogo}
-          resizeMode="contain"
-        />
         {user?.avatar && typeof user.avatar === 'string' && user.avatar.trim() ? (
           <Image
             source={{ 
@@ -88,10 +81,6 @@ const ProfileScreen = ({ navigation }) => {
                 : `https://www.q8sportcar.com${user.avatar}` 
             }}
             style={styles.avatar}
-            onError={(e) => {
-              console.log('⚠️ Avatar image load error:', e.nativeEvent.error);
-              console.log('⚠️ Avatar URI was:', user.avatar.substring(0, 100));
-            }}
           />
         ) : (
           <View style={styles.avatar}>
@@ -201,12 +190,6 @@ const styles = StyleSheet.create({
     padding: 30,
     borderBottomWidth: 2,
     borderBottomColor: '#DC2626',
-  },
-  headerLogo: {
-    width: 60,
-    height: 60,
-    marginBottom: 20,
-    opacity: 0.8,
   },
   avatar: {
     width: 100,

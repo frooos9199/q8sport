@@ -224,34 +224,38 @@ export default function AdminDashboard() {
       <div className="min-h-screen">
         {/* Header */}
         <div className="bg-gradient-to-r from-black via-gray-900 to-black border-b border-red-600">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex items-center w-full md:w-auto">
                 <Link 
                   href="/" 
-                  className="flex items-center text-gray-400 hover:text-white ml-4 transition-colors"
+                  className="flex items-center text-gray-400 hover:text-white ml-4 transition-colors text-sm"
                 >
-                  <ArrowLeft className="h-5 w-5 ml-1" />
-                  العودة للرئيسية
+                  <ArrowLeft className="h-4 w-4 md:h-5 md:w-5 ml-1" />
+                  <span className="hidden sm:inline">العودة للرئيسية</span>
+                  <span className="sm:hidden">رجوع</span>
                 </Link>
-                <Shield className="h-10 w-10 ml-4 text-red-600" />
+                <Shield className="h-8 w-8 md:h-10 md:w-10 ml-3 md:ml-4 text-red-600" />
                 <div>
-                  <h1 className="text-3xl font-bold text-white">لوحة الإدارة</h1>
-                  <p className="text-gray-400 mt-1">Q8 Motors - إدارة النظام</p>
+                  <h1 className="text-xl md:text-3xl font-bold text-white">لوحة الإدارة</h1>
+                  <p className="text-gray-400 mt-1 text-xs md:text-sm hidden sm:block">Q8 Motors - إدارة النظام</p>
                 </div>
               </div>
-              <div className="flex items-center space-x-4">
-                <div className="relative">
-                  <Bell className="h-6 w-6 cursor-pointer hover:text-red-500 transition-colors text-white" />
+              <div className="flex items-center gap-2 md:gap-4 w-full md:w-auto justify-between md:justify-end">
+                <div className="relative hidden md:block">
+                  <Bell className="h-5 w-5 md:h-6 md:w-6 cursor-pointer hover:text-red-500 transition-colors text-white" />
                   <span className="absolute -top-1 -left-1 h-3 w-3 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">3</span>
                 </div>
-                <span className="text-white font-medium">مرحباً، {user?.name || 'الأدمن'}</span>
+                <span className="text-white font-medium text-sm md:text-base truncate max-w-[120px] md:max-w-none">
+                  مرحباً، {user?.name || 'الأدمن'}
+                </span>
                 <button 
                   onClick={handleLogout}
-                  className="flex items-center px-3 py-2 bg-red-600 rounded-lg text-white hover:bg-red-700 transition-colors"
+                  className="flex items-center px-2 md:px-3 py-2 bg-red-600 rounded-lg text-white hover:bg-red-700 transition-colors text-xs md:text-sm"
                 >
-                  <LogOut className="h-5 w-5 ml-2" />
-                  تسجيل الخروج
+                  <LogOut className="h-4 w-4 md:h-5 md:w-5 ml-1 md:ml-2" />
+                  <span className="hidden sm:inline">خروج</span>
+                  <span className="sm:hidden">خروج</span>
                 </button>
               </div>
             </div>
@@ -259,110 +263,110 @@ export default function AdminDashboard() {
         </div>
 
         {/* Main Content */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
           {/* Date Display */}
-          <div className="bg-gray-900 border border-gray-800 rounded-lg p-4 mb-6">
+          <div className="bg-gray-900 border border-gray-800 rounded-lg p-3 md:p-4 mb-4 md:mb-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-medium text-gray-400">اليوم</h3>
-                <p className="text-lg font-bold text-white">{getCurrentDateGregorian()}</p>
+                <h3 className="text-xs md:text-sm font-medium text-gray-400">اليوم</h3>
+                <p className="text-base md:text-lg font-bold text-white">{getCurrentDateGregorian()}</p>
               </div>
               <div className="text-red-600">
-                <Calendar className="h-6 w-6" />
+                <Calendar className="h-5 w-5 md:h-6 md:w-6" />
               </div>
             </div>
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-gray-900 border border-gray-800 rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <Users className="h-12 w-12 text-red-600" />
-                <div className="mr-4">
-                  <p className="text-sm text-gray-400">إجمالي المستخدمين</p>
-                  <p className="text-2xl font-bold text-white">{stats.totalUsers}</p>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
+            <div className="bg-gray-900 border border-gray-800 rounded-lg shadow p-3 md:p-6">
+              <div className="flex flex-col md:flex-row items-center">
+                <Users className="h-8 w-8 md:h-12 md:w-12 text-red-600 mb-2 md:mb-0" />
+                <div className="md:mr-4 text-center md:text-right">
+                  <p className="text-xs md:text-sm text-gray-400">المستخدمين</p>
+                  <p className="text-lg md:text-2xl font-bold text-white">{stats.totalUsers}</p>
                 </div>
               </div>
             </div>
             
-            <div className="bg-gray-900 border border-gray-800 rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <Activity className="h-12 w-12 text-green-600" />
-                <div className="mr-4">
-                  <p className="text-sm text-gray-400">المزادات النشطة</p>
-                  <p className="text-2xl font-bold text-white">{stats.activeAuctions}</p>
+            <div className="bg-gray-900 border border-gray-800 rounded-lg shadow p-3 md:p-6">
+              <div className="flex flex-col md:flex-row items-center">
+                <Activity className="h-8 w-8 md:h-12 md:w-12 text-green-600 mb-2 md:mb-0" />
+                <div className="md:mr-4 text-center md:text-right">
+                  <p className="text-xs md:text-sm text-gray-400">المزادات</p>
+                  <p className="text-lg md:text-2xl font-bold text-white">{stats.activeAuctions}</p>
                 </div>
               </div>
             </div>
             
-            <div className="bg-gray-900 border border-gray-800 rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <DollarSign className="h-12 w-12 text-yellow-600" />
-                <div className="mr-4">
-                  <p className="text-sm text-gray-400 font-medium">إجمالي الإيرادات</p>
-                  <p className="text-2xl font-bold text-white">{formatCurrency(stats.totalRevenue)}</p>
+            <div className="bg-gray-900 border border-gray-800 rounded-lg shadow p-3 md:p-6">
+              <div className="flex flex-col md:flex-row items-center">
+                <DollarSign className="h-8 w-8 md:h-12 md:w-12 text-yellow-600 mb-2 md:mb-0" />
+                <div className="md:mr-4 text-center md:text-right">
+                  <p className="text-xs md:text-sm text-gray-400 font-medium">الإيرادات</p>
+                  <p className="text-base md:text-2xl font-bold text-white">{formatCurrency(stats.totalRevenue)}</p>
                 </div>
               </div>
             </div>
             
-            <div className="bg-gray-900 border border-gray-800 rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <Package className="h-12 w-12 text-red-600" />
-                <div className="mr-4">
-                  <p className="text-sm text-gray-400">إجمالي المزايدات</p>
-                  <p className="text-2xl font-bold text-white">{stats.totalBids}</p>
+            <div className="bg-gray-900 border border-gray-800 rounded-lg shadow p-3 md:p-6">
+              <div className="flex flex-col md:flex-row items-center">
+                <Package className="h-8 w-8 md:h-12 md:w-12 text-red-600 mb-2 md:mb-0" />
+                <div className="md:mr-4 text-center md:text-right">
+                  <p className="text-xs md:text-sm text-gray-400">المزايدات</p>
+                  <p className="text-lg md:text-2xl font-bold text-white">{stats.totalBids}</p>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Quick Actions */}
-          <div className="bg-gray-900 border border-gray-800 rounded-lg shadow p-6 mb-8">
-            <h2 className="text-xl font-semibold text-white mb-4">أوامر إدارية رئيسية</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              <Link href="/admin/users" className="flex items-center justify-center p-4 bg-black border border-gray-800 hover:border-red-600 rounded-lg transition-colors">
-                <Users className="h-6 w-6 text-red-600 ml-2" />
-                <span className="text-white font-medium">إدارة المستخدمين</span>
+          <div className="bg-gray-900 border border-gray-800 rounded-lg shadow p-4 md:p-6 mb-6 md:mb-8">
+            <h2 className="text-lg md:text-xl font-semibold text-white mb-3 md:mb-4">أوامر إدارية رئيسية</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 md:gap-4">
+              <Link href="/admin/users" className="flex flex-col md:flex-row items-center justify-center p-3 md:p-4 bg-black border border-gray-800 hover:border-red-600 rounded-lg transition-colors">
+                <Users className="h-5 w-5 md:h-6 md:w-6 text-red-600 mb-1 md:mb-0 md:ml-2" />
+                <span className="text-white font-medium text-xs md:text-sm text-center md:text-right">المستخدمين</span>
               </Link>
 
-              <Link href="/admin/auctions" className="flex items-center justify-center p-4 bg-black border border-gray-800 hover:border-red-600 rounded-lg transition-colors">
-                <Car className="h-6 w-6 text-green-600 ml-2" />
-                <span className="text-white font-medium">إدارة المزادات</span>
+              <Link href="/admin/auctions" className="flex flex-col md:flex-row items-center justify-center p-3 md:p-4 bg-black border border-gray-800 hover:border-red-600 rounded-lg transition-colors">
+                <Car className="h-5 w-5 md:h-6 md:w-6 text-green-600 mb-1 md:mb-0 md:ml-2" />
+                <span className="text-white font-medium text-xs md:text-sm text-center md:text-right">المزادات</span>
               </Link>
 
-              <Link href="/admin/requests" className="flex items-center justify-center p-4 bg-black border border-gray-800 hover:border-red-600 rounded-lg transition-colors">
-                <ShoppingCart className="h-6 w-6 text-yellow-600 ml-2" />
-                <span className="text-white font-medium">إدارة المطلوبات</span>
+              <Link href="/admin/requests" className="flex flex-col md:flex-row items-center justify-center p-3 md:p-4 bg-black border border-gray-800 hover:border-red-600 rounded-lg transition-colors">
+                <ShoppingCart className="h-5 w-5 md:h-6 md:w-6 text-yellow-600 mb-1 md:mb-0 md:ml-2" />
+                <span className="text-white font-medium text-xs md:text-sm text-center md:text-right">المطلوبات</span>
               </Link>
               
-              <Link href="/admin/ads" className="flex items-center justify-center p-4 bg-black border border-gray-800 hover:border-red-600 rounded-lg transition-colors">
-                <Settings className="h-6 w-6 text-red-600 ml-2" />
-                <span className="text-white font-medium">إعلانات Google</span>
+              <Link href="/admin/ads" className="flex flex-col md:flex-row items-center justify-center p-3 md:p-4 bg-black border border-gray-800 hover:border-red-600 rounded-lg transition-colors">
+                <Settings className="h-5 w-5 md:h-6 md:w-6 text-red-600 mb-1 md:mb-0 md:ml-2" />
+                <span className="text-white font-medium text-xs md:text-sm text-center md:text-right">إعلانات Google</span>
               </Link>
               
-              <Link href="/admin/advertisements" className="flex items-center justify-center p-4 bg-black border border-gray-800 hover:border-red-600 rounded-lg transition-colors">
-                <Monitor className="h-6 w-6 text-green-600 ml-2" />
-                <span className="text-white font-medium">إدارة الإعلانات</span>
+              <Link href="/admin/advertisements" className="flex flex-col md:flex-row items-center justify-center p-3 md:p-4 bg-black border border-gray-800 hover:border-red-600 rounded-lg transition-colors">
+                <Monitor className="h-5 w-5 md:h-6 md:w-6 text-green-600 mb-1 md:mb-0 md:ml-2" />
+                <span className="text-white font-medium text-xs md:text-sm text-center md:text-right">الإعلانات</span>
               </Link>
               
-              <Link href="/admin/showcases" className="flex items-center justify-center p-4 bg-black border border-gray-800 hover:border-red-600 rounded-lg transition-colors">
-                <Car className="h-6 w-6 text-red-600 ml-2" />
-                <span className="text-white font-medium">إدارة Car Show</span>
+              <Link href="/admin/showcases" className="flex flex-col md:flex-row items-center justify-center p-3 md:p-4 bg-black border border-gray-800 hover:border-red-600 rounded-lg transition-colors">
+                <Car className="h-5 w-5 md:h-6 md:w-6 text-red-600 mb-1 md:mb-0 md:ml-2" />
+                <span className="text-white font-medium text-xs md:text-sm text-center md:text-right">Car Show</span>
               </Link>
               
-              <Link href="/admin/shops" className="flex items-center justify-center p-4 bg-black border border-gray-800 hover:border-red-600 rounded-lg transition-colors">
-                <Store className="h-6 w-6 text-red-600 ml-2" />
-                <span className="text-white font-medium">إدارة أصحاب المحلات</span>
+              <Link href="/admin/shops" className="flex flex-col md:flex-row items-center justify-center p-3 md:p-4 bg-black border border-gray-800 hover:border-red-600 rounded-lg transition-colors">
+                <Store className="h-5 w-5 md:h-6 md:w-6 text-red-600 mb-1 md:mb-0 md:ml-2" />
+                <span className="text-white font-medium text-xs md:text-sm text-center md:text-right">المحلات</span>
               </Link>
               
-              <Link href="/admin/reports" className="flex items-center justify-center p-4 bg-black border border-gray-800 hover:border-red-600 rounded-lg transition-colors">
-                <BarChart3 className="h-6 w-6 text-red-600 ml-2" />
-                <span className="text-white font-medium">عرض التقارير</span>
+              <Link href="/admin/reports" className="flex flex-col md:flex-row items-center justify-center p-3 md:p-4 bg-black border border-gray-800 hover:border-red-600 rounded-lg transition-colors">
+                <BarChart3 className="h-5 w-5 md:h-6 md:w-6 text-red-600 mb-1 md:mb-0 md:ml-2" />
+                <span className="text-white font-medium text-xs md:text-sm text-center md:text-right">التقارير</span>
               </Link>
               
-              <Link href="/admin/categories" className="flex items-center justify-center p-4 bg-black border border-gray-800 hover:border-red-600 rounded-lg transition-colors">
-                <Package className="h-6 w-6 text-red-600 ml-2" />
-                <span className="text-white font-medium">إدارة الكاتيجوري</span>
+              <Link href="/admin/categories" className="flex flex-col md:flex-row items-center justify-center p-3 md:p-4 bg-black border border-gray-800 hover:border-red-600 rounded-lg transition-colors">
+                <Package className="h-5 w-5 md:h-6 md:w-6 text-red-600 mb-1 md:mb-0 md:ml-2" />
+                <span className="text-white font-medium text-xs md:text-sm text-center md:text-right">الكاتيجوري</span>
               </Link>
             </div>
           </div>

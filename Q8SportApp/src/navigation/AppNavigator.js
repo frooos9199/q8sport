@@ -1,10 +1,12 @@
 import React from 'react';
+import { View, StatusBar } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useAuth } from '../contexts/AuthContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { AdminIcon, StoreIcon } from '../components/Icons';
+import BurnoutLoader from '../components/BurnoutLoader';
 
 // Auth Screens
 import LoginScreen from '../screens/Auth/LoginScreen';
@@ -598,8 +600,14 @@ const MainTabNavigator = () => {
 const AppNavigator = () => {
   const { loading } = useAuth();
 
+  // عرض SplashScreen أثناء التحميل بدلاً من null
   if (loading) {
-    return null;
+    return (
+      <View style={{ flex: 1, backgroundColor: '#000' }}>
+        <StatusBar barStyle="light-content" backgroundColor="#000" />
+        <BurnoutLoader text="Q8 Sport Car" />
+      </View>
+    );
   }
 
   return (

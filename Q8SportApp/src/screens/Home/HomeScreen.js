@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import {
   Pressable,
 } from 'react-native';
 import BurnoutLoader from '../../components/BurnoutLoader';
+import { SkeletonGrid } from '../../components/SkeletonLoader';
 import { ProductService } from '../../services/api/products';
 import { CarIcon, PartsIcon, AccessoryIcon, FavoriteIcon } from '../../components/Icons';
 import { useAuth } from '../../contexts/AuthContext';
@@ -47,19 +48,19 @@ const ProductCard = React.memo(({ item, index, onPress, onFavorite, isFavorite }
   useEffect(() => {
     Animated.timing(animValue, {
       toValue: 1,
-      duration: 400,
-      delay: index * 100,
+      duration: 300, // تقليل من 400 إلى 300
+      delay: index * 50, // تقليل من 100 إلى 50
       useNativeDriver: true,
     }).start();
 
-    // تغيير الصور تلقائياً
+    // تغيير الصور تلقائياً - تحسين: فقط إذا كان أكثر من صورة واحدة
     if (images.length > 1) {
       const interval = setInterval(() => {
         setCurrentImageIndex((prev) => (prev + 1) % images.length);
-      }, 3000);
+      }, 4000); // زيادة من 3 ثواني إلى 4 ثواني لتقليل العمليات
       return () => clearInterval(interval);
     }
-  }, [images.length]);
+  }, [images.length, index]);
 
   return (
     <Animated.View
@@ -122,10 +123,15 @@ const ProductCard = React.memo(({ item, index, onPress, onFavorite, isFavorite }
 const HomeScreen = ({ navigation }) => {
   const { token, isAuthenticated } = useAuth();
   const [products, setProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [allProducts, setAllProducts] = useState([]); // جميع المنتجات
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [silentRefresh, setSilentRefresh] = useState(false); // تحديث صامت
+  const [loadingMore, setLoadingMore] = useState(false); // تحميل المزيد
+  const [page, setPage] = useState(1); // رقم الصفحة الحالية
+  const [hasMore, setHasMore] = useState(true); // هل يوجد المزيد
+  const ITEMS_PER_PAGE = 10; // عدد المنتجات لكل صفحة
   const [selectedType, setSelectedType] = useState('ALL');
   const [selectedBrand, setSelectedBrand] = useState('');
   const [selectedModel, setSelectedModel] = useState('');
@@ -134,44 +140,80 @@ const HomeScreen = ({ navigation }) => {
   const slideAnim = useRef(new Animated.Value(50)).current;
 
   useEffect(() => {
-    fetchProducts();
+    fetchProducts(true);
+    // تحسين: الأنيميشن يعمل بشكل أسرع
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 800,
+        duration: 500,
         useNativeDriver: true,
       }),
       Animated.spring(slideAnim, {
         toValue: 0,
-        tension: 20,
+        tension: 30,
         friction: 7,
         useNativeDriver: true,
       }),
     ]).start();
   }, []);
 
-  useEffect(() => {
-    filterProducts();
-  }, [products, selectedType, selectedBrand, selectedModel]);
-
-  const fetchProducts = async () => {
-    if (!refreshing) {
-      setLoading(true);
+  const fetchProducts = useCallback(async (reset = false, silent = false) => {
+    if (reset) {
+      if (silent) {
+        setSilentRefresh(true); // تحديث صامت
+      } else {
+        setLoading(true);
+      }
+      setPage(1);
     }
+    
     try {
       const response = await ProductService.getProducts();
       const apiProducts = response.products || [];
-      setProducts(apiProducts);
+      setAllProducts(apiProducts);
+      
+      // تحميل أول 10 منتجات فقط
+      const initialProducts = apiProducts.slice(0, ITEMS_PER_PAGE);
+      setProducts(initialProducts);
+      setHasMore(apiProducts.length > ITEMS_PER_PAGE);
     } catch (error) {
       console.error('Error fetching products:', error);
       setProducts([]);
+      setAllProducts([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
+      setSilentRefresh(false);
     }
-  };
+  }, [refreshing, ITEMS_PER_PAGE]);
 
-  const filterProducts = () => {
+  // دالة لتحميل المزيد من المنتجات
+  const loadMoreProducts = useCallback(() => {
+    if (loadingMore || !hasMore) return;
+    
+    setLoadingMore(true);
+    
+    // محاكاة تأخير بسيط للتحميل
+    setTimeout(() => {
+      const nextPage = page + 1;
+      const startIndex = page * ITEMS_PER_PAGE;
+      const endIndex = startIndex + ITEMS_PER_PAGE;
+      const newProducts = allProducts.slice(startIndex, endIndex);
+      
+      if (newProducts.length > 0) {
+        setProducts(prev => [...prev, ...newProducts]);
+        setPage(nextPage);
+        setHasMore(endIndex < allProducts.length);
+      } else {
+        setHasMore(false);
+      }
+      
+      setLoadingMore(false);
+    }, 500);
+  }, [page, allProducts, loadingMore, hasMore, ITEMS_PER_PAGE]);
+
+  // استخدام useMemo لتحسين الأداء
+  const filteredProducts = useMemo(() => {
     let filtered = products;
 
     if (selectedType !== 'ALL') {
@@ -186,8 +228,17 @@ const HomeScreen = ({ navigation }) => {
       filtered = filtered.filter(p => p.carModel === selectedModel);
     }
 
-    setFilteredProducts(filtered);
-  };
+    return filtered;
+  }, [products, selectedType, selectedBrand, selectedModel]);
+
+  // عند تغيير الفلاتر، إعادة تعيين التحميل التدريجي
+  useEffect(() => {
+    if (selectedType !== 'ALL' || selectedBrand || selectedModel) {
+      // إعادة تعيين الصفحة عند تطبيق فلاتر
+      setPage(1);
+      setHasMore(true);
+    }
+  }, [selectedType, selectedBrand, selectedModel]);
 
   const activeFiltersCount =
     (selectedType !== 'ALL' ? 1 : 0) + (selectedBrand ? 1 : 0) + (selectedModel ? 1 : 0);
@@ -203,27 +254,40 @@ const HomeScreen = ({ navigation }) => {
     .filter(Boolean)
     .join(' • ');
 
-  const handleBrandChange = (brand) => {
+  const handleBrandChange = useCallback((brand) => {
     setSelectedBrand(brand);
     setSelectedModel('');
-  };
+  }, []);
 
-  const resetFilters = () => {
+  const resetFilters = useCallback(() => {
     setSelectedType('ALL');
     setSelectedBrand('');
     setSelectedModel('');
-  };
+  }, []);
 
-  const onRefresh = () => {
+  const onRefresh = useCallback(() => {
     setRefreshing(true);
-    fetchProducts();
-  };
+    setPage(1);
+    setHasMore(true);
+    fetchProducts(true, false); // refresh عادي
+  }, [fetchProducts]);
 
-  const handleProductPress = (productId) => {
+  // Silent refresh - يعمل في الخلفية كل 30 ثانية
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!loading && !refreshing && !loadingMore) {
+        fetchProducts(true, true); // silent refresh
+      }
+    }, 30000); // كل 30 ثانية
+
+    return () => clearInterval(interval);
+  }, [loading, refreshing, loadingMore, fetchProducts]);
+
+  const handleProductPress = useCallback((productId) => {
     navigation.navigate('ProductDetails', { productId });
-  };
+  }, [navigation]);
 
-  const handleFavorite = async (productId) => {
+  const handleFavorite = useCallback(async (productId) => {
     if (!isAuthenticated) {
       Alert.alert('تنبيه', 'يجب تسجيل الدخول لإضافة منتجات للمفضلة');
       return;
@@ -241,7 +305,7 @@ const HomeScreen = ({ navigation }) => {
     } catch (error) {
       console.error('Error:', error);
     }
-  };
+  }, [isAuthenticated, favorites]);
 
   const renderProduct = ({ item, index }) => (
     <ProductCard 
@@ -253,7 +317,8 @@ const HomeScreen = ({ navigation }) => {
     />
   );
 
-  if (loading) {
+  // عرض BurnoutLoader فقط عند التحميل الأولي (ليس عند refresh)
+  if (loading && !refreshing && products.length === 0) {
     return <BurnoutLoader text="جاري تحميل السيارات..." />;
   }
 
@@ -284,6 +349,11 @@ const HomeScreen = ({ navigation }) => {
               <Text style={styles.headerTitleWhite}> Sport Car</Text>
             </Text>
           </View>
+          {silentRefresh && (
+            <View style={styles.silentRefreshIndicator}>
+              <ActivityIndicator size="small" color="#DC2626" />
+            </View>
+          )}
         </View>
       </Animated.View>
 
@@ -468,6 +538,26 @@ const HomeScreen = ({ navigation }) => {
             tintColor="#DC2626"
           />
         }
+        onEndReached={loadMoreProducts}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={() => {
+          if (loadingMore) {
+            return (
+              <View style={styles.loadingMore}>
+                <ActivityIndicator size="small" color="#DC2626" />
+                <Text style={styles.loadingMoreText}>جاري تحميل المزيد...</Text>
+              </View>
+            );
+          }
+          if (!hasMore && filteredProducts.length > 0) {
+            return (
+              <View style={styles.endMessage}>
+                <Text style={styles.endMessageText}>✓ تم عرض جميع المنتجات</Text>
+              </View>
+            );
+          }
+          return null;
+        }}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>لا توجد منتجات</Text>
@@ -516,6 +606,16 @@ const styles = StyleSheet.create({
   },
   headerTitleRed: {
     color: '#DC2626',
+  },
+  silentRefreshIndicator: {
+    position: 'absolute',
+    right: 10,
+    top: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    padding: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#DC2626',
   },
   filtersBar: {
     paddingHorizontal: 12,
@@ -823,6 +923,28 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 15,
     fontWeight: 'bold',
+  },
+  loadingMore: {
+    paddingVertical: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 10,
+  },
+  loadingMoreText: {
+    color: '#DC2626',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  endMessage: {
+    paddingVertical: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  endMessageText: {
+    color: '#888',
+    fontSize: 13,
+    fontWeight: '600',
   },
 });
 

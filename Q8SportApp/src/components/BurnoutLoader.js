@@ -10,12 +10,12 @@ const BurnoutLoader = ({ text = 'جاري التحميل...' }) => {
   const wheelSpin = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // دخان يطلع
+    // دخان يطلع - تحسين: مدة أقصر
     Animated.loop(
       Animated.sequence([
         Animated.timing(smokeAnim, {
           toValue: 1,
-          duration: 1500,
+          duration: 1000, // تقليل من 1500 إلى 1000
           useNativeDriver: true,
         }),
         Animated.timing(smokeAnim, {
@@ -26,48 +26,48 @@ const BurnoutLoader = ({ text = 'جاري التحميل...' }) => {
       ])
     ).start();
 
-    // نار تشتعل
+    // نار تشتعل - تحسين: مدة أقصر
     Animated.loop(
       Animated.sequence([
         Animated.timing(fireAnim, {
           toValue: 1,
-          duration: 300,
+          duration: 200, // تقليل من 300 إلى 200
           useNativeDriver: true,
         }),
         Animated.timing(fireAnim, {
           toValue: 0,
-          duration: 300,
+          duration: 200, // تقليل من 300 إلى 200
           useNativeDriver: true,
         }),
       ])
     ).start();
 
-    // السيارة تهتز
+    // السيارة تهتز - تحسين: أقل اهتزاز
     Animated.loop(
       Animated.sequence([
         Animated.timing(carShake, {
-          toValue: 5,
-          duration: 50,
+          toValue: 3, // تقليل من 5 إلى 3
+          duration: 40, // تقليل من 50 إلى 40
           useNativeDriver: true,
         }),
         Animated.timing(carShake, {
-          toValue: -5,
-          duration: 50,
+          toValue: -3, // تقليل من -5 إلى -3
+          duration: 40,
           useNativeDriver: true,
         }),
         Animated.timing(carShake, {
           toValue: 0,
-          duration: 50,
+          duration: 40,
           useNativeDriver: true,
         }),
       ])
     ).start();
 
-    // الإطارات تدور
+    // الإطارات تدور - تحسين: دوران أسرع
     Animated.loop(
       Animated.timing(wheelSpin, {
         toValue: 1,
-        duration: 800,
+        duration: 600, // تقليل من 800 إلى 600
         useNativeDriver: true,
       })
     ).start();

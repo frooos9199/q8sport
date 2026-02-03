@@ -26,6 +26,7 @@
     "**/android",
     "**/ios",
     "**/__tests__",
-    "**/vendor"
+    "**/vendor",
+    "node_modules/@react-native-firebase/**"
   ]
 }
