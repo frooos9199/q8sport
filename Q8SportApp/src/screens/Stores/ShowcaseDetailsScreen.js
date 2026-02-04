@@ -543,9 +543,12 @@ const styles = StyleSheet.create({
   moderationActions: {
     flexDirection: 'row',
     paddingHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 16,
-    gap: 10,
+    marginTop: 16,
+    marginBottom: 20,
+    paddingTop: 16,
+    borderTopWidth: 1.5,
+    borderTopColor: '#DC2626',
+    gap: 12,
   },
   reportBtn: {
     flex: 1,

@@ -433,11 +433,11 @@ const styles = StyleSheet.create({
   },
   moderationActions: {
     flexDirection: 'row',
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#333',
-    gap: 10,
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1.5,
+    borderTopColor: '#DC2626',
+    gap: 12,
   },
   reportBtn: {
     flex: 1,
