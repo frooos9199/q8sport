@@ -22,11 +22,18 @@ const RegisterScreen = ({ navigation }) => {
   const [whatsapp, setWhatsapp] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
     if (!name || !email || !password) {
       Alert.alert('خطأ', 'يرجى إدخال الاسم، البريد الإلكتروني، وكلمة المرور');
+      return;
+    }
+
+    // Validate terms acceptance
+    if (!acceptedTerms) {
+      Alert.alert('خطأ', 'يجب الموافقة على شروط الاستخدام للمتابعة');
       return;
     }
 
@@ -145,6 +152,27 @@ const RegisterScreen = ({ navigation }) => {
             />
           </View>
 
+          <View style={styles.termsContainer}>
+            <TouchableOpacity
+              style={styles.checkboxContainer}
+              onPress={() => setAcceptedTerms(!acceptedTerms)}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.checkbox, acceptedTerms && styles.checkboxChecked]}>
+                {acceptedTerms && <Text style={styles.checkmark}>✓</Text>}
+              </View>
+              <Text style={styles.termsText}>
+                أوافق على{' '}
+                <Text
+                  style={styles.termsLink}
+                  onPress={() => navigation.navigate('Terms')}
+                >
+                  شروط الاستخدام
+                </Text>
+              </Text>
+            </TouchableOpacity>
+          </View>
+
           <TouchableOpacity
             style={[styles.button, loading && styles.buttonDisabled]}
             onPress={handleRegister}
@@ -219,6 +247,44 @@ const styles = StyleSheet.create({
     borderColor: '#1a1a1a',
     textAlign: 'right',
     fontSize: 15,
+  },
+  termsContainer: {
+    marginVertical: 20,
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderWidth: 2,
+    borderColor: '#666',
+    borderRadius: 6,
+    marginLeft: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#111',
+  },
+  checkboxChecked: {
+    backgroundColor: '#DC2626',
+    borderColor: '#DC2626',
+  },
+  checkmark: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  termsText: {
+    color: '#ccc',
+    fontSize: 14,
+    textAlign: 'right',
+  },
+  termsLink: {
+    color: '#DC2626',
+    fontWeight: 'bold',
+    textDecorationLine: 'underline',
   },
   button: {
     backgroundColor: '#DC2626',

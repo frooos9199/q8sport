@@ -16,6 +16,8 @@ import {
 } from 'react-native';
 
 import { ProductService } from '../services/api/products';
+import ReportButton from '../components/ReportButton';
+import BlockUserButton from '../components/BlockUserButton';
 
 const { width } = Dimensions.get('window');
 
@@ -201,6 +203,24 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                 <Text style={styles.sellerRating}>⭐ {product.seller?.rating || '5.0'} ({product.seller?.totalProducts || 0} منتج)</Text>
               </View>
             </View>
+            
+            {/* أزرار الإبلاغ والحظر */}
+            {product.seller?.id && (
+              <View style={styles.moderationActions}>
+                <ReportButton
+                  contentType="PRODUCT"
+                  contentId={product.id}
+                  reportedUserId={product.seller.id}
+                  style={styles.reportBtn}
+                />
+                <BlockUserButton
+                  userId={product.seller.id}
+                  userName={product.seller.name || 'المستخدم'}
+                  style={styles.blockBtn}
+                  onBlocked={() => navigation.goBack()}
+                />
+              </View>
+            )}
           </View>
 
           {/* أزرار الإجراءات */}
@@ -410,6 +430,20 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#999',
     marginTop: 2,
+  },
+  moderationActions: {
+    flexDirection: 'row',
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#333',
+    gap: 10,
+  },
+  reportBtn: {
+    flex: 1,
+  },
+  blockBtn: {
+    flex: 1,
   },
   actions: {
     flexDirection: 'row',

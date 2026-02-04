@@ -19,6 +19,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import AdminService from '../../services/AdminService';
 import apiClient from '../../services/apiClient';
 import API_CONFIG from '../../config/api';
+import ReportButton from '../../components/ReportButton';
+import BlockUserButton from '../../components/BlockUserButton';
 
 const { width } = Dimensions.get('window');
 
@@ -278,6 +280,24 @@ const ShowcaseDetailsScreen = ({ route, navigation }) => {
             <Text style={styles.followButtonText}>+ متابعة</Text>
           </TouchableOpacity>
         </View>
+        
+        {/* أزرار الإبلاغ والحظر */}
+        {showcase.user?.id && (
+          <View style={styles.moderationActions}>
+            <ReportButton
+              contentType="SHOWCASE"
+              contentId={showcase.id}
+              reportedUserId={showcase.user.id}
+              style={styles.reportBtn}
+            />
+            <BlockUserButton
+              userId={showcase.user.id}
+              userName={showcase.user.name || 'المستخدم'}
+              style={styles.blockBtn}
+              onBlocked={() => navigation.goBack()}
+            />
+          </View>
+        )}
 
         {/* معلومات السيارة */}
         <View style={styles.carSection}>
@@ -519,6 +539,19 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  moderationActions: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 16,
+    gap: 10,
+  },
+  reportBtn: {
+    flex: 1,
+  },
+  blockBtn: {
+    flex: 1,
   },
   carSection: {
     padding: 20,

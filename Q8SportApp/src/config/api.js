@@ -67,6 +67,11 @@ const API_CONFIG = {
     ADMIN_PRODUCT_DELETE: (id) => `/admin/products/${id}`,
     ADMIN_SETTINGS: '/admin/settings',
     ADMIN_REQUESTS: '/admin/requests',
+    
+    // Moderation (Apple Guideline 1.2)
+    MODERATION_REPORT: '/moderation/report',
+    MODERATION_BLOCK: '/moderation/block',
+    MODERATION_ACTIONS: '/moderation/action',
   }
 };
 
