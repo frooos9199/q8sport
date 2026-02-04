@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { verifyToken } from '@/lib/jwt';
+import { verifyTokenString } from '@/lib/auth';
 
 /**
  * POST /api/moderation/block
@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const decoded = verifyToken(token);
+    const decoded = await verifyTokenString(token);
     if (!decoded) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
     }
@@ -125,7 +125,7 @@ export async function DELETE(req: Request) {
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const decoded = verifyToken(token);
+    const decoded = await verifyTokenString(token);
     if (!decoded) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
     }
@@ -186,7 +186,7 @@ export async function GET(req: Request) {
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const decoded = verifyToken(token);
+    const decoded = await verifyTokenString(token);
     if (!decoded) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
     }
