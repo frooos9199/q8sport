@@ -14,12 +14,20 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, email, password, phone, whatsapp } = body;
+    const { name, email, password, phone, whatsapp, acceptedTerms } = body;
 
     // Validate input (make phone optional to comply with privacy guidelines)
     if (!name || !email || !password) {
       return NextResponse.json(
         { error: 'الاسم، البريد الإلكتروني، وكلمة المرور مطلوبة' },
+        { status: 400 }
+      );
+    }
+
+    // CRITICAL: Terms acceptance is REQUIRED (Apple Guideline 1.2)
+    if (!acceptedTerms) {
+      return NextResponse.json(
+        { error: 'يجب الموافقة على شروط الخدمة للمتابعة' },
         { status: 400 }
       );
     }
@@ -53,7 +61,7 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create user
+    // Create user with terms acceptance timestamp
     const user = await prisma.user.create({
       data: {
         name,
@@ -62,7 +70,9 @@ export async function POST(request: NextRequest) {
         phone: phone || null,
         whatsapp: whatsapp || phone || null,
         role: 'USER',
-        status: 'ACTIVE'
+        status: 'ACTIVE',
+        acceptedTermsAt: new Date(),
+        termsVersion: '1.0', // Update this when terms change
       },
       select: {
         id: true,
@@ -72,7 +82,8 @@ export async function POST(request: NextRequest) {
         whatsapp: true,
         role: true,
         status: true,
-        createdAt: true
+        createdAt: true,
+        acceptedTermsAt: true,
       }
     });
 

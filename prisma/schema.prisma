@@ -25,6 +25,10 @@ model User {
   verified  Boolean   @default(false)
   lastLoginAt DateTime?
   
+  // Terms & Safety
+  acceptedTermsAt DateTime?  // Terms of Service acceptance timestamp
+  termsVersion    String?    // Version of terms accepted
+  
   // Shop/Business info
   shopName    String?   // اسم المحل
   shopAddress String?   // عنوان المحل
@@ -57,6 +61,13 @@ model User {
   showcases Showcase[]
   showcaseLikes ShowcaseLike[]
   showcaseComments ShowcaseComment[]
+  
+  // Moderation Relations
+  reports ContentReport[] @relation("ReportedBy")
+  blockedUsers BlockedUser[] @relation("BlockedByUser")
+  blockedByUsers BlockedUser[] @relation("BlockedUser")
+  moderationActions ModerationAction[] @relation("ModeratedBy")
+  bannedContent BannedContent[]
   
   @@map("users")
 }
@@ -502,4 +513,149 @@ enum ShowcaseStatus {
   PENDING   // في انتظار الموافقة
   APPROVED  // تمت الموافقة
   REJECTED  // مرفوض
+}
+// Content Reporting and Moderation System
+model ContentReport {
+  id            String        @id @default(cuid())
+  contentType   ContentType   
+  contentId     String        
+  reason        ReportReason  
+  details       String?       
+  status        ReportStatus  @default(PENDING)
+  priority      ReportPriority @default(MEDIUM)
+  reviewedAt    DateTime?     
+  resolvedAt    DateTime?     
+  resolution    String?       
+  createdAt     DateTime      @default(now())
+  
+  reportedById  String
+  reportedBy    User          @relation("ReportedBy", fields: [reportedById], references: [id], onDelete: Cascade)
+  
+  moderationActions ModerationAction[]
+  
+  @@index([status, priority, createdAt])
+  @@index([contentType, contentId])
+  @@map("content_reports")
+}
+
+model BlockedUser {
+  id          String    @id @default(cuid())
+  reason      String?   
+  createdAt   DateTime  @default(now())
+  
+  userId      String    
+  user        User      @relation("BlockedUser", fields: [userId], references: [id], onDelete: Cascade)
+  
+  blockedById String    
+  blockedBy   User      @relation("BlockedByUser", fields: [blockedById], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, blockedById])
+  @@index([blockedById])
+  @@map("blocked_users")
+}
+
+model ModerationAction {
+  id          String          @id @default(cuid())
+  actionType  ModerationActionType
+  reason      String
+  details     String?
+  createdAt   DateTime        @default(now())
+  expiresAt   DateTime?       
+  
+  reportId    String?
+  report      ContentReport?  @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  
+  moderatorId String
+  moderator   User            @relation("ModeratedBy", fields: [moderatorId], references: [id])
+  
+  targetType  ContentType
+  targetId    String          
+  
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("moderation_actions")
+}
+
+model BannedContent {
+  id          String      @id @default(cuid())
+  contentType ContentType
+  contentId   String
+  reason      String
+  permanent   Boolean     @default(false)
+  expiresAt   DateTime?
+  createdAt   DateTime    @default(now())
+  
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([contentType, contentId])
+  @@index([expiresAt])
+  @@map("banned_content")
+}
+
+model BadWord {
+  id        String   @id @default(cuid())
+  word      String   @unique
+  severity  BadWordSeverity @default(MEDIUM)
+  language  String   @default("ar")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  
+  @@index([language, active])
+  @@map("bad_words")
+}
+
+enum ContentType {
+  PRODUCT
+  SHOWCASE
+  COMMENT
+  REVIEW
+  REQUEST
+  MESSAGE
+  USER_PROFILE
+}
+
+enum ReportReason {
+  INAPPROPRIATE_CONTENT     
+  SPAM                      
+  HARASSMENT                
+  FRAUD                     
+  FAKE_INFORMATION          
+  COPYRIGHT                 
+  VIOLENT_CONTENT           
+  HATE_SPEECH               
+  ADULT_CONTENT             
+  ILLEGAL_ACTIVITY          
+  OTHER                     
+}
+
+enum ReportStatus {
+  PENDING       
+  REVIEWING     
+  RESOLVED      
+  DISMISSED     
+  ESCALATED     
+}
+
+enum ReportPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ModerationActionType {
+  WARNING           
+  CONTENT_REMOVED   
+  USER_SUSPENDED    
+  USER_BANNED       
+  CONTENT_EDITED    
+  NO_ACTION         
+}
+
+enum BadWordSeverity {
+  LOW       
+  MEDIUM    
+  HIGH      
+  SEVERE    
 }
