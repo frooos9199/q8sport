@@ -8,7 +8,7 @@ import { verifyToken } from '@/lib/auth';
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
     const user = await verifyToken(request);
@@ -20,7 +20,7 @@ export async function DELETE(
       );
     }
 
-    const { userId } = params;
+    const { userId } = await params;
 
     if (!userId) {
       return NextResponse.json(
@@ -67,7 +67,7 @@ export async function DELETE(
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
     const user = await verifyToken(request);
@@ -79,7 +79,7 @@ export async function GET(
       );
     }
 
-    const { userId } = params;
+    const { userId } = await params;
 
     const block = await prisma.blockedUser.findUnique({
       where: {

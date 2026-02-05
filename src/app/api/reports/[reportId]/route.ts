@@ -8,7 +8,7 @@ import { verifyToken } from '@/lib/auth';
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { reportId: string } }
+  { params }: { params: Promise<{ reportId: string }> }
 ) {
   try {
     const user = await verifyToken(request);
@@ -21,7 +21,7 @@ export async function PATCH(
       );
     }
 
-    const { reportId } = params;
+    const { reportId } = await params;
     const body = await request.json();
     const { action } = body;
 
@@ -103,7 +103,7 @@ export async function PATCH(
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { reportId: string } }
+  { params }: { params: Promise<{ reportId: string }> }
 ) {
   try {
     const user = await verifyToken(request);
@@ -115,7 +115,7 @@ export async function GET(
       );
     }
 
-    const { reportId } = params;
+    const { reportId } = await params;
 
     const report = await prisma.contentReport.findUnique({
       where: { id: reportId },
