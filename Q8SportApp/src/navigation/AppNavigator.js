@@ -8,15 +8,20 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { AdminIcon, StoreIcon } from '../components/Icons';
 import BurnoutLoader from '../components/BurnoutLoader';
 
+// Home Screens
+import HomeScreen from '../screens/Home/HomeScreen';
+
 // Auth Screens
 import LoginScreen from '../screens/Auth/LoginScreen';
 import RegisterScreen from '../screens/Auth/RegisterScreen';
-
-// Main Screens
-import HomeScreen from '../screens/Home/HomeScreen';
-import ProfileScreen from '../screens/Profile/ProfileScreen';
+import TermsScreen from '../screens/Auth/TermsScreen';
 import AuthScreen from '../screens/Profile/AuthScreen';
+
+// Product Screens
 import ProductDetailsScreen from '../screens/ProductDetailsScreen';
+
+// Profile Screens
+import ProfileScreen from '../screens/Profile/ProfileScreen';
 import MyProductsScreen from '../screens/Profile/MyProductsScreen';
 import AddProductScreen from '../screens/Profile/AddProductScreen';
 import EditProductScreen from '../screens/Profile/EditProductScreen';
@@ -271,6 +276,14 @@ const ProfileStack = () => {
             component={RegisterScreen}
             options={{ 
               title: 'إنشاء حساب',
+              headerBackTitle: 'رجوع',
+            }}
+          />
+          <Stack.Screen 
+            name="Terms" 
+            component={TermsScreen}
+            options={{ 
+              title: 'الشروط والأحكام',
               headerBackTitle: 'رجوع',
             }}
           />

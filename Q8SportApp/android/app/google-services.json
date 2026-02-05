@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "YOUR_PROJECT_NUMBER",
+    "project_number": "510621587144",
     "project_id": "q8sportcar",
-    "storage_bucket": "q8sportcar.appspot.com"
+    "storage_bucket": "q8sportcar.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "YOUR_ANDROID_APP_ID",
+        "mobilesdk_app_id": "1:510621587144:android:7e8b82c375e3ffc2ab37fd",
         "android_client_info": {
           "package_name": "com.q8sportapp"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "YOUR_API_KEY"
+          "current_key": "AIzaSyA902umS8rbUHYes-n9O6xSN3hljc1tGg8"
         }
       ],
       "services": {
