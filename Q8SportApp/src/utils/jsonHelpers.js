@@ -2,6 +2,8 @@
  * Safe JSON parsing utilities to prevent crashes from malformed data
  */
 
+import Logger from './logger';
+
 /**
  * Safely parse JSON with fallback value
  * @param {string} jsonString - The JSON string to parse
@@ -15,7 +17,7 @@ export const safeJSONParse = (jsonString, fallback = null) => {
     }
     return JSON.parse(jsonString);
   } catch (error) {
-    console.warn('JSON parse error:', error.message);
+    Logger.warn('JSON parse error:', error.message);
     return fallback;
   }
 };
@@ -40,7 +42,7 @@ export const safeJSONStringify = (data, fallback = '{}') => {
   try {
     return JSON.stringify(data);
   } catch (error) {
-    console.warn('JSON stringify error:', error.message);
+    Logger.warn('JSON stringify error:', error.message);
     return fallback;
   }
 };

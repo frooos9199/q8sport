@@ -1,5 +1,6 @@
 import apiClient from '../apiClient';
 import API_CONFIG from '../../config/api';
+import Logger from '../../utils/logger';
 
 export const AuthService = {
   login: async (email, password) => {
@@ -11,7 +12,7 @@ export const AuthService = {
   },
 
   register: async (name, email, password, phone, whatsapp, acceptedTerms = false) => {
-    console.log('🚀 AuthService: Sending registration - acceptedTerms:', acceptedTerms);
+    Logger.debug('AuthService: Sending registration', { acceptedTerms });
     const response = await apiClient.post(API_CONFIG.ENDPOINTS.REGISTER, {
       name,
       email,
@@ -20,7 +21,7 @@ export const AuthService = {
       whatsapp: whatsapp?.trim() || null,
       acceptedTerms,
     });
-    console.log('✅ AuthService: Registration response received');
+    Logger.debug('AuthService: Registration response received');
     return response.data;
   },
 

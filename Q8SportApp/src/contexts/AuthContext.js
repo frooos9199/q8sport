@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { StorageService } from '../utils/storage';
 import { AuthService } from '../services/api/auth';
 import { AuthEvents } from '../services/authEvents';
+import Logger from '../utils/logger';
 
 const AuthContext = createContext({});
 
@@ -77,7 +78,7 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (name, email, password, phone, whatsapp, acceptedTerms = false) => {
     try {
-      console.log('📝 AuthContext: Register attempt - acceptedTerms:', acceptedTerms);
+      Logger.auth('Register attempt', { acceptedTerms });
       const normalizedPhone = phone?.trim() || null;
       const normalizedWhatsapp = whatsapp?.trim() || null;
       const response = await AuthService.register(name, email, password, normalizedPhone, normalizedWhatsapp, acceptedTerms);
