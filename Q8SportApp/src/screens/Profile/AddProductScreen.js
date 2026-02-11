@@ -16,6 +16,7 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import { useAuth } from '../../contexts/AuthContext';
 import API_CONFIG from '../../config/api';
 import apiClient from '../../services/apiClient';
+import Logger from '../../utils/logger';
 
 const AddProductScreen = ({ navigation }) => {
   const { token, user, isAuthenticated, loading: authLoading } = useAuth();
@@ -174,16 +175,8 @@ const AddProductScreen = ({ navigation }) => {
     if (!validateStep(2)) return;
 
     // تحقق من وجود token قبل الإرسال
-    console.log('🔍 Submitting product - Auth check:', {
-      hasToken: !!token,
-      hasUser: !!user,
-      isAuthenticated,
-      userName: user?.name,
-      tokenPreview: token ? `${token.substring(0, 20)}...` : 'null'
-    });
-
     if (!token || !user) {
-      console.error('❌ Auth failed - Missing credentials');
+      Logger.error('Auth failed - Missing credentials');
       Alert.alert(
         '⚠️ خطأ في المصادقة',
         'يبدو أن جلستك انتهت. يرجى تسجيل الدخول مرة أخرى',
