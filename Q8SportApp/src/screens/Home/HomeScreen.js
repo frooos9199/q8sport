@@ -185,8 +185,9 @@ const HomeScreen = ({ navigation }) => {
       setLoading(false);
       setRefreshing(false);
       setSilentRefresh(false);
+      setLoadingMore(false); // Ensure loading states are reset
     }
-  }, [refreshing, ITEMS_PER_PAGE]);
+  }, [ITEMS_PER_PAGE]); // Remove refreshing to prevent infinite loop
 
   // دالة لتحميل المزيد من المنتجات
   const loadMoreProducts = useCallback(() => {

@@ -61,8 +61,13 @@ const ProductDetailsScreen = ({ route, navigation }) => {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchProduct();
-    setRefreshing(false);
+    try {
+      await fetchProduct();
+    } catch (error) {
+      console.error('Refresh error:', error);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const normalizePhone = (phone) => {
