@@ -13,6 +13,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import API_CONFIG from '../../config/api';
 import apiClient from '../../services/apiClient';
+import { parseImages } from '../../utils/jsonHelpers';
 
 const MyProductsScreen = ({ navigation }) => {
   const { user, token } = useAuth();
@@ -93,29 +94,7 @@ const MyProductsScreen = ({ navigation }) => {
     );
   };
 
-  const parseImages = (images) => {
-    try {
-      if (!images) return null;
-      
-      // If already a URL string
-      if (typeof images === 'string' && (images.startsWith('http') || images.startsWith('data:image'))) {
-        return images;
-      }
-      
-      // Try to parse JSON
-      const parsed = JSON.parse(images);
-      
-      // Get first image from array
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed[0];
-      }
-      
-      return null;
-    } catch (error) {
-      console.error('Error parsing images:', error);
-      return null;
-    }
-  };
+
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -149,13 +128,17 @@ const MyProductsScreen = ({ navigation }) => {
     }
   };
 
-  const renderProduct = ({ item }) => (
+  const renderProduct = ({ item }) => {
+    const images = parseImages(item.images);
+    const firstImage = images && images.length > 0 ? images[0] : null;
+
+    return (
     <TouchableOpacity
       style={styles.productCard}
       onPress={() => navigation.navigate('ProductDetails', { productId: item.id })}>
-      {item.images ? (
+      {firstImage ? (
         <Image
-          source={{ uri: parseImages(item.images) }}
+          source={{ uri: firstImage }}
           style={styles.productImage}
           resizeMode="cover"
         />
@@ -204,6 +187,7 @@ const MyProductsScreen = ({ navigation }) => {
       </View>
     </TouchableOpacity>
   );
+  };
 
   if (loading) {
     return (

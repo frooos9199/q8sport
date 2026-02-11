@@ -12,6 +12,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import apiClient from '../../services/apiClient';
 import API_CONFIG from '../../config/api';
+import { parseImages } from '../../utils/jsonHelpers';
 
 const ManageShowcasesScreen = ({ navigation }) => {
   const { token } = useAuth();
@@ -123,8 +124,8 @@ const ManageShowcasesScreen = ({ navigation }) => {
   };
 
   const renderShowcase = ({ item }) => {
-    const images = item.images ? JSON.parse(item.images) : [];
-    const firstImage = images.length > 0 ? images[0] : null;
+    const images = parseImages(item.images);
+    const firstImage = images && images.length > 0 ? images[0] : null;
     
     return (
       <View style={styles.card}>
