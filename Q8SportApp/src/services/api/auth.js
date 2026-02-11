@@ -10,14 +10,17 @@ export const AuthService = {
     return response.data;
   },
 
-  register: async (name, email, password, phone, whatsapp) => {
+  register: async (name, email, password, phone, whatsapp, acceptedTerms = false) => {
+    console.log('🚀 AuthService: Sending registration - acceptedTerms:', acceptedTerms);
     const response = await apiClient.post(API_CONFIG.ENDPOINTS.REGISTER, {
       name,
       email,
       password,
       phone: phone?.trim() || null,
       whatsapp: whatsapp?.trim() || null,
+      acceptedTerms,
     });
+    console.log('✅ AuthService: Registration response received');
     return response.data;
   },
 

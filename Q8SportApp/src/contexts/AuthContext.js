@@ -75,11 +75,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (name, email, password, phone, whatsapp) => {
+  const register = async (name, email, password, phone, whatsapp, acceptedTerms = false) => {
     try {
+      console.log('📝 AuthContext: Register attempt - acceptedTerms:', acceptedTerms);
       const normalizedPhone = phone?.trim() || null;
       const normalizedWhatsapp = whatsapp?.trim() || null;
-      const response = await AuthService.register(name, email, password, normalizedPhone, normalizedWhatsapp);
+      const response = await AuthService.register(name, email, password, normalizedPhone, normalizedWhatsapp, acceptedTerms);
       
       if (response.user) {
         // Auto login after register
