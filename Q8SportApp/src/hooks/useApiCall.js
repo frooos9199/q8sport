@@ -41,7 +41,7 @@ export const useApiCall = (apiFunction, options = {}) => {
 
     // Setup timeout to force reset loading state
     timeoutRef.current = setTimeout(() => {
-      if (mountedRef.current && loading) {
+      if (mountedRef.current) {
         Logger.warn('API call timeout - forcing loading state reset');
         setLoading(false);
         setError(new Error('انتهت مهلة الطلب'));
@@ -92,7 +92,7 @@ export const useApiCall = (apiFunction, options = {}) => {
         await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
       }
     }
-  }, [apiFunction, onSuccess, onError, timeout, retries, loading]);
+  }, [apiFunction, onSuccess, onError, timeout, retries]); // Removed loading from dependencies
 
   const reset = useCallback(() => {
     if (mountedRef.current) {
