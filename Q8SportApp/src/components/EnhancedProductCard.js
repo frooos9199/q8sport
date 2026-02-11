@@ -10,6 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { openWhatsApp } from '../utils/whatsapp';
+import { parseImages } from '../utils/jsonHelpers';
 
 // دالة لحساب الوقت منذ النشر
 const getTimeAgo = (dateString) => {
@@ -58,7 +59,11 @@ const EnhancedProductCard = ({ item, index, onPress }) => {
         message: `${item.title}\nالسعر: ${item.price} د.ك\nالحالة: ${item.condition}\n\nQ8Sport - سوق السيارات الرياضية`,
       });
     } catch (error) {
-      console.log(error);
+      console.error('Share error:', error);
+      // Only show error alert if it's not a user cancellation
+      if (error.message !== 'User did not share') {
+        Alert.alert('خطأ', 'فشلت عملية المشاركة');
+      }
     }
   };
 

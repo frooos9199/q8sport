@@ -22,6 +22,7 @@ import { CarIcon, PartsIcon, AccessoryIcon, FavoriteIcon } from '../../component
 import { useAuth } from '../../contexts/AuthContext';
 import API_CONFIG from '../../config/api';
 import apiClient from '../../services/apiClient';
+import { parseImages } from '../../utils/jsonHelpers';
 
 const SPORT_CARS = {
   Ford: ['Mustang', 'F-150 Raptor', 'GT', 'Shelby GT500'],
@@ -43,7 +44,7 @@ const PRODUCT_TYPES = [
 const ProductCard = React.memo(({ item, index, onPress, onFavorite, isFavorite }) => {
   const animValue = useRef(new Animated.Value(0)).current;
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const images = item.images ? JSON.parse(item.images) : [];
+  const images = parseImages(item.images); // Safe JSON parsing
 
   useEffect(() => {
     Animated.timing(animValue, {
@@ -184,8 +185,9 @@ const HomeScreen = ({ navigation }) => {
       setLoading(false);
       setRefreshing(false);
       setSilentRefresh(false);
+      setLoadingMore(false); // Ensure loading states are reset
     }
-  }, [refreshing, ITEMS_PER_PAGE]);
+  }, [ITEMS_PER_PAGE]); // Remove refreshing to prevent infinite loop
 
   // دالة لتحميل المزيد من المنتجات
   const loadMoreProducts = useCallback(() => {

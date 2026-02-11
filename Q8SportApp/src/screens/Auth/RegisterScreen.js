@@ -13,6 +13,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
+import Logger from '../../utils/logger';
 
 const RegisterScreen = ({ navigation }) => {
   const { register } = useAuth();
@@ -26,6 +27,8 @@ const RegisterScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
+    Logger.debug('Registration attempt', { acceptedTerms });
+    
     if (!name || !email || !password) {
       Alert.alert('خطأ', 'يرجى إدخال الاسم، البريد الإلكتروني، وكلمة المرور');
       return;
@@ -55,7 +58,7 @@ const RegisterScreen = ({ navigation }) => {
     }
 
     setLoading(true);
-    const result = await register(name, email, password, phone, whatsapp);
+    const result = await register(name, email, password, phone, whatsapp, acceptedTerms);
     setLoading(false);
 
     if (!result.success) {
@@ -155,7 +158,11 @@ const RegisterScreen = ({ navigation }) => {
           <View style={styles.termsContainer}>
             <TouchableOpacity
               style={styles.checkboxContainer}
-              onPress={() => setAcceptedTerms(!acceptedTerms)}
+              onPress={() => {
+                const newValue = !acceptedTerms;
+                Logger.debug('Checkbox toggled', { newValue });
+                setAcceptedTerms(newValue);
+              }}
               activeOpacity={0.7}
             >
               <View style={[styles.checkbox, acceptedTerms && styles.checkboxChecked]}>
@@ -262,7 +269,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#666',
     borderRadius: 6,
-    marginLeft: 10,
+    marginLeft: 15,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#111',
@@ -280,6 +287,8 @@ const styles = StyleSheet.create({
     color: '#ccc',
     fontSize: 14,
     textAlign: 'right',
+    paddingRight: 10,
+    flex: 1,
   },
   termsLink: {
     color: '#DC2626',

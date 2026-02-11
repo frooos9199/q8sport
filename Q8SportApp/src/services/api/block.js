@@ -1,6 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const API_URL = 'https://q8sportcar.com/api';
+import apiClient from '../apiClient';
+import Logger from '../../utils/logger';
 
 export const BlockService = {
   /**
@@ -8,29 +7,19 @@ export const BlockService = {
    */
   async blockUser(userId) {
     try {
-      const token = await AsyncStorage.getItem('authToken');
-      
-      const response = await fetch(`${API_URL}/blocks`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          blockedUserId: userId,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'فشل حظر المستخدم');
+      if (!userId) {
+        throw new Error('معرّف المستخدم مطلوب');
       }
 
-      return data;
+      const response = await apiClient.post('/blocks', {
+        blockedUserId: userId,
+      });
+
+      return response.data;
     } catch (error) {
-      console.error('Block user error:', error);
-      throw error;
+      Logger.error('Block user error:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'فشل حظر المستخدم';
+      throw new Error(errorMessage);
     }
   },
 
@@ -39,25 +28,17 @@ export const BlockService = {
    */
   async unblockUser(userId) {
     try {
-      const token = await AsyncStorage.getItem('authToken');
-      
-      const response = await fetch(`${API_URL}/blocks/${userId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'فشل إلغاء الحظر');
+      if (!userId) {
+        throw new Error('معرّف المستخدم مطلوب');
       }
 
-      return data;
+      const response = await apiClient.delete(`/blocks/${userId}`);
+
+      return response.data;
     } catch (error) {
-      console.error('Unblock user error:', error);
-      throw error;
+      Logger.error('Unblock user error:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'فشل إلغاء الحظر';
+      throw new Error(errorMessage);
     }
   },
 
@@ -66,25 +47,13 @@ export const BlockService = {
    */
   async getBlockedUsers() {
     try {
-      const token = await AsyncStorage.getItem('authToken');
-      
-      const response = await fetch(`${API_URL}/blocks`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const response = await apiClient.get('/blocks');
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'فشل تحميل المستخدمين المحظورين');
-      }
-
-      return data;
+      return response.data;
     } catch (error) {
-      console.error('Get blocked users error:', error);
-      throw error;
+      Logger.error('Get blocked users error:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'فشل تحميل المستخدمين المحظورين';
+      throw new Error(errorMessage);
     }
   },
 
@@ -93,24 +62,15 @@ export const BlockService = {
    */
   async isUserBlocked(userId) {
     try {
-      const token = await AsyncStorage.getItem('authToken');
-      
-      const response = await fetch(`${API_URL}/blocks/check/${userId}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'فشل التحقق من الحظر');
+      if (!userId) {
+        return false;
       }
 
-      return data.isBlocked || false;
+      const response = await apiClient.get(`/blocks/check/${userId}`);
+
+      return response.data?.isBlocked || false;
     } catch (error) {
-      console.error('Check blocked error:', error);
+      Logger.error('Check blocked error:', error);
       return false;
     }
   },

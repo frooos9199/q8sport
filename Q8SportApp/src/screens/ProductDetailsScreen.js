@@ -18,6 +18,7 @@ import {
 import { ProductService } from '../services/api/products';
 import ReportButton from '../components/ReportButton';
 import BlockUserButton from '../components/BlockUserButton';
+import { parseImages } from '../utils/jsonHelpers';
 
 const { width } = Dimensions.get('window');
 
@@ -60,8 +61,13 @@ const ProductDetailsScreen = ({ route, navigation }) => {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchProduct();
-    setRefreshing(false);
+    try {
+      await fetchProduct();
+    } catch (error) {
+      console.error('Refresh error:', error);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const normalizePhone = (phone) => {
@@ -115,7 +121,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
             {/* معرض الصور */}
             <View style={styles.imageGallery}>
               <FlatList
-                data={product.images ? JSON.parse(product.images) : []}
+                data={parseImages(product.images)}
                 horizontal
                 pagingEnabled
                 showsHorizontalScrollIndicator={false}
@@ -147,9 +153,9 @@ const ProductDetailsScreen = ({ route, navigation }) => {
                   <Text style={styles.badgeText}>📤</Text>
                 </TouchableOpacity>
               </View>
-              {product.images && JSON.parse(product.images).length > 1 && (
+              {parseImages(product.images).length > 1 && (
                 <View style={styles.pagination}>
-                  {JSON.parse(product.images).map((_, index) => (
+                  {parseImages(product.images).map((_, index) => (
                     <View
                       key={index}
                       style={[
