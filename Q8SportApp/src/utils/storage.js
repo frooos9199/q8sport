@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Logger from './logger';
 
 const KEYS = {
   TOKEN: '@q8sport_token',
@@ -15,7 +16,7 @@ export const StorageService = {
       await AsyncStorage.setItem(KEYS.TOKEN, token);
       return true;
     } catch (error) {
-      console.error('Error saving token:', error);
+      Logger.error('Error saving token:', error);
       return false;
     }
   },
@@ -24,7 +25,7 @@ export const StorageService = {
     try {
       return await AsyncStorage.getItem(KEYS.TOKEN);
     } catch (error) {
-      console.error('Error getting token:', error);
+      Logger.error('Error getting token:', error);
       return null;
     }
   },
@@ -34,7 +35,7 @@ export const StorageService = {
       await AsyncStorage.removeItem(KEYS.TOKEN);
       return true;
     } catch (error) {
-      console.error('Error removing token:', error);
+      Logger.error('Error removing token:', error);
       return false;
     }
   },
@@ -45,7 +46,7 @@ export const StorageService = {
       await AsyncStorage.setItem(KEYS.USER, JSON.stringify(user));
       return true;
     } catch (error) {
-      console.error('Error saving user:', error);
+      Logger.error('Error saving user:', error);
       return false;
     }
   },
@@ -55,7 +56,7 @@ export const StorageService = {
       const user = await AsyncStorage.getItem(KEYS.USER);
       return user ? JSON.parse(user) : null;
     } catch (error) {
-      console.error('Error getting user:', error);
+      Logger.error('Error getting user:', error);
       return null;
     }
   },
@@ -65,7 +66,7 @@ export const StorageService = {
       await AsyncStorage.removeItem(KEYS.USER);
       return true;
     } catch (error) {
-      console.error('Error removing user:', error);
+      Logger.error('Error removing user:', error);
       return false;
     }
   },
@@ -76,7 +77,7 @@ export const StorageService = {
       await AsyncStorage.multiRemove([KEYS.TOKEN, KEYS.USER]);
       return true;
     } catch (error) {
-      console.error('Error clearing storage:', error);
+      Logger.error('Error clearing storage:', error);
       return false;
     }
   },
@@ -87,7 +88,7 @@ export const StorageService = {
       await AsyncStorage.setItem(KEYS.BIOMETRIC_ENABLED, enabled.toString());
       return true;
     } catch (error) {
-      console.error('Error setting biometric enabled:', error);
+      Logger.error('Error setting biometric enabled:', error);
       return false;
     }
   },
@@ -97,33 +98,43 @@ export const StorageService = {
       const enabled = await AsyncStorage.getItem(KEYS.BIOMETRIC_ENABLED);
       return enabled === 'true';
     } catch (error) {
-      console.error('Error checking biometric enabled:', error);
+      Logger.error('Error checking biometric enabled:', error);
       return false;
     }
   },
 
+  // WARNING: This stores credentials in plain text - NOT SECURE
+  // TODO: Replace with react-native-keychain for production
+  // For now, this is a temporary solution for biometric auth
   saveBiometricCredentials: async (email, password) => {
     try {
-      await AsyncStorage.setItem(KEYS.BIOMETRIC_EMAIL, email);
-      await AsyncStorage.setItem(KEYS.BIOMETRIC_PASSWORD, password);
+      // Simple obfuscation (NOT encryption - still insecure)
+      const obfuscatedEmail = Buffer.from(email).toString('base64');
+      const obfuscatedPassword = Buffer.from(password).toString('base64');
+      
+      await AsyncStorage.setItem(KEYS.BIOMETRIC_EMAIL, obfuscatedEmail);
+      await AsyncStorage.setItem(KEYS.BIOMETRIC_PASSWORD, obfuscatedPassword);
       return true;
     } catch (error) {
-      console.error('Error saving biometric credentials:', error);
+      Logger.error('Error saving biometric credentials:', error);
       return false;
     }
   },
 
   getBiometricCredentials: async () => {
     try {
-      const email = await AsyncStorage.getItem(KEYS.BIOMETRIC_EMAIL);
-      const password = await AsyncStorage.getItem(KEYS.BIOMETRIC_PASSWORD);
+      const obfuscatedEmail = await AsyncStorage.getItem(KEYS.BIOMETRIC_EMAIL);
+      const obfuscatedPassword = await AsyncStorage.getItem(KEYS.BIOMETRIC_PASSWORD);
       
-      if (email && password) {
+      if (obfuscatedEmail && obfuscatedPassword) {
+        // Decode obfuscated credentials
+        const email = Buffer.from(obfuscatedEmail, 'base64').toString('utf-8');
+        const password = Buffer.from(obfuscatedPassword, 'base64').toString('utf-8');
         return { email, password };
       }
       return null;
     } catch (error) {
-      console.error('Error getting biometric credentials:', error);
+      Logger.error('Error getting biometric credentials:', error);
       return null;
     }
   },
@@ -137,7 +148,7 @@ export const StorageService = {
       ]);
       return true;
     } catch (error) {
-      console.error('Error removing biometric credentials:', error);
+      Logger.error('Error removing biometric credentials:', error);
       return false;
     }
   },

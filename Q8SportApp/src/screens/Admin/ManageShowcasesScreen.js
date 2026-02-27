@@ -12,6 +12,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import apiClient from '../../services/apiClient';
 import API_CONFIG from '../../config/api';
+import { parseImages } from '../../utils/jsonHelpers';
 
 const ManageShowcasesScreen = ({ navigation }) => {
   const { token } = useAuth();
@@ -122,24 +123,32 @@ const ManageShowcasesScreen = ({ navigation }) => {
     );
   };
 
-  const renderShowcase = ({ item }) => {
-    const images = item.images ? JSON.parse(item.images) : [];
-    const firstImage = images.length > 0 ? images[0] : null;
+  const ShowcaseCard = ({ item }) => {
+    const [imageError, setImageError] = useState(false);
+    const [avatarError, setAvatarError] = useState(false);
+    const images = parseImages(item.images);
+    const firstImage = images && images.length > 0 ? images[0] : null;
     
     return (
       <View style={styles.card}>
         <TouchableOpacity
           onPress={() => navigation.navigate('ShowcaseDetails', { showcase: item })}
           activeOpacity={0.9}>
-          {firstImage ? (
+          {!imageError && firstImage ? (
             <Image 
               source={{ uri: firstImage }} 
               style={styles.cardImage}
-              onError={(e) => console.log('⚠️ ManageShowcasesScreen: Image load error')}
+              onError={(e) => {
+                console.log('⚠️ ManageShowcasesScreen: Image load error:', firstImage);
+                setImageError(true);
+              }}
             />
           ) : (
             <View style={[styles.cardImage, { backgroundColor: '#1a1a1a', justifyContent: 'center', alignItems: 'center' }]}>
               <Text style={{ color: '#DC2626', fontSize: 40 }}>🚗</Text>
+              <Text style={{ color: '#999', fontSize: 14, marginTop: 8 }}>
+                {item.carBrand || 'سيارة'}
+              </Text>
             </View>
           )}
           <View style={styles.previewBadge}>
@@ -149,7 +158,7 @@ const ManageShowcasesScreen = ({ navigation }) => {
         
         <View style={styles.cardContent}>
           <View style={styles.userRow}>
-            {item.user?.avatar && typeof item.user.avatar === 'string' && item.user.avatar.trim() &&
+            {!avatarError && item.user?.avatar && typeof item.user.avatar === 'string' && item.user.avatar.trim() &&
              (item.user.avatar.startsWith('http') || item.user.avatar.startsWith('data:') || item.user.avatar.startsWith('/')) ? (
               <Image 
                 source={{ 
@@ -158,7 +167,10 @@ const ManageShowcasesScreen = ({ navigation }) => {
                     : `https://www.q8sportcar.com${item.user.avatar}`
                 }} 
                 style={styles.avatar}
-                onError={(e) => console.log('⚠️ ManageShowcasesScreen: Avatar load error')}
+                onError={(e) => {
+                  console.log('⚠️ ManageShowcasesScreen: Avatar load error');
+                  setAvatarError(true);
+                }}
               />
             ) : (
               <View style={[styles.avatar, { backgroundColor: '#1a1a1a', justifyContent: 'center', alignItems: 'center' }]}>
@@ -209,6 +221,8 @@ const ManageShowcasesScreen = ({ navigation }) => {
       </View>
     );
   };
+
+  const renderShowcase = ({ item }) => <ShowcaseCard item={item} />;
 
   return (
     <View style={styles.container}>

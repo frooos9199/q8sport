@@ -8,6 +8,8 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -86,6 +88,11 @@ const AddRequestScreen = ({ navigation }) => {
   };
 
   return (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+    >
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       {!isAuthenticated || !token ? (
         <View style={styles.notAuthContainer}>
@@ -198,6 +205,7 @@ const AddRequestScreen = ({ navigation }) => {
         </>
       )}
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 

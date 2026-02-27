@@ -13,6 +13,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import API_CONFIG from '../../config/api';
 import apiClient from '../../services/apiClient';
+import { parseImages } from '../../utils/jsonHelpers';
 
 const MyProductsScreen = ({ navigation }) => {
   const { user, token } = useAuth();
@@ -26,14 +27,53 @@ const MyProductsScreen = ({ navigation }) => {
 
   const fetchMyProducts = async () => {
     try {
-      console.log('Fetching products with token:', token ? 'Token exists' : 'No token');
+      console.log('📥 جلب المنتجات من API...');
+      console.log('🔐 Token موجود:', token ? 'نعم' : 'لا');
 
       const response = await apiClient.get(API_CONFIG.ENDPOINTS.USER_PRODUCTS);
       const data = response.data;
-      console.log('Products received:', data?.products?.length || 0);
-      setProducts(data?.products || []);
+      
+      console.log('📊 عدد المنتجات المستلمة (قبل الفلترة):', data?.products?.length || 0);
+      
+      // 🔍 فحص البيانات الفعلية للمنتجات
+      if (data?.products?.length > 0) {
+        console.log('🔍 فحص أول منتج:', {
+          id: data.products[0].id,
+          status: data.products[0].status,
+          deletedAt: data.products[0].deletedAt,
+          isDeleted: data.products[0].isDeleted,
+          title: data.products[0].title
+        });
+      }
+      
+      // ✅ فلترة المنتجات المحذوفة (soft delete) - بشرط أن deletedAt ليس undefined
+      const activeProducts = (data?.products || []).filter(product => {
+        const hasDeletedAtField = product.deletedAt !== undefined;
+        const isDeleted = 
+          product.status === 'DELETED' || 
+          (hasDeletedAtField && product.deletedAt !== null) || 
+          product.isDeleted === true;
+        
+        if (isDeleted) {
+          console.log('🗑️ تم تجاهل منتج محذوف:', product.id, {
+            status: product.status,
+            deletedAt: product.deletedAt,
+            isDeleted: product.isDeleted
+          });
+        }
+        
+        return !isDeleted;
+      });
+      
+      console.log('✅ عدد المنتجات النشطة (بعد الفلترة):', activeProducts.length);
+      
+      if (activeProducts.length > 0) {
+        console.log('🆔 معرفات المنتجات النشطة:', activeProducts.map(p => p.id));
+      }
+      
+      setProducts(activeProducts);
     } catch (error) {
-      console.error('Error fetching products:', error);
+      console.error('❌ خطأ في جلب المنتجات:', error);
       Alert.alert('خطأ', error?.response?.data?.error || 'حدث خطأ في تحميل المنتجات');
     } finally {
       setLoading(false);
@@ -57,11 +97,33 @@ const MyProductsScreen = ({ navigation }) => {
           style: 'destructive',
           onPress: async () => {
             try {
-              await apiClient.delete(API_CONFIG.ENDPOINTS.PRODUCT_DETAILS(productId));
-              Alert.alert('تم', 'تم حذف المنتج بنجاح');
-              fetchMyProducts();
+              console.log('🗑️ محاولة حذف المنتج:', productId);
+              console.log('🔗 DELETE endpoint:', API_CONFIG.ENDPOINTS.PRODUCT_DETAILS(productId));
+              
+              const response = await apiClient.delete(API_CONFIG.ENDPOINTS.PRODUCT_DETAILS(productId));
+              
+              console.log('✅ استجابة الحذف:', response.data);
+              console.log('📊 Status:', response.status);
+              
+              // ✅ تحديث القائمة محلياً فقط إذا نجح الحذف من API
+              if (response.status === 200 || response.status === 204) {
+                setProducts(prevProducts => 
+                  prevProducts.filter(product => product.id !== productId)
+                );
+                Alert.alert('✅ تم', 'تم حذف المنتج بنجاح');
+              } else {
+                console.warn('⚠️ استجابة غير متوقعة:', response.status);
+                Alert.alert('⚠️ تحذير', 'قد لا يكون الحذف قد اكتمل. يرجى التحقق.');
+              }
             } catch (error) {
-              Alert.alert('خطأ', error?.response?.data?.error || 'حدث خطأ في حذف المنتج');
+              console.error('❌ خطأ في حذف المنتج:', error);
+              console.error('📋 تفاصيل الخطأ:', error?.response?.data);
+              console.error('🔢 Status code:', error?.response?.status);
+              
+              Alert.alert('❌ خطأ', error?.response?.data?.error || error?.message || 'حدث خطأ في حذف المنتج');
+              
+              // عكس الحذف المحلي إذا فشل
+              fetchMyProducts();
             }
           },
         },
@@ -82,10 +144,19 @@ const MyProductsScreen = ({ navigation }) => {
               await apiClient.patch(API_CONFIG.ENDPOINTS.PRODUCT_DETAILS(productId), {
                 status: 'sold',
               });
-              Alert.alert('تم', 'تم تحديث حالة المنتج إلى مباع');
-              fetchMyProducts();
+              
+              // ✅ تحديث حالة المنتج محلياً فوراً
+              setProducts(prevProducts =>
+                prevProducts.map(product =>
+                  product.id === productId
+                    ? { ...product, status: 'sold' }
+                    : product
+                )
+              );
+              
+              Alert.alert('✅ تم', 'تم تحديث حالة المنتج إلى مباع');
             } catch (error) {
-              Alert.alert('خطأ', error?.response?.data?.error || 'حدث خطأ في تحديث المنتج');
+              Alert.alert('❌ خطأ', error?.response?.data?.error || 'حدث خطأ في تحديث المنتج');
             }
           },
         },
@@ -93,29 +164,7 @@ const MyProductsScreen = ({ navigation }) => {
     );
   };
 
-  const parseImages = (images) => {
-    try {
-      if (!images) return null;
-      
-      // If already a URL string
-      if (typeof images === 'string' && (images.startsWith('http') || images.startsWith('data:image'))) {
-        return images;
-      }
-      
-      // Try to parse JSON
-      const parsed = JSON.parse(images);
-      
-      // Get first image from array
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed[0];
-      }
-      
-      return null;
-    } catch (error) {
-      console.error('Error parsing images:', error);
-      return null;
-    }
-  };
+
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -149,13 +198,17 @@ const MyProductsScreen = ({ navigation }) => {
     }
   };
 
-  const renderProduct = ({ item }) => (
+  const renderProduct = ({ item }) => {
+    const images = parseImages(item.images);
+    const firstImage = images && images.length > 0 ? images[0] : null;
+
+    return (
     <TouchableOpacity
       style={styles.productCard}
       onPress={() => navigation.navigate('ProductDetails', { productId: item.id })}>
-      {item.images ? (
+      {firstImage ? (
         <Image
-          source={{ uri: parseImages(item.images) }}
+          source={{ uri: firstImage }}
           style={styles.productImage}
           resizeMode="cover"
         />
@@ -204,6 +257,7 @@ const MyProductsScreen = ({ navigation }) => {
       </View>
     </TouchableOpacity>
   );
+  };
 
   if (loading) {
     return (
@@ -218,11 +272,6 @@ const MyProductsScreen = ({ navigation }) => {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>منتجاتي</Text>
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => navigation.navigate('AddProduct')}>
-          <Text style={styles.addButtonText}>+ إضافة منتج</Text>
-        </TouchableOpacity>
       </View>
 
       <FlatList
@@ -282,17 +331,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
-  },
-  addButton: {
-    backgroundColor: '#DC2626',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  addButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 14,
   },
   listContent: {
     padding: 10,

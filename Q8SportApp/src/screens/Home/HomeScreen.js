@@ -22,6 +22,7 @@ import { CarIcon, PartsIcon, AccessoryIcon, FavoriteIcon } from '../../component
 import { useAuth } from '../../contexts/AuthContext';
 import API_CONFIG from '../../config/api';
 import apiClient from '../../services/apiClient';
+import { parseImages } from '../../utils/jsonHelpers';
 
 const SPORT_CARS = {
   Ford: ['Mustang', 'F-150 Raptor', 'GT', 'Shelby GT500'],
@@ -43,21 +44,21 @@ const PRODUCT_TYPES = [
 const ProductCard = React.memo(({ item, index, onPress, onFavorite, isFavorite }) => {
   const animValue = useRef(new Animated.Value(0)).current;
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const images = item.images ? JSON.parse(item.images) : [];
+  const images = parseImages(item.images); // Safe JSON parsing
 
   useEffect(() => {
     Animated.timing(animValue, {
       toValue: 1,
-      duration: 300, // تقليل من 400 إلى 300
-      delay: index * 50, // تقليل من 100 إلى 50
+      duration: 250, // تقليل من 300 إلى 250
+      delay: index * 30, // تقليل من 50 إلى 30
       useNativeDriver: true,
     }).start();
 
-    // تغيير الصور تلقائياً - تحسين: فقط إذا كان أكثر من صورة واحدة
+    // تغيير الصور تلقائياً - فقط إذا كان أكثر من صورة واحدة
     if (images.length > 1) {
       const interval = setInterval(() => {
         setCurrentImageIndex((prev) => (prev + 1) % images.length);
-      }, 4000); // زيادة من 3 ثواني إلى 4 ثواني لتقليل العمليات
+      }, 5000); // زيادة من 4 إلى 5 ثواني لتقليل العمليات
       return () => clearInterval(interval);
     }
   }, [images.length, index]);
@@ -92,6 +93,8 @@ const ProductCard = React.memo(({ item, index, onPress, onFavorite, isFavorite }
           <Image
             source={{ uri: images[currentImageIndex] }}
             style={styles.productImage}
+            resizeMode="cover"
+            fadeDuration={100}
           />
         ) : (
           <View style={styles.placeholderImage}>
@@ -531,6 +534,13 @@ const HomeScreen = ({ navigation }) => {
         keyExtractor={(item) => item.id}
         numColumns={2}
         contentContainerStyle={styles.listContent}
+        // ⚡ Performance Optimizations
+        initialNumToRender={6}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+        removeClippedSubviews={true}
+        updateCellsBatchingPeriod={50}
+        // Refresh
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -538,6 +548,7 @@ const HomeScreen = ({ navigation }) => {
             tintColor="#DC2626"
           />
         }
+        // Pagination
         onEndReached={loadMoreProducts}
         onEndReachedThreshold={0.5}
         ListFooterComponent={() => {

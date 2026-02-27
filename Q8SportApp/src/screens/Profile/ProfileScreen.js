@@ -60,6 +60,17 @@ const ProfileScreen = ({ navigation }) => {
     await logout();
   };
 
+  const navigateToAdmin = () => {
+    // Navigate to Admin Tab using parent navigation
+    const parentNav = navigation?.getParent?.();
+    if (parentNav?.navigate) {
+      parentNav.navigate('AdminTab');
+    } else {
+      // Fallback: try direct navigation
+      navigation.navigate('AdminTab');
+    }
+  };
+
   return (
     <ScrollView 
       style={styles.container}
@@ -99,6 +110,15 @@ const ProfileScreen = ({ navigation }) => {
       </View>
 
       <View style={styles.menu}>
+        {user?.role === 'ADMIN' && (
+          <TouchableOpacity
+            style={[styles.menuItem, styles.adminButton]}
+            onPress={navigateToAdmin}>
+            <Ionicons name="shield-checkmark" size={28} color="#F59E0B" />
+            <Text style={styles.menuText}>لوحة التحكم الإدارية</Text>
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity
           style={styles.menuItem}
           onPress={() => navigation.navigate('MyProducts')}>
@@ -108,16 +128,23 @@ const ProfileScreen = ({ navigation }) => {
 
         <TouchableOpacity
           style={styles.menuItem}
-          onPress={() => navigation.navigate('AddProduct')}>
-          <ProductIcon size={28} color="#10B981" />
-          <Text style={styles.menuText}>إضافة منتج</Text>
+          onPress={() => navigation.navigate('MyAuctions')}>
+          <Ionicons name="hammer" size={28} color="#10B981" />
+          <Text style={styles.menuText}>مزاداتي</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.menuItem}
-          onPress={() => navigation.navigate('UserStats')}>
-          <StatsIcon size={28} color="#3B82F6" />
-          <Text style={styles.menuText}>إحصائياتي</Text>
+          onPress={() => navigation.navigate('MyShowcases')}>
+          <Ionicons name="star" size={28} color="#8B5CF6" />
+          <Text style={styles.menuText}>الكار شو</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => navigation.navigate('MyRequests')}>
+          <Ionicons name="megaphone" size={28} color="#F59E0B" />
+          <Text style={styles.menuText}>طلباتي</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -127,27 +154,13 @@ const ProfileScreen = ({ navigation }) => {
           <Text style={styles.menuText}>المفضلة</Text>
         </TouchableOpacity>
 
-
         <TouchableOpacity
           style={styles.menuItem}
-          onPress={() => navigation.navigate('MyRequests')}>
-          <Ionicons name="search-outline" size={28} color="#F59E0B" />
-          <Text style={styles.menuText}>طلباتي</Text>
+          onPress={() => navigation.navigate('UserStats')}>
+          <StatsIcon size={28} color="#3B82F6" />
+          <Text style={styles.menuText}>إحصائياتي</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.menuItem}
-          onPress={() => navigation.navigate('MyAuctions')}>
-          <Ionicons name="pricetags-outline" size={28} color="#DC2626" />
-          <Text style={styles.menuText}>مزاداتي</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.menuItem}
-          onPress={() => navigation.navigate('AddAuction')}>
-          <Ionicons name="add-circle-outline" size={28} color="#10B981" />
-          <Text style={styles.menuText}>إضافة مزاد</Text>
-        </TouchableOpacity>
         <TouchableOpacity
           style={styles.menuItem}
           onPress={() => navigation.navigate('Messages')}>

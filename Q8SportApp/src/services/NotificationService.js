@@ -3,10 +3,15 @@ import { Platform, PermissionsAndroid } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 class NotificationService {
+  // Get messaging instance
+  getMessaging() {
+    return messaging();
+  }
+
   async requestPermission() {
     try {
       if (Platform.OS === 'ios') {
-        const authStatus = await messaging().requestPermission();
+        const authStatus = await this.getMessaging().requestPermission();
         const { AuthorizationStatus } = messaging;
         return authStatus === AuthorizationStatus.AUTHORIZED ||
                authStatus === AuthorizationStatus.PROVISIONAL;
@@ -24,8 +29,7 @@ class NotificationService {
 
   async getToken() {
     try {
-      // لا حاجة للتحقق من التسجيل - يتم تلقائياً
-      const token = await messaging().getToken();
+      const token = await this.getMessaging().getToken();
       if (token) {
         await AsyncStorage.setItem('fcm_token', token);
       }
@@ -45,8 +49,8 @@ class NotificationService {
 
     const token = await this.getToken();
     
-    // استخدام onTokenRefresh مباشرة
-    const unsubscribeTokenRefresh = messaging().onTokenRefresh(async (newToken) => {
+    // Token refresh listener
+    const unsubscribeTokenRefresh = this.getMessaging().onTokenRefresh(async (newToken) => {
       await AsyncStorage.setItem('fcm_token', newToken);
     });
 
@@ -54,23 +58,23 @@ class NotificationService {
   }
 
   onMessage(callback) {
-    return messaging().onMessage(async (remoteMessage) => {
+    return this.getMessaging().onMessage(async (remoteMessage) => {
       callback(remoteMessage);
     });
   }
 
   onNotificationOpenedApp(callback) {
-    return messaging().onNotificationOpenedApp((remoteMessage) => {
+    return this.getMessaging().onNotificationOpenedApp((remoteMessage) => {
       callback(remoteMessage);
     });
   }
 
   async getInitialNotification() {
-    return await messaging().getInitialNotification();
+    return await this.getMessaging().getInitialNotification();
   }
 
   setBackgroundMessageHandler(handler) {
-    messaging().setBackgroundMessageHandler(handler);
+    this.getMessaging().setBackgroundMessageHandler(handler);
   }
 }
 

@@ -1,289 +1,176 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Animated, Image } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 
-const { width } = Dimensions.get('window');
-
-const BurnoutLoader = ({ text = 'جاري التحميل...' }) => {
-  const smokeAnim = useRef(new Animated.Value(0)).current;
-  const fireAnim = useRef(new Animated.Value(0)).current;
-  const carShake = useRef(new Animated.Value(0)).current;
-  const wheelSpin = useRef(new Animated.Value(0)).current;
+const BurnoutLoader = () => {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.8)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+  const barAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // دخان يطلع - تحسين: مدة أقصر
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(smokeAnim, {
-          toValue: 1,
-          duration: 1000, // تقليل من 1500 إلى 1000
-          useNativeDriver: true,
-        }),
-        Animated.timing(smokeAnim, {
-          toValue: 0,
-          duration: 0,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-
-    // نار تشتعل - تحسين: مدة أقصر
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(fireAnim, {
-          toValue: 1,
-          duration: 200, // تقليل من 300 إلى 200
-          useNativeDriver: true,
-        }),
-        Animated.timing(fireAnim, {
-          toValue: 0,
-          duration: 200, // تقليل من 300 إلى 200
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-
-    // السيارة تهتز - تحسين: أقل اهتزاز
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(carShake, {
-          toValue: 3, // تقليل من 5 إلى 3
-          duration: 40, // تقليل من 50 إلى 40
-          useNativeDriver: true,
-        }),
-        Animated.timing(carShake, {
-          toValue: -3, // تقليل من -5 إلى -3
-          duration: 40,
-          useNativeDriver: true,
-        }),
-        Animated.timing(carShake, {
-          toValue: 0,
-          duration: 40,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-
-    // الإطارات تدور - تحسين: دوران أسرع
-    Animated.loop(
-      Animated.timing(wheelSpin, {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 600, // تقليل من 800 إلى 600
+        duration: 500,
         useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        tension: 40,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    Animated.loop(
+      Animated.timing(barAnim, {
+        toValue: 1,
+        duration: 1500,
+        useNativeDriver: false,
       })
     ).start();
   }, []);
 
-  const smokeOpacity = smokeAnim.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [0.8, 0.4, 0],
-  });
-
-  const smokeScale = smokeAnim.interpolate({
+  const barWidth = barAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [1, 2.5],
-  });
-
-  const smokeTranslateY = smokeAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, -100],
-  });
-
-  const fireScale = fireAnim.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [1, 1.3, 1],
-  });
-
-  const wheelRotate = wheelSpin.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
+    outputRange: ['0%', '100%'],
   });
 
   return (
-    <View style={styles.container}>
-      {/* الخلفية */}
-      <View style={styles.road} />
-
-      {/* السيارة */}
+    <LinearGradient
+      colors={['#000000', '#0a0000', '#000000']}
+      style={styles.container}>
       <Animated.View
         style={[
-          styles.carContainer,
+          styles.content,
           {
-            transform: [{ translateX: carShake }],
+            opacity: fadeAnim,
+            transform: [{ scale: scaleAnim }, { translateY: slideAnim }],
           },
         ]}>
-        {/* جسم السيارة */}
-        <View style={styles.car}>
-          <Text style={styles.carEmoji}>🏎️</Text>
+        <View style={styles.logoBox}>
+          <LinearGradient
+            colors={['#DC2626', '#B91C1C', '#7F1D1D']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.logoGradient}>
+            <Text style={styles.logoText}>Q8</Text>
+          </LinearGradient>
         </View>
 
-        {/* الإطارات */}
-        <View style={styles.wheelsContainer}>
-          <Animated.View
-            style={[
-              styles.wheel,
-              {
-                transform: [{ rotate: wheelRotate }],
-              },
-            ]}>
-            <Text style={styles.wheelText}>⚙️</Text>
-          </Animated.View>
-          <Animated.View
-            style={[
-              styles.wheel,
-              {
-                transform: [{ rotate: wheelRotate }],
-              },
-            ]}>
-            <Text style={styles.wheelText}>⚙️</Text>
-          </Animated.View>
+        <Text style={styles.appName}>Sport Car</Text>
+        <Text style={styles.subtitle}>قطع غيار السيارات الأمريكية</Text>
+
+        <View style={styles.loadingContainer}>
+          <View style={styles.loadingBar}>
+            <Animated.View
+              style={[
+                styles.loadingFill,
+                {
+                  width: barWidth,
+                },
+              ]}
+            />
+          </View>
+          <Text style={styles.loadingText}>جاري التحميل...</Text>
         </View>
-
-        {/* النار من الإطارات */}
-        <Animated.View
-          style={[
-            styles.fireContainer,
-            {
-              transform: [{ scale: fireScale }],
-            },
-          ]}>
-          <Text style={styles.fire}>🔥</Text>
-          <Text style={styles.fire}>🔥</Text>
-        </Animated.View>
-
-        {/* الدخان */}
-        <Animated.View
-          style={[
-            styles.smokeContainer,
-            {
-              opacity: smokeOpacity,
-              transform: [
-                { scale: smokeScale },
-                { translateY: smokeTranslateY },
-              ],
-            },
-          ]}>
-          <Text style={styles.smoke}>💨</Text>
-          <Text style={styles.smoke}>💨</Text>
-          <Text style={styles.smoke}>💨</Text>
-        </Animated.View>
       </Animated.View>
 
-      {/* النص */}
-      <View style={styles.textContainer}>
-        <Text style={styles.loadingText}>{text}</Text>
-        <View style={styles.dotsContainer}>
-          <Animated.Text style={[styles.dot, { opacity: smokeAnim }]}>
-            •
-          </Animated.Text>
-          <Animated.Text
-            style={[
-              styles.dot,
-              {
-                opacity: smokeAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0, 1],
-                }),
-              },
-            ]}>
-            •
-          </Animated.Text>
-          <Animated.Text
-            style={[
-              styles.dot,
-              {
-                opacity: smokeAnim.interpolate({
-                  inputRange: [0, 0.5, 1],
-                  outputRange: [0, 0, 1],
-                }),
-              },
-            ]}>
-            •
-          </Animated.Text>
-        </View>
+      <View style={styles.footer}>
+        <Text style={styles.footerText}>Made in Kuwait 🇰🇼</Text>
       </View>
-    </View>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  road: {
-    position: 'absolute',
-    bottom: 0,
+  content: {
+    alignItems: 'center',
+  },
+  logoBox: {
+    width: 140,
+    height: 140,
+    borderRadius: 30,
+    overflow: 'hidden',
+    marginBottom: 30,
+    shadowColor: '#DC2626',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.8,
+    shadowRadius: 20,
+    elevation: 20,
+  },
+  logoGradient: {
     width: '100%',
-    height: 150,
-    backgroundColor: '#1a1a1a',
-    borderTopWidth: 3,
-    borderTopColor: '#DC2626',
-  },
-  carContainer: {
-    alignItems: 'center',
-    marginBottom: 100,
-  },
-  car: {
-    marginBottom: -20,
-  },
-  carEmoji: {
-    fontSize: 120,
-  },
-  wheelsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: 100,
-    marginTop: -30,
-  },
-  wheel: {
-    width: 30,
-    height: 30,
+    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  wheelText: {
-    fontSize: 30,
+  logoText: {
+    fontSize: 60,
+    fontWeight: '900',
+    color: '#fff',
+    letterSpacing: -2,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
-  fireContainer: {
-    position: 'absolute',
-    bottom: -10,
-    flexDirection: 'row',
-    gap: 20,
+  appName: {
+    fontSize: 38,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 8,
+    letterSpacing: 1,
   },
-  fire: {
-    fontSize: 40,
+  subtitle: {
+    fontSize: 14,
+    color: '#888',
+    marginBottom: 60,
+    letterSpacing: 1,
   },
-  smokeContainer: {
-    position: 'absolute',
-    bottom: 20,
-    flexDirection: 'row',
-    gap: 15,
-  },
-  smoke: {
-    fontSize: 50,
-    color: '#666',
-  },
-  textContainer: {
-    position: 'absolute',
-    bottom: 100,
+  loadingContainer: {
     alignItems: 'center',
+    width: 250,
+  },
+  loadingBar: {
+    width: '100%',
+    height: 4,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 2,
+    overflow: 'hidden',
+    marginBottom: 12,
+  },
+  loadingFill: {
+    height: '100%',
+    backgroundColor: '#DC2626',
+    shadowColor: '#DC2626',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 8,
   },
   loadingText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
+    fontSize: 12,
+    color: '#666',
+    letterSpacing: 1,
   },
-  dotsContainer: {
-    flexDirection: 'row',
-    gap: 5,
+  footer: {
+    position: 'absolute',
+    bottom: 40,
   },
-  dot: {
-    color: '#DC2626',
-    fontSize: 30,
-    fontWeight: 'bold',
+  footerText: {
+    fontSize: 12,
+    color: '#444',
+    letterSpacing: 1,
   },
 });
 

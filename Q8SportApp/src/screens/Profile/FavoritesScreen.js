@@ -13,6 +13,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import API_CONFIG from '../../config/api';
 import apiClient from '../../services/apiClient';
+import { parseImages } from '../../utils/jsonHelpers';
 
 const FavoritesScreen = ({ navigation }) => {
   const { token, isAuthenticated } = useAuth();
@@ -55,23 +56,18 @@ const FavoritesScreen = ({ navigation }) => {
     }
   };
 
-  const parseImages = (images) => {
-    try {
-      if (!images) return null;
-      if (typeof images === 'string' && images.startsWith('http')) return images;
-      const parsed = JSON.parse(images);
-      return Array.isArray(parsed) ? parsed[0] : null;
-    } catch {
-      return null;
-    }
-  };
 
-  const renderProduct = ({ item }) => (
+
+  const renderProduct = ({ item }) => {
+    const images = parseImages(item.images);
+    const firstImage = images && images.length > 0 ? images[0] : null;
+
+    return (
     <TouchableOpacity
       style={styles.productCard}
       onPress={() => navigation.navigate('ProductDetails', { productId: item.id })}>
-      {item.images ? (
-        <Image source={{ uri: parseImages(item.images) }} style={styles.productImage} />
+      {firstImage ? (
+        <Image source={{ uri: firstImage }} style={styles.productImage} />
       ) : (
         <View style={styles.placeholderImage}>
           <Text style={styles.placeholderText}>📦</Text>
@@ -90,6 +86,7 @@ const FavoritesScreen = ({ navigation }) => {
       </View>
     </TouchableOpacity>
   );
+  };
 
   if (loading) {
     return (

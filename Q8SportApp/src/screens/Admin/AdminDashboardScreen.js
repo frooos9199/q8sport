@@ -108,11 +108,6 @@ const AdminDashboardScreen = () => {
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#DC2626" />
       }>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>لوحة التحكم</Text>
-        <Text style={styles.headerSubtitle}>إدارة Q8 Sport Car</Text>
-      </View>
-
       <View style={styles.statsGrid}>
         <StatCard icon="👥" title="المستخدمين" value={stats.totalUsers} color="#3B82F6" />
         <StatCard icon="📦" title="المنتجات" value={stats.totalProducts} color="#10B981" />

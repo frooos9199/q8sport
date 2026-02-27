@@ -75,49 +75,58 @@ const StoresScreen = ({ navigation }) => {
     }
   };
 
-  const renderStore = ({ item }) => (
-    <TouchableOpacity
-      style={styles.storeCard}
-      onPress={() => navigation.navigate('StoreDetails', { storeId: item.id, title: item.name })}>
-      <View style={styles.storeHeader}>
-        <View style={styles.avatar}>
-          {item.image && typeof item.image === 'string' && item.image.trim() &&
-           (item.image.startsWith('http') || item.image.startsWith('data:') || item.image.startsWith('/')) ? (
-            <Image 
-              source={{ 
-                uri: item.image.startsWith('http') || item.image.startsWith('data:')
-                  ? item.image
-                  : `https://www.q8sportcar.com${item.image}`
-              }} 
-              style={styles.avatarImage}
-              onError={(e) => console.log('⚠️ StoresScreen: Image load error')}
-            />
-          ) : (
-            <Text style={styles.avatarText}>{item.name?.charAt(0)?.toUpperCase() || 'M'}</Text>
-          )}
+  const StoreCard = ({ item }) => {
+    const [imageError, setImageError] = useState(false);
+    
+    return (
+      <TouchableOpacity
+        style={styles.storeCard}
+        onPress={() => navigation.navigate('StoreDetails', { storeId: item.id, title: item.name })}>
+        <View style={styles.storeHeader}>
+          <View style={styles.avatar}>
+            {!imageError && item.image && typeof item.image === 'string' && item.image.trim() &&
+             (item.image.startsWith('http') || item.image.startsWith('data:') || item.image.startsWith('/')) ? (
+              <Image 
+                source={{ 
+                  uri: item.image.startsWith('http') || item.image.startsWith('data:')
+                    ? item.image
+                    : `https://www.q8sportcar.com${item.image}`
+                }} 
+                style={styles.avatarImage}
+                onError={(e) => {
+                  console.log('⚠️ StoresScreen: Image load error for', item.name);
+                  setImageError(true);
+                }}
+              />
+            ) : (
+              <Text style={styles.avatarText}>{item.name?.charAt(0)?.toUpperCase() || 'M'}</Text>
+            )}
+          </View>
+          <View style={styles.storeInfo}>
+            <Text style={styles.storeName}>{item.name}</Text>
+            <Text style={styles.storeLocation}>📍 {item.address}</Text>
+          </View>
+          <StoreIcon size={24} color="#DC2626" />
         </View>
-        <View style={styles.storeInfo}>
-          <Text style={styles.storeName}>{item.name}</Text>
-          <Text style={styles.storeLocation}>📍 {item.address}</Text>
+        <View style={styles.storeStats}>
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>{item.productsCount || 0}</Text>
+            <Text style={styles.statLabel}>منتج</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>{Number(item.rating || 0).toFixed(1)}</Text>
+            <Text style={styles.statLabel}>⭐</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>{item.verified ? '✓' : '—'}</Text>
+            <Text style={styles.statLabel}>موثق</Text>
+          </View>
         </View>
-        <StoreIcon size={24} color="#DC2626" />
-      </View>
-      <View style={styles.storeStats}>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>{item.productsCount || 0}</Text>
-          <Text style={styles.statLabel}>منتج</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>{Number(item.rating || 0).toFixed(1)}</Text>
-          <Text style={styles.statLabel}>⭐</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>{item.verified ? '✓' : '—'}</Text>
-          <Text style={styles.statLabel}>موثق</Text>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
+
+  const renderStore = ({ item }) => <StoreCard item={item} />;
 
   if (loading) {
     return (

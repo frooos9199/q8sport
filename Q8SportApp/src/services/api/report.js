@@ -1,6 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const API_URL = 'https://q8sportcar.com/api';
+import apiClient from '../apiClient';
+import Logger from '../../utils/logger';
 
 export const ReportService = {
   /**
@@ -8,33 +7,23 @@ export const ReportService = {
    */
   async reportContent({ contentType, contentId, reportedUserId, reason, details }) {
     try {
-      const token = await AsyncStorage.getItem('authToken');
-      
-      const response = await fetch(`${API_URL}/reports`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          contentType, // PRODUCT, USER, COMMENT, etc.
-          contentId,
-          reportedUserId,
-          reason,
-          details,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'فشل إرسال البلاغ');
+      if (!contentType || !contentId) {
+        throw new Error('نوع المحتوى ومعرّفه مطلوبان');
       }
 
-      return data;
+      const response = await apiClient.post('/reports', {
+        contentType, // PRODUCT, USER, COMMENT, etc.
+        contentId,
+        reportedUserId,
+        reason,
+        details,
+      });
+
+      return response.data;
     } catch (error) {
-      console.error('Report error:', error);
-      throw error;
+      Logger.error('Report error:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'فشل إرسال البلاغ';
+      throw new Error(errorMessage);
     }
   },
 
@@ -43,25 +32,13 @@ export const ReportService = {
    */
   async getMyReports() {
     try {
-      const token = await AsyncStorage.getItem('authToken');
-      
-      const response = await fetch(`${API_URL}/reports/my-reports`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const response = await apiClient.get('/reports/my-reports');
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'فشل تحميل البلاغات');
-      }
-
-      return data;
+      return response.data;
     } catch (error) {
-      console.error('Get reports error:', error);
-      throw error;
+      Logger.error('Get reports error:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'فشل تحميل البلاغات';
+      throw new Error(errorMessage);
     }
   },
 };

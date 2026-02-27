@@ -197,13 +197,7 @@ const MyRequestsScreen = ({ navigation }) => {
       <Ionicons name="file-tray-outline" size={80} color="#DC2626" />
       <Text style={styles.emptyTitle}>لا توجد طلبات</Text>
       <Text style={styles.emptyText}>لم تقم بإضافة أي طلبات بعد</Text>
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => navigation.navigate('AddRequest')}
-      >
-        <Ionicons name="add" size={20} color="#fff" />
-        <Text style={styles.addButtonText}>إضافة طلب</Text>
-      </TouchableOpacity>
+      <Text style={styles.emptyHint}>استخدم زر (+) في الأسفل لإضافة طلب</Text>
     </View>
   );
 
@@ -349,19 +343,10 @@ const styles = StyleSheet.create({
     color: '#999',
     marginBottom: 30,
   },
-  addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#DC2626',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 25,
-  },
-  addButtonText: {
-    color: '#fff',
-    fontSize: 16,
+  emptyHint: {
+    fontSize: 14,
+    color: '#DC2626',
     fontWeight: 'bold',
-    marginLeft: 8,
   },
 });
 

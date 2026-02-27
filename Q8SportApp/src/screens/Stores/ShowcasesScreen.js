@@ -17,6 +17,9 @@ const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2;
 
 const ShowcaseCard = ({ item, onPress }) => {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [imageError, setImageError] = useState(false);
+  
   // ✅ Safe parse images with validation
   const parseImages = (imgs) => {
     try {
@@ -36,11 +39,11 @@ const ShowcaseCard = ({ item, onPress }) => {
   
   const images = parseImages(item.images);
   const isPending = item.status === 'PENDING';
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const currentImage = images[currentImageIndex];
 
   // ✅ Auto-rotate images every 3 seconds
   useEffect(() => {
-    if (images.length > 1) {
+    if (images.length > 1 && !imageError) {
       const interval = setInterval(() => {
         setCurrentImageIndex((prevIndex) => 
           prevIndex === images.length - 1 ? 0 : prevIndex + 1
@@ -49,22 +52,29 @@ const ShowcaseCard = ({ item, onPress }) => {
 
       return () => clearInterval(interval);
     }
-  }, [images.length]);
+  }, [images.length, imageError]);
 
   return (
     <TouchableOpacity
       style={styles.card}
       onPress={() => onPress(item)}
       activeOpacity={0.9}>
-      {images.length > 0 ? (
+      {images.length > 0 && currentImage && !imageError ? (
         <Image
-          source={{ uri: images[currentImageIndex] || images[0] }}
+          source={{ uri: currentImage }}
           style={styles.cardImage}
-          onError={(e) => console.log('⚠️ ShowcasesScreen: Image load error')}
+          resizeMode="cover"
+          onError={(e) => {
+            console.log('⚠️ Image load error:', currentImage);
+            setImageError(true);
+          }}
         />
       ) : (
-        <View style={[styles.cardImage, { backgroundColor: '#1a1a1a', justifyContent: 'center', alignItems: 'center' }]}>
-          <Text style={{ color: '#DC2626', fontSize: 40 }}>🚗</Text>
+        <View style={[styles.cardImage, styles.placeholderImage]}>
+          <Text style={styles.placeholderEmoji}>🚗</Text>
+          <Text style={styles.placeholderText}>
+            {item.carBrand || 'سيارة'}
+          </Text>
         </View>
       )}
       
@@ -192,14 +202,6 @@ const ShowcasesScreen = ({ navigation }) => {
     }
   };
 
-  const handleAddShowcase = () => {
-    if (!isAuthenticated) {
-      navigation.navigate('Auth');
-      return;
-    }
-    navigation.navigate('AddShowcase');
-  };
-
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -211,20 +213,6 @@ const ShowcasesScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>
-          <Text style={styles.headerTitleRed}>Car </Text>
-          <Text style={styles.headerTitleWhite}>Show</Text>
-        </Text>
-        <Text style={styles.headerSubtitle}>أجمل وأقوى السيارات في الكويت</Text>
-      </View>
-
-      {/* Add Button */}
-      <TouchableOpacity style={styles.addButton} onPress={handleAddShowcase}>
-        <Text style={styles.addButtonText}>+ أضف سيارتك</Text>
-      </TouchableOpacity>
-
       {/* Showcases Grid */}
       <FlatList
         data={showcases}
@@ -285,23 +273,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#999',
   },
-  addButton: {
-    margin: 16,
-    backgroundColor: '#DC2626',
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    shadowColor: '#DC2626',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  addButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
   listContent: {
     padding: 16,
     paddingTop: 0,
@@ -321,6 +292,20 @@ const styles = StyleSheet.create({
     height: CARD_WIDTH * 1.1,
     backgroundColor: '#2a2a2a',
     resizeMode: 'cover',
+  },
+  placeholderImage: {
+    backgroundColor: '#1a1a1a',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  placeholderEmoji: {
+    fontSize: 50,
+    marginBottom: 8,
+  },
+  placeholderText: {
+    color: '#DC2626',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   dotsContainer: {
     flexDirection: 'row',

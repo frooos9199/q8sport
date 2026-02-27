@@ -23,6 +23,7 @@ export default function AuthPage() {
     name: '',
     phone: ''
   });
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
   const { login } = useAuth();
@@ -204,13 +205,24 @@ export default function AuthPage() {
         }
       } else {
         // Registration via API
+        console.log('Registration attempt - acceptedTerms:', acceptedTerms);
+        
         if (!formData.email || !formData.password || !formData.name) {
           setError('يرجى ملء جميع الحقول المطلوبة');
+          setLoading(false);
+          return;
+        }
+        
+        // Check if terms are accepted
+        if (!acceptedTerms) {
+          setError('يجب الموافقة على الشروط والأحكام للمتابعة');
+          setLoading(false);
           return;
         }
         
         if (formData.password.length < 6) {
           setError('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+          setLoading(false);
           return;
         }
 
@@ -224,7 +236,8 @@ export default function AuthPage() {
             email: formData.email,
             password: formData.password,
             phone: formData.phone,
-            whatsapp: formData.phone
+            whatsapp: formData.phone,
+            acceptedTerms: acceptedTerms
           })
         });
 
@@ -399,6 +412,55 @@ export default function AuthPage() {
               )}
             </div>
 
+            {/* Terms and Conditions Checkbox (Registration only) */}
+            {!isLogin && (
+              <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
+                <div className="flex items-start">
+                  <div className="flex items-center h-6 mt-1">
+                    <input
+                      id="terms"
+                      name="terms"
+                      type="checkbox"
+                      checked={acceptedTerms}
+                      onChange={(e) => {
+                        console.log('Checkbox changed:', e.target.checked);
+                        setAcceptedTerms(e.target.checked);
+                        setError(''); // Clear error when checkbox changes
+                      }}
+                      className="h-5 w-5 text-red-600 focus:ring-red-600 focus:ring-2 border-gray-600 rounded bg-gray-900 cursor-pointer"
+                      style={{ accentColor: '#dc2626' }}
+                    />
+                  </div>
+                  <div className="mr-3 text-sm">
+                    <label htmlFor="terms" className="text-gray-200 cursor-pointer font-medium">
+                      أوافق على{' '}
+                      <Link 
+                        href="/terms" 
+                        target="_blank"
+                        className="text-red-500 hover:text-red-400 underline font-semibold"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        الشروط والأحكام
+                      </Link>
+                      {' '}و{' '}
+                      <Link 
+                        href="/privacy" 
+                        target="_blank"
+                        className="text-red-500 hover:text-red-400 underline font-semibold"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        سياسة الخصوصية
+                      </Link>
+                      {' '}<span className="text-red-500">*</span>
+                    </label>
+                    <p className="text-xs text-gray-400 mt-1">
+                      يجب الموافقة على الشروط لإنشاء حساب جديد
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Error message */}
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-3">
@@ -410,7 +472,7 @@ export default function AuthPage() {
             <div>
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || (!isLogin && !acceptedTerms)}
                 className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
               >
                 {loading ? (
@@ -422,6 +484,11 @@ export default function AuthPage() {
                   isLogin ? 'تسجيل الدخول' : 'إنشاء الحساب'
                 )}
               </button>
+              {!isLogin && !acceptedTerms && (
+                <p className="mt-2 text-xs text-center text-gray-400">
+                  يرجى الموافقة على الشروط والأحكام أولاً
+                </p>
+              )}
             </div>
 
             {/* Forgot password (Login only) */}
@@ -446,6 +513,7 @@ export default function AuthPage() {
                   onClick={() => {
                     setIsLogin(!isLogin);
                     setError('');
+                    setAcceptedTerms(false);
                     setFormData({ email: '', password: '', name: '', phone: '' });
                   }}
                   className="font-medium text-red-500 hover:text-red-400 mr-1"

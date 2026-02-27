@@ -47,6 +47,7 @@ const API_CONFIG = {
     SHOWCASES: '/showcases',
     SHOWCASE_DETAILS: (id) => `/showcases/${id}`,
     SHOWCASE_LIKE: (id) => `/showcases/${id}/like`,
+    USER_SHOWCASES: '/user/showcases',
     
     // Users / Stores (Shops)
     USERS: '/users',

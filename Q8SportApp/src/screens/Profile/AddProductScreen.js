@@ -16,6 +16,7 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import { useAuth } from '../../contexts/AuthContext';
 import API_CONFIG from '../../config/api';
 import apiClient from '../../services/apiClient';
+import Logger from '../../utils/logger';
 
 const AddProductScreen = ({ navigation }) => {
   const { token, user, isAuthenticated, loading: authLoading } = useAuth();
@@ -69,28 +70,66 @@ const AddProductScreen = ({ navigation }) => {
       mediaType: 'photo',
       maxWidth: 1200,
       maxHeight: 1200,
-      quality: 0.85,
+      quality: 0.7,
       selectionLimit: 5 - images.length,
-      includeBase64: false,
+      includeBase64: true, // ✅ نحتاج base64 للرفع
     };
 
     launchImageLibrary(options, (response) => {
-      if (response.didCancel) return;
+      console.log('📷 Image picker response:', {
+        didCancel: response.didCancel,
+        hasError: !!response.errorCode,
+        errorCode: response.errorCode,
+        assetsCount: response.assets?.length || 0
+      });
+      
+      if (response.didCancel) {
+        console.log('⚠️ User cancelled image picker');
+        return;
+      }
+      
       if (response.errorCode) {
+        console.error('❌ Image picker error:', response.errorCode, response.errorMessage);
         Alert.alert('خطأ', 'فشل اختيار الصورة');
         return;
       }
+      
       if (response.assets) {
+        console.log('📸 Processing', response.assets.length, 'assets...');
+        
+        response.assets.forEach((asset, i) => {
+          console.log(`Asset ${i}:`, {
+            hasUri: !!asset.uri,
+            hasBase64: !!asset.base64,
+            type: asset.type,
+            fileName: asset.fileName,
+            base64Length: asset.base64?.length || 0
+          });
+        });
+        
         const newImages = response.assets
-          .filter((asset) => asset?.uri)
+          .filter((asset) => {
+            const valid = asset?.uri && asset?.base64;
+            if (!valid) {
+              console.warn('⚠️ Invalid asset, missing uri or base64');
+            }
+            return valid;
+          })
           .map((asset) => ({
-            uri: asset.uri,
+            uri: asset.uri, // للعرض في الشاشة
+            base64: `data:${asset.type || 'image/jpeg'};base64,${asset.base64}`, // للرفع
             type: asset.type || 'image/jpeg',
             name:
               asset.fileName ||
               `product_${Date.now()}_${Math.random().toString(16).slice(2)}.jpg`,
           }));
-        setImages((prev) => [...prev, ...newImages].slice(0, 5));
+          
+        console.log('✅ Selected', newImages.length, 'valid images');
+        setImages((prev) => {
+          const updated = [...prev, ...newImages].slice(0, 5);
+          console.log('📦 Total images after update:', updated.length);
+          return updated;
+        });
       }
     });
   };
@@ -145,45 +184,49 @@ const AddProductScreen = ({ navigation }) => {
     setCurrentStep(currentStep - 1);
   };
 
-  const uploadImages = async () => {
-    if (!images.length) return [];
-
-    const fd = new FormData();
-    for (const img of images) {
-      fd.append('images', {
-        uri: img.uri,
-        type: img.type || 'image/jpeg',
-        name: img.name || `product_${Date.now()}.jpg`,
+  const prepareImages = () => {
+    console.log('🔍 prepareImages called, images count:', images.length);
+    
+    if (!images.length) {
+      console.log('⚠️ No images to prepare');
+      return [];
+    }
+    
+    // طباعة معلومات كل صورة
+    images.forEach((img, i) => {
+      console.log(`Image ${i}:`, {
+        hasUri: !!img.uri,
+        hasBase64: !!img.base64,
+        base64Preview: img.base64 ? img.base64.substring(0, 50) + '...' : 'MISSING'
       });
-    }
-
-    const res = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.UPLOAD}`, {
-      method: 'POST',
-      body: fd,
     });
-
-    const data = await res.json();
-    if (!res.ok || !data?.success || !Array.isArray(data?.files)) {
-      throw new Error(data?.error || 'فشل رفع الصور');
+    
+    // استخراج base64 من الصور
+    const base64Images = images
+      .filter(img => {
+        if (!img.base64) {
+          console.warn('⚠️ Image missing base64, skipping');
+          return false;
+        }
+        return true;
+      })
+      .map(img => img.base64);
+    
+    console.log('✅ Prepared', base64Images.length, 'base64 images out of', images.length);
+    
+    if (base64Images.length === 0 && images.length > 0) {
+      console.error('❌ All images are missing base64 data!');
     }
-
-    return data.files;
+    
+    return base64Images;
   };
 
   const handleSubmit = async () => {
     if (!validateStep(2)) return;
 
     // تحقق من وجود token قبل الإرسال
-    console.log('🔍 Submitting product - Auth check:', {
-      hasToken: !!token,
-      hasUser: !!user,
-      isAuthenticated,
-      userName: user?.name,
-      tokenPreview: token ? `${token.substring(0, 20)}...` : 'null'
-    });
-
     if (!token || !user) {
-      console.error('❌ Auth failed - Missing credentials');
+      Logger.error('Auth failed - Missing credentials');
       Alert.alert(
         '⚠️ خطأ في المصادقة',
         'يبدو أن جلستك انتهت. يرجى تسجيل الدخول مرة أخرى',
@@ -197,16 +240,33 @@ const AddProductScreen = ({ navigation }) => {
       return;
     }
 
-    setLoading(true);
+    const submitProduct = async (forceEmptyImages = false) => {
+      setLoading(true);
 
-    try {
-      const uploaded = await uploadImages();
+      try {
+        console.log('📤 Starting product creation...');
+        const base64Images = forceEmptyImages ? [] : prepareImages();
+        console.log('✅ Images prepared, count:', base64Images.length);
+        
+        // تحذير إذا كان المستخدم أضاف صور ولكنها فارغة
+        if (!forceEmptyImages && images.length > 0 && base64Images.length === 0) {
+          setLoading(false);
+          Alert.alert(
+            '⚠️ مشكلة في الصور',
+            'الصور التي اخترتها لا يمكن رفعها. حاول اختيار الصور مرة أخرى أو أكمل بدون صور.',
+            [
+              { text: 'حاول مرة أخرى', style: 'cancel' },
+              { text: 'أكمل بدون صور', onPress: () => submitProduct(true) },
+            ]
+          );
+          return;
+        }
 
-      const typeMap = {
-        'car': 'CAR',
-        'parts': 'PART',
-        'accessories': 'PART'
-      };
+        const typeMap = {
+          'car': 'CAR',
+          'parts': 'PART',
+          'accessories': 'PART'
+        };
 
       const conditionMap = {
         'new': 'NEW',
@@ -225,9 +285,10 @@ const AddProductScreen = ({ navigation }) => {
         carYear: formData.year ? parseInt(formData.year) : null,
         condition: conditionMap[formData.partCondition] || 'USED',
         contactPhone: formData.phone || null,
-        images: uploaded,
+        images: JSON.stringify(base64Images), // ✅ إرسال base64 كـ JSON
       };
 
+      console.log('📤 Sending product data to API...');
       await apiClient.post(API_CONFIG.ENDPOINTS.PRODUCTS, productData);
       console.log('✅ AddProductScreen: Product created successfully!');
       Alert.alert('✅ نجح', 'تم إضافة المنتج بنجاح', [
@@ -237,12 +298,29 @@ const AddProductScreen = ({ navigation }) => {
         },
       ]);
     } catch (error) {
-      console.error('❌ AddProductScreen: Network/Parse error:', error);
-      const message = error?.response?.data?.error || error?.response?.data?.message || error?.message;
-      Alert.alert('❌ خطأ', 'حدث خطأ أثناء إضافة المنتج: ' + (message || 'غير معروف'));
+      console.error('❌ AddProductScreen: Error occurred:', error);
+      
+      let errorMessage = 'حدث خطأ غير متوقع';
+      
+      // حاول الحصول على رسالة الخطأ من مصادر مختلفة
+      if (error?.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      Alert.alert('❌ خطأ', errorMessage, [
+        { text: 'حاول مرة أخرى', style: 'default' },
+      ]);
     } finally {
       setLoading(false);
     }
+    };
+
+    // استدعاء الدالة لإرسال المنتج
+    await submitProduct();
   };
 
   const renderStepIndicator = () => (

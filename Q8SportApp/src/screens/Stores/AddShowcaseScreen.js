@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,8 @@ import {
   Image,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { useAuth } from '../../contexts/AuthContext';
@@ -17,8 +19,12 @@ import API_CONFIG from '../../config/api';
 
 const CAR_BRANDS = ['Ford', 'Chevrolet', 'Dodge', 'BMW', 'Mercedes', 'Porsche', 'Toyota', 'Nissan'];
 
-const AddShowcaseScreen = ({ navigation }) => {
+const AddShowcaseScreen = ({ navigation, route }) => {
   const { token } = useAuth();
+  const editMode = route?.params?.editMode || false;
+  const showcaseData = route?.params?.showcaseData || null;
+  const imagesString = route?.params?.imagesString || null;
+  
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState([]);
   const [carBrand, setCarBrand] = useState('');
@@ -27,6 +33,45 @@ const AddShowcaseScreen = ({ navigation }) => {
   const [carYear, setCarYear] = useState('');
   const [horsepower, setHorsepower] = useState('');
   const [description, setDescription] = useState('');
+
+  // Load existing data in edit mode
+  useEffect(() => {
+    if (editMode && showcaseData) {
+      console.log('📝 Edit mode: Loading showcase data', showcaseData.id);
+      
+      // Parse images from imagesString
+      let parsedImages = [];
+      if (imagesString) {
+        try {
+          const imageUrls = typeof imagesString === 'string' 
+            ? JSON.parse(imagesString) 
+            : imagesString;
+          
+          // Filter HTTP URLs only (skip base64)
+          const validUrls = Array.isArray(imageUrls) 
+            ? imageUrls.filter(url => typeof url === 'string' && url.startsWith('http'))
+            : [];
+          
+          parsedImages = validUrls.map(url => ({
+            uri: url,
+            base64: url,
+            isExisting: true
+          }));
+          
+          console.log('✅ Loaded images:', parsedImages.length);
+        } catch (e) {
+          console.error('Error parsing images:', e);
+        }
+      }
+      
+      setImages(parsedImages);
+      setCarBrand(showcaseData.carBrand || '');
+      setCarModel(showcaseData.carModel || '');
+      setCarYear(showcaseData.carYear?.toString() || '');
+      setHorsepower(showcaseData.horsepower?.toString() || '');
+      setDescription(showcaseData.description || '');
+    }
+  }, [editMode, showcaseData, imagesString]);
 
   const pickImages = async () => {
     launchImageLibrary({
@@ -87,31 +132,51 @@ const AddShowcaseScreen = ({ navigation }) => {
     setLoading(true);
 
     try {
-      console.log('📤 Sending showcase data...');
+      console.log(editMode ? '📝 Updating showcase data...' : '📤 Sending showcase data...');
       console.log(`📸 Total images to upload: ${images.length}`);
       
-      // ✅ استخراج base64 من كل صورة
-      const base64Images = images.map(img => img.base64);
+      // Extract base64/URLs from images
+      const processedImages = images.map(img => {
+        if (img.isExisting) {
+          // Keep existing image URL as-is
+          return img.base64;
+        } else {
+          // Use base64 for new images
+          return img.base64;
+        }
+      });
       
-      const showcaseData = {
+      const showcaseDataToSend = {
         carBrand: carBrand || customBrand,
         carModel,
         carYear: parseInt(carYear),
         horsepower: horsepower ? parseInt(horsepower) : null,
         description,
-        images: JSON.stringify(base64Images), // ✅ إرسال base64 بدل URIs
+        images: JSON.stringify(processedImages),
       };
 
-      console.log('Showcase data prepared (images count):', base64Images.length);
+      console.log('Showcase data prepared (images count):', processedImages.length);
 
-      const response = await apiClient.post(API_CONFIG.ENDPOINTS.SHOWCASES, showcaseData);
+      let response;
+      if (editMode && showcaseData?.id) {
+        // Update existing showcase
+        response = await apiClient.put(
+          `${API_CONFIG.ENDPOINTS.SHOWCASES}/${showcaseData.id}`,
+          showcaseDataToSend
+        );
+      } else {
+        // Create new showcase
+        response = await apiClient.post(API_CONFIG.ENDPOINTS.SHOWCASES, showcaseDataToSend);
+      }
       
       console.log('✅ Response:', response.data);
 
       setLoading(false);
       Alert.alert(
-        'تم الإرسال بنجاح! ✅',
-        'سيتم مراجعة عرضك من قبل الإدارة وسيظهر في التطبيق بعد الموافقة',
+        editMode ? 'تم التحديث بنجاح! ✅' : 'تم الإرسال بنجاح! ✅',
+        editMode 
+          ? 'تم تحديث الكار شو بنجاح'
+          : 'سيتم مراجعة عرضك من قبل الإدارة وسيظهر في التطبيق بعد الموافقة',
         [
           {
             text: 'حسناً',
@@ -128,15 +193,22 @@ const AddShowcaseScreen = ({ navigation }) => {
   };
 
   return (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+    >
     <ScrollView style={styles.container}>
       <View style={styles.content}>
         {/* تعليمات */}
-        <View style={styles.infoBox}>
-          <Text style={styles.infoIcon}>ℹ️</Text>
-          <Text style={styles.infoText}>
-            سيتم مراجعة عرضك من قبل الإدارة قبل نشره في التطبيق
-          </Text>
-        </View>
+        {!editMode && (
+          <View style={styles.infoBox}>
+            <Text style={styles.infoIcon}>ℹ️</Text>
+            <Text style={styles.infoText}>
+              سيتم مراجعة عرضك من قبل الإدارة قبل نشره في التطبيق
+            </Text>
+          </View>
+        )}
 
         {/* الصور */}
         <View style={styles.section}>
@@ -263,7 +335,9 @@ const AddShowcaseScreen = ({ navigation }) => {
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.submitButtonText}>📤 إرسال للمراجعة</Text>
+            <Text style={styles.submitButtonText}>
+              {editMode ? '✅ حفظ التعديلات' : '📤 إرسال للمراجعة'}
+            </Text>
           )}
         </TouchableOpacity>
 
@@ -272,6 +346,7 @@ const AddShowcaseScreen = ({ navigation }) => {
         </Text>
       </View>
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -282,6 +357,19 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+    minHeight: 400,
+  },
+  loadingText: {
+    color: '#fff',
+    fontSize: 16,
+    marginTop: 16,
+    textAlign: 'center',
   },
   infoBox: {
     flexDirection: 'row',

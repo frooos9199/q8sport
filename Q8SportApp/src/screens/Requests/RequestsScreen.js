@@ -142,29 +142,12 @@ const RequestsScreen = ({ navigation }) => {
         resizeMode="contain"
       />
       <Text style={styles.emptyTitle}>لا توجد طلبات حالياً</Text>
-      <Text style={styles.emptyText}>كن أول من يضيف طلب</Text>
-      <TouchableOpacity
-        style={styles.emptyAddButton}
-        onPress={() => navigation.navigate('AddRequest')}
-      >
-        <Ionicons name="add-circle-outline" size={24} color="#fff" />
-        <Text style={styles.emptyAddText}>أضف طلبك الأول</Text>
-      </TouchableOpacity>
+      <Text style={styles.emptyText}>استخدم زر (+) في الأسفل لإضافة طلب</Text>
     </View>
   );
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>المطلوب</Text>
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => navigation.navigate('AddRequest')}
-        >
-          <Ionicons name="add" size={24} color="#fff" />
-        </TouchableOpacity>
-      </View>
-
       <FlatList
         data={requests}
         renderItem={renderRequest}
@@ -204,14 +187,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '900',
     color: '#fff',
-  },
-  addButton: {
-    backgroundColor: '#DC2626',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   list: {
     padding: 16,
@@ -349,20 +324,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     marginBottom: 30,
-  },
-  emptyAddButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#DC2626',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 25,
-  },
-  emptyAddText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
   },
 });
 

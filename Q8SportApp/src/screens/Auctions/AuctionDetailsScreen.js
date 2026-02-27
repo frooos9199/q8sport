@@ -163,6 +163,7 @@ const AuctionDetailsScreen = ({ route, navigation }) => {
     const raw = String(uri || '').trim();
     if (!raw) return null;
     if (/^https?:\/\//i.test(raw)) return raw;
+    if (/^data:/i.test(raw)) return raw; // ✅ دعم base64 data URLs
     // API_CONFIG.BASE_URL includes /api; strip it to get the site root
     const siteRoot = String(API_CONFIG.BASE_URL || '').replace(/\/api\/?$/i, '');
     if (!siteRoot) return raw;

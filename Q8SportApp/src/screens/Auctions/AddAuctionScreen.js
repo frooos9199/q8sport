@@ -9,6 +9,8 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { launchImageLibrary } from 'react-native-image-picker';
@@ -50,25 +52,47 @@ const AddAuctionScreen = ({ navigation }) => {
     launchImageLibrary(
       {
         mediaType: 'photo',
-        quality: 0.85,
+        quality: 0.7,
         maxWidth: 1600,
         maxHeight: 1600,
         selectionLimit: Math.max(0, 5 - images.length),
+        // لا حاجة لـ includeBase64 لأننا سنحول من URI لاحقاً
       },
       (response) => {
-        if (response.didCancel) return;
+        if (response.didCancel) {
+          console.log('📷 المستخدم ألغى اختيار الصور');
+          return;
+        }
         if (response.errorCode) {
+          console.error('❌ خطأ في اختيار الصور:', response.errorMessage);
           Alert.alert('خطأ', 'فشل اختيار الصور');
           return;
         }
         if (response.assets && response.assets.length > 0) {
+          console.log('📸 تم اختيار', response.assets.length, 'صورة');
+          
           const picked = response.assets
             .filter((a) => a?.uri)
-            .map((a) => ({
-              uri: a.uri,
-              type: a.type || 'image/jpeg',
-              name: a.fileName || `auction_${Date.now()}_${Math.random().toString(16).slice(2)}.jpg`,
-            }));
+            .map((a) => {
+              console.log('✅ صورة صالحة:', { hasUri: !!a.uri, type: a.type });
+              return {
+                uri: a.uri,
+                type: a.type || 'image/jpeg',
+                name: a.fileName || `auction_${Date.now()}_${Math.random().toString(16).slice(2)}.jpg`,
+              };
+            });
+          
+          console.log('📊 عدد الصور الصالحة:', picked.length);
+          
+          if (response.assets.length > 0 && picked.length === 0) {
+            console.error('❌ جميع الصور لا تحتوي على URI!');
+            Alert.alert(
+              '⚠️ مشكلة في الصور',
+              'لم نتمكن من تحميل الصور. جرب صور أخرى أو أكمل بدون صور.'
+            );
+            return;
+          }
+          
           setImages((prev) => [...prev, ...picked].slice(0, 5));
         }
       }
@@ -79,29 +103,79 @@ const AddAuctionScreen = ({ navigation }) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const uploadImages = async () => {
-    if (!images.length) return [];
-
-    const fd = new FormData();
-    for (const img of images) {
-      fd.append('images', {
-        uri: img.uri,
-        type: img.type,
-        name: img.name,
+  // ✅ تحويل URI إلى Base64 باستخدام XMLHttpRequest
+  const convertUriToBase64 = async (uri, mimeType = 'image/jpeg') => {
+    try {
+      console.log('🔄 تحويل URI إلى Base64:', uri.substring(0, 50) + '...');
+      
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.onload = function() {
+          const reader = new FileReader();
+          reader.onloadend = function() {
+            const base64String = reader.result;
+            console.log('✅ تم التحويل بنجاح، الطول:', base64String ? base64String.length : 0);
+            resolve(base64String);
+          };
+          reader.onerror = () => {
+            console.error('❌ FileReader error');
+            reject(new Error('FileReader failed'));
+          };
+          reader.readAsDataURL(xhr.response);
+        };
+        xhr.onerror = () => {
+          console.error('❌ XMLHttpRequest error');
+          reject(new Error('XMLHttpRequest failed'));
+        };
+        xhr.responseType = 'blob';
+        xhr.open('GET', uri, true);
+        xhr.send(null);
       });
+    } catch (error) {
+      console.error('❌ فشل تحويل URI إلى Base64:', error);
+      return null;
+    }
+  };
+
+  // ✅ تحضير base64 images بدلاً من رفعها بـ FormData
+  const prepareImages = async () => {
+    console.log('🎨 تحضير الصور، العدد:', images.length);
+    
+    if (!images.length) {
+      console.log('⚠️ لا توجد صور للتحضير');
+      return [];
     }
 
-    const res = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.UPLOAD}`, {
-      method: 'POST',
-      body: fd,
+    // 🔍 فحص كل صورة بالتفصيل
+    images.forEach((img, idx) => {
+      console.log(`🔍 صورة ${idx}:`, {
+        hasUri: !!img.uri,
+        hasBase64: !!img.base64,
+        hasType: !!img.type,
+        base64Preview: img.base64 ? img.base64.substring(0, 50) + '...' : 'MISSING'
+      });
     });
 
-    const data = await res.json();
-    if (!res.ok || !data?.success || !Array.isArray(data?.files)) {
-      throw new Error(data?.error || 'فشل رفع الصور');
-    }
+    const base64ImagesPromises = images.map(async (img) => {
+      // إذا كان base64 موجود مسبقاً، استخدمه
+      if (img.base64) {
+        console.log('✅ صورة لديها base64 جاهز');
+        return img.base64;
+      }
+      
+      // إذا لم يكن موجود، حوّل من URI
+      console.log('🔄 صورة بدون base64، سيتم التحويل من URI...');
+      const base64 = await convertUriToBase64(img.uri, img.type);
+      return base64;
+    });
 
-    return data.files;
+    const base64Images = await Promise.all(base64ImagesPromises);
+    
+    // فلترة الصور الفاشلة (null)
+    const validImages = base64Images.filter(img => img !== null);
+    
+    console.log('📤 عدد الصور المعدة للإرسال:', validImages.length, 'من أصل', images.length);
+    return validImages;
   };
 
   const submit = async () => {
@@ -117,41 +191,71 @@ const AddAuctionScreen = ({ navigation }) => {
 
     setLoading(true);
     try {
-      const uploaded = await uploadImages();
-
-      const payload = {
-        title: form.title,
-        description: form.description,
-        category: form.category,
-        carModel: form.carModel,
-        carYear: form.carYear ? parseInt(form.carYear) : null,
-        condition: form.condition,
-        startingPrice: form.startingPrice,
-        reservePrice: form.reservePrice,
-        buyNowPrice: form.buyNowPrice,
-        duration: Number(form.duration),
-        images: uploaded,
-      };
-
-      const data = await AuctionsService.createAuction(payload);
-
-      Alert.alert('نجح', 'تم إنشاء المزاد بنجاح', [
-        {
-          text: 'عرض مزاداتي',
-          onPress: () => navigation.navigate('MyAuctions'),
-        },
-      ]);
-
-      return data;
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : 'حدث خطأ أثناء إنشاء المزاد';
-      Alert.alert('خطأ', msg);
+      console.log('📤 بدء إرسال المزاد...');
+      
+      // ✅ تحضير الصور بدلاً من رفعها (الآن async)
+      const base64Images = await prepareImages();
+      
+      // تحذير إذا اختار المستخدم صور لكنها فارغة
+      if (images.length > 0 && base64Images.length === 0) {
+        Alert.alert(
+          '⚠️ مشكلة في الصور',
+          'الصور التي اخترتها لا يمكن رفعها. جرّب اختيار صور مرة أخرى أو أكمل بدون صور.',
+          [
+            { text: 'حاول مرة أخرى', style: 'cancel', onPress: () => setLoading(false) },
+            { text: 'أكمل بدون صور', onPress: () => submitWithImages([]) },
+          ]
+        );
+        return;
+      }
+      
+      await submitWithImages(base64Images);
+    } catch (err) {
+      console.error('❌ خطأ في إنشاء المزاد:', err);
+      Alert.alert('خطأ', err?.message || 'حدث خطأ غير متوقع');
     } finally {
       setLoading(false);
     }
   };
 
+  const submitWithImages = async (base64Images) => {
+    console.log('📦 إنشاء payload مع', base64Images.length, 'صورة');
+    
+    const payload = {
+      title: form.title,
+      description: form.description,
+      category: form.category,
+      carModel: form.carModel,
+      carYear: form.carYear ? parseInt(form.carYear) : null,
+      condition: form.condition,
+      startingPrice: form.startingPrice,
+      reservePrice: form.reservePrice,
+      buyNowPrice: form.buyNowPrice,
+      duration: Number(form.duration),
+      images: JSON.stringify(base64Images), // ✅ إرسال base64 كـ JSON string
+    };
+    
+    console.log('🚀 إرسال المزاد للـ API...');
+
+    const data = await AuctionsService.createAuction(payload);
+    
+    console.log('✅ تم إنشاء المزاد بنجاح!');
+    Alert.alert('✅ نجح', 'تم إنشاء المزاد بنجاح', [
+      {
+        text: 'عرض مزاداتي',
+        onPress: () => navigation.navigate('MyAuctions'),
+      },
+    ]);
+
+    return data;
+  };
+
   return (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+    >
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Text style={styles.title}>إضافة مزاد</Text>
@@ -301,6 +405,7 @@ const AddAuctionScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
