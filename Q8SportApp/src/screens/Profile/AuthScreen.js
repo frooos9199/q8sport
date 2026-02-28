@@ -88,11 +88,11 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingVertical: 20,
+    paddingBottom: 120, // مسافة كافية لتجنب الشريط السفلي
   },
   content: {
-    flex: 1,
-    justifyContent: 'space-between',
     paddingVertical: 60,
+    paddingBottom: 40, // مسافة إضافية للأزرار
   },
   logoContainer: {
     alignItems: 'center',
@@ -147,6 +147,8 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     paddingHorizontal: 30,
+    marginTop: 30,
+    marginBottom: 40, // مسافة إضافية لتجنب الشريط السفلي
   },
   primaryButton: {
     backgroundColor: '#DC2626',
