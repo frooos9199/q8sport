@@ -9,12 +9,14 @@ import {
   RefreshControl,
   Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { AuctionsService } from '../../services/api/auctions';
 import apiClient from '../../services/apiClient';
 import API_CONFIG from '../../config/api';
 
 const MyAuctionsScreen = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
@@ -156,7 +158,7 @@ const MyAuctionsScreen = ({ navigation }) => {
         data={items}
         renderItem={renderItem}
         keyExtractor={(it) => String(it.id)}
-        contentContainerStyle={items.length === 0 ? styles.emptyList : styles.list}
+        contentContainerStyle={items.length === 0 ? styles.emptyList : [styles.list, { paddingBottom: 65 + insets.bottom + 20 }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor="#DC2626" />}
         ListEmptyComponent={
           <View style={styles.centerEmpty}>
@@ -174,7 +176,7 @@ const MyAuctionsScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
-  list: { padding: 12, paddingBottom: 100 },
+  list: { padding: 12 },
   emptyList: { flexGrow: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000', padding: 20 },
   centerEmpty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },

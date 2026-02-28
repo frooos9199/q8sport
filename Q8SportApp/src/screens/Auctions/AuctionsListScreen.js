@@ -8,12 +8,14 @@ import {
   TouchableOpacity,
   RefreshControl,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AuctionsService } from '../../services/api/auctions';
 import { useAuth } from '../../contexts/AuthContext';
 import { openWhatsApp } from '../../utils/whatsapp';
 
 const AuctionsListScreen = ({ navigation }) => {
   const { user, isAuthenticated } = useAuth();
+  const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
@@ -166,7 +168,7 @@ const AuctionsListScreen = ({ navigation }) => {
         data={auctions}
         renderItem={renderItem}
         keyExtractor={(item) => String(item.id)}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, { paddingBottom: 65 + insets.bottom + 20 }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor="#DC2626" />}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
@@ -187,7 +189,7 @@ const styles = StyleSheet.create({
   filterButtonActiveRed: { borderColor: '#DC2626', backgroundColor: '#DC2626' },
   filterText: { color: '#aaa', fontWeight: 'bold' },
   filterTextActive: { color: '#fff' },
-  list: { padding: 12, paddingBottom: 100 },
+  list: { padding: 12 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000', padding: 20 },
   errorText: { color: '#F87171', fontSize: 16, textAlign: 'center', marginBottom: 12 },
   retryButton: { backgroundColor: '#DC2626', paddingHorizontal: 18, paddingVertical: 10, borderRadius: 10 },

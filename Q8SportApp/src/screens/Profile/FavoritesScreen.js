@@ -10,6 +10,7 @@ import {
   Alert,
   RefreshControl,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import API_CONFIG from '../../config/api';
 import apiClient from '../../services/apiClient';
@@ -17,6 +18,7 @@ import { parseImages } from '../../utils/jsonHelpers';
 
 const FavoritesScreen = ({ navigation }) => {
   const { token, isAuthenticated } = useAuth();
+  const insets = useSafeAreaInsets();
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -120,7 +122,7 @@ const FavoritesScreen = ({ navigation }) => {
         renderItem={renderProduct}
         keyExtractor={(item) => item.id}
         numColumns={2}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, { paddingBottom: 65 + insets.bottom + 20 }]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -157,7 +159,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
   },
   list: {
-    padding: 10,    paddingBottom: 100,  },
+    padding: 10,
+  },
   productCard: {
     flex: 1,
     margin: 5,

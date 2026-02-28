@@ -15,6 +15,7 @@ import {
   Share,
   RefreshControl,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import AdminService from '../../services/AdminService';
 import apiClient from '../../services/apiClient';
@@ -27,6 +28,7 @@ const { width } = Dimensions.get('window');
 const ShowcaseDetailsScreen = ({ route, navigation }) => {
   const { showcase } = route.params;
   const { isAuthenticated, user } = useAuth();
+  const insets = useSafeAreaInsets();
   
   // ✅ Safe parse images with validation
   const parseShowcaseImages = (imgs) => {
@@ -206,7 +208,7 @@ const ShowcaseDetailsScreen = ({ route, navigation }) => {
   return (
     <View style={styles.container}>
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={[{ paddingBottom: 65 + insets.bottom + 20 }]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}

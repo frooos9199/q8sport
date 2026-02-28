@@ -15,6 +15,7 @@ import {
   Modal,
   Pressable,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BurnoutLoader from '../../components/BurnoutLoader';
 import { SkeletonGrid } from '../../components/SkeletonLoader';
 import { ProductService } from '../../services/api/products';
@@ -125,6 +126,7 @@ const ProductCard = React.memo(({ item, index, onPress, onFavorite, isFavorite }
 
 const HomeScreen = ({ navigation }) => {
   const { token, isAuthenticated } = useAuth();
+  const insets = useSafeAreaInsets();
   const [products, setProducts] = useState([]);
   const [allProducts, setAllProducts] = useState([]); // جميع المنتجات
   const [favorites, setFavorites] = useState([]);
@@ -525,7 +527,7 @@ const HomeScreen = ({ navigation }) => {
         renderItem={renderProduct}
         keyExtractor={(item) => item.id}
         numColumns={2}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: 65 + insets.bottom + 20 }]}
         // ⚡ Performance Optimizations
         initialNumToRender={6}
         maxToRenderPerBatch={10}
@@ -739,7 +741,6 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 10,
-    paddingBottom: 100,
   },
   productCard: {
     flex: 1,

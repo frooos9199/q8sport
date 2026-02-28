@@ -9,6 +9,7 @@ import {
   Image,
   RefreshControl,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import apiClient from '../../services/apiClient';
 import API_CONFIG from '../../config/api';
 import { StoreIcon } from '../../components/Icons';
@@ -16,6 +17,7 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const StoresScreen = ({ navigation }) => {
   const { user, isAuthenticated } = useAuth();
+  const insets = useSafeAreaInsets();
   const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -142,7 +144,7 @@ const StoresScreen = ({ navigation }) => {
         data={stores}
         renderItem={renderStore}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, { paddingBottom: 65 + insets.bottom + 20 }]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -175,7 +177,6 @@ const styles = StyleSheet.create({
   },
   list: {
     padding: 15,
-    paddingBottom: 100,
   },
   headerBtn: {
     marginRight: 12,

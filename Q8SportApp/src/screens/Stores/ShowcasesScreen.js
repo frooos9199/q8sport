@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import API_CONFIG from '../../config/api';
 
@@ -148,6 +149,7 @@ const ShowcaseCard = ({ item, onPress }) => {
 
 const ShowcasesScreen = ({ navigation }) => {
   const { isAuthenticated } = useAuth();
+  const insets = useSafeAreaInsets();
   const [showcases, setShowcases] = useState([]);
   const [likedShowcases, setLikedShowcases] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -224,7 +226,7 @@ const ShowcasesScreen = ({ navigation }) => {
         )}
         keyExtractor={(item) => item.id}
         numColumns={2}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: 65 + insets.bottom + 20 }]}
         columnWrapperStyle={styles.row}
         refreshControl={
           <RefreshControl
@@ -276,7 +278,6 @@ const styles = StyleSheet.create({
   listContent: {
     padding: 16,
     paddingTop: 0,
-    paddingBottom: 100,
   },
   row: {
     justifyContent: 'space-between',

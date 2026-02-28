@@ -15,6 +15,7 @@ import {
   RefreshControl,
 } from 'react-native';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProductService } from '../services/api/products';
 import ReportButton from '../components/ReportButton';
 import BlockUserButton from '../components/BlockUserButton';
@@ -24,6 +25,7 @@ const { width } = Dimensions.get('window');
 
 const ProductDetailsScreen = ({ route, navigation }) => {
   const { productId } = route.params;
+  const insets = useSafeAreaInsets();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -101,7 +103,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       <ScrollView 
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={[{ paddingBottom: 65 + insets.bottom + 20 }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl

@@ -12,6 +12,7 @@ import {
   FlatList,
   Dimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AuctionsService } from '../../services/api/auctions';
 import { useAuth } from '../../contexts/AuthContext';
 import API_CONFIG from '../../config/api';
@@ -22,6 +23,7 @@ const { width } = Dimensions.get('window');
 const AuctionDetailsScreen = ({ route, navigation }) => {
   const auctionId = route?.params?.auctionId;
   const { user, isAuthenticated } = useAuth();
+  const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [auction, setAuction] = useState(null);
@@ -179,7 +181,7 @@ const AuctionDetailsScreen = ({ route, navigation }) => {
   const isHighestBidder = isAuthenticated && user?.id && auction?.highestBidder?.id && user.id === auction.highestBidder.id;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingBottom: 65 + insets.bottom + 20 }]}>
       <View style={styles.galleryWrap}>
         <FlatList
           data={images}
@@ -347,7 +349,7 @@ const AuctionDetailsScreen = ({ route, navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
-  content: { padding: 12, paddingBottom: 100 },
+  content: { padding: 12 },
   galleryWrap: { marginBottom: 12, borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: '#222' },
   galleryImage: { width: width - 24, height: 220, backgroundColor: '#111' },
   galleryPlaceholder: { width: width - 24, height: 220, backgroundColor: '#111', justifyContent: 'center', alignItems: 'center' },

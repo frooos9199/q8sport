@@ -9,6 +9,7 @@ import {
   Alert,
   Image,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import KeyboardAvoidingScrollView from '../../components/KeyboardAvoidingScrollView';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { launchImageLibrary } from 'react-native-image-picker';
@@ -18,6 +19,7 @@ import API_CONFIG from '../../config/api';
 
 const AddAuctionScreen = ({ navigation }) => {
   const { isAuthenticated, user } = useAuth();
+  const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState([]); // { uri, type, name }
 
@@ -251,7 +253,7 @@ const AddAuctionScreen = ({ navigation }) => {
   return (
     <KeyboardAvoidingScrollView 
       style={styles.container} 
-      contentContainerStyle={styles.content}>
+      contentContainerStyle={[styles.content, { paddingBottom: 65 + insets.bottom + 20 }]}>
       <View style={styles.header}>
         <Text style={styles.title}>إضافة مزاد</Text>
         <Text style={styles.subTitle}>سيظهر في قسم المزادات وفي ملفك الشخصي</Text>
@@ -405,7 +407,7 @@ const AddAuctionScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
-  content: { padding: 16, paddingBottom: 100 },
+  content: { padding: 16 },
   header: { marginBottom: 14 },
   title: { color: '#fff', fontSize: 22, fontWeight: 'bold' },
   subTitle: { color: '#aaa', marginTop: 6 },

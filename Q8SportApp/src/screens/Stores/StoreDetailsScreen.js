@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import apiClient from '../../services/apiClient';
 import API_CONFIG from '../../config/api';
 import { openWhatsApp } from '../../utils/whatsapp';
@@ -28,6 +29,7 @@ const safeParseImages = (images) => {
 
 const StoreDetailsScreen = ({ route, navigation }) => {
   const storeId = route?.params?.storeId;
+  const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [store, setStore] = useState(null);
@@ -129,7 +131,7 @@ const StoreDetailsScreen = ({ route, navigation }) => {
         data={products}
         renderItem={renderProduct}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, { paddingBottom: 65 + insets.bottom + 20 }]}
         numColumns={2}
         columnWrapperStyle={styles.row}
         ListEmptyComponent={
@@ -183,7 +185,7 @@ const styles = StyleSheet.create({
   header: { padding: 16, borderBottomWidth: 2, borderBottomColor: '#DC2626' },
   storeName: { color: '#fff', fontSize: 20, fontWeight: 'bold', marginBottom: 6 },
   storeSub: { color: '#999', fontSize: 13, marginBottom: 3 },
-  list: { padding: 12, paddingBottom: 100 },
+  list: { padding: 12 },
   row: { flexDirection: 'row', justifyContent: 'space-between' },
   productCard: { backgroundColor: '#1a1a1a', borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: '#333', marginBottom: 12, flex: 1, marginHorizontal: 4 },
     contactBar: {

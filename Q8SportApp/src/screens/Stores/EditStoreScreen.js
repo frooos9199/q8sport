@@ -9,12 +9,14 @@ import {
   Alert,
   ScrollView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { useAuth } from '../../contexts/AuthContext';
 import API_CONFIG from '../../config/api';
 
 const EditStoreScreen = ({ navigation }) => {
   const { user, updateProfile, isAuthenticated } = useAuth();
+  const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(false);
   const [picked, setPicked] = useState(null); // { uri, type, name }
 
@@ -112,7 +114,7 @@ const EditStoreScreen = ({ navigation }) => {
   const previewUri = picked?.uri || currentShopImage;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingBottom: 65 + insets.bottom + 20 }]}>
       <View style={styles.header}>
         <Text style={styles.title}>صورة المحل</Text>
         <Text style={styles.subtitle}>ستظهر على كرت المحل في قائمة المحلات</Text>
@@ -149,7 +151,7 @@ const EditStoreScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
-  content: { padding: 16, paddingBottom: 100 },
+  content: { padding: 16 },
   header: { marginBottom: 16 },
   title: { color: '#fff', fontSize: 20, fontWeight: 'bold', marginBottom: 6 },
   subtitle: { color: '#999', fontSize: 13 },
