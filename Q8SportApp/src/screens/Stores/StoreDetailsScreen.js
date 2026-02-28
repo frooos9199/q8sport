@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
   header: { padding: 16, borderBottomWidth: 2, borderBottomColor: '#DC2626' },
   storeName: { color: '#fff', fontSize: 20, fontWeight: 'bold', marginBottom: 6 },
   storeSub: { color: '#999', fontSize: 13, marginBottom: 3 },
-  list: { padding: 12, paddingBottom: 80 },
+  list: { padding: 12, paddingBottom: 100 },
   row: { flexDirection: 'row', justifyContent: 'space-between' },
   productCard: { backgroundColor: '#1a1a1a', borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: '#333', marginBottom: 12, flex: 1, marginHorizontal: 4 },
     contactBar: {

@@ -104,10 +104,13 @@ const EnhancedProductCard = ({ item, index, onPress }) => {
         activeOpacity={0.7}>
         {/* الصورة */}
         <View style={styles.imageContainer}>
-          {item.images && JSON.parse(item.images)[0] ? (
+          {item.images && parseImages(item.images)[0] ? (
             <Image
-              source={{ uri: JSON.parse(item.images)[0] }}
+              source={{ uri: parseImages(item.images)[0] }}
               style={styles.image}
+              // Performance optimizations
+              fadeDuration={100}
+              cache="force-cache"
             />
           ) : (
             <View style={styles.placeholderImage}>

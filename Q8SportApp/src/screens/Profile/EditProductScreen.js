@@ -3,15 +3,13 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
   Alert,
   Image,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
+import KeyboardAvoidingScrollView from '../../components/KeyboardAvoidingScrollView';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { useAuth } from '../../contexts/AuthContext';
 import API_CONFIG from '../../config/api';
@@ -204,13 +202,9 @@ const EditProductScreen = ({ route, navigation }) => {
   };
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingScrollView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}>
+      contentContainerStyle={styles.content}>
         
         <View style={styles.header}>
           <Text style={styles.headerTitle}>✏️ تعديل المنتج</Text>
@@ -431,10 +425,7 @@ const EditProductScreen = ({ route, navigation }) => {
             )}
           </TouchableOpacity>
         </View>
-
-        <View style={{ height: 30 }} />
-      </ScrollView>
-    </KeyboardAvoidingView>
+    </KeyboardAvoidingScrollView>
   );
 };
 
@@ -442,9 +433,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
-  },
-  scrollView: {
-    flex: 1,
   },
   content: {
     padding: 20,

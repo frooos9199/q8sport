@@ -101,6 +101,7 @@ const ProductDetailsScreen = ({ route, navigation }) => {
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       <ScrollView 
+        contentContainerStyle={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl

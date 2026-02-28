@@ -5,13 +5,11 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  ScrollView,
   ActivityIndicator,
   Alert,
   Image,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
+import KeyboardAvoidingScrollView from '../../components/KeyboardAvoidingScrollView';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -126,12 +124,7 @@ const EditProfileScreen = ({ navigation }) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-    >
-    <ScrollView style={styles.container}>
+    <KeyboardAvoidingScrollView style={styles.container}>
       <View style={styles.avatarSection}>
         <TouchableOpacity onPress={handleImagePick} activeOpacity={0.7}>
           {avatar?.uri ? (
@@ -228,8 +221,7 @@ const EditProfileScreen = ({ navigation }) => {
           )}
         </TouchableOpacity>
       </View>
-    </ScrollView>
-    </KeyboardAvoidingView>
+    </KeyboardAvoidingScrollView>
   );
 };
 

@@ -5,14 +5,12 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
   Alert,
   Image,
   StatusBar,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
+import KeyboardAvoidingScrollView from '../../components/KeyboardAvoidingScrollView';
 import Logger from '../../utils/logger';
 
 const RegisterScreen = ({ navigation }) => {
@@ -67,12 +65,9 @@ const RegisterScreen = ({ navigation }) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}>
+    <KeyboardAvoidingScrollView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0a0a0a" />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.content}>
+      <View style={styles.content}>
           <Image
             source={require('../../../assets/images/icon.png')}
             style={styles.logo}
@@ -199,8 +194,7 @@ const RegisterScreen = ({ navigation }) => {
             </Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+    </KeyboardAvoidingScrollView>
   );
 };
 
@@ -209,12 +203,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0a0a0a',
   },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-  },
   content: {
     padding: 24,
+    paddingTop: 40,
+    paddingBottom: 100,
   },
   logo: {
     width: 100,

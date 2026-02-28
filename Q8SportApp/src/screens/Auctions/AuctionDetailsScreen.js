@@ -347,7 +347,7 @@ const AuctionDetailsScreen = ({ route, navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
-  content: { padding: 12 },
+  content: { padding: 12, paddingBottom: 100 },
   galleryWrap: { marginBottom: 12, borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: '#222' },
   galleryImage: { width: width - 24, height: 220, backgroundColor: '#111' },
   galleryPlaceholder: { width: width - 24, height: 220, backgroundColor: '#111', justifyContent: 'center', alignItems: 'center' },

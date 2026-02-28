@@ -5,12 +5,10 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  ScrollView,
   Alert,
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
+import KeyboardAvoidingScrollView from '../../components/KeyboardAvoidingScrollView';
 import { useAuth } from '../../contexts/AuthContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import API_CONFIG from '../../config/api';
@@ -88,12 +86,9 @@ const AddRequestScreen = ({ navigation }) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-    >
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <KeyboardAvoidingScrollView 
+      style={styles.container} 
+      contentContainerStyle={styles.contentContainer}>
       {!isAuthenticated || !token ? (
         <View style={styles.notAuthContainer}>
           <Ionicons name="lock-closed-outline" size={80} color="#DC2626" />
@@ -204,8 +199,7 @@ const AddRequestScreen = ({ navigation }) => {
           </TouchableOpacity>
         </>
       )}
-    </ScrollView>
-    </KeyboardAvoidingView>
+    </KeyboardAvoidingScrollView>
   );
 };
 

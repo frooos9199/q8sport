@@ -7,10 +7,8 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
+import KeyboardAvoidingScrollView from '../../components/KeyboardAvoidingScrollView';
 import { useAuth } from '../../contexts/AuthContext';
 import API_CONFIG from '../../config/api';
 import apiClient from '../../services/apiClient';
@@ -103,12 +101,7 @@ const ChangePasswordScreen = ({ navigation }) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-    >
-    <ScrollView style={styles.container}>
+    <KeyboardAvoidingScrollView style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>🔒 تغيير كلمة المرور</Text>
         <Text style={styles.subtitle}>أدخل كلمة المرور الحالية والجديدة</Text>
@@ -171,8 +164,7 @@ const ChangePasswordScreen = ({ navigation }) => {
           )}
         </TouchableOpacity>
       </View>
-    </ScrollView>
-    </KeyboardAvoidingView>
+    </KeyboardAvoidingScrollView>
   );
 };
 

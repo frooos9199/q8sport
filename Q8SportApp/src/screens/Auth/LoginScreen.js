@@ -5,9 +5,6 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
   Alert,
   Image,
   StatusBar,
@@ -15,6 +12,7 @@ import {
   Modal,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
+import KeyboardAvoidingScrollView from '../../components/KeyboardAvoidingScrollView';
 import BiometricService from '../../services/BiometricService';
 import apiClient from '../../services/apiClient';
 
@@ -145,12 +143,9 @@ const LoginScreen = ({ navigation }) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}>
+    <KeyboardAvoidingScrollView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0a0a0a" />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.content}>
+      <View style={styles.content}>
           <Image
             source={require('../../../assets/images/icon.png')}
             style={styles.logo}
@@ -294,8 +289,7 @@ const LoginScreen = ({ navigation }) => {
             </Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+    </KeyboardAvoidingScrollView>
   );
 };
 
@@ -304,12 +298,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0a0a0a',
   },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-  },
   content: {
     padding: 24,
+    paddingTop: 40,
+    paddingBottom: 100,
   },
   logo: {
     width: '100%',

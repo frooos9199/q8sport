@@ -206,6 +206,7 @@ const ShowcaseDetailsScreen = ({ route, navigation }) => {
   return (
     <View style={styles.container}>
       <ScrollView
+        contentContainerStyle={{ paddingBottom: 100 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}

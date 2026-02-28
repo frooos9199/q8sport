@@ -41,14 +41,14 @@ const ShowcaseCard = ({ item, onPress }) => {
   const isPending = item.status === 'PENDING';
   const currentImage = images[currentImageIndex];
 
-  // ✅ Auto-rotate images every 3 seconds
+  // ✅ Auto-rotate images every 15 seconds (توفير bandwidth)
   useEffect(() => {
     if (images.length > 1 && !imageError) {
       const interval = setInterval(() => {
         setCurrentImageIndex((prevIndex) => 
           prevIndex === images.length - 1 ? 0 : prevIndex + 1
         );
-      }, 3000);
+      }, 15000); // 15 ثانية بدلاً من 3
 
       return () => clearInterval(interval);
     }
@@ -276,6 +276,7 @@ const styles = StyleSheet.create({
   listContent: {
     padding: 16,
     paddingTop: 0,
+    paddingBottom: 100,
   },
   row: {
     justifyContent: 'space-between',

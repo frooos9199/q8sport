@@ -174,7 +174,7 @@ const MyAuctionsScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
-  list: { padding: 12 },
+  list: { padding: 12, paddingBottom: 100 },
   emptyList: { flexGrow: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000', padding: 20 },
   centerEmpty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },

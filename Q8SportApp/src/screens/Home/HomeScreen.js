@@ -58,7 +58,7 @@ const ProductCard = React.memo(({ item, index, onPress, onFavorite, isFavorite }
     if (images.length > 1) {
       const interval = setInterval(() => {
         setCurrentImageIndex((prev) => (prev + 1) % images.length);
-      }, 5000); // زيادة من 4 إلى 5 ثواني لتقليل العمليات
+      }, 15000); // 15 ثانية لتوفير bandwidth
       return () => clearInterval(interval);
     }
   }, [images.length, index]);
@@ -275,16 +275,8 @@ const HomeScreen = ({ navigation }) => {
     fetchProducts(true, false); // refresh عادي
   }, [fetchProducts]);
 
-  // Silent refresh - يعمل في الخلفية كل 30 ثانية
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (!loading && !refreshing && !loadingMore) {
-        fetchProducts(true, true); // silent refresh
-      }
-    }, 30000); // كل 30 ثانية
-
-    return () => clearInterval(interval);
-  }, [loading, refreshing, loadingMore, fetchProducts]);
+  // تم إلغاء Auto-Refresh لتوفير 90% من استهلاك Vercel
+  // المستخدم يمكنه السحب للتحديث يدوياً عبر Pull-to-Refresh
 
   const handleProductPress = useCallback((productId) => {
     navigation.navigate('ProductDetails', { productId });
@@ -747,6 +739,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 10,
+    paddingBottom: 100,
   },
   productCard: {
     flex: 1,

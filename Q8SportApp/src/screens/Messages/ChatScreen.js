@@ -24,8 +24,8 @@ const ChatScreen = ({ route }) => {
     if (!token) return;
 
     fetchMessages();
-    const interval = setInterval(fetchMessages, 3000);
-    return () => clearInterval(interval);
+    // تم إلغاء Auto-refresh لتوفير bandwidth
+    // المستخدم يمكنه إرسال رسالة لتحديث المحادثة
   }, [conversationId, token]);
 
   const fetchMessages = async () => {

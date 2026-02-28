@@ -157,8 +157,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
   },
   list: {
-    padding: 10,
-  },
+    padding: 10,    paddingBottom: 100,  },
   productCard: {
     flex: 1,
     margin: 5,

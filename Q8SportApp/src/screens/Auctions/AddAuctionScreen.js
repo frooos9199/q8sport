@@ -3,15 +3,13 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
   Alert,
   Image,
-  KeyboardAvoidingView,
-  Platform,
 } from 'react-native';
+import KeyboardAvoidingScrollView from '../../components/KeyboardAvoidingScrollView';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { useAuth } from '../../contexts/AuthContext';
@@ -251,12 +249,9 @@ const AddAuctionScreen = ({ navigation }) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-    >
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <KeyboardAvoidingScrollView 
+      style={styles.container} 
+      contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Text style={styles.title}>إضافة مزاد</Text>
         <Text style={styles.subTitle}>سيظهر في قسم المزادات وفي ملفك الشخصي</Text>
@@ -404,14 +399,13 @@ const AddAuctionScreen = ({ navigation }) => {
           )}
         </TouchableOpacity>
       </View>
-    </ScrollView>
-    </KeyboardAvoidingView>
+    </KeyboardAvoidingScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
-  content: { padding: 16, paddingBottom: 28 },
+  content: { padding: 16, paddingBottom: 100 },
   header: { marginBottom: 14 },
   title: { color: '#fff', fontSize: 22, fontWeight: 'bold' },
   subTitle: { color: '#aaa', marginTop: 6 },

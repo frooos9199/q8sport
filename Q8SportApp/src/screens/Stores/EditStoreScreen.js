@@ -149,7 +149,7 @@ const EditStoreScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
-  content: { padding: 16 },
+  content: { padding: 16, paddingBottom: 100 },
   header: { marginBottom: 16 },
   title: { color: '#fff', fontSize: 20, fontWeight: 'bold', marginBottom: 6 },
   subtitle: { color: '#999', fontSize: 13 },

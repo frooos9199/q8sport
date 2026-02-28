@@ -229,6 +229,7 @@ const styles = StyleSheet.create({
   },
   list: {
     padding: 15,
+    paddingBottom: 100,
   },
   emptyList: {
     flex: 1,
