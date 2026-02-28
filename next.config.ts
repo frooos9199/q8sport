@@ -8,6 +8,10 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
+        hostname: 'res.cloudinary.com', // Cloudinary CDN
+      },
+      {
+        protocol: 'https',
         hostname: 'via.placeholder.com',
       },
       {
