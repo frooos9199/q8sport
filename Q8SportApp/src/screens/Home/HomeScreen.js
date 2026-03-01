@@ -16,6 +16,7 @@ import {
   Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import BurnoutLoader from '../../components/BurnoutLoader';
 import { SkeletonGrid } from '../../components/SkeletonLoader';
 import { ProductService } from '../../services/api/products';
@@ -161,6 +162,14 @@ const HomeScreen = ({ navigation }) => {
       }),
     ]).start();
   }, []);
+
+  // 🔄 تحديث تلقائي عند العودة للشاشة (بعد إضافة منتج مثلاً)
+  useFocusEffect(
+    useCallback(() => {
+      // تحديث صامت (بدون إظهار loader)
+      fetchProducts(true, true);
+    }, [])
+  );
 
   const fetchProducts = useCallback(async (reset = false, silent = false) => {
     if (reset) {

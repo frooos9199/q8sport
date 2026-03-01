@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Image,
   Alert,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../contexts/AuthContext';
 import API_CONFIG from '../../config/api';
 import apiClient from '../../services/apiClient';
@@ -21,9 +22,12 @@ const MyProductsScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    fetchMyProducts();
-  }, []);
+  // 🔄 تحديث تلقائي عند فتح الشاشة أو العودة إليها
+  useFocusEffect(
+    useCallback(() => {
+      fetchMyProducts();
+    }, [])
+  );
 
   const fetchMyProducts = async () => {
     try {

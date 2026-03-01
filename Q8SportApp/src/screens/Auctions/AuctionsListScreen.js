@@ -9,6 +9,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { AuctionsService } from '../../services/api/auctions';
 import { useAuth } from '../../contexts/AuthContext';
 import { openWhatsApp } from '../../utils/whatsapp';
@@ -54,6 +55,13 @@ const AuctionsListScreen = ({ navigation }) => {
   useEffect(() => {
     load(false);
   }, [load]);
+
+  // 🔄 تحديث تلقائي عند العودة للشاشة
+  useFocusEffect(
+    useCallback(() => {
+      load(true);
+    }, [load])
+  );
 
   const formatKwd = (value) => {
     const n = typeof value === 'number' ? value : value ? Number(value) : null;
