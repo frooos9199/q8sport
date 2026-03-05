@@ -3,14 +3,11 @@ import { prisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth'
 import { put } from '@vercel/blob'
 
-// GET - جلب جميع العروض (للأدمن) أو المعتمدة فقط (للمستخدمين)
+// GET - جلب جميع السيارات (بدون اعتماد مسبق)
 export async function GET(request: NextRequest) {
   try {
-    const user = await verifyToken(request)
-    const isAdmin = user?.role === 'ADMIN'
-
     const showcases = await prisma.showcase.findMany({
-      where: isAdmin ? {} : { status: 'APPROVED' },
+      where: {},
       include: {
         user: {
           select: {
