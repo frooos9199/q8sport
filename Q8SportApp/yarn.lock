@@ -2026,6 +2026,11 @@
   resolved "https://registry.npmjs.org/@react-native-firebase/messaging/-/messaging-23.8.3.tgz"
   integrity sha512-P3DzmTd+opPEd/qQGJoXsZkynoSsYaGseQ8xGiwcLC6y/MzIiaI1DqrAs6yJVZTjgTX464Oh3+6gPExfHzhnmA==
 
+"@react-native-firebase/storage@^23.8.3":
+  version "23.8.3"
+  resolved "https://registry.npmjs.org/@react-native-firebase/storage/-/storage-23.8.3.tgz"
+  integrity sha512-vpzlFxWIABo1Y2ORNt362zhca0OB2KbqwQ3IXJNNXOFO7k9VRsuaYR882EaMMvHzZ/ZTwyoIASZrTBF/tDpKvw==
+
 "@react-native-picker/picker@^2.11.4":
   version "2.11.4"
   resolved "https://registry.npmjs.org/@react-native-picker/picker/-/picker-2.11.4.tgz"

@@ -16,6 +16,7 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import { useAuth } from '../../contexts/AuthContext';
 import apiClient from '../../services/apiClient';
 import API_CONFIG from '../../config/api';
+import { uploadMultipleImages } from '../../services/FirebaseStorage';
 
 const CAR_BRANDS = ['Ford', 'Chevrolet', 'Dodge', 'BMW', 'Mercedes', 'Porsche', 'Toyota', 'Nissan'];
 
@@ -144,10 +145,10 @@ const AddShowcaseScreen = ({ navigation, route }) => {
 
     try {
       console.log(editMode ? '📝 Updating showcase data...' : '📤 Sending showcase data...');
-      console.log(`📸 Total images to upload: ${images.length}`);
+      console.log(`📸 Total images to process: ${images.length}`);
       
       // Extract base64/URLs from images
-      const processedImages = images.map(img => {
+      const imagesToUpload = images.map(img => {
         if (img.isExisting) {
           // Keep existing image URL as-is
           return img.base64;
@@ -156,6 +157,13 @@ const AddShowcaseScreen = ({ navigation, route }) => {
           return img.base64;
         }
       });
+
+      console.log('🔥 Uploading images to Firebase Storage...');
+      
+      // رفع الصور إلى Firebase Storage
+      const uploadedImageUrls = await uploadMultipleImages(imagesToUpload, 'showcases');
+      
+      console.log(`✅ Successfully uploaded ${uploadedImageUrls.length} images to Firebase`);
       
       const showcaseDataToSend = {
         carBrand: carBrand || customBrand,
@@ -163,10 +171,10 @@ const AddShowcaseScreen = ({ navigation, route }) => {
         carYear: parseInt(carYear),
         horsepower: horsepower ? parseInt(horsepower) : null,
         description,
-        images: JSON.stringify(processedImages),
+        images: JSON.stringify(uploadedImageUrls), // Send Firebase URLs instead of base64
       };
 
-      console.log('Showcase data prepared (images count):', processedImages.length);
+      console.log('Showcase data prepared (images count):', uploadedImageUrls.length);
 
       let response;
       if (editMode && showcaseData?.id) {

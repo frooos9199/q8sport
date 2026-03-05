@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth'
-import { put } from '@vercel/blob'
 
 // GET - جلب جميع السيارات (بدون اعتماد مسبق)
 export async function GET(request: NextRequest) {
@@ -59,7 +58,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'جميع الحقول مطلوبة' }, { status: 400 })
     }
 
-    // Parse images (could be string or array)
+    // Parse images (should be Firebase Storage URLs from the app)
     let imageArray: string[] = []
     try {
       imageArray = typeof images === 'string' ? JSON.parse(images) : images
@@ -67,53 +66,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'صيغة الصور غير صحيحة' }, { status: 400 })
     }
 
-    // Upload images to Vercel Blob and get URLs
-    const uploadedImageUrls: string[] = []
-    for (let i = 0; i < imageArray.length; i++) {
-      const image = imageArray[i]
-      
-      try {
-        // Skip if already a URL
-        if (image.startsWith('http://') || image.startsWith('https://')) {
-          uploadedImageUrls.push(image)
-          console.log(`✅ Image ${i + 1}: Already a URL`)
-        } 
-        // Upload base64 images to Vercel Blob
-        else if (image.startsWith('data:image')) {
-          // Extract base64 data
-          const matches = image.match(/^data:image\/(\w+);base64,(.+)$/)
-          if (!matches) {
-            console.warn(`⚠️ Image ${i + 1}: Invalid base64 format`)
-            continue
-          }
+    // Validate that images are URLs (from Firebase or other sources)
+    const validImages = imageArray.filter(img => 
+      img.startsWith('http://') || img.startsWith('https://')
+    )
 
-          const imageType = matches[1]
-          const base64Data = matches[2]
-          const buffer = Buffer.from(base64Data, 'base64')
-          
-          // Upload to Vercel Blob
-          const filename = `showcase_${Date.now()}_${i}.${imageType}`
-          const blob = await put(filename, buffer, {
-            access: 'public',
-            contentType: `image/${imageType}`
-          })
-          
-          uploadedImageUrls.push(blob.url)
-          console.log(`✅ Image ${i + 1}: Uploaded to Vercel Blob - ${blob.url.substring(0, 60)}...`)
-        } else {
-          console.warn(`⚠️ Image ${i + 1}: Invalid format`)
-        }
-      } catch (error) {
-        console.error(`❌ Error uploading image ${i + 1}:`, error)
-        // Continue with other images even if one fails
-      }
+    if (validImages.length === 0) {
+      return NextResponse.json({ error: 'لا توجد صور صالحة' }, { status: 400 })
     }
 
-    if (uploadedImageUrls.length === 0) {
-      return NextResponse.json({ error: 'فشل رفع الصور' }, { status: 500 })
-    }
+    console.log(`✅ Received ${validImages.length} image URLs from Firebase Storage`)
 
-    const imagesJson = JSON.stringify(uploadedImageUrls)
+    const imagesJson = JSON.stringify(validImages)
 
     const showcase = await prisma.showcase.create({
       data: {
