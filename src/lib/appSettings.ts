@@ -8,7 +8,7 @@ export type AppSettings = {
 };
 
 const DEFAULT_SETTINGS: AppSettings = {
-  autoApprove: false,
+  autoApprove: true,
   maintenanceMode: false,
   allowRegistrations: true,
   maxProductsPerUser: 10,
@@ -25,7 +25,7 @@ async function ensureSettingsTable(): Promise<void> {
   await prisma.$executeRaw`
     CREATE TABLE IF NOT EXISTS "app_settings" (
       id INT PRIMARY KEY,
-      "autoApprove" BOOLEAN NOT NULL DEFAULT FALSE,
+      "autoApprove" BOOLEAN NOT NULL DEFAULT TRUE,
       "maintenanceMode" BOOLEAN NOT NULL DEFAULT FALSE,
       "allowRegistrations" BOOLEAN NOT NULL DEFAULT TRUE,
       "maxProductsPerUser" INT NOT NULL DEFAULT 10,

@@ -11,6 +11,7 @@ import {
   Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import API_CONFIG from '../../config/api';
 import apiClient from '../../services/apiClient';
@@ -18,6 +19,7 @@ import { parseImages } from '../../utils/jsonHelpers';
 
 const MyProductsScreen = ({ navigation }) => {
   const { user, token } = useAuth();
+  const insets = useSafeAreaInsets();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -50,7 +52,10 @@ const MyProductsScreen = ({ navigation }) => {
         });
       }
       
-      // ✅ فلترة المنتجات المحذوفة (soft delete) - بشرط أن deletedAt ليس undefined
+      // ✅ فلترة المنتجات: عرض كل شيء إلا DELETED
+      // INACTIVE = قيد المراجعة (يجب أن تظهر للمستخدم)
+      // ACTIVE = نشط
+      // PENDING = قيد المراجعة
       const activeProducts = (data?.products || []).filter(product => {
         const hasDeletedAtField = product.deletedAt !== undefined;
         const isDeleted = 
@@ -66,6 +71,7 @@ const MyProductsScreen = ({ navigation }) => {
           });
         }
         
+        // إظهار جميع المنتجات إلا المحذوفة
         return !isDeleted;
       });
       
@@ -181,8 +187,11 @@ const MyProductsScreen = ({ navigation }) => {
       case 'pending':
       case 'PENDING':
         return '#F59E0B'; // Orange
+      case 'inactive':
+      case 'INACTIVE':
+        return '#6B7280'; // Gray - قيد المراجعة
       default:
-        return '#16A34A';
+        return '#6B7280';
     }
   };
 
@@ -197,6 +206,9 @@ const MyProductsScreen = ({ navigation }) => {
       case 'pending':
       case 'PENDING':
         return 'معلق';
+      case 'inactive':
+      case 'INACTIVE':
+        return 'قيد المراجعة';
       default:
         return status || 'نشط';
     }
@@ -274,16 +286,18 @@ const MyProductsScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>منتجاتي</Text>
-      </View>
-
       <FlatList
         data={products}
         renderItem={renderProduct}
         keyExtractor={(item) => item.id}
         numColumns={2}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: 65 + insets.bottom + 20 }]}
+        ListHeaderComponent={
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>منتجاتي</Text>
+          </View>
+        }
+        stickyHeaderIndices={[0]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -328,6 +342,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 15,
+    backgroundColor: '#000',
     borderBottomWidth: 2,
     borderBottomColor: '#DC2626',
   },

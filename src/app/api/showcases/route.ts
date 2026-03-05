@@ -9,9 +9,7 @@ export async function GET(request: NextRequest) {
     const isAdmin = user?.role === 'ADMIN'
 
     const showcases = await prisma.showcase.findMany({
-      where: isAdmin ? {} : {
-        status: 'APPROVED'
-      },
+      where: isAdmin ? {} : { status: 'APPROVED' },
       include: {
         user: {
           select: {
@@ -74,7 +72,7 @@ export async function POST(request: NextRequest) {
         description,
         images: imagesJson,
         userId: user.userId,
-        status: 'PENDING'
+        status: 'APPROVED'
       },
       include: {
         user: {

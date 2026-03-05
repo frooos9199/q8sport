@@ -184,12 +184,23 @@ const HomeScreen = ({ navigation }) => {
     try {
       const response = await ProductService.getProducts();
       const apiProducts = response.products || [];
-      setAllProducts(apiProducts);
+      
+      // ✅ فلترة: عرض جميع المنتجات ما عدا المحذوفة (DELETED)
+      // المنتجات تظهر مباشرة بدون موافقة (ACTIVE, INACTIVE, PENDING)
+      const activeProducts = apiProducts.filter(product => {
+        const isDeleted = product.status === 'DELETED' || 
+                         (product.deletedAt !== undefined && product.deletedAt !== null) ||
+                         product.isDeleted === true;
+        
+        return !isDeleted;
+      });
+      
+      setAllProducts(activeProducts);
       
       // تحميل أول 10 منتجات فقط
-      const initialProducts = apiProducts.slice(0, ITEMS_PER_PAGE);
+      const initialProducts = activeProducts.slice(0, ITEMS_PER_PAGE);
       setProducts(initialProducts);
-      setHasMore(apiProducts.length > ITEMS_PER_PAGE);
+      setHasMore(activeProducts.length > ITEMS_PER_PAGE);
     } catch (error) {
       console.error('Error fetching products:', error);
       setProducts([]);

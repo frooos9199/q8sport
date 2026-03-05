@@ -10,6 +10,7 @@ import {
   Alert,
   Animated,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProductService } from '../../services/api/products';
 import EnhancedProductCard from '../../components/EnhancedProductCard';
 
@@ -20,6 +21,7 @@ const ProductCard = React.memo(({ item, index, onPress }) => {
 });
 
 const GuestHomeScreen = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -127,7 +129,7 @@ const GuestHomeScreen = ({ navigation }) => {
         renderItem={renderProduct}
         keyExtractor={(item) => item.id}
         numColumns={2}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: 65 + insets.bottom + 20 }]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}

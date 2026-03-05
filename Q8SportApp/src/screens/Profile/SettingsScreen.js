@@ -158,6 +158,7 @@ const SettingsScreen = ({ navigation }) => {
   return (
     <ScrollView 
       style={styles.container}
+      contentContainerStyle={{ paddingBottom: 100 }}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
@@ -331,8 +332,6 @@ const SettingsScreen = ({ navigation }) => {
           <Text style={styles.dangerButtonText}>🚪 تسجيل الخروج</Text>
         </TouchableOpacity>
       </View>
-
-      <View style={{ height: 30 }} />
     </ScrollView>
   );
 };

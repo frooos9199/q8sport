@@ -181,9 +181,11 @@ const EditProductScreen = ({ route, navigation }) => {
         carYear: formData.year ? parseInt(formData.year) : null,
         condition: conditionMap[formData.partCondition] || 'USED',
         contactPhone: formData.phone || null,
-        images: imageURIs,
+        images: JSON.stringify(imageURIs), // ✅ تحويل إلى JSON string
+        status: 'ACTIVE', // ✅ الحفاظ على حالة نشط
       };
 
+      console.log('📤 Updating product:', productData);
       await apiClient.patch(API_CONFIG.ENDPOINTS.PRODUCT_DETAILS(product.id), productData);
 
       Alert.alert('✅ نجح', 'تم تحديث المنتج بنجاح', [

@@ -12,6 +12,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import apiClient from '../../services/apiClient';
 import API_CONFIG from '../../config/api';
@@ -21,6 +22,7 @@ const { width } = Dimensions.get('window');
 
 const MyShowcasesScreen = ({ navigation }) => {
   const { token, user } = useAuth();
+  const insets = useSafeAreaInsets();
   const [showcases, setShowcases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -263,7 +265,7 @@ const MyShowcasesScreen = ({ navigation }) => {
         data={showcases}
         renderItem={renderItem}
         keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
-        contentContainerStyle={styles.listContainer}
+        contentContainerStyle={[styles.listContainer, { paddingBottom: 65 + insets.bottom + 20 }]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}

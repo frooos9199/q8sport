@@ -74,6 +74,7 @@ const ProfileScreen = ({ navigation }) => {
   return (
     <ScrollView 
       style={styles.container}
+      contentContainerStyle={{ paddingBottom: 100 }}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}

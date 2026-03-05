@@ -284,9 +284,19 @@ const AddProductScreen = ({ navigation }) => {
         condition: conditionMap[formData.partCondition] || 'USED',
         contactPhone: formData.phone || null,
         images: JSON.stringify(base64Images), // ✅ إرسال base64 كـ JSON
+        status: 'ACTIVE', // ✅ نشط مباشرة - بدون انتظار موافقة
       };
 
       console.log('📤 Sending product data to API...');
+      console.log('📋 Product data:', {
+        title: productData.title,
+        price: productData.price,
+        productType: productData.productType,
+        condition: productData.condition,
+        imagesCount: base64Images.length,
+        hasPhone: !!productData.contactPhone
+      });
+      
       await apiClient.post(API_CONFIG.ENDPOINTS.PRODUCTS, productData);
       console.log('✅ AddProductScreen: Product created successfully!');
       Alert.alert('✅ نجح', 'تم إضافة المنتج بنجاح', [
@@ -297,6 +307,8 @@ const AddProductScreen = ({ navigation }) => {
       ]);
     } catch (error) {
       console.error('❌ AddProductScreen: Error occurred:', error);
+      console.error('❌ Error response:', error?.response?.data);
+      console.error('❌ Error status:', error?.response?.status);
       
       let errorMessage = 'حدث خطأ غير متوقع';
       

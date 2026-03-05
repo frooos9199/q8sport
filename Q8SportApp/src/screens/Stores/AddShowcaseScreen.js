@@ -82,6 +82,17 @@ const AddShowcaseScreen = ({ navigation, route }) => {
       maxHeight: 1200,
       includeBase64: true, // ✅ طلب base64 مباشرة
     }, async (response) => {
+      if (response.didCancel) {
+        console.log('📷 User cancelled image picker');
+        return;
+      }
+      
+      if (response.errorCode) {
+        console.error('📷 ImagePicker Error:', response.errorMessage);
+        Alert.alert('خطأ', 'فشل اختيار الصور');
+        return;
+      }
+      
       if (response.assets && response.assets.length > 0) {
         try {
           const processedImages = [];
@@ -94,7 +105,7 @@ const AddShowcaseScreen = ({ navigation, route }) => {
             
             if (base64) {
               processedImages.push({
-                uri: asset.uri, // للعرض المحلي
+                uri: base64, // ✅ استخدام base64 للعرض والرفع
                 base64, // للرفع
               });
               console.log(`✅ Processed image ${processedImages.length}/${response.assets.length}`);
@@ -198,7 +209,7 @@ const AddShowcaseScreen = ({ navigation, route }) => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
       <View style={styles.content}>
         {/* تعليمات */}
         {!editMode && (

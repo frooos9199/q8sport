@@ -173,7 +173,23 @@ const ShowcasesScreen = ({ navigation }) => {
       const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SHOWCASES}`);
       if (response.ok) {
         const data = await response.json();
-        setShowcases(data.showcases || []);
+        const allShowcases = data.showcases || [];
+        
+        // ✅ فلترة: عرض فقط المعارض النشطة (ACTIVE)
+        // PENDING = يحتاج موافقة الإدارة (لا يظهر للعامة)
+        const activeShowcases = allShowcases.filter(showcase => {
+          const isActive = showcase.status === 'ACTIVE';
+          if (!isActive) {
+            console.log('⏸️ تجاهل معرض غير نشط:', {
+              id: showcase.id,
+              status: showcase.status,
+              carBrand: showcase.carBrand
+            });
+          }
+          return isActive;
+        });
+        
+        setShowcases(activeShowcases);
       }
     } catch (error) {
       console.error('Error fetching showcases:', error);

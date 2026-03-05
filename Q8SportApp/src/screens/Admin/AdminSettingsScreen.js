@@ -77,7 +77,7 @@ const AdminSettingsScreen = () => {
   );
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>⚙️ إعدادات الإدارة</Text>
       </View>
@@ -151,8 +151,6 @@ const AdminSettingsScreen = () => {
       <TouchableOpacity style={styles.saveButton} onPress={handleSaveSettings}>
         <Text style={styles.saveButtonText}>💾 حفظ الإعدادات</Text>
       </TouchableOpacity>
-
-      <View style={{ height: 30 }} />
     </ScrollView>
   );
 };

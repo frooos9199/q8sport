@@ -8,6 +8,7 @@ import {
   Image,
   RefreshControl,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../contexts/AuthContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import API_CONFIG from '../../config/api';
@@ -16,6 +17,7 @@ import { openWhatsApp } from '../../utils/whatsapp';
 
 const RequestsScreen = ({ navigation }) => {
   const { token } = useAuth();
+  const insets = useSafeAreaInsets();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -152,7 +154,7 @@ const RequestsScreen = ({ navigation }) => {
         data={requests}
         renderItem={renderRequest}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={requests.length === 0 ? styles.emptyList : styles.list}
+        contentContainerStyle={requests.length === 0 ? styles.emptyList : [styles.list, { paddingBottom: 65 + insets.bottom + 20 }]}
         ListEmptyComponent={!loading && <EmptyState />}
         refreshControl={
           <RefreshControl
