@@ -51,6 +51,10 @@ export default function ShowcasesPage() {
     }
   };
 
+  const isBase64Image = (url: string) => {
+    return url && url.startsWith('data:image');
+  };
+
   const getUserAvatar = (avatar?: string) => {
     if (!avatar) {
       return 'https://ui-avatars.com/api/?name=User&background=DC2626&color=fff&size=128';
@@ -100,24 +104,36 @@ export default function ShowcasesPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {showcases.map((showcase) => (
-                <div
-                  key={showcase.id}
-                  className="bg-gray-900 rounded-lg overflow-hidden border border-gray-800 hover:border-red-600 transition-all duration-300 group"
-                >
-                  <div className="relative h-64 bg-black">
-                    <Image
-                      src={getImageUrl(showcase.images)}
-                      alt={`${showcase.carBrand} ${showcase.carModel}`}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    {showcase.horsepower && (
-                      <div className="absolute top-3 right-3 bg-red-600 text-white px-3 py-1 rounded-full text-sm font-bold">
-                        ⚡ {showcase.horsepower} HP
-                      </div>
-                    )}
-                  </div>
+              {showcases.map((showcase) => {
+                const imageUrl = getImageUrl(showcase.images);
+                const isBase64 = isBase64Image(imageUrl);
+                
+                return (
+                  <div
+                    key={showcase.id}
+                    className="bg-gray-900 rounded-lg overflow-hidden border border-gray-800 hover:border-red-600 transition-all duration-300 group"
+                  >
+                    <div className="relative h-64 bg-black">
+                      {isBase64 ? (
+                        <img
+                          src={imageUrl}
+                          alt={`${showcase.carBrand} ${showcase.carModel}`}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <Image
+                          src={imageUrl}
+                          alt={`${showcase.carBrand} ${showcase.carModel}`}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      )}
+                      {showcase.horsepower && (
+                        <div className="absolute top-3 right-3 bg-red-600 text-white px-3 py-1 rounded-full text-sm font-bold">
+                          ⚡ {showcase.horsepower} HP
+                        </div>
+                      )}
+                    </div>
 
                   <div className="p-5">
                     <div className="flex items-center mb-3">
@@ -145,7 +161,8 @@ export default function ShowcasesPage() {
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
