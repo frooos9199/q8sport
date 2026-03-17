@@ -8,7 +8,7 @@ import SearchBar from "@/components/ui/SearchBar";
 
 export default function Navbar() {
   const { locale, t } = useLocale();
-  const { user, logout } = useAuth();
+  const { user, isAdmin, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const otherLocale: Locale = locale === "ar" ? "en" : "ar";
 
@@ -56,6 +56,7 @@ export default function Navbar() {
 
             {user ? (
               <div className="flex items-center gap-2">
+                {isAdmin && <span className="text-primary text-xs font-bold border border-primary/30 bg-primary/10 px-2 py-0.5 rounded">ADMIN</span>}
                 <Link href={`/${locale}/dashboard`} className="btn-primary text-sm !py-2 !px-4">
                   {t.common.myAccount}
                 </Link>

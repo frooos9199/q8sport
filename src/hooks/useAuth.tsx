@@ -10,11 +10,13 @@ import {
 } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { User } from "@/types";
+import { ADMIN_EMAILS } from "@/lib/admin";
 
 type AuthContextType = {
   user: User | null;
   firebaseUser: FirebaseUser | null;
   loading: boolean;
+  isAdmin: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
@@ -34,6 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
@@ -41,10 +44,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (fbUser) {
         const userDoc = await getDoc(doc(db, "users", fbUser.uid));
         if (userDoc.exists()) {
-          setUser(userDoc.data() as User);
+          const userData = userDoc.data() as User;
+          setUser(userData);
+          setIsAdmin(ADMIN_EMAILS.includes(fbUser.email || ""));
         }
       } else {
         setUser(null);
+        setIsAdmin(false);
       }
       setLoading(false);
     });
@@ -67,15 +73,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
     await setDoc(doc(db, "users", cred.user.uid), userData);
     setUser(userData);
+    setIsAdmin(ADMIN_EMAILS.includes(data.email));
   };
 
   const logout = async () => {
     await signOut(auth);
     setUser(null);
+    setIsAdmin(false);
   };
 
   return (
-    <AuthContext.Provider value={{ user, firebaseUser, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, firebaseUser, loading, isAdmin, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );
