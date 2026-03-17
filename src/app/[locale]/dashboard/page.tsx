@@ -4,7 +4,7 @@ import { useLocale } from "@/hooks/useLocale";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { db, storage } from "@/lib/firebase";
-import { collection, addDoc, query, where, orderBy, getDocs, deleteDoc, doc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, query, where, orderBy, getDocs, deleteDoc, doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { CAR_BRANDS, PART_CATEGORIES } from "@/types";
 
@@ -16,6 +16,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("cars");
   const [showForm, setShowForm] = useState(false);
+  const [editItem, setEditItem] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
   const [myItems, setMyItems] = useState<any[]>([]);
   const [loadingItems, setLoadingItems] = useState(false);
@@ -65,6 +66,23 @@ export default function DashboardPage() {
     setMyItems((p) => p.filter((i) => i.id !== id));
   };
 
+  const handleStatusChange = async (id: string, newStatus: string) => {
+    await updateDoc(doc(db, tab, id), { status: newStatus });
+    setMyItems((p) => p.map((i) => i.id === id ? { ...i, status: newStatus } : i));
+  };
+
+  const handleEdit = (item: any) => {
+    setEditItem(item);
+    setShowForm(true);
+  };
+
+  const handleUpdate = async (id: string, data: any) => {
+    await updateDoc(doc(db, tab, id), data);
+    setMyItems((p) => p.map((i) => i.id === id ? { ...i, ...data } : i));
+    setEditItem(null);
+    setShowForm(false);
+  };
+
   if (authLoading || !user) return <div className="text-center py-20 text-silver/50 animate-pulse">{t.common.loading}</div>;
 
   const userTabs: Tab[] = ["cars", "parts", "requests"];
@@ -86,6 +104,20 @@ export default function DashboardPage() {
     gallery: locale === "ar" ? "إضافة صور" : "Add Photos",
   };
 
+  const statusOptions: Record<string, string[]> = {
+    cars: ["active", "sold", "pending"],
+    parts: ["active", "sold", "pending"],
+    requests: ["open", "closed"],
+  };
+
+  const statusColors: Record<string, string> = {
+    active: "text-green-400 bg-green-600/10 border-green-600/30",
+    open: "text-green-400 bg-green-600/10 border-green-600/30",
+    sold: "text-primary bg-primary/10 border-primary/30",
+    closed: "text-primary bg-primary/10 border-primary/30",
+    pending: "text-yellow-400 bg-yellow-600/10 border-yellow-600/30",
+  };
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-10">
       {/* Header */}
@@ -102,13 +134,8 @@ export default function DashboardPage() {
       {/* Tabs */}
       <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
         {tabs.map((t2) => (
-          <button
-            key={t2}
-            onClick={() => { setTab(t2); setShowForm(false); }}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
-              tab === t2 ? "bg-primary text-white" : "bg-metal text-silver hover:bg-metal-light"
-            }`}
-          >
+          <button key={t2} onClick={() => { setTab(t2); setShowForm(false); setEditItem(null); }}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${tab === t2 ? "bg-primary text-white" : "bg-metal text-silver hover:bg-metal-light"}`}>
             <span>{tabLabels[t2].icon}</span>
             {tabLabels[t2].label}
             {!loadingItems && tab === t2 && <span className="bg-white/20 text-xs px-1.5 py-0.5 rounded-full">{myItems.length}</span>}
@@ -118,14 +145,14 @@ export default function DashboardPage() {
 
       {/* Add Button */}
       {tab !== "users" && (
-        <button onClick={() => setShowForm(!showForm)} className="btn-primary text-sm mb-6">
-          {showForm ? t.common.cancel : `+ ${addLabels[tab] || ""}`}
+        <button onClick={() => { setShowForm(!showForm); setEditItem(null); }} className="btn-primary text-sm mb-6">
+          {showForm && !editItem ? t.common.cancel : `+ ${addLabels[tab] || ""}`}
         </button>
       )}
 
-      {/* Add Form */}
+      {/* Add / Edit Form */}
       {showForm && tab !== "users" && (
-        <AddForm
+        <ItemForm
           tab={tab}
           user={user}
           locale={locale}
@@ -133,7 +160,10 @@ export default function DashboardPage() {
           uploadImages={uploadImages}
           submitting={submitting}
           setSubmitting={setSubmitting}
-          onDone={(item: any) => { setMyItems((p) => [item, ...p]); setShowForm(false); }}
+          editItem={editItem}
+          onDone={(item: any) => { setMyItems((p) => [item, ...p]); setShowForm(false); setEditItem(null); }}
+          onUpdate={(id: string, data: any) => handleUpdate(id, data)}
+          onCancel={() => { setShowForm(false); setEditItem(null); }}
         />
       )}
 
@@ -142,11 +172,8 @@ export default function DashboardPage() {
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
             <div key={i} className="card p-4 animate-pulse flex items-center gap-4">
-              <div className="w-12 h-12 bg-metal rounded-lg" />
-              <div className="flex-1 space-y-2">
-                <div className="h-4 bg-metal rounded w-1/2" />
-                <div className="h-3 bg-metal rounded w-1/3" />
-              </div>
+              <div className="w-14 h-14 bg-metal rounded-lg" />
+              <div className="flex-1 space-y-2"><div className="h-4 bg-metal rounded w-1/2" /><div className="h-3 bg-metal rounded w-1/3" /></div>
             </div>
           ))}
         </div>
@@ -158,39 +185,65 @@ export default function DashboardPage() {
       ) : (
         <div className="space-y-3">
           {myItems.map((item) => (
-            <div key={item.id} className="card p-4 flex items-center justify-between hover-lift">
-              <div className="flex items-center gap-4 flex-1 min-w-0">
-                {item.images?.[0] ? (
-                  <img src={item.images[0]} alt="" className="w-14 h-14 rounded-lg object-cover" />
-                ) : (
-                  <span className="w-14 h-14 rounded-lg bg-metal flex items-center justify-center text-xl">
-                    {tabLabels[tab].icon}
-                  </span>
-                )}
-                <div className="min-w-0">
-                  <h3 className="text-white font-bold truncate">
-                    {item.title?.[locale] || item.title?.ar || item.name || item.email || "—"}
-                  </h3>
-                  <div className="flex items-center gap-2 text-xs text-silver/50 mt-0.5">
-                    {item.brand && <span>{item.brand}</span>}
-                    {item.year && <span>• {item.year}</span>}
-                    {item.price && <span>• {item.price.toLocaleString()} {t.common.kwd}</span>}
-                    {item.userName && tab === "users" && <span>{item.userName}</span>}
-                    {item.phone && <span>📱 {item.phone}</span>}
-                    {item.status && (
-                      <span className={`${
-                        item.status === "active" || item.status === "open" ? "text-green-400" :
-                        item.status === "sold" ? "text-primary" : "text-yellow-400"
-                      }`}>
-                        • {item.status}
-                      </span>
-                    )}
+            <div key={item.id} className="card p-4 hover-lift">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                  {item.images?.[0] ? (
+                    <img src={item.images[0]} alt="" className="w-14 h-14 rounded-lg object-cover" />
+                  ) : (
+                    <span className="w-14 h-14 rounded-lg bg-metal flex items-center justify-center text-xl">{tabLabels[tab].icon}</span>
+                  )}
+                  <div className="min-w-0">
+                    <h3 className="text-white font-bold truncate">
+                      {item.title?.[locale] || item.title?.ar || item.name || item.email || "—"}
+                    </h3>
+                    <div className="flex items-center gap-2 text-xs text-silver/50 mt-0.5 flex-wrap">
+                      {item.brand && <span>{item.brand}</span>}
+                      {item.year && <span>• {item.year}</span>}
+                      {item.price && <span>• {item.price.toLocaleString()} {t.common.kwd}</span>}
+                      {tab === "users" && item.phone && <span>📱 {item.phone}</span>}
+                      {tab === "users" && item.whatsapp && <span>💬 {item.whatsapp}</span>}
+                      {tab === "users" && item.email && <span>📧 {item.email}</span>}
+                    </div>
                   </div>
                 </div>
+
+                <div className="flex items-center gap-2 ms-4">
+                  {/* Status Dropdown (Admin) */}
+                  {isAdmin && statusOptions[tab] && item.status && (
+                    <select
+                      value={item.status}
+                      onChange={(e) => handleStatusChange(item.id, e.target.value)}
+                      className={`text-xs font-bold px-2 py-1 rounded-lg border cursor-pointer ${statusColors[item.status] || "text-silver bg-metal border-metal"}`}
+                    >
+                      {statusOptions[tab].map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  )}
+
+                  {/* Non-admin status badge */}
+                  {!isAdmin && item.status && (
+                    <span className={`text-xs font-bold px-2 py-1 rounded-lg border ${statusColors[item.status] || "text-silver bg-metal border-metal"}`}>
+                      {item.status}
+                    </span>
+                  )}
+
+                  {/* Edit Button */}
+                  {(isAdmin || item.userId === user.uid) && tab !== "users" && (
+                    <button onClick={() => handleEdit(item)} className="text-silver hover:text-white text-sm transition-colors p-1.5 rounded-lg hover:bg-metal">
+                      ✏️
+                    </button>
+                  )}
+
+                  {/* Delete Button */}
+                  {(isAdmin || item.userId === user.uid) && (
+                    <button onClick={() => handleDelete(item.id)} className="text-silver hover:text-primary text-sm transition-colors p-1.5 rounded-lg hover:bg-primary/10">
+                      🗑️
+                    </button>
+                  )}
+                </div>
               </div>
-              <button onClick={() => handleDelete(item.id)} className="text-primary hover:text-primary-dark text-sm font-bold ms-4 transition-colors">
-                {t.common.delete}
-              </button>
             </div>
           ))}
         </div>
@@ -199,39 +252,38 @@ export default function DashboardPage() {
   );
 }
 
-function AddForm({ tab, user, locale, t, uploadImages, submitting, setSubmitting, onDone }: any) {
-  const [titleAr, setTitleAr] = useState("");
-  const [titleEn, setTitleEn] = useState("");
-  const [descAr, setDescAr] = useState("");
-  const [descEn, setDescEn] = useState("");
-  const [brand, setBrand] = useState("");
-  const [model, setModel] = useState("");
-  const [year, setYear] = useState("");
-  const [price, setPrice] = useState("");
-  const [mileage, setMileage] = useState("");
-  const [color, setColor] = useState("");
-  const [transmission, setTransmission] = useState("automatic");
-  const [fuelType, setFuelType] = useState("petrol");
-  const [category, setCategory] = useState("engine");
-  const [condition, setCondition] = useState("used");
-  const [reqCategory, setReqCategory] = useState("car");
+function ItemForm({ tab, user, locale, t, uploadImages, submitting, setSubmitting, editItem, onDone, onUpdate, onCancel }: any) {
+  const isEdit = !!editItem;
+  const [titleAr, setTitleAr] = useState(editItem?.title?.ar || "");
+  const [titleEn, setTitleEn] = useState(editItem?.title?.en || "");
+  const [descAr, setDescAr] = useState(editItem?.description?.ar || "");
+  const [descEn, setDescEn] = useState(editItem?.description?.en || "");
+  const [brand, setBrand] = useState(editItem?.brand || editItem?.compatibleBrands?.[0] || "");
+  const [model, setModel] = useState(editItem?.model || "");
+  const [year, setYear] = useState(editItem?.year?.toString() || "");
+  const [price, setPrice] = useState(editItem?.price?.toString() || editItem?.budget?.toString() || "");
+  const [mileage, setMileage] = useState(editItem?.mileage?.toString() || "");
+  const [color, setColor] = useState(editItem?.color || "");
+  const [transmission, setTransmission] = useState(editItem?.transmission || "automatic");
+  const [fuelType, setFuelType] = useState(editItem?.fuelType || "petrol");
+  const [category, setCategory] = useState(editItem?.category || "engine");
+  const [condition, setCondition] = useState(editItem?.condition || "used");
+  const [reqCategory, setReqCategory] = useState(editItem?.category || "car");
   const [images, setImages] = useState<FileList | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      let imageUrls: string[] = [];
-      if (images && images.length > 0) imageUrls = await uploadImages(images);
+      let imageUrls: string[] = editItem?.images || [];
+      if (images && images.length > 0) {
+        const newUrls = await uploadImages(images);
+        imageUrls = [...imageUrls, ...newUrls];
+      }
 
       let data: any = {
-        userId: user.uid,
-        userName: user.name,
-        userWhatsapp: user.whatsapp,
         title: { ar: titleAr, en: titleEn || titleAr },
         description: { ar: descAr, en: descEn || descAr },
-        status: tab === "requests" ? "open" : "active",
-        createdAt: serverTimestamp(),
       };
 
       if (tab === "cars") {
@@ -241,11 +293,26 @@ function AddForm({ tab, user, locale, t, uploadImages, submitting, setSubmitting
       } else if (tab === "requests") {
         data = { ...data, category: reqCategory, budget: price ? Number(price) : null };
       } else if (tab === "gallery") {
-        data = { title: { ar: titleAr, en: titleEn || titleAr }, images: imageUrls, createdAt: serverTimestamp() };
+        data = { title: { ar: titleAr, en: titleEn || titleAr }, images: imageUrls };
       }
 
-      const docRef = await addDoc(collection(db, tab), data);
-      onDone({ id: docRef.id, ...data });
+      if (isEdit) {
+        await onUpdate(editItem.id, data);
+      } else {
+        data = {
+          ...data,
+          userId: user.uid,
+          userName: user.name,
+          userWhatsapp: user.whatsapp,
+          status: tab === "requests" ? "open" : "active",
+          createdAt: serverTimestamp(),
+        };
+        if (tab === "gallery") {
+          data = { title: { ar: titleAr, en: titleEn || titleAr }, images: imageUrls, createdAt: serverTimestamp() };
+        }
+        const docRef = await addDoc(collection(db, tab), data);
+        onDone({ id: docRef.id, ...data });
+      }
     } catch (e) {
       console.error(e);
     }
@@ -254,6 +321,15 @@ function AddForm({ tab, user, locale, t, uploadImages, submitting, setSubmitting
 
   return (
     <form onSubmit={handleSubmit} className="card p-6 mb-6 space-y-4 animate-fadeInUp">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-white font-bold">
+          {isEdit ? (locale === "ar" ? "✏️ تعديل" : "✏️ Edit") : (locale === "ar" ? "➕ إضافة جديد" : "➕ Add New")}
+        </h3>
+        {isEdit && (
+          <button type="button" onClick={onCancel} className="text-silver hover:text-primary text-sm">{t.common.cancel}</button>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="text-silver text-sm mb-1 block">{locale === "ar" ? "العنوان (عربي)" : "Title (Arabic)"}</label>
@@ -378,14 +454,21 @@ function AddForm({ tab, user, locale, t, uploadImages, submitting, setSubmitting
 
       {tab !== "requests" && (
         <div>
-          <label className="text-silver text-sm mb-1 block">{locale === "ar" ? "الصور" : "Images"}</label>
+          <label className="text-silver text-sm mb-1 block">
+            {locale === "ar" ? (isEdit ? "إضافة صور جديدة" : "الصور") : (isEdit ? "Add new images" : "Images")}
+          </label>
           <input type="file" multiple accept="image/*" onChange={(e) => setImages(e.target.files)}
             className="input-field file:bg-primary file:text-white file:border-0 file:rounded file:px-3 file:py-1 file:me-3 file:cursor-pointer" />
+          {isEdit && editItem?.images?.length > 0 && (
+            <p className="text-silver/40 text-xs mt-1">
+              {locale === "ar" ? `${editItem.images.length} صور موجودة - الصور الجديدة بتنضاف عليها` : `${editItem.images.length} existing images - new images will be added`}
+            </p>
+          )}
         </div>
       )}
 
       <button type="submit" disabled={submitting} className="btn-primary w-full disabled:opacity-50">
-        {submitting ? t.common.loading : t.common.save}
+        {submitting ? t.common.loading : isEdit ? t.common.save : (locale === "ar" ? "إضافة" : "Add")}
       </button>
     </form>
   );
