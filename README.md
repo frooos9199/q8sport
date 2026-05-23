@@ -1,97 +1,54 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Q8 Sport Market
 
-# Getting Started
+منصة موجهة لسوق الكويت لبيع السيارات السبورت وقطع الغيار والمطلوبات المباشرة من المستخدمين.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+المنتج المستهدف ليس تطبيق عرض فقط. الاتجاه الجديد هو منصة واحدة بهوية قوية تعمل على:
 
-## Step 1: Start Metro
+- تطبيق iOS
+- تطبيق Android
+- موقع ويب بنفس اللغة والهوية والبيانات
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+## الفكرة الأساسية
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+السوق في الكويت يتحرك بسرعة عندما تكون المطلوبات واضحة وسهلة الوصول. لذلك المنتج يعتمد على مسارين واضحين:
+
+- `معروض`: سيارات سبورت وقطع غيار مع تواصل مباشر
+- `مطلوب الآن`: المستخدم يكتب ما يحتاجه والسوق يتفاعل معه مباشرة
+
+## ما تغير في هذا الريبو
+
+- إزالة مسارات ومنطق الأدمن من الواجهة الأساسية
+- تحويل الواجهة الرئيسية إلى سوق حي فيه معروضات ومطلوبات
+- إضافة صفحة تفاصيل لقطع الغيار
+- تقوية تجربة الحساب لتخدم المستخدم العادي لا الإدارة
+
+## التشغيل
+
+### React Native
 
 ```sh
-# Using npm
 npm start
-
-# OR using Yarn
-yarn start
-```
-
-## Step 2: Build and run your app
-
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
-
-```sh
-# Using npm
+npm run ios
 npm run android
-
-# OR using Yarn
-yarn android
 ```
 
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+### iOS Pods
 
 ```sh
 bundle install
+cd ios && bundle exec pod install
 ```
 
-Then, and every time you update your native dependencies, run:
+## Firebase
 
-```sh
-bundle exec pod install
-```
+المشروع يعتمد حاليًا على:
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+- Firebase Auth
+- Realtime Database
+- Firebase Storage
 
-```sh
-# Using npm
-npm run ios
+لازم يكون إعداد `DATABASE_URL` موجود بشكل صحيح داخل ملفات Firebase الأصلية للتطبيق.
 
-# OR using Yarn
-yarn ios
-```
+## الاتجاه التالي
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
-
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
-
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+الخطوة القادمة بعد هذه الجولة هي بناء هوية موحدة بين الموبايل والويب، مع صفحة رئيسية أقوى، ونشر سيارات/قطع بشكل كامل، ثم واجهة ويب عامة تحمل نفس روح السوق.

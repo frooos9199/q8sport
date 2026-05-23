@@ -65,5 +65,3 @@ export const CAR_BRANDS = [
   "Nissan", "Toyota", "Chevrolet", "Ford", "Dodge",
   "Jaguar", "Bentley", "Rolls-Royce", "Lexus", "Other"
 ];
-
-export const ADMIN_EMAILS = ["admin@q8sportcar.com"];

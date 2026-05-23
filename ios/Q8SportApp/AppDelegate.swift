@@ -2,6 +2,7 @@ import UIKit
 import React
 import React_RCTAppDelegate
 import ReactAppDependencyProvider
+import FirebaseCore
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -14,6 +15,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
+    // Initialize Firebase
+    configureFirebaseIfNeeded()
+    
     let delegate = ReactNativeDelegate()
     let factory = RCTReactNativeFactory(delegate: delegate)
     delegate.dependencyProvider = RCTAppDependencyProvider()
@@ -30,6 +34,42 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     )
 
     return true
+  }
+
+  private func inferDefaultDatabaseURL(projectId: String?) -> String? {
+    guard let projectId, !projectId.isEmpty else { return nil }
+    // NOTE: This is Firebase's default RTDB host pattern.
+    // If your RTDB instance is in a specific region, you'll need to set DATABASE_URL explicitly
+    // in GoogleService-Info.plist (iOS) and google-services.json (Android).
+    return "https://\(projectId)-default-rtdb.firebaseio.com"
+  }
+
+  private func configureFirebaseIfNeeded() {
+    if FirebaseApp.app() != nil {
+      return
+    }
+
+    guard let filePath = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist"),
+          let options = FirebaseOptions(contentsOfFile: filePath) else {
+      FirebaseApp.configure()
+      return
+    }
+
+        if let override = Bundle.main.object(forInfoDictionaryKey: "FIREBASE_DATABASE_URL_OVERRIDE") as? String,
+       !override.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+      options.databaseURL = override.trimmingCharacters(in: .whitespacesAndNewlines)
+    #if DEBUG
+      print("[firebase] Using RTDB URL override from Info.plist: \(options.databaseURL ?? "")")
+    #endif
+        } else if (options.databaseURL == nil || options.databaseURL?.isEmpty == true),
+          let inferred = inferDefaultDatabaseURL(projectId: options.projectID) {
+      options.databaseURL = inferred
+#if DEBUG
+      print("[firebase] DATABASE_URL missing; using inferred default: \(inferred)")
+#endif
+    }
+
+    FirebaseApp.configure(options: options)
   }
 }
 

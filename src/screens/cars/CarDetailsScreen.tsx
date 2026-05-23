@@ -1,31 +1,66 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, Dimensions, Linking, Modal } from 'react-native';
-import firestore from '@react-native-firebase/firestore';
-import { colors } from '../lib/theme';
-import { t } from '../i18n';
-import { Car } from '../types';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, Dimensions, Linking, Modal, Animated, StatusBar } from 'react-native';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import LinearGradient from 'react-native-linear-gradient';
+import { db } from '../../lib/firebase';
+import { get, ref as dbRef } from '@react-native-firebase/database';
+import { colors, radius, shadows, spacing } from '../../lib/theme';
+import { t } from '../../i18n';
+import { Car } from '../../types';
 
 const { width } = Dimensions.get('window');
 
-export default function CarDetailsScreen({ route }: any) {
+export default function CarDetailsScreen({ route, navigation }: any) {
+  const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
   const { id } = route.params;
   const [car, setCar] = useState<Car | null>(null);
   const [loading, setLoading] = useState(true);
   const [imgIndex, setImgIndex] = useState(0);
   const [lightbox, setLightbox] = useState(false);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(40)).current;
 
   useEffect(() => {
-    firestore().collection('cars').doc(id).get().then(doc => {
-      if (doc.exists) setCar({ id: doc.id, ...doc.data() } as Car);
-      setLoading(false);
-    });
-  }, [id]);
+    let mounted = true;
 
-  if (loading) return <View style={s.center}><Text style={s.loadText}>{t('loading')}</Text></View>;
-  if (!car) return <View style={s.center}><Text style={s.loadText}>{t('noResults')}</Text></View>;
+    const run = async () => {
+      try {
+        const snap = await get(dbRef(db, `cars/${id}`));
+        if (!mounted) return;
+        if (snap.exists()) setCar({ id: snap.key, ...snap.val() });
+      } catch (e) {
+        console.log('CarDetails fetch error:', e);
+      } finally {
+        if (!mounted) return;
+        setLoading(false);
+        Animated.parallel([
+          Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+          Animated.timing(slideAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
+        ]).start();
+      }
+    };
+
+    run();
+    return () => { mounted = false; };
+  }, [fadeAnim, id, slideAnim]);
+
+  if (loading) return (
+    <View style={s.loadingWrap}>
+      <Text style={s.loadingIcon}>🏎️</Text>
+      <Text style={s.loadingText}>{t('loading')}</Text>
+    </View>
+  );
+  if (!car) return (
+    <View style={s.loadingWrap}>
+      <Text style={s.loadingIcon}>😕</Text>
+      <Text style={s.loadingText}>{t('noResults')}</Text>
+    </View>
+  );
 
   const openWhatsApp = () => {
-    const phone = car.userWhatsapp.replace(/[^0-9]/g, '');
+    const phone = car.userWhatsapp?.replace(/[^0-9]/g, '');
     Linking.openURL(`https://wa.me/${phone}?text=${encodeURIComponent(`مرحبا، أبي أستفسر عن: ${car.title.ar} - ${car.brand} ${car.model} ${car.year}`)}`);
   };
 
@@ -39,127 +74,260 @@ export default function CarDetailsScreen({ route }: any) {
   ];
 
   return (
-    <ScrollView style={s.container} showsVerticalScrollIndicator={false}>
-      {/* Image */}
-      <TouchableOpacity onPress={() => setLightbox(true)}>
-        {car.images?.[imgIndex] ? (
-          <Image source={{ uri: car.images[imgIndex] }} style={s.mainImg} />
-        ) : (
-          <View style={[s.mainImg, s.placeholder]}><Text style={{ fontSize: 60 }}>🏎️</Text></View>
-        )}
-      </TouchableOpacity>
+    <View style={s.container}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Image Gallery */}
+        <View style={s.imageSection}>
+          <TouchableOpacity activeOpacity={0.95} onPress={() => setLightbox(true)}>
+            {car.images?.[imgIndex] ? (
+              <Image source={{ uri: car.images[imgIndex] }} style={s.mainImg} />
+            ) : (
+              <View style={[s.mainImg, s.placeholder]}><Text style={{ fontSize: 70 }}>🏎️</Text></View>
+            )}
+          </TouchableOpacity>
+          <LinearGradient colors={['transparent', colors.dark]} style={s.imgGradient} />
 
-      {/* Thumbnails */}
-      {car.images && car.images.length > 1 && (
-        <ScrollView horizontal style={s.thumbRow} showsHorizontalScrollIndicator={false}>
-          {car.images.map((img, i) => (
-            <TouchableOpacity key={i} onPress={() => setImgIndex(i)} style={[s.thumb, imgIndex === i && s.thumbActive]}>
-              <Image source={{ uri: img }} style={s.thumbImg} />
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      )}
+          {/* Image counter */}
+          {car.images && car.images.length > 1 && (
+            <View style={s.imgCounter}>
+              <Text style={s.imgCounterText}>{imgIndex + 1}/{car.images.length}</Text>
+            </View>
+          )}
 
-      <View style={s.content}>
-        {/* Status */}
-        <View style={s.badgeRow}>
-          <View style={s.yearBadge}><Text style={s.yearText}>{car.year}</Text></View>
+          {/* Status badge */}
           <View style={[s.statusBadge, car.status === 'sold' ? s.soldBg : s.activeBg]}>
-            <Text style={[s.statusText, car.status === 'sold' ? s.soldColor : s.activeColor]}>
+            <Text style={[s.statusText, { color: car.status === 'sold' ? colors.primary : colors.green }]}>
               {car.status === 'active' ? t('active') : t('sold')}
             </Text>
           </View>
         </View>
 
-        <Text style={s.title}>{car.title.ar}</Text>
-        <Text style={s.sub}>{car.brand} • {car.model}</Text>
-
-        {/* Price */}
-        <View style={s.priceBox}>
-          <Text style={s.price}>{car.price?.toLocaleString()}</Text>
-          <Text style={s.kwd}>{t('kwd')}</Text>
-        </View>
-
-        {/* Specs */}
-        <View style={s.specsGrid}>
-          {specs.map(sp => (
-            <View key={sp.label} style={s.specItem}>
-              <Text style={s.specIcon}>{sp.icon}</Text>
-              <Text style={s.specLabel}>{sp.label}</Text>
-              <Text style={s.specValue}>{sp.value}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Description */}
-        {car.description?.ar && (
-          <View style={s.descBox}>
-            <Text style={s.descTitle}>{t('description')}</Text>
-            <Text style={s.descText}>{car.description.ar}</Text>
-          </View>
+        {/* Thumbnails */}
+        {car.images && car.images.length > 1 && (
+          <ScrollView horizontal style={s.thumbRow} showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: spacing.xl }}>
+            {car.images.map((img, i) => (
+              <TouchableOpacity key={i} onPress={() => setImgIndex(i)} style={[s.thumb, imgIndex === i && s.thumbActive]}>
+                <Image source={{ uri: img }} style={s.thumbImg} />
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         )}
 
-        {/* WhatsApp */}
-        <TouchableOpacity style={s.waButton} onPress={openWhatsApp}>
-          <Text style={s.waButtonText}>💬 {t('contactWhatsapp')}</Text>
-        </TouchableOpacity>
+        {/* Content */}
+        <Animated.View style={[s.content, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+          {/* Title & Price */}
+          <Text style={s.title}>{car.title.ar}</Text>
+          <Text style={s.sub}>{car.brand} • {car.model} • {car.year}</Text>
 
-        <Text style={s.seller}>{car.userName}</Text>
+          <View style={s.priceCard}>
+            <View style={s.priceGradient}>
+              <LinearGradient colors={['rgba(227,30,36,0.08)', 'rgba(227,30,36,0.02)']} style={s.priceGradientFill} />
+              <View style={s.priceRow}>
+                <View>
+                  <Text style={s.priceLabel}>{t('price')}</Text>
+                  <View style={s.priceWrap}>
+                    <Text style={s.price}>{car.price?.toLocaleString()}</Text>
+                    <Text style={s.kwd}>{t('kwd')}</Text>
+                  </View>
+                </View>
+                <View style={s.yearBigBadge}>
+                  <Text style={s.yearBigText}>{car.year}</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          {/* Specs Grid */}
+          <Text style={s.specsTitle}>المواصفات</Text>
+          <View style={s.specsGrid}>
+            {specs.map(sp => (
+              <View key={sp.label} style={s.specItem}>
+                <Text style={s.specIcon}>{sp.icon}</Text>
+                <Text style={s.specLabel}>{sp.label}</Text>
+                <Text style={s.specValue}>{sp.value}</Text>
+              </View>
+            ))}
+          </View>
+
+          {/* Description */}
+          {car.description?.ar && (
+            <View style={s.descCard}>
+              <Text style={s.descTitle}>{t('description')}</Text>
+              <Text style={s.descText}>{car.description.ar}</Text>
+            </View>
+          )}
+
+          {/* Seller */}
+          <TouchableOpacity
+            activeOpacity={0.88}
+            style={s.sellerCard}
+            onPress={() => navigation.navigate('SellerProfile', { sellerId: car.userId, sellerName: car.userName, sellerWhatsapp: car.userWhatsapp })}
+          >
+            <View style={s.sellerAvatar}>
+              <Text style={s.sellerAvatarText}>{car.userName?.[0] || '?'}</Text>
+            </View>
+            <View style={s.sellerInfo}>
+              <Text style={s.sellerName}>{car.userName}</Text>
+              <Text style={s.sellerLabel}>المعلن • اضغط لعرض ملفه</Text>
+            </View>
+          </TouchableOpacity>
+        </Animated.View>
+
+        <View style={{ height: tabBarHeight + 180 }} />
+      </ScrollView>
+
+      {/* Fixed Bottom CTA */}
+      <View style={s.bottomBar}>
+        <View style={[s.bottomGradient, { paddingBottom: tabBarHeight + 24 }]}>
+          <LinearGradient colors={[colors.dark + '00', colors.dark, colors.dark]} style={s.bottomGradientFill} />
+          <TouchableOpacity style={s.waButton} activeOpacity={0.85} onPress={openWhatsApp}>
+            <View style={s.waButtonGradient}>
+              <LinearGradient
+                colors={[colors.whatsapp, colors.whatsappDark]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={s.waButtonGradientFill}
+              />
+              <Text style={s.waButtonText}>💬 {t('contactWhatsapp')}</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Lightbox */}
       <Modal visible={lightbox} transparent animationType="fade">
         <View style={s.lightbox}>
-          <TouchableOpacity style={s.closeBtn} onPress={() => setLightbox(false)}>
-            <Text style={s.closeText}>✕</Text>
+          <StatusBar hidden={lightbox} />
+          <TouchableOpacity style={[s.closeBtn, { top: insets.top + 16 }]} onPress={() => setLightbox(false)}>
+            <View style={s.closeBtnBg}><Text style={s.closeText}>✕</Text></View>
           </TouchableOpacity>
           {car.images?.[imgIndex] && <Image source={{ uri: car.images[imgIndex] }} style={s.lightboxImg} resizeMode="contain" />}
+          {car.images && car.images.length > 1 && (
+            <View style={[s.lightboxNav, { bottom: insets.bottom + 20 }]}>
+              <TouchableOpacity onPress={() => setImgIndex(Math.max(0, imgIndex - 1))} style={s.navBtn}>
+                <Text style={s.navText}>→</Text>
+              </TouchableOpacity>
+              <Text style={s.lightboxCount}>{imgIndex + 1} / {car.images.length}</Text>
+              <TouchableOpacity onPress={() => setImgIndex(Math.min(car.images.length - 1, imgIndex + 1))} style={s.navBtn}>
+                <Text style={s.navText}>←</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </Modal>
-
-      <View style={{ height: 40 }} />
-    </ScrollView>
+    </View>
   );
 }
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark },
-  center: { flex: 1, backgroundColor: colors.dark, justifyContent: 'center', alignItems: 'center' },
-  loadText: { color: colors.silver },
-  mainImg: { width, height: 280 },
+  loadingWrap: { flex: 1, backgroundColor: colors.dark, justifyContent: 'center', alignItems: 'center' },
+  loadingIcon: { fontSize: 50, marginBottom: 12 },
+  loadingText: { color: colors.silver, fontSize: 15 },
+
+  // Image
+  imageSection: { position: 'relative' },
+  mainImg: { width, height: 320 },
   placeholder: { backgroundColor: colors.metal, justifyContent: 'center', alignItems: 'center' },
-  thumbRow: { paddingHorizontal: 16, paddingVertical: 10 },
-  thumb: { width: 60, height: 60, borderRadius: 10, marginRight: 8, borderWidth: 2, borderColor: colors.metal, overflow: 'hidden' },
+  imgGradient: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 120 },
+  imgCounter: { position: 'absolute', bottom: 16, right: 16, backgroundColor: 'rgba(0,0,0,0.7)', paddingHorizontal: 12, paddingVertical: 5, borderRadius: radius.full },
+  imgCounterText: { color: colors.white, fontSize: 12, fontWeight: '600' },
+  statusBadge: { position: 'absolute', top: 16, right: 16, paddingHorizontal: 14, paddingVertical: 6, borderRadius: radius.full },
+  soldBg: { backgroundColor: 'rgba(227,30,36,0.9)' },
+  activeBg: { backgroundColor: 'rgba(16,185,129,0.9)' },
+  statusText: { color: colors.white, fontWeight: '800', fontSize: 12 },
+
+  // Thumbs
+  thumbRow: { marginTop: -10, marginBottom: 8 },
+  thumb: { width: 56, height: 56, borderRadius: radius.md, marginRight: 8, borderWidth: 2, borderColor: colors.metalBorder, overflow: 'hidden' },
   thumbActive: { borderColor: colors.primary },
   thumbImg: { width: '100%', height: '100%' },
-  content: { padding: 20 },
-  badgeRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
-  yearBadge: { backgroundColor: colors.primary, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  yearText: { color: colors.white, fontWeight: '800', fontSize: 12 },
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  soldBg: { backgroundColor: colors.primary + '20' },
-  activeBg: { backgroundColor: '#22C55E20' },
-  statusText: { fontWeight: '700', fontSize: 12 },
-  soldColor: { color: colors.primary },
-  activeColor: { color: colors.green },
-  title: { fontSize: 28, fontWeight: '900', color: colors.white, marginBottom: 4 },
-  sub: { color: colors.silver, fontSize: 14, opacity: 0.6, marginBottom: 16 },
-  priceBox: { backgroundColor: colors.primary + '10', borderWidth: 1, borderColor: colors.primary + '30', borderRadius: 16, padding: 20, flexDirection: 'row', alignItems: 'baseline', gap: 8, marginBottom: 20 },
-  price: { color: colors.primary, fontSize: 32, fontWeight: '900' },
+
+  // Content
+  content: { padding: spacing.xl },
+  title: { fontSize: 26, fontWeight: '900', color: colors.white, marginBottom: 4 },
+  sub: { color: colors.silver, fontSize: 14, marginBottom: 20 },
+
+  // Price
+  priceCard: { borderRadius: radius.xl, overflow: 'hidden', borderWidth: 1, borderColor: colors.primaryBorder, marginBottom: 24 },
+  priceGradient: { padding: 20, justifyContent: 'center' },
+  priceGradientFill: { ...StyleSheet.absoluteFillObject },
+  priceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  priceLabel: { color: colors.silver, fontSize: 12, marginBottom: 4 },
+  priceWrap: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
+  price: { color: colors.primary, fontSize: 34, fontWeight: '900' },
   kwd: { color: colors.silver, fontSize: 16 },
-  specsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
-  specItem: { backgroundColor: colors.darkCard, borderWidth: 1, borderColor: colors.metal, borderRadius: 12, padding: 12, width: '48%' },
-  specIcon: { fontSize: 18, marginBottom: 4 },
-  specLabel: { color: colors.silver, fontSize: 10, opacity: 0.5 },
-  specValue: { color: colors.white, fontWeight: '700', fontSize: 13 },
-  descBox: { marginBottom: 20 },
-  descTitle: { color: colors.white, fontWeight: '700', fontSize: 16, marginBottom: 8 },
-  descText: { color: colors.silver, lineHeight: 22, opacity: 0.7 },
-  waButton: { backgroundColor: colors.whatsapp, paddingVertical: 16, borderRadius: 14, alignItems: 'center', marginBottom: 12 },
-  waButtonText: { color: colors.white, fontWeight: '800', fontSize: 18 },
-  seller: { color: colors.silver, textAlign: 'center', opacity: 0.5, fontSize: 13 },
-  lightbox: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' },
-  closeBtn: { position: 'absolute', top: 60, right: 20, zIndex: 10 },
-  closeText: { color: colors.white, fontSize: 28 },
+  yearBigBadge: { backgroundColor: colors.primary, width: 52, height: 52, borderRadius: 26, justifyContent: 'center', alignItems: 'center' },
+  yearBigText: { color: colors.white, fontWeight: '900', fontSize: 14 },
+
+  // Specs
+  specsTitle: { color: colors.white, fontSize: 18, fontWeight: '800', marginBottom: 14 },
+  specsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 },
+  specItem: { width: (width - spacing.xl * 2 - 12) / 2, backgroundColor: colors.darkCard, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.metalBorder, padding: 14 },
+  specIcon: { fontSize: 18, marginBottom: 10 },
+  specLabel: { color: colors.silver, fontSize: 11, marginBottom: 6 },
+  specValue: { color: colors.white, fontWeight: '800', fontSize: 14 },
+  descCard: { backgroundColor: colors.darkCard, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.metalBorder, padding: 18, marginBottom: 18 },
+  descTitle: { color: colors.white, fontSize: 16, fontWeight: '900', marginBottom: 10 },
+  descText: { color: colors.silverLight, fontSize: 14, lineHeight: 22 },
+  sellerCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.darkCard, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.metalBorder, padding: 18, marginBottom: 8 },
+  sellerAvatar: { width: 54, height: 54, borderRadius: 27, backgroundColor: colors.primaryGlow, alignItems: 'center', justifyContent: 'center', marginRight: 14 },
+  sellerAvatarText: { color: colors.primary, fontSize: 20, fontWeight: '900' },
+  sellerInfo: { flex: 1 },
+  sellerName: { color: colors.white, fontSize: 17, fontWeight: '900', marginBottom: 4 },
+  sellerLabel: { color: colors.silver, fontSize: 12 },
+  bottomBar: { position: 'absolute', left: 0, right: 0, bottom: 0 },
+  bottomGradient: { position: 'relative' },
+  bottomGradientFill: { ...StyleSheet.absoluteFillObject },
+  waButton: { marginHorizontal: spacing.xl, borderRadius: radius.xl, overflow: 'hidden' },
+  waButtonGradient: { paddingVertical: 16, alignItems: 'center', justifyContent: 'center' },
+  waButtonGradientFill: { ...StyleSheet.absoluteFillObject },
+  waButtonText: { color: colors.white, fontSize: 16, fontWeight: '900' },
+  lightbox: { flex: 1, backgroundColor: 'rgba(0,0,0,0.96)', alignItems: 'center', justifyContent: 'center' },
+  closeBtn: { position: 'absolute', right: 20, zIndex: 5 },
+  closeBtnBg: { width: 42, height: 42, borderRadius: 21, backgroundColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center' },
+  closeText: { color: colors.white, fontSize: 20, fontWeight: '900' },
+  lightboxImg: { width: '100%', height: '72%' },
+  lightboxNav: { position: 'absolute', flexDirection: 'row', alignItems: 'center', gap: 18 },
+  navBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: 'rgba(255,255,255,0.12)', alignItems: 'center', justifyContent: 'center' },
+  navText: { color: colors.white, fontSize: 18, fontWeight: '900' },
+  lightboxCount: { color: colors.white, fontSize: 13, fontWeight: '700' },
+  specsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 },
+  specItem: { width: '47%', backgroundColor: colors.darkCard, borderWidth: 1, borderColor: colors.metalBorder, borderRadius: radius.lg, padding: 14 },
+  specIcon: { fontSize: 20, marginBottom: 6 },
+  specLabel: { color: colors.silver, fontSize: 11, marginBottom: 2 },
+  specValue: { color: colors.white, fontWeight: '700', fontSize: 14 },
+
+  // Description
+  descCard: { backgroundColor: colors.darkCard, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.metalBorder, padding: 18, marginBottom: 20 },
+  descTitle: { color: colors.white, fontWeight: '700', fontSize: 16, marginBottom: 10 },
+  descText: { color: colors.silver, lineHeight: 24, fontSize: 14 },
+
+  // Seller
+  sellerCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.darkCard, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.metalBorder, padding: 14 },
+  sellerAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  sellerAvatarText: { color: colors.white, fontSize: 18, fontWeight: '900' },
+  sellerInfo: { flex: 1 },
+  sellerName: { color: colors.white, fontWeight: '700', fontSize: 15 },
+  sellerLabel: { color: colors.silver, fontSize: 11, marginTop: 2 },
+
+  // Bottom Bar
+  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0 },
+  bottomGradient: { paddingTop: 40, paddingHorizontal: spacing.xl },
+  bottomGradientFill: { ...StyleSheet.absoluteFillObject },
+  waButton: { borderRadius: radius.lg, overflow: 'hidden', ...shadows.card },
+  waButtonGradient: { paddingVertical: 18, alignItems: 'center', justifyContent: 'center', borderRadius: radius.lg },
+  waButtonGradientFill: { ...StyleSheet.absoluteFillObject },
+  waButtonText: { color: colors.white, fontWeight: '900', fontSize: 18 },
+
+  // Lightbox
+  lightbox: { flex: 1, backgroundColor: 'rgba(0,0,0,0.97)', justifyContent: 'center', alignItems: 'center' },
+  closeBtn: { position: 'absolute', right: 20, zIndex: 10 },
+  closeBtnBg: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
+  closeText: { color: colors.white, fontSize: 20 },
   lightboxImg: { width: width, height: width },
+  lightboxNav: { position: 'absolute', flexDirection: 'row', alignItems: 'center', gap: 20 },
+  navBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
+  navText: { color: colors.white, fontSize: 20 },
+  lightboxCount: { color: colors.white, fontSize: 14, fontWeight: '600' },
 });

@@ -1,57 +1,175 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import LinearGradient from 'react-native-linear-gradient';
+import { getAuth, sendPasswordResetEmail } from '@react-native-firebase/auth';
 import { useAuth } from '../../hooks/useAuth';
-import { colors } from '../../lib/theme';
+import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { t } from '../../i18n';
 
 export default function LoginScreen({ navigation }: any) {
+  const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) return;
     setLoading(true);
     try {
       await login(email, password);
-    } catch (e: any) {
+    } catch {
       Alert.alert('خطأ', 'البريد أو كلمة المرور غير صحيحة');
     }
     setLoading(false);
   };
 
+  const handleForgotPassword = async () => {
+    const normalizedEmail = (email || '').trim().toLowerCase();
+    if (!normalizedEmail) {
+      Alert.alert('نسيت كلمة المرور؟', 'اكتب بريدك الإلكتروني أولاً في الحقل ثم اضغط نسيت كلمة المرور');
+      return;
+    }
+
+    setResetting(true);
+    try {
+      const authInstance = getAuth();
+      await sendPasswordResetEmail(authInstance, normalizedEmail);
+      Alert.alert('تم الإرسال', 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك');
+    } catch (e: any) {
+      const code = typeof e?.code === 'string' ? e.code : '';
+      const message = typeof e?.message === 'string' ? e.message : '';
+      console.log('Password reset error:', { code, message });
+
+      if (code === 'auth/user-not-found') {
+        Alert.alert('خطأ', 'هذا البريد غير مسجل');
+      } else if (code === 'auth/invalid-email') {
+        Alert.alert('خطأ', 'البريد الإلكتروني غير صحيح');
+      } else if (code === 'auth/network-request-failed') {
+        Alert.alert('خطأ', 'تأكد من اتصال الإنترنت وحاول مرة ثانية');
+      } else if (code === 'auth/internal-error') {
+        Alert.alert('خطأ', 'خطأ داخلي من Firebase. غالباً مشكلة إعدادات iOS (GoogleService-Info.plist) أو إعدادات مشروع Firebase.');
+      } else {
+        Alert.alert('خطأ', code ? `تعذر إرسال الرابط (${code})` : 'تعذر إرسال الرابط. تأكد من البريد وحاول مرة ثانية');
+      }
+    }
+    setResetting(false);
+  };
+
   return (
-    <View style={s.container}>
-      <View style={s.card}>
-        <Text style={s.logo}><Text style={{ color: colors.primary }}>Q8</Text> SPORT CAR</Text>
-        <Text style={s.title}>{t('login')}</Text>
+    <KeyboardAvoidingView
+      style={s.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={insets.top}
+    >
+      <LinearGradient colors={['rgba(227,30,36,0.06)', 'transparent', 'transparent']} style={s.bgGlow} />
 
-        <TextInput style={s.input} placeholder={t('email')} placeholderTextColor={colors.silver + '60'}
-          value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
-        <TextInput style={s.input} placeholder={t('password')} placeholderTextColor={colors.silver + '60'}
-          value={password} onChangeText={setPassword} secureTextEntry />
+      <ScrollView
+        contentContainerStyle={[
+          s.scroll,
+          {
+            paddingTop: Math.max(spacing.xl, insets.top + spacing.xl),
+            paddingBottom: tabBarHeight + spacing.xl,
+          },
+        ]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={s.logoSection}>
+          <Text style={s.logoQ8}>Q8</Text>
+          <Text style={s.logoSport}>SPORT CAR</Text>
+          <View style={s.logoLine} />
+        </View>
 
-        <TouchableOpacity style={s.btn} onPress={handleLogin} disabled={loading}>
-          <Text style={s.btnText}>{loading ? t('loading') : t('login')}</Text>
-        </TouchableOpacity>
+        <View style={s.card}>
+          <Text style={s.title}>{t('login')}</Text>
 
-        <TouchableOpacity onPress={() => navigation.navigate('Register')} style={s.link}>
-          <Text style={s.linkText}>{t('noAccount')} <Text style={{ color: colors.primary }}>{t('register')}</Text></Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+          <View style={s.inputWrap}>
+            <Text style={s.inputIcon}>📧</Text>
+            <TextInput
+              style={s.input}
+              placeholder={t('email')}
+              placeholderTextColor={colors.silver + '50'}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+          </View>
+
+          <View style={s.inputWrap}>
+            <Text style={s.inputIcon}>🔒</Text>
+            <TextInput
+              style={s.input}
+              placeholder={t('password')}
+              placeholderTextColor={colors.silver + '50'}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+          </View>
+
+          <View style={s.btnWrap}>
+            <TouchableOpacity activeOpacity={0.85} onPress={handleLogin} disabled={loading} style={s.btnTouch}>
+              <View style={s.btn}>
+                <LinearGradient
+                  colors={colors.gradient.primary as string[]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={s.btnFill}
+                />
+                <Text style={s.btnText}>{loading ? t('loading') : t('login')}</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity
+            onPress={handleForgotPassword}
+            disabled={resetting}
+            style={s.forgotLink}
+          >
+            <Text style={s.forgotText}>{resetting ? t('loading') : 'نسيت كلمة المرور؟'}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => navigation.navigate('Register')} style={s.link}>
+            <Text style={s.linkText}>{t('noAccount')} <Text style={{ color: colors.primary, fontWeight: '700' }}>{t('register')}</Text></Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark, justifyContent: 'center', padding: 20 },
-  card: { backgroundColor: colors.darkCard, borderRadius: 20, borderWidth: 1, borderColor: colors.metal, padding: 24 },
-  logo: { fontSize: 22, fontWeight: '900', color: colors.white, textAlign: 'center', marginBottom: 8 },
-  title: { fontSize: 20, fontWeight: '700', color: colors.white, textAlign: 'center', marginBottom: 24 },
-  input: { backgroundColor: colors.metal, borderWidth: 1, borderColor: colors.metalLight, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, color: colors.white, marginBottom: 12 },
-  btn: { backgroundColor: colors.primary, paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginTop: 8 },
-  btnText: { color: colors.white, fontWeight: '800', fontSize: 16 },
-  link: { marginTop: 20, alignItems: 'center' },
+  container: { flex: 1, backgroundColor: colors.dark },
+  scroll: { flexGrow: 1, justifyContent: 'center', padding: spacing.xl },
+  bgGlow: { position: 'absolute', top: 0, left: 0, right: 0, height: 300 },
+
+  logoSection: { alignItems: 'center', marginBottom: 32 },
+  logoQ8: { fontSize: 50, fontWeight: '900', color: colors.primary },
+  logoSport: { fontSize: 18, fontWeight: '800', color: colors.white, letterSpacing: 3 },
+  logoLine: { width: 40, height: 3, backgroundColor: colors.primary, borderRadius: 2, marginTop: 12 },
+
+  card: { backgroundColor: colors.darkCard, borderRadius: radius.xxl, borderWidth: 1, borderColor: colors.metalBorder, padding: 28, ...shadows.card },
+  title: { fontSize: 22, fontWeight: '800', color: colors.white, textAlign: 'center', marginBottom: 24 },
+
+  inputWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.metal, borderWidth: 1, borderColor: colors.metalBorder, borderRadius: radius.lg, paddingHorizontal: spacing.lg, marginBottom: 14 },
+  inputIcon: { fontSize: 16, marginRight: 10 },
+  input: { flex: 1, paddingVertical: 16, color: colors.white, fontSize: 15 },
+
+  btnWrap: { marginTop: 10, marginBottom: 4 },
+  btnTouch: { borderRadius: radius.lg, overflow: 'hidden' },
+  btn: { paddingVertical: 18, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center', width: '100%' },
+  btnFill: { ...StyleSheet.absoluteFillObject },
+  btnText: { color: colors.white, fontWeight: '900', fontSize: 17 },
+
+  forgotLink: { marginTop: 14, alignItems: 'center' },
+  forgotText: { color: colors.silver, fontSize: 13, textDecorationLine: 'underline' },
+
+  link: { marginTop: 22, alignItems: 'center' },
   linkText: { color: colors.silver, fontSize: 13 },
 });

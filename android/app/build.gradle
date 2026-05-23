@@ -117,3 +117,8 @@ dependencies {
         implementation jscFlavor
     }
 }
+
+// Firebase (React Native Firebase) - only apply if config file exists
+if (file('google-services.json').exists()) {
+    apply plugin: "com.google.gms.google-services"
+}
