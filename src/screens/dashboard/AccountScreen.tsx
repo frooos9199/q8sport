@@ -1,22 +1,24 @@
 import React from 'react';
-import { Alert, View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput } from 'react-native';
+import { Alert, View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput, Image, ActivityIndicator } from 'react-native';
+import { launchImageLibrary } from 'react-native-image-picker';
 import LinearGradient from 'react-native-linear-gradient';
 import { useAuth } from '../../hooks/useAuth';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { t } from '../../i18n';
 
 export default function AccountScreen({ navigation }: any) {
-  const { user, logout, updateContactInfo } = useAuth();
+  const { user, logout, updateContactInfo, updateProfileAvatar } = useAuth();
   const [phone, setPhone] = React.useState('');
   const [whatsapp, setWhatsapp] = React.useState('');
   const [saving, setSaving] = React.useState(false);
-
-  if (!user) return null;
+  const [avatarUploading, setAvatarUploading] = React.useState(false);
 
   React.useEffect(() => {
-    setPhone(user.phone || '');
-    setWhatsapp(user.whatsapp || '');
-  }, [user.phone, user.whatsapp]);
+    setPhone(user?.phone || '');
+    setWhatsapp(user?.whatsapp || '');
+  }, [user?.phone, user?.whatsapp]);
+
+  if (!user) return null;
 
   const navigateToTab = (tabName: string, params?: object) => {
     const parent = navigation?.getParent?.();
@@ -94,6 +96,24 @@ export default function AccountScreen({ navigation }: any) {
     }
   };
 
+  const pickAvatar = async () => {
+    const result = await launchImageLibrary({ mediaType: 'photo', selectionLimit: 1, quality: 0.85 });
+    if (result.didCancel) return;
+
+    const avatarUri = result.assets?.[0]?.uri;
+    if (!avatarUri) return;
+
+    setAvatarUploading(true);
+    try {
+      await updateProfileAvatar(avatarUri);
+      Alert.alert('تم', 'تم تحديث صورة الحساب وستظهر في إعلاناتك');
+    } catch (error: any) {
+      Alert.alert('خطأ', error?.message || 'تعذر رفع صورة الحساب');
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
   return (
     <ScrollView style={s.container} showsVerticalScrollIndicator={false}>
       {/* Profile Card */}
@@ -101,9 +121,18 @@ export default function AccountScreen({ navigation }: any) {
         <LinearGradient colors={['rgba(227,30,36,0.1)', 'transparent']} style={s.profileGlow} />
         <View style={s.avatarWrap}>
           <View style={s.avatar}>
-            <LinearGradient colors={colors.gradient.primary as string[]} style={s.avatarFill} />
-            <Text style={s.avatarText}>{user.name?.[0] || '?'}</Text>
+            {user.avatar ? (
+              <Image source={{ uri: user.avatar }} style={s.avatarImage} />
+            ) : (
+              <>
+                <LinearGradient colors={colors.gradient.primary as string[]} style={s.avatarFill} />
+                <Text style={s.avatarText}>{user.name?.[0] || '?'}</Text>
+              </>
+            )}
           </View>
+          <TouchableOpacity style={s.avatarEditBtn} activeOpacity={0.88} onPress={pickAvatar} disabled={avatarUploading}>
+            {avatarUploading ? <ActivityIndicator size="small" color={colors.white} /> : <Text style={s.avatarEditText}>📷</Text>}
+          </TouchableOpacity>
         </View>
         <Text style={s.name}>{user.name}</Text>
         <Text style={s.email}>{user.email}</Text>
@@ -180,7 +209,10 @@ const s = StyleSheet.create({
   avatarWrap: { position: 'relative', marginBottom: 14 },
   avatar: { width: 80, height: 80, borderRadius: 40, overflow: 'hidden', justifyContent: 'center', alignItems: 'center' },
   avatarFill: { ...StyleSheet.absoluteFillObject },
+  avatarImage: { width: '100%', height: '100%' },
   avatarText: { color: colors.white, fontSize: 32, fontWeight: '900' },
+  avatarEditBtn: { position: 'absolute', right: -2, bottom: -2, width: 32, height: 32, borderRadius: 16, backgroundColor: colors.primary, borderWidth: 2, borderColor: colors.darkCard, alignItems: 'center', justifyContent: 'center' },
+  avatarEditText: { fontSize: 14 },
   name: { color: colors.white, fontSize: 22, fontWeight: '900' },
   email: { color: colors.silver, fontSize: 13, marginTop: 4 },
   marketBadge: { backgroundColor: colors.primaryGlow, borderWidth: 1, borderColor: colors.primaryBorder, paddingHorizontal: 14, paddingVertical: 5, borderRadius: radius.full, marginTop: 12 },

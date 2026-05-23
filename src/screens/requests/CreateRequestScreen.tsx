@@ -88,6 +88,7 @@ export default function CreateRequestScreen({ navigation, route }: any) {
         userId: user.uid,
         userName: user.name || '',
         userWhatsapp: user.whatsapp || '',
+        userAvatar: user.avatar || '',
         title: { ar: titleValue, en: titleValue },
         description: { ar: descriptionValue, en: descriptionValue },
         category,

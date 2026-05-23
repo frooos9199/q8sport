@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, FlatList, Linking, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Alert, FlatList, Image, Linking, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ref as dbRef, update } from '@react-native-firebase/database';
 
 import { useAuth } from '../../hooks/useAuth';
@@ -26,7 +26,7 @@ export default function SellerProfileScreen({ route, navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [updatingUser, setUpdatingUser] = useState(false);
 
-  const loadSellerData = async () => {
+  const loadSellerData = useCallback(async () => {
     const [carsSnap, partsSnap, requestsSnap, userSnap] = await Promise.all([
       getDbSnapshot(dbRef(db, 'cars'), 'cars'),
       getDbSnapshot(dbRef(db, 'parts'), 'parts'),
@@ -60,7 +60,7 @@ export default function SellerProfileScreen({ route, navigation }: any) {
     setParts(sortListingsByFreshnessAndStatus(nextParts));
     setRequests(sortListingsByFreshnessAndStatus(nextRequests));
     setSellerUser(userSnap.exists() ? { uid: sellerId, ...userSnap.val() } : null);
-  };
+  }, [sellerId]);
 
   useEffect(() => {
     let mounted = true;
@@ -75,7 +75,7 @@ export default function SellerProfileScreen({ route, navigation }: any) {
     return () => {
       mounted = false;
     };
-  }, [sellerId]);
+  }, [loadSellerData]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -221,7 +221,13 @@ export default function SellerProfileScreen({ route, navigation }: any) {
       ListHeaderComponent={
         <>
           <View style={s.profileCard}>
-            <View style={s.avatar}><Text style={s.avatarText}>{sellerName?.[0] || '?'}</Text></View>
+            <View style={s.avatar}>
+              {sellerUser?.avatar ? (
+                <Image source={{ uri: sellerUser.avatar }} style={s.avatarImage} />
+              ) : (
+                <Text style={s.avatarText}>{sellerName?.[0] || '?'}</Text>
+              )}
+            </View>
             <Text style={s.name}>{sellerName}</Text>
             <Text style={s.handle}>معلن مباشر في السوق</Text>
 
@@ -347,6 +353,7 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark },
   profileCard: { backgroundColor: colors.darkCard, borderRadius: radius.xxl, borderWidth: 1, borderColor: colors.primaryBorder, padding: 22, marginBottom: 18, ...shadows.card },
   avatar: { width: 76, height: 76, borderRadius: 38, backgroundColor: colors.primaryGlow, alignItems: 'center', justifyContent: 'center', marginBottom: 14, alignSelf: 'center' },
+  avatarImage: { width: '100%', height: '100%' },
   avatarText: { color: colors.primary, fontSize: 28, fontWeight: '900' },
   name: { color: colors.white, fontSize: 24, fontWeight: '900', textAlign: 'center' },
   handle: { color: colors.silver, fontSize: 13, textAlign: 'center', marginTop: 6, marginBottom: 18 },

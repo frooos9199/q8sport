@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Linking, Animated, RefreshControl, Image } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
 import { db } from '../../lib/firebase';
 import { orderByChild, query, ref as dbRef } from '@react-native-firebase/database';
 import { getDbSnapshot } from '../../lib/firebaseDatabase';
@@ -58,7 +57,7 @@ function AnimatedRequestCard({ item, index, navigation }: { item: Request; index
 
   useEffect(() => {
     Animated.timing(anim, { toValue: 1, duration: 400, delay: index * 80, useNativeDriver: true }).start();
-  }, []);
+  }, [anim, index]);
 
   const catIcon = item.category === 'car' ? '🏎️' : item.category === 'part' ? '⚙️' : '📦';
 
@@ -93,7 +92,13 @@ function AnimatedRequestCard({ item, index, navigation }: { item: Request; index
           activeOpacity={0.85}
           onPress={() => navigation.navigate('SellerProfile', { sellerId: item.userId, sellerName: item.userName, sellerWhatsapp: item.userWhatsapp })}
         >
-          <View style={s.userAvatar}><Text style={s.userAvatarText}>{item.userName?.[0] || '?'}</Text></View>
+          <View style={s.userAvatar}>
+            {item.userAvatar ? (
+              <Image source={{ uri: item.userAvatar }} style={s.userAvatarImage} />
+            ) : (
+              <Text style={s.userAvatarText}>{item.userName?.[0] || '?'}</Text>
+            )}
+          </View>
           <Text style={s.userName}>{item.userName}</Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -131,7 +136,8 @@ const s = StyleSheet.create({
 
   footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: colors.metalBorder, paddingTop: 14 },
   userWrap: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  userAvatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.metal, justifyContent: 'center', alignItems: 'center' },
+  userAvatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.metal, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
+  userAvatarImage: { width: '100%', height: '100%' },
   userAvatarText: { color: colors.white, fontSize: 12, fontWeight: '700' },
   userName: { color: colors.silver, fontSize: 12 },
   waBtn: { backgroundColor: colors.whatsapp, paddingVertical: 9, paddingHorizontal: 18, borderRadius: radius.md },

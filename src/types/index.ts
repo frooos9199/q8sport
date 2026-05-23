@@ -18,6 +18,7 @@ export interface Car {
   userId: string;
   userName: string;
   userWhatsapp: string;
+  userAvatar?: string;
   title: { ar: string; en: string };
   description: { ar: string; en: string };
   brand: string;
@@ -38,6 +39,7 @@ export interface Part {
   userId: string;
   userName: string;
   userWhatsapp: string;
+  userAvatar?: string;
   title: { ar: string; en: string };
   description: { ar: string; en: string };
   category: string;
@@ -54,6 +56,7 @@ export interface Request {
   userId: string;
   userName: string;
   userWhatsapp: string;
+  userAvatar?: string;
   title: { ar: string; en: string };
   description: { ar: string; en: string };
   category: "car" | "part" | "other";

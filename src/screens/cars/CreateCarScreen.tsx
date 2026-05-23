@@ -82,6 +82,7 @@ export default function CreateCarScreen({ navigation, route }: any) {
         userId: user.uid,
         userName: user.name,
         userWhatsapp: user.whatsapp,
+        userAvatar: user.avatar || '',
         title: { ar: title.trim(), en: title.trim() },
         description: { ar: description.trim(), en: description.trim() },
         brand,

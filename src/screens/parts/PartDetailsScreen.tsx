@@ -119,6 +119,13 @@ export default function PartDetailsScreen({ route, navigation }: any) {
           activeOpacity={0.88}
           onPress={() => navigation.navigate('SellerProfile', { sellerId: part.userId, sellerName: part.userName, sellerWhatsapp: part.userWhatsapp })}
         >
+          <View style={s.sellerAvatar}>
+            {part.userAvatar ? (
+              <Image source={{ uri: part.userAvatar }} style={s.sellerAvatarImage} />
+            ) : (
+              <Text style={s.sellerAvatarText}>{part.userName?.[0] || '?'}</Text>
+            )}
+          </View>
           <View style={s.sellerCopy}>
             <Text style={s.sellerLabel}>البائع</Text>
             <Text style={s.sellerName}>{part.userName}</Text>
@@ -181,6 +188,9 @@ const s = StyleSheet.create({
   description: { color: colors.silverLight, fontSize: 14, lineHeight: 22 },
 
   sellerCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.darkCard, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.metalBorder, padding: 18, marginBottom: 16 },
+  sellerAvatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: colors.primaryGlow, justifyContent: 'center', alignItems: 'center', marginRight: 14, overflow: 'hidden' },
+  sellerAvatarImage: { width: '100%', height: '100%' },
+  sellerAvatarText: { color: colors.primary, fontSize: 20, fontWeight: '900' },
   sellerCopy: { flex: 1 },
   sellerLabel: { color: colors.silver, fontSize: 12, marginBottom: 6 },
   sellerName: { color: colors.white, fontWeight: '900', fontSize: 18, marginBottom: 4 },

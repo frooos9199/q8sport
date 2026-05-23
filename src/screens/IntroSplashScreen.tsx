@@ -38,10 +38,12 @@ export default function IntroSplashScreen({ onDone }: IntroSplashScreenProps) {
           style={videoFrame}
           resizeMode="contain"
           paused={false}
+          muted
+          volume={0}
           repeat={false}
           playInBackground={false}
           playWhenInactive={false}
-          ignoreSilentSwitch="ignore"
+          ignoreSilentSwitch="obey"
           onLoad={(event: any) => {
             const naturalWidth = Number(event?.naturalSize?.width) || 0;
             const naturalHeight = Number(event?.naturalSize?.height) || 0;

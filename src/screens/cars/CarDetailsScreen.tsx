@@ -175,7 +175,11 @@ export default function CarDetailsScreen({ route, navigation }: any) {
             onPress={() => navigation.navigate('SellerProfile', { sellerId: car.userId, sellerName: car.userName, sellerWhatsapp: car.userWhatsapp })}
           >
             <View style={s.sellerAvatar}>
-              <Text style={s.sellerAvatarText}>{car.userName?.[0] || '?'}</Text>
+              {car.userAvatar ? (
+                <Image source={{ uri: car.userAvatar }} style={s.sellerAvatarImage} />
+              ) : (
+                <Text style={s.sellerAvatarText}>{car.userName?.[0] || '?'}</Text>
+              )}
             </View>
             <View style={s.sellerInfo}>
               <Text style={s.sellerName}>{car.userName}</Text>
@@ -321,6 +325,7 @@ const s = StyleSheet.create({
   // Seller
   sellerCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.darkCard, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.metalBorder, padding: 14 },
   sellerAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  sellerAvatarImage: { width: '100%', height: '100%' },
   sellerAvatarText: { color: colors.white, fontSize: 18, fontWeight: '900' },
   sellerInfo: { flex: 1 },
   sellerName: { color: colors.white, fontWeight: '700', fontSize: 15 },

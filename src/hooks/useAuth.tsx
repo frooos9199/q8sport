@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { auth, db } from '../lib/firebase';
 import { ref as dbRef, serverTimestamp, set as dbSet, update } from '@react-native-firebase/database';
+import { ref as storageRef } from '@react-native-firebase/storage';
 import {
   AppleAuthProvider,
   createUserWithEmailAndPassword,
@@ -12,6 +13,7 @@ import {
 } from '@react-native-firebase/auth';
 import { appleAuth } from '@invertase/react-native-apple-authentication';
 import { getDbSnapshot, reportRealtimeDatabaseError } from '../lib/firebaseDatabase';
+import { storage } from '../lib/firebase';
 import { User } from '../types';
 
 function normalizeEmail(email: string) {
@@ -49,8 +51,30 @@ type AuthContextType = {
   register: (data: { email: string; password: string; name: string; phone: string; whatsapp: string }) => Promise<void>;
   signInWithApple: () => Promise<void>;
   updateContactInfo: (data: { phone: string; whatsapp: string }) => Promise<void>;
+  updateProfileAvatar: (fileUri: string) => Promise<void>;
   logout: () => Promise<void>;
 };
+
+async function syncUserAvatarAcrossListings(uid: string, avatar: string) {
+  const rootUpdates: Record<string, any> = {};
+
+  for (const collection of ['cars', 'parts', 'requests']) {
+    const snap = await getDbSnapshot(dbRef(db, collection), collection, { showAlert: false });
+
+    snap.forEach((child: any) => {
+      const value = child.val();
+      if (value?.userId === uid) {
+        rootUpdates[`${collection}/${child.key}/userAvatar`] = avatar;
+        rootUpdates[`${collection}/${child.key}/updatedAt`] = Date.now();
+      }
+      return undefined;
+    });
+  }
+
+  if (Object.keys(rootUpdates).length) {
+    await update(dbRef(db), rootUpdates);
+  }
+}
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
@@ -261,13 +285,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(nextUser);
   };
 
+  const updateProfileAvatar = async (fileUri: string) => {
+    if (!user) {
+      throw new Error('user-not-found');
+    }
+
+    const cleanUri = fileUri.replace('file://', '');
+    const avatarRef = storageRef(storage, `users/${user.uid}/avatar-${Date.now()}.jpg`);
+
+    await avatarRef.putFile(cleanUri);
+    const avatarUrl = await avatarRef.getDownloadURL();
+
+    try {
+      await update(dbRef(db, `users/${user.uid}`), {
+        avatar: avatarUrl,
+        updatedAt: Date.now(),
+      });
+      await syncUserAvatarAcrossListings(user.uid, avatarUrl);
+    } catch (error) {
+      reportRealtimeDatabaseError(`users/${user.uid}`, error, false);
+      throw error;
+    }
+
+    setUser({
+      ...user,
+      avatar: avatarUrl,
+    });
+  };
+
   const logout = async () => {
     await signOut(auth as any);
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, fbUser, loading, login, register, signInWithApple, updateContactInfo, logout }}>
+    <AuthContext.Provider value={{ user, fbUser, loading, login, register, signInWithApple, updateContactInfo, updateProfileAvatar, logout }}>
       {children}
     </AuthContext.Provider>
   );
