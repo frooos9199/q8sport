@@ -121,6 +121,7 @@
 				00EEFC60759A1932668264C0 /* [CP] Embed Pods Frameworks */,
 				E235C05ADACE081382539298 /* [CP] Copy Pods Resources */,
 				0F5463E2DED5AD58BF46523F /* [CP-User] [RNFB] Core Configuration */,
+				F9A1C4012F1A000100A10001 /* [CP-User] Generate Hermes dSYM */,
 			);
 			buildRules = (
 			);
@@ -260,6 +261,21 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Q8SportApp/Pods-Q8SportApp-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		F9A1C4012F1A000100A10001 /* [CP-User] Generate Hermes dSYM */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "[CP-User] Generate Hermes dSYM";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e\n\nif [ \"${CONFIGURATION}\" != \"Release\" ]; then\n  exit 0\nfi\n\nHERMES_DSYM=\"${DWARF_DSYM_FOLDER_PATH}/hermesvm.framework.dSYM\"\nHERMES_BINARY=\"\"\n\nif [ -z \"${DWARF_DSYM_FOLDER_PATH:-}\" ]; then\n  exit 0\nfi\n\nfor candidate in \\\n  \"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermesvm.framework/hermesvm\" \\\n  \"${BUILT_PRODUCTS_DIR}/hermes-engine/hermesvm.framework/hermesvm\" \\\n  \"${PODS_ROOT}/hermes-engine/destroot/Library/Frameworks/ios/hermesvm.framework/hermesvm\" \\\n  \"${PODS_ROOT}/hermes-engine/build/iphoneos/lib/hermesvm.framework/hermesvm\"\ndo\n  if [ -f \"${candidate}\" ]; then\n    HERMES_BINARY=\"${candidate}\"\n    break\n  fi\ndone\n\nif [ -z \"${HERMES_BINARY}\" ]; then\n  echo \"warning: hermesvm binary not found; skipping dSYM generation\"\n  exit 0\nfi\n\nrm -rf \"${HERMES_DSYM}\"\nxcrun dsymutil \"${HERMES_BINARY}\" --out \"${HERMES_DSYM}\"\n\nif [ ! -f \"${HERMES_DSYM}/Contents/Resources/DWARF/hermesvm\" ]; then\n  echo \"error: Failed to generate hermesvm.framework.dSYM\"\n  exit 1\nfi\n\nif [ -n \"${ARCHIVE_DSYMS_PATH:-}\" ]; then\n  ARCHIVE_HERMES_DSYM=\"${ARCHIVE_DSYMS_PATH}/hermesvm.framework.dSYM\"\n  if [ \"${ARCHIVE_HERMES_DSYM}\" != \"${HERMES_DSYM}\" ]; then\n    rm -rf \"${ARCHIVE_HERMES_DSYM}\"\n    cp -R \"${HERMES_DSYM}\" \"${ARCHIVE_HERMES_DSYM}\"\n  fi\nfi\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
