@@ -4,10 +4,12 @@ import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import { db } from '../../lib/firebase';
-import { get, ref as dbRef } from '@react-native-firebase/database';
+import { ref as dbRef } from '@react-native-firebase/database';
+import { getDbSnapshot } from '../../lib/firebaseDatabase';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { t } from '../../i18n';
 import { Car } from '../../types';
+import { shareListing } from '../../lib/shareListing';
 
 const { width } = Dimensions.get('window');
 
@@ -27,7 +29,7 @@ export default function CarDetailsScreen({ route, navigation }: any) {
 
     const run = async () => {
       try {
-        const snap = await get(dbRef(db, `cars/${id}`));
+        const snap = await getDbSnapshot(dbRef(db, `cars/${id}`), `cars/${id}`);
         if (!mounted) return;
         if (snap.exists()) setCar({ id: snap.key, ...snap.val() });
       } catch (e) {
@@ -64,6 +66,15 @@ export default function CarDetailsScreen({ route, navigation }: any) {
     Linking.openURL(`https://wa.me/${phone}?text=${encodeURIComponent(`مرحبا، أبي أستفسر عن: ${car.title.ar} - ${car.brand} ${car.model} ${car.year}`)}`);
   };
 
+  const shareMessage = [
+    `إعلان من تطبيق Q8 Sport Car`,
+    `${car.title.ar}`,
+    `${car.brand} ${car.model} ${car.year}`,
+    `السعر: ${car.price?.toLocaleString()} ${t('kwd')}`,
+    car.description?.ar || '',
+    'حمّل التطبيق وتابع المزيد من السيارات والقطع المميزة.',
+  ].filter(Boolean).join('\n');
+
   const specs = [
     { icon: '📅', label: t('year'), value: car.year },
     { icon: '🏷️', label: t('brand'), value: car.brand },
@@ -77,7 +88,7 @@ export default function CarDetailsScreen({ route, navigation }: any) {
     <View style={s.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Image Gallery */}
-        <View style={s.imageSection}>
+        <View style={[s.imageSection, { marginTop: insets.top + 52 }] }>
           <TouchableOpacity activeOpacity={0.95} onPress={() => setLightbox(true)}>
             {car.images?.[imgIndex] ? (
               <Image source={{ uri: car.images[imgIndex] }} style={s.mainImg} />
@@ -96,7 +107,7 @@ export default function CarDetailsScreen({ route, navigation }: any) {
 
           {/* Status badge */}
           <View style={[s.statusBadge, car.status === 'sold' ? s.soldBg : s.activeBg]}>
-            <Text style={[s.statusText, { color: car.status === 'sold' ? colors.primary : colors.green }]}>
+            <Text style={[s.statusText, { color: colors.white }]}> 
               {car.status === 'active' ? t('active') : t('sold')}
             </Text>
           </View>
@@ -170,29 +181,33 @@ export default function CarDetailsScreen({ route, navigation }: any) {
               <Text style={s.sellerName}>{car.userName}</Text>
               <Text style={s.sellerLabel}>المعلن • اضغط لعرض ملفه</Text>
             </View>
+            <TouchableOpacity style={s.sellerWhatsappBtn} activeOpacity={0.88} onPress={openWhatsApp}>
+              <Text style={s.sellerWhatsappIcon}>💬</Text>
+            </TouchableOpacity>
           </TouchableOpacity>
+
+          <View style={s.shareCard}>
+            <Text style={s.shareTitle}>شارك الإعلان</Text>
+            <Text style={s.shareSubtitle}>انشر السيارة في واتساب أو انستقرام أو تيكتوك أو سناب</Text>
+            <View style={s.shareGrid}>
+              <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => shareListing('whatsapp', shareMessage)}>
+                <Text style={s.shareChipText}>واتساب</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => shareListing('instagram', shareMessage)}>
+                <Text style={s.shareChipText}>انستقرام</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => shareListing('tiktok', shareMessage)}>
+                <Text style={s.shareChipText}>تيكتوك</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => shareListing('snapchat', shareMessage)}>
+                <Text style={s.shareChipText}>سناب</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </Animated.View>
 
-        <View style={{ height: tabBarHeight + 180 }} />
+        <View style={{ height: tabBarHeight + 36 }} />
       </ScrollView>
-
-      {/* Fixed Bottom CTA */}
-      <View style={s.bottomBar}>
-        <View style={[s.bottomGradient, { paddingBottom: tabBarHeight + 24 }]}>
-          <LinearGradient colors={[colors.dark + '00', colors.dark, colors.dark]} style={s.bottomGradientFill} />
-          <TouchableOpacity style={s.waButton} activeOpacity={0.85} onPress={openWhatsApp}>
-            <View style={s.waButtonGradient}>
-              <LinearGradient
-                colors={[colors.whatsapp, colors.whatsappDark]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={s.waButtonGradientFill}
-              />
-              <Text style={s.waButtonText}>💬 {t('contactWhatsapp')}</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-      </View>
 
       {/* Lightbox */}
       <Modal visible={lightbox} transparent animationType="fade">
@@ -276,7 +291,7 @@ const s = StyleSheet.create({
   sellerInfo: { flex: 1 },
   sellerName: { color: colors.white, fontSize: 17, fontWeight: '900', marginBottom: 4 },
   sellerLabel: { color: colors.silver, fontSize: 12 },
-  bottomBar: { position: 'absolute', left: 0, right: 0, bottom: 0 },
+  bottomBar: { position: 'absolute', left: 0, right: 0 },
   bottomGradient: { position: 'relative' },
   bottomGradientFill: { ...StyleSheet.absoluteFillObject },
   waButton: { marginHorizontal: spacing.xl, borderRadius: radius.xl, overflow: 'hidden' },
@@ -310,15 +325,22 @@ const s = StyleSheet.create({
   sellerInfo: { flex: 1 },
   sellerName: { color: colors.white, fontWeight: '700', fontSize: 15 },
   sellerLabel: { color: colors.silver, fontSize: 11, marginTop: 2 },
-
-  // Bottom Bar
-  bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0 },
-  bottomGradient: { paddingTop: 40, paddingHorizontal: spacing.xl },
-  bottomGradientFill: { ...StyleSheet.absoluteFillObject },
-  waButton: { borderRadius: radius.lg, overflow: 'hidden', ...shadows.card },
-  waButtonGradient: { paddingVertical: 18, alignItems: 'center', justifyContent: 'center', borderRadius: radius.lg },
-  waButtonGradientFill: { ...StyleSheet.absoluteFillObject },
-  waButtonText: { color: colors.white, fontWeight: '900', fontSize: 18 },
+  sellerWhatsappBtn: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: colors.whatsapp,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 12,
+  },
+  sellerWhatsappIcon: { color: colors.white, fontSize: 18 },
+  shareCard: { backgroundColor: colors.darkCard, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.metalBorder, padding: 16, marginTop: 16 },
+  shareTitle: { color: colors.white, fontSize: 16, fontWeight: '800', marginBottom: 6 },
+  shareSubtitle: { color: colors.silver, fontSize: 12, lineHeight: 20, marginBottom: 14 },
+  shareGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  shareChip: { minWidth: '47%', backgroundColor: colors.metal, borderRadius: radius.full, borderWidth: 1, borderColor: colors.metalBorder, paddingVertical: 12, paddingHorizontal: 14, alignItems: 'center' },
+  shareChipText: { color: colors.white, fontSize: 13, fontWeight: '800' },
 
   // Lightbox
   lightbox: { flex: 1, backgroundColor: 'rgba(0,0,0,0.97)', justifyContent: 'center', alignItems: 'center' },

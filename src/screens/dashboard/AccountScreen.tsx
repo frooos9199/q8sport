@@ -1,14 +1,22 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { Alert, View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useAuth } from '../../hooks/useAuth';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { t } from '../../i18n';
 
 export default function AccountScreen({ navigation }: any) {
-  const { user, logout } = useAuth();
+  const { user, logout, updateContactInfo } = useAuth();
+  const [phone, setPhone] = React.useState('');
+  const [whatsapp, setWhatsapp] = React.useState('');
+  const [saving, setSaving] = React.useState(false);
 
   if (!user) return null;
+
+  React.useEffect(() => {
+    setPhone(user.phone || '');
+    setWhatsapp(user.whatsapp || '');
+  }, [user.phone, user.whatsapp]);
 
   const navigateToTab = (tabName: string, params?: object) => {
     const parent = navigation?.getParent?.();
@@ -16,50 +24,75 @@ export default function AccountScreen({ navigation }: any) {
     else navigation.navigate(tabName, params);
   };
 
-  const menuItems = [
-    {
-      key: 'cars',
-      icon: '🏎️',
-      label: t('cars'),
-      desc: 'استكشف السيارات السبورت المعروضة الآن',
-      onPress: () => navigateToTab('CarsTab'),
-    },
-    {
-      key: 'parts',
-      icon: '⚙️',
-      label: t('parts'),
-      desc: 'ابحث عن القطع الجاهزة والنادرة',
-      onPress: () => navigateToTab('PartsTab'),
-    },
-    {
-      key: 'requests',
-      icon: '📋',
-      label: t('requests'),
-      desc: 'طلبات السوق المفتوحة والمطلوبات',
-      onPress: () => navigateToTab('RequestsTab'),
-    },
-    {
-      key: 'wanted',
-      icon: '🔥',
-      label: 'انشر مطلوب',
-      desc: 'خل السوق كله يشوف اللي تحتاجه',
-      onPress: () => navigateToTab('RequestsTab', { screen: 'CreateRequest' }),
-    },
-    {
-      key: 'publish',
-      icon: '➕',
-      label: 'أضف إعلان',
-      desc: 'نشر سيارة أو قطعة مباشرة بدون موافقات',
-      onPress: () => navigateToTab('AccountTab', { screen: 'CreateListingHub' }),
-    },
-    {
-      key: 'myListings',
-      icon: '🗂️',
-      label: 'إعلاناتي',
-      desc: 'إدارة كل سياراتك وقطعك ومطلوباتك',
-      onPress: () => navigation.navigate('MyListings'),
-    },
-  ];
+  const menuItems = user.isAdmin
+    ? [
+        {
+          key: 'adminListings',
+          icon: '🛡️',
+          label: 'إدارة السوق',
+          desc: 'إدارة كل السيارات والقطع والطلبات مع تعديل وحذف وتغيير الحالة',
+          onPress: () => navigation.navigate('MyListings', { adminView: true }),
+        },
+        {
+          key: 'publish',
+          icon: '➕',
+          label: 'مركز النشر',
+          desc: 'إضافة سيارة أو قطعة أو مطلوب جديد من مكان واحد',
+          onPress: () => navigateToTab('AccountTab', { screen: 'CreateListingHub' }),
+        },
+        {
+          key: 'userManagement',
+          icon: '👥',
+          label: 'إدارة المستخدمين',
+          desc: 'عرض كل الحسابات والبحث فيها ومنح أو سحب صلاحية الإدارة',
+          onPress: () => navigation.navigate('UserManagement'),
+        },
+      ]
+    : [
+        {
+          key: 'publish',
+          icon: '➕',
+          label: 'أضف إعلان',
+          desc: 'نشر سيارة أو قطعة جديدة مباشرة في السوق',
+          onPress: () => navigateToTab('AccountTab', { screen: 'CreateListingHub' }),
+        },
+        {
+          key: 'wanted',
+          icon: '🔥',
+          label: 'انشر مطلوب',
+          desc: 'أضف طلبك وخله ظاهر لكل السوق',
+          onPress: () => navigateToTab('RequestsTab', { screen: 'CreateRequest' }),
+        },
+        {
+          key: 'myListings',
+          icon: '🗂️',
+          label: 'إعلاناتي',
+          desc: 'إدارة كل سياراتك وقطعك ومطلوباتك',
+          onPress: () => navigation.navigate('MyListings'),
+        },
+      ];
+
+  const hasChanges = phone.trim() !== (user.phone || '').trim() || whatsapp.trim() !== (user.whatsapp || '').trim();
+
+  const saveContactInfo = async () => {
+    const phoneValue = phone.trim();
+    const whatsappValue = whatsapp.trim();
+
+    if (!phoneValue && !whatsappValue) {
+      Alert.alert('تنبيه', 'أدخل رقم الموبايل أو الواتساب على الأقل');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await updateContactInfo({ phone: phoneValue, whatsapp: whatsappValue });
+      Alert.alert('تم', 'تم تحديث بيانات التواصل');
+    } catch {
+      Alert.alert('خطأ', 'تعذر تحديث بيانات التواصل');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <ScrollView style={s.container} showsVerticalScrollIndicator={false}>
@@ -75,27 +108,43 @@ export default function AccountScreen({ navigation }: any) {
         <Text style={s.name}>{user.name}</Text>
         <Text style={s.email}>{user.email}</Text>
         <View style={s.marketBadge}>
-          <Text style={s.marketText}>KUWAIT SPORT MARKET</Text>
+          <Text style={s.marketText}>{user.isAdmin ? 'صلاحية إدارة كاملة' : 'KUWAIT SPORT MARKET'}</Text>
         </View>
       </View>
 
       {/* Info Card */}
       <View style={s.infoCard}>
-        <View style={s.infoRow}>
-          <View style={s.infoIconWrap}><Text style={s.infoIcon}>📱</Text></View>
-          <View style={s.infoContent}>
-            <Text style={s.infoLabel}>{t('phone')}</Text>
-            <Text style={s.infoValue}>{user.phone}</Text>
-          </View>
+        <View style={s.formField}>
+          <Text style={s.infoLabel}>{t('phone')}</Text>
+          <TextInput
+            value={phone}
+            onChangeText={setPhone}
+            style={s.input}
+            placeholder="اكتب رقم الموبايل"
+            placeholderTextColor={colors.silver + '66'}
+            keyboardType="phone-pad"
+          />
         </View>
         <View style={s.infoDivider} />
-        <View style={s.infoRow}>
-          <View style={s.infoIconWrap}><Text style={s.infoIcon}>💬</Text></View>
-          <View style={s.infoContent}>
-            <Text style={s.infoLabel}>{t('whatsapp')}</Text>
-            <Text style={s.infoValue}>{user.whatsapp}</Text>
-          </View>
+        <View style={s.formField}>
+          <Text style={s.infoLabel}>{t('whatsapp')}</Text>
+          <TextInput
+            value={whatsapp}
+            onChangeText={setWhatsapp}
+            style={s.input}
+            placeholder="اكتب رقم الواتساب"
+            placeholderTextColor={colors.silver + '66'}
+            keyboardType="phone-pad"
+          />
         </View>
+        <TouchableOpacity
+          style={[s.saveBtn, (!hasChanges || saving) && s.saveBtnDisabled]}
+          activeOpacity={0.85}
+          onPress={saveContactInfo}
+          disabled={!hasChanges || saving}
+        >
+          <Text style={s.saveBtnText}>{saving ? 'جاري الحفظ...' : 'حفظ بيانات التواصل'}</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Menu */}
@@ -139,13 +188,13 @@ const s = StyleSheet.create({
 
   // Info
   infoCard: { backgroundColor: colors.darkCard, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.metalBorder, padding: 18, marginBottom: 16 },
-  infoRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6 },
-  infoIconWrap: { width: 38, height: 38, borderRadius: 12, backgroundColor: colors.metal, justifyContent: 'center', alignItems: 'center', marginRight: 14 },
-  infoIcon: { fontSize: 16 },
-  infoContent: { flex: 1 },
+  formField: { paddingVertical: 6 },
   infoLabel: { color: colors.silver, fontSize: 11 },
-  infoValue: { color: colors.white, fontWeight: '700', fontSize: 15, marginTop: 2 },
+  input: { marginTop: 8, backgroundColor: colors.metal, borderWidth: 1, borderColor: colors.metalBorder, borderRadius: radius.lg, color: colors.white, fontSize: 15, paddingHorizontal: 14, paddingVertical: 14 },
   infoDivider: { height: 1, backgroundColor: colors.metalBorder, marginVertical: 12 },
+  saveBtn: { marginTop: 16, backgroundColor: colors.primaryGlow, borderWidth: 1, borderColor: colors.primaryBorder, borderRadius: radius.lg, paddingVertical: 14, alignItems: 'center' },
+  saveBtnDisabled: { opacity: 0.5 },
+  saveBtnText: { color: colors.primary, fontWeight: '900', fontSize: 14 },
 
   // Menu
   menuSection: { marginBottom: 20 },

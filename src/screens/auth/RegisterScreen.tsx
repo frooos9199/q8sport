@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView,
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
+import { AppleButton } from '@invertase/react-native-apple-authentication';
 import { useAuth } from '../../hooks/useAuth';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { t } from '../../i18n';
@@ -10,7 +11,7 @@ import { t } from '../../i18n';
 export default function RegisterScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
-  const { register } = useAuth();
+  const { register, signInWithApple } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -43,6 +44,21 @@ export default function RegisterScreen({ navigation }: any) {
       } else {
         Alert.alert('خطأ', code ? `حدث خطأ (${code})` : 'حدث خطأ، حاول مرة ثانية');
       }
+    }
+    setLoading(false);
+  };
+
+  const handleAppleRegister = async () => {
+    setLoading(true);
+    try {
+      await signInWithApple();
+    } catch (e: any) {
+      const code = typeof e?.code === 'string' ? e.code : '';
+      if (code === '1001' || code === 'ERR_CANCELED') {
+        setLoading(false);
+        return;
+      }
+      Alert.alert('خطأ', 'تعذر التسجيل بحساب Apple');
     }
     setLoading(false);
   };
@@ -103,6 +119,18 @@ export default function RegisterScreen({ navigation }: any) {
             </TouchableOpacity>
           </View>
 
+          {Platform.OS === 'ios' ? (
+            <View style={s.appleWrap}>
+              <AppleButton
+                buttonStyle={AppleButton.Style.WHITE}
+                buttonType={AppleButton.Type.SIGN_UP}
+                style={s.appleButton}
+                cornerRadius={radius.lg}
+                onPress={handleAppleRegister}
+              />
+            </View>
+          ) : null}
+
           <TouchableOpacity onPress={() => navigation.navigate('Login')} style={s.link}>
             <Text style={s.linkText}>{t('hasAccount')} <Text style={{ color: colors.primary, fontWeight: '700' }}>{t('login')}</Text></Text>
           </TouchableOpacity>
@@ -113,10 +141,22 @@ export default function RegisterScreen({ navigation }: any) {
 }
 
 function InputField({ icon, ...props }: any) {
+  const [hidden, setHidden] = useState(Boolean(props.secureTextEntry));
+
   return (
     <View style={s.inputWrap}>
       <Text style={s.inputIcon}>{icon}</Text>
-      <TextInput style={s.input} placeholderTextColor={colors.silver + '50'} {...props} />
+      <TextInput
+        style={s.input}
+        placeholderTextColor={colors.silver + '50'}
+        {...props}
+        secureTextEntry={props.secureTextEntry ? hidden : false}
+      />
+      {props.secureTextEntry ? (
+        <TouchableOpacity onPress={() => setHidden((current) => !current)} style={s.eyeButton}>
+          <Text style={s.eyeText}>{hidden ? '👁️' : '🙈'}</Text>
+        </TouchableOpacity>
+      ) : null}
     </View>
   );
 }
@@ -136,6 +176,8 @@ const s = StyleSheet.create({
   inputWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.metal, borderWidth: 1, borderColor: colors.metalBorder, borderRadius: radius.lg, paddingHorizontal: spacing.lg, marginBottom: 12 },
   inputIcon: { fontSize: 16, marginRight: 10 },
   input: { flex: 1, paddingVertical: 15, color: colors.white, fontSize: 15 },
+  eyeButton: { paddingLeft: 10, paddingVertical: 8 },
+  eyeText: { fontSize: 18 },
 
   checkRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12, paddingHorizontal: 4 },
   checkbox: { width: 22, height: 22, borderRadius: 7, borderWidth: 2, borderColor: colors.metalBorder, justifyContent: 'center', alignItems: 'center' },
@@ -148,6 +190,8 @@ const s = StyleSheet.create({
   btn: { paddingVertical: 18, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center', width: '100%' },
   btnFill: { ...StyleSheet.absoluteFillObject },
   btnText: { color: colors.white, fontWeight: '900', fontSize: 17 },
+  appleWrap: { marginTop: 12 },
+  appleButton: { width: '100%', height: 52 },
 
   link: { marginTop: 22, alignItems: 'center' },
   linkText: { color: colors.silver, fontSize: 13 },

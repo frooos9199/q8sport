@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Linking, Animated, RefreshControl } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Linking, Animated, RefreshControl, Image } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { db } from '../../lib/firebase';
-import { get, orderByChild, query, ref as dbRef } from '@react-native-firebase/database';
+import { orderByChild, query, ref as dbRef } from '@react-native-firebase/database';
+import { getDbSnapshot } from '../../lib/firebaseDatabase';
+import { sortListingsByFreshnessAndStatus } from '../../lib/listingSort';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { t } from '../../i18n';
 import { Request } from '../../types';
@@ -15,10 +17,10 @@ export default function RequestsScreen({ navigation }: any) {
   const fetchRequests = async () => {
     try {
       const requestsQuery = query(dbRef(db, 'requests'), orderByChild('createdAt'));
-      const snap = await get(requestsQuery);
+      const snap = await getDbSnapshot(requestsQuery, 'requests');
       const data: Request[] = [];
-      snap.forEach((child: any) => { data.unshift({ id: child.key, ...child.val() }); return undefined; });
-      setRequests(data);
+      snap.forEach((child: any) => { data.push({ id: child.key, ...child.val() }); return undefined; });
+      setRequests(sortListingsByFreshnessAndStatus(data));
     } catch (e) {
       console.log('Error:', e);
     }
@@ -62,6 +64,9 @@ function AnimatedRequestCard({ item, index, navigation }: { item: Request; index
 
   return (
     <Animated.View style={[s.card, { opacity: anim, transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }]}>
+      {item.images?.[0] ? (
+        <Image source={{ uri: item.images[0] }} style={s.cardImage} />
+      ) : null}
       <View style={s.cardHeader}>
         <View style={[s.badge, item.status === 'open' ? s.openBg : s.closedBg]}>
           <View style={[s.badgeDot, { backgroundColor: item.status === 'open' ? colors.green : colors.primary }]} />
@@ -107,6 +112,7 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark },
 
   card: { backgroundColor: colors.darkCard, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.metalBorder, padding: 18, marginBottom: 14, ...shadows.card },
+  cardImage: { width: '100%', height: 170, borderRadius: radius.lg, marginBottom: 14 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   badge: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 5, borderRadius: radius.full },
   openBg: { backgroundColor: colors.greenGlow },

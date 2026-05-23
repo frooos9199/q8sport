@@ -6,6 +6,9 @@ export interface User {
   email: string;
   phone: string;
   whatsapp: string;
+  isAdmin?: boolean;
+  disabled?: boolean;
+  deletedAt?: any;
   avatar?: string;
   createdAt: any;
 }
@@ -55,6 +58,7 @@ export interface Request {
   description: { ar: string; en: string };
   category: "car" | "part" | "other";
   budget?: number;
+  images?: string[];
   status: "open" | "closed";
   createdAt: any;
 }

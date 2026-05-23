@@ -2,7 +2,9 @@ import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Image, StyleSheet, TextInput, Linking, Animated, RefreshControl } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { db } from '../../lib/firebase';
-import { get, orderByChild, query, ref as dbRef } from '@react-native-firebase/database';
+import { orderByChild, query, ref as dbRef } from '@react-native-firebase/database';
+import { getDbSnapshot } from '../../lib/firebaseDatabase';
+import { sortListingsByFreshnessAndStatus } from '../../lib/listingSort';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { t } from '../../i18n';
 import { Part } from '../../types';
@@ -16,10 +18,10 @@ export default function PartsScreen({ navigation }: any) {
   const fetchParts = async () => {
     try {
       const partsQuery = query(dbRef(db, 'parts'), orderByChild('createdAt'));
-      const snap = await get(partsQuery);
+      const snap = await getDbSnapshot(partsQuery, 'parts');
       const data: Part[] = [];
-      snap.forEach((child: any) => { data.unshift({ id: child.key, ...child.val() }); return undefined; });
-      setParts(data);
+      snap.forEach((child: any) => { data.push({ id: child.key, ...child.val() }); return undefined; });
+      setParts(sortListingsByFreshnessAndStatus(data));
     } catch (e) {
       console.log('Error:', e);
     }
@@ -101,7 +103,10 @@ function AnimatedPartCard({ item, index, navigation }: any) {
             style={s.waBtn}
             onPress={() => Linking.openURL(`https://wa.me/${item.userWhatsapp?.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`مرحبا، أبي أستفسر عن: ${item.title?.ar}`)}`)}
           >
-            <Text style={s.waBtnText}>💬 تواصل</Text>
+            <View style={s.waIconWrap}>
+              <Text style={s.waBtnIcon}>💬</Text>
+            </View>
+            <Text style={s.waBtnText}>تواصل</Text>
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
@@ -128,8 +133,29 @@ const s = StyleSheet.create({
   info: { padding: 12 },
   title: { color: colors.white, fontWeight: '700', fontSize: 13, marginBottom: 6, lineHeight: 18 },
   price: { color: colors.primary, fontWeight: '900', fontSize: 16, marginBottom: 10 },
-  waBtn: { backgroundColor: colors.whatsapp, paddingVertical: 9, borderRadius: radius.sm, alignItems: 'center' },
-  waBtnText: { color: colors.white, fontWeight: '700', fontSize: 12 },
+  waBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: 'transparent',
+    paddingLeft: 6,
+    paddingRight: 12,
+    paddingVertical: 6,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: 'rgba(37, 211, 102, 0.35)',
+  },
+  waIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(37, 211, 102, 0.16)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  waBtnIcon: { fontSize: 15 },
+  waBtnText: { color: colors.white, fontWeight: '800', fontSize: 12 },
 
   emptyWrap: { alignItems: 'center', padding: 60 },
   emptyIcon: { fontSize: 50, marginBottom: 12 },

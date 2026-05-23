@@ -15,25 +15,46 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
   ) -> Bool {
-    // Initialize Firebase
     configureFirebaseIfNeeded()
-    
+    configureReactNativeFactoryIfNeeded()
+
+    return true
+  }
+
+  func application(
+    _ application: UIApplication,
+    configurationForConnecting connectingSceneSession: UISceneSession,
+    options: UIScene.ConnectionOptions
+  ) -> UISceneConfiguration {
+    let configuration = UISceneConfiguration(
+      name: "Default Configuration",
+      sessionRole: connectingSceneSession.role
+    )
+    configuration.delegateClass = SceneDelegate.self
+    return configuration
+  }
+
+  func attachReactNative(to window: UIWindow, launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) {
+    configureReactNativeFactoryIfNeeded()
+    self.window = window
+    reactNativeFactory?.startReactNative(
+      withModuleName: "Q8SportApp",
+      in: window,
+      launchOptions: launchOptions
+    )
+  }
+
+  private func configureReactNativeFactoryIfNeeded() {
+    if reactNativeFactory != nil {
+      return
+    }
+
     let delegate = ReactNativeDelegate()
     let factory = RCTReactNativeFactory(delegate: delegate)
     delegate.dependencyProvider = RCTAppDependencyProvider()
 
     reactNativeDelegate = delegate
     reactNativeFactory = factory
-
-    window = UIWindow(frame: UIScreen.main.bounds)
-
-    factory.startReactNative(
-      withModuleName: "Q8SportApp",
-      in: window,
-      launchOptions: launchOptions
-    )
-
-    return true
   }
 
   private func inferDefaultDatabaseURL(projectId: String?) -> String? {

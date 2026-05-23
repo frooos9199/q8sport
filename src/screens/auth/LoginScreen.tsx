@@ -4,6 +4,7 @@ import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import { getAuth, sendPasswordResetEmail } from '@react-native-firebase/auth';
+import { AppleButton } from '@invertase/react-native-apple-authentication';
 import { useAuth } from '../../hooks/useAuth';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { t } from '../../i18n';
@@ -11,9 +12,10 @@ import { t } from '../../i18n';
 export default function LoginScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
-  const { login } = useAuth();
+  const { login, signInWithApple } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resetting, setResetting] = useState(false);
 
@@ -22,8 +24,12 @@ export default function LoginScreen({ navigation }: any) {
     setLoading(true);
     try {
       await login(email, password);
-    } catch {
-      Alert.alert('خطأ', 'البريد أو كلمة المرور غير صحيحة');
+    } catch (e: any) {
+      if (e?.message === 'user-disabled-by-admin') {
+        Alert.alert('تم تعطيل الحساب', 'هذا الحساب موقوف من الإدارة حاليًا');
+      } else {
+        Alert.alert('خطأ', 'البريد أو كلمة المرور غير صحيحة');
+      }
     }
     setLoading(false);
   };
@@ -58,6 +64,25 @@ export default function LoginScreen({ navigation }: any) {
       }
     }
     setResetting(false);
+  };
+
+  const handleAppleSignIn = async () => {
+    setLoading(true);
+    try {
+      await signInWithApple();
+    } catch (e: any) {
+      const code = typeof e?.code === 'string' ? e.code : '';
+      if (code === '1001' || code === 'ERR_CANCELED') {
+        setLoading(false);
+        return;
+      }
+      if (e?.message === 'user-disabled-by-admin') {
+        Alert.alert('تم تعطيل الحساب', 'هذا الحساب موقوف من الإدارة حاليًا');
+      } else {
+        Alert.alert('خطأ', 'تعذر تسجيل الدخول بحساب Apple');
+      }
+    }
+    setLoading(false);
   };
 
   return (
@@ -109,8 +134,11 @@ export default function LoginScreen({ navigation }: any) {
               placeholderTextColor={colors.silver + '50'}
               value={password}
               onChangeText={setPassword}
-              secureTextEntry
+              secureTextEntry={!showPassword}
             />
+            <TouchableOpacity onPress={() => setShowPassword((current) => !current)} style={s.eyeButton}>
+              <Text style={s.eyeText}>{showPassword ? '🙈' : '👁️'}</Text>
+            </TouchableOpacity>
           </View>
 
           <View style={s.btnWrap}>
@@ -126,6 +154,18 @@ export default function LoginScreen({ navigation }: any) {
               </View>
             </TouchableOpacity>
           </View>
+
+          {Platform.OS === 'ios' ? (
+            <View style={s.appleWrap}>
+              <AppleButton
+                buttonStyle={AppleButton.Style.WHITE}
+                buttonType={AppleButton.Type.SIGN_IN}
+                style={s.appleButton}
+                cornerRadius={radius.lg}
+                onPress={handleAppleSignIn}
+              />
+            </View>
+          ) : null}
 
           <TouchableOpacity
             onPress={handleForgotPassword}
@@ -160,12 +200,16 @@ const s = StyleSheet.create({
   inputWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.metal, borderWidth: 1, borderColor: colors.metalBorder, borderRadius: radius.lg, paddingHorizontal: spacing.lg, marginBottom: 14 },
   inputIcon: { fontSize: 16, marginRight: 10 },
   input: { flex: 1, paddingVertical: 16, color: colors.white, fontSize: 15 },
+  eyeButton: { paddingLeft: 10, paddingVertical: 8 },
+  eyeText: { fontSize: 18 },
 
   btnWrap: { marginTop: 10, marginBottom: 4 },
   btnTouch: { borderRadius: radius.lg, overflow: 'hidden' },
   btn: { paddingVertical: 18, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center', width: '100%' },
   btnFill: { ...StyleSheet.absoluteFillObject },
   btnText: { color: colors.white, fontWeight: '900', fontSize: 17 },
+  appleWrap: { marginTop: 12 },
+  appleButton: { width: '100%', height: 52 },
 
   forgotLink: { marginTop: 14, alignItems: 'center' },
   forgotText: { color: colors.silver, fontSize: 13, textDecorationLine: 'underline' },

@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, Linking } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import { get, ref as dbRef } from '@react-native-firebase/database';
+import { ref as dbRef } from '@react-native-firebase/database';
 
 import { db } from '../../lib/firebase';
+import { getDbSnapshot } from '../../lib/firebaseDatabase';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { Part } from '../../types';
 import { t } from '../../i18n';
+import { shareListing } from '../../lib/shareListing';
 
 export default function PartDetailsScreen({ route, navigation }: any) {
   const { id } = route.params;
@@ -18,7 +20,7 @@ export default function PartDetailsScreen({ route, navigation }: any) {
 
     const run = async () => {
       try {
-        const snap = await get(dbRef(db, `parts/${id}`));
+        const snap = await getDbSnapshot(dbRef(db, `parts/${id}`), `parts/${id}`);
         if (mounted && snap.exists()) {
           setPart({ id: snap.key, ...snap.val() });
         }
@@ -55,6 +57,15 @@ export default function PartDetailsScreen({ route, navigation }: any) {
     const phone = part.userWhatsapp?.replace(/[^0-9]/g, '');
     Linking.openURL(`https://wa.me/${phone}?text=${encodeURIComponent(`مرحبا، عندي اهتمام بخصوص القطعة: ${part.title?.ar}`)}`);
   };
+
+  const shareMessage = [
+    `إعلان من تطبيق Q8 Sport Car`,
+    part.title?.ar || 'قطعة سبورت',
+    part.category || '',
+    `السعر: ${part.price?.toLocaleString()} ${t('kwd')}`,
+    part.description?.ar || '',
+    'حمّل التطبيق وتابع المزيد من القطع والسيارات المميزة.',
+  ].filter(Boolean).join('\n');
 
   return (
     <ScrollView style={s.container} contentContainerStyle={{ paddingBottom: 36 }} showsVerticalScrollIndicator={false}>
@@ -108,16 +119,34 @@ export default function PartDetailsScreen({ route, navigation }: any) {
           activeOpacity={0.88}
           onPress={() => navigation.navigate('SellerProfile', { sellerId: part.userId, sellerName: part.userName, sellerWhatsapp: part.userWhatsapp })}
         >
-          <Text style={s.sellerLabel}>البائع</Text>
-          <Text style={s.sellerName}>{part.userName}</Text>
-          <Text style={s.sellerHint}>تواصل مباشر بدون وسيط • اضغط لعرض الملف</Text>
+          <View style={s.sellerCopy}>
+            <Text style={s.sellerLabel}>البائع</Text>
+            <Text style={s.sellerName}>{part.userName}</Text>
+            <Text style={s.sellerHint}>تواصل مباشر بدون وسيط • اضغط لعرض الملف</Text>
+          </View>
+          <TouchableOpacity style={s.sellerWhatsappBtn} activeOpacity={0.88} onPress={contactSeller}>
+            <Text style={s.sellerWhatsappIcon}>💬</Text>
+          </TouchableOpacity>
         </TouchableOpacity>
 
-        <TouchableOpacity style={s.ctaButton} activeOpacity={0.88} onPress={contactSeller}>
-          <LinearGradient colors={[colors.whatsapp, colors.whatsappDark]} style={s.ctaFill}>
-            <Text style={s.ctaText}>💬 {t('contactWhatsapp')}</Text>
-          </LinearGradient>
-        </TouchableOpacity>
+        <View style={s.shareCard}>
+          <Text style={s.shareTitle}>شارك الإعلان</Text>
+          <Text style={s.shareSubtitle}>انشر القطعة في واتساب أو انستقرام أو تيكتوك أو سناب</Text>
+          <View style={s.shareGrid}>
+            <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => shareListing('whatsapp', shareMessage)}>
+              <Text style={s.shareChipText}>واتساب</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => shareListing('instagram', shareMessage)}>
+              <Text style={s.shareChipText}>انستقرام</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => shareListing('tiktok', shareMessage)}>
+              <Text style={s.shareChipText}>تيكتوك</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => shareListing('snapchat', shareMessage)}>
+              <Text style={s.shareChipText}>سناب</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
     </ScrollView>
   );
@@ -151,12 +180,25 @@ const s = StyleSheet.create({
   sectionTitle: { color: colors.white, fontWeight: '900', fontSize: 16, marginBottom: 10 },
   description: { color: colors.silverLight, fontSize: 14, lineHeight: 22 },
 
-  sellerCard: { backgroundColor: colors.darkCard, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.metalBorder, padding: 18, marginBottom: 16 },
+  sellerCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.darkCard, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.metalBorder, padding: 18, marginBottom: 16 },
+  sellerCopy: { flex: 1 },
   sellerLabel: { color: colors.silver, fontSize: 12, marginBottom: 6 },
   sellerName: { color: colors.white, fontWeight: '900', fontSize: 18, marginBottom: 4 },
   sellerHint: { color: colors.silverLight, fontSize: 12 },
-
-  ctaButton: { borderRadius: radius.lg, overflow: 'hidden' },
-  ctaFill: { alignItems: 'center', justifyContent: 'center', paddingVertical: 16 },
-  ctaText: { color: colors.white, fontWeight: '900', fontSize: 16 },
+  sellerWhatsappBtn: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: colors.whatsapp,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 12,
+  },
+  sellerWhatsappIcon: { color: colors.white, fontSize: 18 },
+  shareCard: { backgroundColor: colors.darkCard, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.metalBorder, padding: 18, marginBottom: 16, ...shadows.card },
+  shareTitle: { color: colors.white, fontSize: 16, fontWeight: '900', marginBottom: 6 },
+  shareSubtitle: { color: colors.silver, fontSize: 12, lineHeight: 20, marginBottom: 14 },
+  shareGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  shareChip: { width: '47%', backgroundColor: colors.metal, borderRadius: radius.full, borderWidth: 1, borderColor: colors.metalBorder, paddingVertical: 12, alignItems: 'center', justifyContent: 'center' },
+  shareChipText: { color: colors.white, fontSize: 13, fontWeight: '800' },
 });

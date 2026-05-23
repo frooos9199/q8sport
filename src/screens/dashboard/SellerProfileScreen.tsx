@@ -1,10 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { FlatList, Linking, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { get, ref as dbRef } from '@react-native-firebase/database';
+import { Alert, FlatList, Linking, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ref as dbRef, update } from '@react-native-firebase/database';
 
+import { useAuth } from '../../hooks/useAuth';
+import { deleteUserAccountFromMarketplace } from '../../lib/adminUserManagement';
 import { db } from '../../lib/firebase';
+import { getDbSnapshot } from '../../lib/firebaseDatabase';
+import { sortListingsByFreshnessAndStatus } from '../../lib/listingSort';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
-import { Car, Part, Request } from '../../types';
+import { Car, Part, Request, User } from '../../types';
 
 type SellerFeedItem =
   | { type: 'car'; item: Car }
@@ -12,18 +16,22 @@ type SellerFeedItem =
   | { type: 'request'; item: Request };
 
 export default function SellerProfileScreen({ route, navigation }: any) {
+  const { user } = useAuth();
   const { sellerId, sellerName, sellerWhatsapp } = route.params;
   const [cars, setCars] = useState<Car[]>([]);
   const [parts, setParts] = useState<Part[]>([]);
   const [requests, setRequests] = useState<Request[]>([]);
+  const [sellerUser, setSellerUser] = useState<User | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [updatingUser, setUpdatingUser] = useState(false);
 
   const loadSellerData = async () => {
-    const [carsSnap, partsSnap, requestsSnap] = await Promise.all([
-      get(dbRef(db, 'cars')),
-      get(dbRef(db, 'parts')),
-      get(dbRef(db, 'requests')),
+    const [carsSnap, partsSnap, requestsSnap, userSnap] = await Promise.all([
+      getDbSnapshot(dbRef(db, 'cars'), 'cars'),
+      getDbSnapshot(dbRef(db, 'parts'), 'parts'),
+      getDbSnapshot(dbRef(db, 'requests'), 'requests'),
+      getDbSnapshot(dbRef(db, `users/${sellerId}`), `users/${sellerId}`, { showAlert: false }),
     ]);
 
     const nextCars: Car[] = [];
@@ -32,25 +40,26 @@ export default function SellerProfileScreen({ route, navigation }: any) {
 
     carsSnap.forEach((child: any) => {
       const value = child.val();
-      if (value?.userId === sellerId) nextCars.unshift({ id: child.key, ...value });
+      if (value?.userId === sellerId) nextCars.push({ id: child.key, ...value });
       return undefined;
     });
 
     partsSnap.forEach((child: any) => {
       const value = child.val();
-      if (value?.userId === sellerId) nextParts.unshift({ id: child.key, ...value });
+      if (value?.userId === sellerId) nextParts.push({ id: child.key, ...value });
       return undefined;
     });
 
     requestsSnap.forEach((child: any) => {
       const value = child.val();
-      if (value?.userId === sellerId) nextRequests.unshift({ id: child.key, ...value });
+      if (value?.userId === sellerId) nextRequests.push({ id: child.key, ...value });
       return undefined;
     });
 
-    setCars(nextCars);
-    setParts(nextParts);
-    setRequests(nextRequests);
+    setCars(sortListingsByFreshnessAndStatus(nextCars));
+    setParts(sortListingsByFreshnessAndStatus(nextParts));
+    setRequests(sortListingsByFreshnessAndStatus(nextRequests));
+    setSellerUser(userSnap.exists() ? { uid: sellerId, ...userSnap.val() } : null);
   };
 
   useEffect(() => {
@@ -81,12 +90,114 @@ export default function SellerProfileScreen({ route, navigation }: any) {
     const carFeed = cars.map(item => ({ type: 'car' as const, item }));
     const partFeed = parts.map(item => ({ type: 'part' as const, item }));
     const requestFeed = requests.map(item => ({ type: 'request' as const, item }));
-    return [...carFeed, ...partFeed, ...requestFeed];
+    return [...carFeed, ...partFeed, ...requestFeed].sort((left, right) => {
+      const leftStatus = left.item?.status;
+      const rightStatus = right.item?.status;
+      if ((leftStatus === 'sold' || leftStatus === 'closed') !== (rightStatus === 'sold' || rightStatus === 'closed')) {
+        return leftStatus === 'sold' || leftStatus === 'closed' ? 1 : -1;
+      }
+
+      const leftTime = left.item?.updatedAt || left.item?.createdAt || 0;
+      const rightTime = right.item?.updatedAt || right.item?.createdAt || 0;
+      return String(rightTime).localeCompare(String(leftTime));
+    });
   }, [cars, parts, requests]);
 
   const openWhatsApp = () => {
-    const phone = String(sellerWhatsapp || '').replace(/[^0-9]/g, '');
+    const phone = String(sellerUser?.whatsapp || sellerUser?.phone || sellerWhatsapp || '').replace(/[^0-9]/g, '');
+    if (!phone) {
+      Alert.alert('تنبيه', 'لا يوجد رقم واتساب لهذا المستخدم');
+      return;
+    }
     Linking.openURL(`https://wa.me/${phone}?text=${encodeURIComponent(`مرحبا ${sellerName}، عندي اهتمام بمعروضاتك في Q8 Sport Market`)}`);
+  };
+
+  const isAdminViewer = Boolean(user?.isAdmin);
+  const isSelfProfile = user?.uid === sellerId;
+
+  const toggleSellerAdmin = async () => {
+    if (!sellerUser) return;
+    if (sellerUser.deletedAt) {
+      Alert.alert('تنبيه', 'هذا الحساب محذوف بالفعل');
+      return;
+    }
+    if (isSelfProfile) {
+      Alert.alert('تنبيه', 'ما تقدر تغير صلاحية إدارتك من هذه الصفحة');
+      return;
+    }
+
+    setUpdatingUser(true);
+    try {
+      await update(dbRef(db, `users/${sellerId}`), {
+        isAdmin: !sellerUser.isAdmin,
+        updatedAt: Date.now(),
+      });
+      await loadSellerData();
+    } catch (error: any) {
+      Alert.alert('خطأ', error?.message || 'تعذر تحديث صلاحية الإدارة');
+    } finally {
+      setUpdatingUser(false);
+    }
+  };
+
+  const toggleSellerDisabled = async () => {
+    if (!sellerUser) return;
+    if (sellerUser.deletedAt) {
+      Alert.alert('تنبيه', 'هذا الحساب محذوف بالفعل');
+      return;
+    }
+    if (isSelfProfile) {
+      Alert.alert('تنبيه', 'ما تقدر تعطل حسابك من هذه الصفحة');
+      return;
+    }
+
+    setUpdatingUser(true);
+    try {
+      await update(dbRef(db, `users/${sellerId}`), {
+        disabled: !sellerUser.disabled,
+        updatedAt: Date.now(),
+      });
+      await loadSellerData();
+    } catch (error: any) {
+      Alert.alert('خطأ', error?.message || 'تعذر تحديث حالة الحساب');
+    } finally {
+      setUpdatingUser(false);
+    }
+  };
+
+  const deleteSellerAccount = () => {
+    if (!sellerUser) return;
+    if (sellerUser.deletedAt) {
+      Alert.alert('تنبيه', 'هذا الحساب محذوف بالفعل');
+      return;
+    }
+    if (isSelfProfile) {
+      Alert.alert('تنبيه', 'ما تقدر حذف حسابك من هذه الصفحة');
+      return;
+    }
+
+    Alert.alert(
+      'حذف الحساب',
+      `سيتم حذف حساب ${sellerName} من السوق مع كل معروضاته وطلباته. هذا الإجراء نهائي.`,
+      [
+        { text: 'إلغاء', style: 'cancel' },
+        {
+          text: 'حذف الحساب',
+          style: 'destructive',
+          onPress: async () => {
+            setUpdatingUser(true);
+            try {
+              await deleteUserAccountFromMarketplace({ uid: sellerId, email: sellerUser.email });
+              await loadSellerData();
+            } catch (error: any) {
+              Alert.alert('خطأ', error?.message || 'تعذر حذف الحساب');
+            } finally {
+              setUpdatingUser(false);
+            }
+          },
+        },
+      ],
+    );
   };
 
   const goToListing = (entry: SellerFeedItem) => {
@@ -114,6 +225,14 @@ export default function SellerProfileScreen({ route, navigation }: any) {
             <Text style={s.name}>{sellerName}</Text>
             <Text style={s.handle}>معلن مباشر في السوق</Text>
 
+            {sellerUser ? (
+              <View style={s.badgesRow}>
+                {sellerUser.isAdmin ? <View style={s.adminBadge}><Text style={s.adminBadgeText}>مشرف</Text></View> : null}
+                {sellerUser.disabled ? <View style={s.disabledBadge}><Text style={s.disabledBadgeText}>الحساب معطل</Text></View> : null}
+                {sellerUser.deletedAt ? <View style={s.deletedBadge}><Text style={s.deletedBadgeText}>الحساب محذوف</Text></View> : null}
+              </View>
+            ) : null}
+
             <View style={s.statsRow}>
               <Stat label="سيارات" value={cars.length} />
               <Stat label="قطع" value={parts.length} />
@@ -129,6 +248,45 @@ export default function SellerProfileScreen({ route, navigation }: any) {
             <TouchableOpacity style={s.cta} activeOpacity={0.88} onPress={openWhatsApp}>
               <Text style={s.ctaText}>💬 تواصل مع المعلن</Text>
             </TouchableOpacity>
+
+            {isAdminViewer ? (
+              <View style={s.adminToolsCard}>
+                <Text style={s.adminToolsTitle}>أدوات الإدارة</Text>
+                <Text style={s.adminToolsSub}>تحكم بالحساب مباشرة من صفحة التفاصيل.</Text>
+                <View style={s.adminActionsRow}>
+                  <TouchableOpacity
+                    style={[s.deleteActionBtn, (updatingUser || isSelfProfile || Boolean(sellerUser?.deletedAt)) && s.adminActionDisabled]}
+                    activeOpacity={0.85}
+                    disabled={updatingUser || isSelfProfile || !sellerUser || Boolean(sellerUser?.deletedAt)}
+                    onPress={deleteSellerAccount}
+                  >
+                    <Text style={s.deleteActionText}>{updatingUser ? 'جاري التحديث...' : 'حذف الحساب'}</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[s.adminActionBtn, sellerUser?.disabled ? s.adminActionPrimary : s.adminActionMuted, (updatingUser || isSelfProfile) && s.adminActionDisabled]}
+                    activeOpacity={0.85}
+                    disabled={updatingUser || isSelfProfile || !sellerUser || Boolean(sellerUser?.deletedAt)}
+                    onPress={toggleSellerDisabled}
+                  >
+                    <Text style={[s.adminActionText, sellerUser?.disabled ? s.adminActionTextPrimary : s.adminActionTextMuted]}>
+                      {updatingUser ? 'جاري التحديث...' : sellerUser?.disabled ? 'تفعيل الحساب' : 'تعطيل الحساب'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[s.adminActionBtn, sellerUser?.isAdmin ? s.adminActionMuted : s.adminActionPrimary, (updatingUser || isSelfProfile) && s.adminActionDisabled]}
+                    activeOpacity={0.85}
+                    disabled={updatingUser || isSelfProfile || !sellerUser || Boolean(sellerUser?.deletedAt)}
+                    onPress={toggleSellerAdmin}
+                  >
+                    <Text style={[s.adminActionText, sellerUser?.isAdmin ? s.adminActionTextMuted : s.adminActionTextPrimary]}>
+                      {updatingUser ? 'جاري التحديث...' : sellerUser?.isAdmin ? 'سحب الإدارة' : 'منح الإدارة'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : null}
           </View>
 
           <View style={s.sectionHeader}>
@@ -192,6 +350,13 @@ const s = StyleSheet.create({
   avatarText: { color: colors.primary, fontSize: 28, fontWeight: '900' },
   name: { color: colors.white, fontSize: 24, fontWeight: '900', textAlign: 'center' },
   handle: { color: colors.silver, fontSize: 13, textAlign: 'center', marginTop: 6, marginBottom: 18 },
+  badgesRow: { flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 18 },
+  adminBadge: { backgroundColor: colors.primaryGlow, borderRadius: radius.full, borderWidth: 1, borderColor: colors.primaryBorder, paddingHorizontal: 12, paddingVertical: 5 },
+  adminBadgeText: { color: colors.primary, fontSize: 11, fontWeight: '900' },
+  disabledBadge: { backgroundColor: 'rgba(245, 158, 11, 0.16)', borderRadius: radius.full, paddingHorizontal: 12, paddingVertical: 5 },
+  disabledBadgeText: { color: colors.yellow, fontSize: 11, fontWeight: '900' },
+  deletedBadge: { backgroundColor: 'rgba(227, 30, 36, 0.16)', borderRadius: radius.full, paddingHorizontal: 12, paddingVertical: 5 },
+  deletedBadgeText: { color: colors.primary, fontSize: 11, fontWeight: '900' },
   statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16, gap: 10 },
   statItem: { flex: 1, backgroundColor: colors.metal, borderRadius: radius.lg, paddingVertical: 14, alignItems: 'center' },
   statValue: { color: colors.white, fontSize: 20, fontWeight: '900' },
@@ -201,6 +366,19 @@ const s = StyleSheet.create({
   trustLine: { color: colors.silverLight, fontSize: 13, lineHeight: 20, marginBottom: 4 },
   cta: { backgroundColor: colors.whatsapp, borderRadius: radius.xl, paddingVertical: 15, alignItems: 'center' },
   ctaText: { color: colors.white, fontWeight: '900', fontSize: 15 },
+  adminToolsCard: { backgroundColor: colors.metal, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.metalBorder, padding: 16, marginTop: 14 },
+  adminToolsTitle: { color: colors.white, fontSize: 15, fontWeight: '900' },
+  adminToolsSub: { color: colors.silver, fontSize: 12, marginTop: 4, marginBottom: 12 },
+  adminActionsRow: { flexDirection: 'row', gap: 10 },
+  adminActionBtn: { flex: 1, borderRadius: radius.lg, borderWidth: 1, paddingVertical: 13, alignItems: 'center' },
+  adminActionPrimary: { backgroundColor: colors.primaryGlow, borderColor: colors.primaryBorder },
+  adminActionMuted: { backgroundColor: colors.darkCard, borderColor: colors.metalBorder },
+  adminActionDisabled: { opacity: 0.5 },
+  adminActionText: { fontSize: 13, fontWeight: '900' },
+  adminActionTextPrimary: { color: colors.primary },
+  adminActionTextMuted: { color: colors.silverLight },
+  deleteActionBtn: { flex: 1, borderRadius: radius.lg, borderWidth: 1, paddingVertical: 13, alignItems: 'center', backgroundColor: 'rgba(227, 30, 36, 0.12)', borderColor: colors.primaryBorder },
+  deleteActionText: { color: colors.primary, fontSize: 13, fontWeight: '900' },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
   sectionTitle: { color: colors.white, fontSize: 18, fontWeight: '900' },
   sectionSub: { color: colors.silver, fontSize: 12 },

@@ -1,12 +1,14 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { get, ref as dbRef, remove } from '@react-native-firebase/database';
+import { ref as dbRef, remove, update } from '@react-native-firebase/database';
 
 import { useAuth } from '../../hooks/useAuth';
+import { getDbSnapshot } from '../../lib/firebaseDatabase';
 import { db } from '../../lib/firebase';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 
 type ListingType = 'car' | 'part' | 'request';
+type FilterType = 'all' | ListingType;
 
 type ListingRow = {
   id: string;
@@ -23,26 +25,41 @@ export default function MyListingsScreen({ navigation }: any) {
   const [items, setItems] = useState<ListingRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [filter, setFilter] = useState<FilterType>('all');
 
   const loadListings = useCallback(async () => {
     if (!user) return;
 
     const [carsSnap, partsSnap, requestsSnap] = await Promise.all([
-      get(dbRef(db, 'cars')),
-      get(dbRef(db, 'parts')),
-      get(dbRef(db, 'requests')),
+      getDbSnapshot(dbRef(db, 'cars'), 'cars'),
+      getDbSnapshot(dbRef(db, 'parts'), 'parts'),
+      getDbSnapshot(dbRef(db, 'requests'), 'requests'),
     ]);
 
     const nextItems: ListingRow[] = [];
+    const canManageAllListings = Boolean(user?.isAdmin);
+
+    const shouldIncludeListing = (ownerUserId?: string) => canManageAllListings || ownerUserId === user.uid;
+
+    const sellerLine = (value: any) => {
+      if (!canManageAllListings) {
+        return null;
+      }
+
+      const sellerName = value?.userName?.trim() || 'معلن غير معروف';
+      const sellerWhatsapp = value?.userWhatsapp?.trim();
+      return sellerWhatsapp ? `${sellerName} • ${sellerWhatsapp}` : sellerName;
+    };
 
     carsSnap.forEach((child: any) => {
       const value = child.val();
-      if (value?.userId === user.uid) {
+      if (shouldIncludeListing(value?.userId)) {
+        const seller = sellerLine(value);
         nextItems.push({
           id: child.key,
           type: 'car',
           title: value?.title?.ar || 'سيارة',
-          subtitle: [value?.brand, value?.model, value?.year].filter(Boolean).join(' • '),
+          subtitle: [value?.brand, value?.model, value?.year, seller].filter(Boolean).join(' • '),
           priceLine: value?.price ? `${Number(value.price).toLocaleString()} د.ك` : 'بدون سعر',
           status: value?.status || 'active',
           raw: value,
@@ -53,12 +70,13 @@ export default function MyListingsScreen({ navigation }: any) {
 
     partsSnap.forEach((child: any) => {
       const value = child.val();
-      if (value?.userId === user.uid) {
+      if (shouldIncludeListing(value?.userId)) {
+        const seller = sellerLine(value);
         nextItems.push({
           id: child.key,
           type: 'part',
           title: value?.title?.ar || 'قطعة',
-          subtitle: [value?.category, ...(value?.compatibleBrands || []).slice(0, 2)].filter(Boolean).join(' • '),
+          subtitle: [value?.category, ...(value?.compatibleBrands || []).slice(0, 2), seller].filter(Boolean).join(' • '),
           priceLine: value?.price ? `${Number(value.price).toLocaleString()} د.ك` : 'بدون سعر',
           status: value?.status || 'active',
           raw: value,
@@ -69,12 +87,15 @@ export default function MyListingsScreen({ navigation }: any) {
 
     requestsSnap.forEach((child: any) => {
       const value = child.val();
-      if (value?.userId === user.uid) {
+      if (shouldIncludeListing(value?.userId)) {
+        const seller = sellerLine(value);
         nextItems.push({
           id: child.key,
           type: 'request',
           title: value?.title?.ar || 'مطلوب',
-          subtitle: value?.category === 'car' ? 'طلب سيارة' : value?.category === 'part' ? 'طلب قطعة' : 'طلب خاص',
+          subtitle: [value?.category === 'car' ? 'طلب سيارة' : value?.category === 'part' ? 'طلب قطعة' : 'طلب خاص', seller]
+            .filter(Boolean)
+            .join(' • '),
           priceLine: value?.budget ? `${Number(value.budget).toLocaleString()} د.ك` : 'بدون ميزانية محددة',
           status: value?.status || 'open',
           raw: value,
@@ -152,6 +173,41 @@ export default function MyListingsScreen({ navigation }: any) {
     ]);
   };
 
+  const toggleListingStatus = async (item: ListingRow) => {
+    const path = item.type === 'car' ? `cars/${item.id}` : item.type === 'part' ? `parts/${item.id}` : `requests/${item.id}`;
+    const nextStatus = item.type === 'request'
+      ? item.status === 'open' ? 'closed' : 'open'
+      : item.status === 'sold' ? 'active' : 'sold';
+
+    try {
+      await update(dbRef(db, path), { status: nextStatus, updatedAt: Date.now() });
+      setItems(prev => prev.map(entry => (
+        entry.id === item.id && entry.type === item.type
+          ? { ...entry, status: nextStatus, raw: { ...entry.raw, status: nextStatus, updatedAt: Date.now() } }
+          : entry
+      )));
+    } catch (e: any) {
+      Alert.alert('خطأ', e?.message || 'تعذر تحديث حالة الإعلان');
+    }
+  };
+
+  const filteredItems = items.filter(item => filter === 'all' || item.type === filter);
+
+  const filterLabel = (value: FilterType) => {
+    if (value === 'car') return 'سيارات';
+    if (value === 'part') return 'قطع';
+    if (value === 'request') return 'طلبات';
+    return 'الكل';
+  };
+
+  const statusActionLabel = (item: ListingRow) => {
+    if (item.type === 'request') {
+      return item.status === 'open' ? 'إغلاق' : 'إعادة فتح';
+    }
+
+    return item.status === 'sold' ? 'تنشيط' : 'تعليم كمباع';
+  };
+
   if (loading) {
     return (
       <View style={s.center}>
@@ -163,20 +219,43 @@ export default function MyListingsScreen({ navigation }: any) {
   return (
     <FlatList
       style={s.container}
-      data={items}
+      data={filteredItems}
       keyExtractor={item => `${item.type}-${item.id}`}
       contentContainerStyle={{ padding: spacing.xl, paddingBottom: 40 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
       ListHeaderComponent={
-        <View style={s.heroCard}>
-          <Text style={s.heroTitle}>إعلاناتك في السوق</Text>
-          <Text style={s.heroSub}>من هنا تعدل أو تحذف أي سيارة أو قطعة أو مطلوب نزلته.</Text>
-        </View>
+        <>
+          <View style={s.heroCard}>
+            <Text style={s.heroTitle}>{user?.isAdmin ? 'إدارة كل الإعلانات' : 'إعلاناتك في السوق'}</Text>
+            <Text style={s.heroSub}>
+              {user?.isAdmin
+                ? 'بصفتك أدمن، تراجع وتعدل وتحذف وتغيّر حالة أي سيارة أو قطعة أو مطلوب في السوق.'
+                : 'من هنا تعدل أو تحذف أو تغيّر حالة أي سيارة أو قطعة أو مطلوب نزلته.'}
+            </Text>
+          </View>
+
+          <View style={s.filtersRow}>
+            {(['all', 'car', 'part', 'request'] as FilterType[]).map(value => (
+              <TouchableOpacity
+                key={value}
+                activeOpacity={0.85}
+                onPress={() => setFilter(value)}
+                style={[s.filterChip, filter === value && s.filterChipActive]}
+              >
+                <Text style={[s.filterChipText, filter === value && s.filterChipTextActive]}>{filterLabel(value)}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </>
       }
       ListEmptyComponent={
         <View style={s.centerCard}>
-          <Text style={s.emptyTitle}>ما عندك إعلانات للحين</Text>
-          <Text style={s.emptySub}>ابدأ بنشر أول سيارة أو قطعة أو مطلوب، وبعدها راح تظهر هنا كلها.</Text>
+          <Text style={s.emptyTitle}>{user?.isAdmin ? 'ما فيه عناصر على هذا الفلتر' : 'ما عندك عناصر على هذا الفلتر'}</Text>
+          <Text style={s.emptySub}>
+            {user?.isAdmin
+              ? 'جرّب تغيير الفلتر أو انتظر حتى يضاف إعلان جديد ليظهر هنا مباشرة.'
+              : 'ابدأ بنشر أول سيارة أو قطعة أو مطلوب، وبعدها راح تظهر هنا كلها.'}
+          </Text>
         </View>
       }
       renderItem={({ item }) => (
@@ -191,6 +270,9 @@ export default function MyListingsScreen({ navigation }: any) {
           <View style={s.actionsRow}>
             <TouchableOpacity style={s.editBtn} activeOpacity={0.85} onPress={() => editListing(item)}>
               <Text style={s.editText}>تعديل</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={s.statusBtn} activeOpacity={0.85} onPress={() => toggleListingStatus(item)}>
+              <Text style={s.statusBtnText}>{statusActionLabel(item)}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={s.deleteBtn} activeOpacity={0.85} onPress={() => deleteListing(item)}>
               <Text style={s.deleteText}>حذف</Text>
@@ -210,6 +292,11 @@ const s = StyleSheet.create({
   heroCard: { backgroundColor: colors.darkCard, borderRadius: radius.xxl, borderWidth: 1, borderColor: colors.primaryBorder, padding: 20, marginBottom: 16 },
   heroTitle: { color: colors.white, fontWeight: '900', fontSize: 22, marginBottom: 6 },
   heroSub: { color: colors.silverLight, fontSize: 13, lineHeight: 21 },
+  filtersRow: { flexDirection: 'row', gap: 10, marginBottom: 16, flexWrap: 'wrap' },
+  filterChip: { backgroundColor: colors.darkCard, borderRadius: radius.full, borderWidth: 1, borderColor: colors.metalBorder, paddingHorizontal: 14, paddingVertical: 9 },
+  filterChipActive: { borderColor: colors.primaryBorder, backgroundColor: colors.primaryGlow },
+  filterChipText: { color: colors.silverLight, fontSize: 12, fontWeight: '800' },
+  filterChipTextActive: { color: colors.primary },
   centerCard: { backgroundColor: colors.darkCard, borderRadius: radius.xxl, borderWidth: 1, borderColor: colors.metalBorder, padding: 22, alignItems: 'center' },
   emptyTitle: { color: colors.white, fontWeight: '900', fontSize: 18, marginBottom: 8 },
   emptySub: { color: colors.silver, fontSize: 13, textAlign: 'center', lineHeight: 21 },
@@ -224,6 +311,8 @@ const s = StyleSheet.create({
   actionsRow: { flexDirection: 'row', gap: 10 },
   editBtn: { flex: 1, backgroundColor: colors.metal, borderRadius: radius.lg, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: colors.metalBorder },
   editText: { color: colors.white, fontWeight: '800' },
+  statusBtn: { flex: 1, backgroundColor: colors.dark, borderRadius: radius.lg, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: colors.primaryBorder },
+  statusBtnText: { color: colors.primary, fontWeight: '900', fontSize: 12 },
   deleteBtn: { flex: 1, backgroundColor: colors.primaryGlow, borderRadius: radius.lg, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: colors.primaryBorder },
   deleteText: { color: colors.primary, fontWeight: '900' },
 });

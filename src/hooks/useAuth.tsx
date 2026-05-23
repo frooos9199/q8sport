@@ -1,17 +1,44 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { auth, db } from '../lib/firebase';
-import { get, ref as dbRef, serverTimestamp, set as dbSet } from '@react-native-firebase/database';
+import { ref as dbRef, serverTimestamp, set as dbSet, update } from '@react-native-firebase/database';
 import {
+  AppleAuthProvider,
   createUserWithEmailAndPassword,
   onAuthStateChanged,
+  signInWithCredential,
   signInWithEmailAndPassword,
   signOut,
   updateProfile,
 } from '@react-native-firebase/auth';
+import { appleAuth } from '@invertase/react-native-apple-authentication';
+import { getDbSnapshot, reportRealtimeDatabaseError } from '../lib/firebaseDatabase';
 import { User } from '../types';
 
 function normalizeEmail(email: string) {
   return (email || '').trim().toLowerCase();
+}
+
+const ADMIN_EMAILS = new Set(['summit_kw@hotmail.com']);
+
+function isAdminEmail(email?: string | null) {
+  return ADMIN_EMAILS.has(normalizeEmail(email || ''));
+}
+
+function buildFallbackUser(firebaseUser: any): User {
+  return {
+    uid: firebaseUser.uid,
+    name: firebaseUser.displayName || '',
+    email: normalizeEmail(firebaseUser.email || ''),
+    phone: '',
+    whatsapp: '',
+    isAdmin: isAdminEmail(firebaseUser.email),
+    disabled: false,
+    createdAt: serverTimestamp() as any,
+  };
+}
+
+async function readUserRecord(uid: string) {
+  return getDbSnapshot(dbRef(db, `users/${uid}`), `users/${uid}`, { showAlert: false });
 }
 
 type AuthContextType = {
@@ -20,6 +47,8 @@ type AuthContextType = {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (data: { email: string; password: string; name: string; phone: string; whatsapp: string }) => Promise<void>;
+  signInWithApple: () => Promise<void>;
+  updateContactInfo: (data: { phone: string; whatsapp: string }) => Promise<void>;
   logout: () => Promise<void>;
 };
 
@@ -47,18 +76,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       try {
-        const snap = await get(dbRef(db, `users/${u.uid}`));
+        const snap = await readUserRecord(u.uid);
         if (snap.exists()) {
-          setUser(snap.val() as User);
+          const existingUser = snap.val() as User;
+          if (existingUser.disabled) {
+            await signOut(auth as any);
+            setUser(null);
+            setLoading(false);
+            clearTimeout(safetyTimeout);
+            return;
+          }
+
+          setUser({
+            ...existingUser,
+            isAdmin: existingUser.isAdmin ?? isAdminEmail(existingUser.email || u.email || ''),
+            disabled: Boolean(existingUser.disabled),
+          });
         } else {
-          const fallback: User = {
-            uid: u.uid,
-            name: u.displayName || '',
-            email: normalizeEmail(u.email || ''),
-            phone: '',
-            whatsapp: '',
-            createdAt: serverTimestamp() as any,
-          };
+          const fallback = buildFallbackUser(u);
 
           // Best-effort: create missing user record so app screens can work.
           try {
@@ -69,8 +104,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           setUser(fallback);
         }
-      } catch {
-        setUser(null);
+      } catch (error) {
+        reportRealtimeDatabaseError(`users/${u.uid}`, error, false);
+        setUser(buildFallbackUser(u));
       } finally {
         setLoading(false);
         clearTimeout(safetyTimeout);
@@ -83,7 +119,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth as any, normalizeEmail(email), password);
+    const credential = await signInWithEmailAndPassword(auth as any, normalizeEmail(email), password);
+    const snap = await readUserRecord(credential.user.uid);
+    const existingUser = snap.exists() ? (snap.val() as Partial<User>) : null;
+
+    if (existingUser?.disabled) {
+      await signOut(auth as any);
+      throw new Error('user-disabled-by-admin');
+    }
+  };
+
+  const upsertUserRecord = async (
+    firebaseUser: any,
+    fallbackData?: { name?: string; email?: string },
+  ) => {
+    const userRef = dbRef(db, `users/${firebaseUser.uid}`);
+    const fallbackName = (fallbackData?.name || firebaseUser.displayName || '').trim();
+    const fallbackEmail = normalizeEmail(fallbackData?.email || firebaseUser.email || '');
+
+    let existingData: Partial<User> | null = null;
+
+    try {
+      const existingSnap = await getDbSnapshot(userRef, `users/${firebaseUser.uid}`, { showAlert: false });
+      existingData = existingSnap.exists() ? (existingSnap.val() as Partial<User>) : null;
+    } catch (error) {
+      reportRealtimeDatabaseError(`users/${firebaseUser.uid}`, error, false);
+    }
+
+    if (existingData?.disabled) {
+      await signOut(auth as any);
+      throw new Error('user-disabled-by-admin');
+    }
+
+    const userData: User = {
+      uid: firebaseUser.uid,
+      name: existingData?.name || fallbackName,
+      email: existingData?.email || fallbackEmail,
+      phone: existingData?.phone || '',
+      whatsapp: existingData?.whatsapp || '',
+      isAdmin: existingData?.isAdmin ?? isAdminEmail(existingData?.email || fallbackEmail),
+      disabled: Boolean(existingData?.disabled),
+      avatar: existingData?.avatar,
+      createdAt: existingData?.createdAt || (serverTimestamp() as any),
+    };
+
+    try {
+      await dbSet(userRef, userData);
+    } catch (error) {
+      reportRealtimeDatabaseError(`users/${firebaseUser.uid}`, error, false);
+    }
+
+    setUser(userData);
   };
 
   const register = async (data: { email: string; password: string; name: string; phone: string; whatsapp: string }) => {
@@ -102,10 +188,77 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email: normalizedEmail,
       phone: data.phone,
       whatsapp: data.whatsapp,
+      isAdmin: isAdminEmail(normalizedEmail),
       createdAt: serverTimestamp() as any,
     };
-    await dbSet(dbRef(db, `users/${cred.user.uid}`), userData);
+
+    try {
+      await dbSet(dbRef(db, `users/${cred.user.uid}`), userData);
+    } catch (error) {
+      reportRealtimeDatabaseError(`users/${cred.user.uid}`, error, false);
+    }
+
     setUser(userData);
+  };
+
+  const signInWithApple = async () => {
+    const appleResponse = await appleAuth.performRequest({
+      requestedOperation: appleAuth.Operation.LOGIN,
+      requestedScopes: [appleAuth.Scope.FULL_NAME, appleAuth.Scope.EMAIL],
+    });
+
+    if (!appleResponse.identityToken) {
+      throw new Error('apple-auth-no-token');
+    }
+
+    const credential = AppleAuthProvider.credential(appleResponse.identityToken, appleResponse.nonce);
+    const result = await signInWithCredential(auth as any, credential as any);
+
+    const fullName = [appleResponse.fullName?.givenName, appleResponse.fullName?.familyName]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+
+    if (fullName && !result.user.displayName) {
+      try {
+        await updateProfile(result.user as any, { displayName: fullName });
+      } catch {
+        // Ignore non-fatal profile sync issues.
+      }
+    }
+
+    await upsertUserRecord(result.user, {
+      name: fullName,
+      email: appleResponse.email || result.user.email || '',
+    });
+  };
+
+  const updateContactInfo = async (data: { phone: string; whatsapp: string }) => {
+    if (!user) {
+      throw new Error('user-not-found');
+    }
+
+    const sanitizedPhone = data.phone.trim();
+    const sanitizedWhatsapp = data.whatsapp.trim();
+
+    const nextUser: User = {
+      ...user,
+      phone: sanitizedPhone,
+      whatsapp: sanitizedWhatsapp,
+    };
+
+    try {
+      await update(dbRef(db, `users/${user.uid}`), {
+        phone: sanitizedPhone,
+        whatsapp: sanitizedWhatsapp,
+        updatedAt: Date.now(),
+      });
+    } catch (error) {
+      reportRealtimeDatabaseError(`users/${user.uid}`, error, false);
+      throw error;
+    }
+
+    setUser(nextUser);
   };
 
   const logout = async () => {
@@ -114,7 +267,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, fbUser, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, fbUser, loading, login, register, signInWithApple, updateContactInfo, logout }}>
       {children}
     </AuthContext.Provider>
   );

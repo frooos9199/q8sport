@@ -4,7 +4,9 @@ import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import { db } from '../lib/firebase';
-import { get, limitToLast, orderByChild, query, ref as dbRef } from '@react-native-firebase/database';
+import { limitToLast, orderByChild, query, ref as dbRef } from '@react-native-firebase/database';
+import { getDbSnapshot } from '../lib/firebaseDatabase';
+import { sortListingsByFreshnessAndStatus } from '../lib/listingSort';
 import { colors, radius, shadows, spacing } from '../lib/theme';
 import { t } from '../i18n';
 import { Car, Part, Request } from '../types';
@@ -26,23 +28,23 @@ export default function HomeScreen({ navigation }: any) {
 
   const fetchData = async () => {
     try {
-      const carsQuery = query(dbRef(db, 'cars'), orderByChild('createdAt'), limitToLast(8));
-      const partsQuery = query(dbRef(db, 'parts'), orderByChild('createdAt'), limitToLast(6));
-      const requestsQuery = query(dbRef(db, 'requests'), orderByChild('createdAt'), limitToLast(4));
+      const carsQuery = query(dbRef(db, 'cars'), orderByChild('createdAt'));
+      const partsQuery = query(dbRef(db, 'parts'), orderByChild('createdAt'));
+      const requestsQuery = query(dbRef(db, 'requests'), orderByChild('createdAt'));
       const [carsSnap, partsSnap, requestsSnap] = await Promise.all([
-        get(carsQuery),
-        get(partsQuery),
-        get(requestsQuery),
+        getDbSnapshot(carsQuery, 'cars'),
+        getDbSnapshot(partsQuery, 'parts'),
+        getDbSnapshot(requestsQuery, 'requests'),
       ]);
       const carsData: Car[] = [];
-      carsSnap.forEach((child: any) => { carsData.unshift({ id: child.key, ...child.val() }); return undefined; });
+      carsSnap.forEach((child: any) => { carsData.push({ id: child.key, ...child.val() }); return undefined; });
       const partsData: Part[] = [];
-      partsSnap.forEach((child: any) => { partsData.unshift({ id: child.key, ...child.val() }); return undefined; });
+      partsSnap.forEach((child: any) => { partsData.push({ id: child.key, ...child.val() }); return undefined; });
       const requestsData: Request[] = [];
-      requestsSnap.forEach((child: any) => { requestsData.unshift({ id: child.key, ...child.val() }); return undefined; });
-      setCars(carsData);
-      setParts(partsData);
-      setRequests(requestsData);
+      requestsSnap.forEach((child: any) => { requestsData.push({ id: child.key, ...child.val() }); return undefined; });
+      setCars(sortListingsByFreshnessAndStatus(carsData).slice(0, 8));
+      setParts(sortListingsByFreshnessAndStatus(partsData).slice(0, 6));
+      setRequests(sortListingsByFreshnessAndStatus(requestsData).slice(0, 4));
     } catch (e) {
       console.log('Fetch error:', e);
     }
@@ -115,39 +117,7 @@ export default function HomeScreen({ navigation }: any) {
       showsVerticalScrollIndicator={false}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
     >
-      {/* Hero Section */}
       <Animated.View style={[s.hero, { paddingTop: insets.top + 24, opacity: heroAnim, transform: [{ translateY: heroAnim.interpolate({ inputRange: [0, 1], outputRange: [-20, 0] }) }] }]}>
-        <LinearGradient colors={['rgba(227,30,36,0.08)', 'transparent']} style={s.heroGlow} />
-        <View style={s.logoWrap}>
-          <Text style={s.logoQ8}>Q8</Text>
-          <Text style={s.logoSport}>SPORT MARKET</Text>
-        </View>
-        <View style={s.heroLine} />
-        <Text style={s.heroTitle}>{t('hero')}</Text>
-        <Text style={s.heroSub}>{t('heroSub')}</Text>
-
-        <View style={s.heroPitchCard}>
-          <Text style={s.heroPitchTitle}>سوق سريع يطلع بين الشباب</Text>
-          <Text style={s.heroPitchText}>المعروضات والمطلوبات في مكان واحد. إذا أحد يبي مكينة فورد أو رنجات AMG أو سيارة كاملة، يكتب المطلوب ويبدأ التفاعل مباشرة.</Text>
-        </View>
-
-        <View style={s.statsRow}>
-          <View style={s.statItem}>
-            <Text style={s.statNum}>{cars.length}+</Text>
-            <Text style={s.statLabel}>{t('cars')}</Text>
-          </View>
-          <View style={s.statDivider} />
-          <View style={s.statItem}>
-            <Text style={s.statNum}>{parts.length}+</Text>
-            <Text style={s.statLabel}>{t('parts')}</Text>
-          </View>
-          <View style={s.statDivider} />
-          <View style={s.statItem}>
-            <Text style={s.statNum}>{requests.length}+</Text>
-            <Text style={s.statLabel}>مطلوب</Text>
-          </View>
-        </View>
-
         <View style={s.heroBtns}>
           <TouchableOpacity style={s.btnPrimary} activeOpacity={0.85} onPress={() => navigation.navigate('CarsTab')}>
             <View style={s.btnGradient}>
@@ -296,25 +266,7 @@ export default function HomeScreen({ navigation }: any) {
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark },
 
-  // Hero
-  hero: { paddingBottom: 30, paddingHorizontal: spacing.xl, alignItems: 'center' },
-  heroGlow: { position: 'absolute', top: 0, left: 0, right: 0, height: 200, borderBottomLeftRadius: 100, borderBottomRightRadius: 100 },
-  logoWrap: { flexDirection: 'row', alignItems: 'baseline', gap: 8, marginBottom: 4 },
-  logoQ8: { fontSize: 42, fontWeight: '900', color: colors.primary },
-  logoSport: { fontSize: 20, fontWeight: '800', color: colors.white, letterSpacing: 2 },
-  heroLine: { width: 50, height: 3, backgroundColor: colors.primary, borderRadius: 2, marginVertical: 18 },
-  heroTitle: { fontSize: 24, fontWeight: '900', color: colors.white, textAlign: 'center', marginBottom: 8, lineHeight: 34 },
-  heroSub: { fontSize: 14, color: colors.silver, textAlign: 'center', marginBottom: 24, lineHeight: 22 },
-  heroPitchCard: { width: '100%', backgroundColor: colors.darkCard, borderWidth: 1, borderColor: colors.primaryBorder, borderRadius: radius.xl, padding: 18, marginBottom: 20 },
-  heroPitchTitle: { color: colors.white, fontWeight: '900', fontSize: 16, marginBottom: 8, textAlign: 'center' },
-  heroPitchText: { color: colors.silverLight, lineHeight: 22, textAlign: 'center', fontSize: 13 },
-
-  statsRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.darkCard, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.metalBorder, paddingVertical: 16, paddingHorizontal: 24, marginBottom: 24, gap: 20 },
-  statItem: { alignItems: 'center' },
-  statNum: { color: colors.primary, fontSize: 20, fontWeight: '900' },
-  statLabel: { color: colors.silver, fontSize: 11, marginTop: 2 },
-  statDivider: { width: 1, height: 30, backgroundColor: colors.metalBorder },
-
+  hero: { paddingBottom: 8, paddingHorizontal: spacing.xl, alignItems: 'stretch' },
   heroBtns: { flexDirection: 'column', gap: 12, width: '100%', alignItems: 'stretch' },
   btnPrimary: { width: '100%', borderRadius: radius.lg, overflow: 'hidden', ...shadows.glow },
   btnGradient: { width: '100%', paddingVertical: 16, paddingHorizontal: spacing.lg, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center' },

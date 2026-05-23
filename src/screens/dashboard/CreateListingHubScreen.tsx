@@ -36,7 +36,7 @@ export default function CreateListingHubScreen({ navigation }: any) {
     <ScrollView style={s.container} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
       <View style={s.heroCard}>
         <Text style={s.heroTitle}>ابدأ النشر</Text>
-        <Text style={s.heroSub}>كل المحتوى ينزل مباشرة للمستخدمين. بدون مراجعات إدارية ولا انتظار.</Text>
+        <Text style={s.heroSub}>اختر نوع الإعلان وأضفه مباشرة للسوق، مع إمكانية إدارته لاحقاً من حسابك أو من لوحة الأدمن.</Text>
       </View>
 
       {cards.map(card => (

@@ -38,6 +38,11 @@ cp .env.local.example .env.local
 - `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
 - `NEXT_PUBLIC_FIREBASE_DATABASE_URL`
 - `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
+- `FIREBASE_PROJECT_ID`
+- `FIREBASE_DATABASE_URL`
+- `FIREBASE_ADMIN_CLIENT_EMAIL`
+- `FIREBASE_ADMIN_PRIVATE_KEY`
+- `ADMIN_API_TOKEN`
 
 إذا لم تضبط `NEXT_PUBLIC_FIREBASE_DATABASE_URL` فالموقع سيحاول افتراض المسار الافتراضي بالشكل التالي:
 
@@ -81,3 +86,32 @@ https://<project-id>-default-rtdb.firebaseio.com
 ## Production
 
 راجع [DEPLOYMENT.md](DEPLOYMENT.md) لإعدادات Vercel والدومين وقواعد Firebase المطلوبة للإنتاج.
+
+## حذف مستخدم نهائيًا من Firebase Auth
+
+تم تجهيز مسار خادمي لهذا الغرض داخل:
+
+- `src/app/api/admin/delete-user/route.ts`
+
+المسار يتطلب:
+
+- `FIREBASE_ADMIN_CLIENT_EMAIL`
+- `FIREBASE_ADMIN_PRIVATE_KEY`
+- `FIREBASE_PROJECT_ID`
+- `FIREBASE_DATABASE_URL`
+- `ADMIN_API_TOKEN`
+
+ويرسل طلب `POST` بهذا الشكل:
+
+```bash
+curl -X POST http://localhost:3000/api/admin/delete-user \
+	-H 'content-type: application/json' \
+	-H 'x-admin-token: YOUR_ADMIN_API_TOKEN' \
+	-d '{"uid":"USER_UID"}'
+```
+
+هذا المسار يقوم بـ:
+
+- حذف المستخدم من Firebase Authentication
+- حذف سياراته وقطعه وطلباته من Realtime Database
+- تحويل سجل المستخدم إلى حساب محذوف داخل `users/{uid}`

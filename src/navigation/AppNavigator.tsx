@@ -1,4 +1,5 @@
 import React from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
@@ -21,10 +22,13 @@ import SellerProfileScreen from '../screens/dashboard/SellerProfileScreen';
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import AccountScreen from '../screens/dashboard/AccountScreen';
+import UserManagementScreen from '../screens/dashboard/UserManagementScreen';
 import IntroSplashScreen from '../screens/IntroSplashScreen';
+import LaunchNoticeScreen from '../screens/LaunchNoticeScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+const LAUNCH_NOTICE_ACCEPTED_KEY = 'launch-notice-accepted-v1';
 
 const screenOptions = {
   headerStyle: { backgroundColor: colors.dark },
@@ -34,10 +38,51 @@ const screenOptions = {
   headerShadowVisible: false,
 };
 
+function BrandHeaderTitle() {
+  return (
+    <View style={tabStyles.brandWrap}>
+      <View style={tabStyles.brandRow}>
+        <Text style={tabStyles.brandQ8}>Q8</Text>
+        <Text style={tabStyles.brandSport}>sport</Text>
+        <Text style={tabStyles.brandCar}>Car</Text>
+      </View>
+      <View style={tabStyles.brandAccent} />
+    </View>
+  );
+}
+
+function CreateHeaderButton({ navigation }: { navigation: any }) {
+  const { user } = useAuth();
+
+  const onPress = () => {
+    const parentNavigation = navigation.getParent();
+
+    if (!user) {
+      parentNavigation?.navigate('AccountTab');
+      return;
+    }
+
+    parentNavigation?.navigate('HomeTab', { screen: 'CreateListingHub' });
+  };
+
+  return (
+    <TouchableOpacity activeOpacity={0.85} onPress={onPress} style={tabStyles.headerAddBtn}>
+      <Text style={tabStyles.headerAddIcon}>+</Text>
+    </TouchableOpacity>
+  );
+}
+
 function HomeStack() {
   return (
     <Stack.Navigator id="home-stack" screenOptions={screenOptions}>
-      <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'Q8 Sport Market' }} />
+      <Stack.Screen
+        name="Home"
+        component={HomeScreen}
+        options={({ navigation }) => ({
+          headerTitle: () => <BrandHeaderTitle />,
+          headerRight: () => <CreateHeaderButton navigation={navigation} />,
+        })}
+      />
       <Stack.Screen name="CarDetails" component={CarDetailsScreen} options={{ title: t('details'), headerTransparent: true, headerTitle: '' }} />
       <Stack.Screen name="PartDetails" component={PartDetailsScreen} options={{ title: t('details') }} />
       <Stack.Screen name="SellerProfile" component={SellerProfileScreen} options={{ title: 'ملف المعلن' }} />
@@ -52,7 +97,14 @@ function HomeStack() {
 function CarsStack() {
   return (
     <Stack.Navigator id="cars-stack" screenOptions={screenOptions}>
-      <Stack.Screen name="Cars" component={CarsScreen} options={{ title: `🏎️ ${t('cars')}` }} />
+      <Stack.Screen
+        name="Cars"
+        component={CarsScreen}
+        options={({ navigation }) => ({
+          title: `🏎️ ${t('cars')}`,
+          headerRight: () => <CreateHeaderButton navigation={navigation} />,
+        })}
+      />
       <Stack.Screen name="CarDetails" component={CarDetailsScreen} options={{ title: t('details'), headerTransparent: true, headerTitle: '' }} />
       <Stack.Screen name="SellerProfile" component={SellerProfileScreen} options={{ title: 'ملف المعلن' }} />
       <Stack.Screen name="CreateCar" component={CreateCarScreen} options={{ title: 'أضف سيارة' }} />
@@ -63,7 +115,14 @@ function CarsStack() {
 function PartsStack() {
   return (
     <Stack.Navigator id="parts-stack" screenOptions={screenOptions}>
-      <Stack.Screen name="Parts" component={PartsScreen} options={{ title: `⚙️ ${t('parts')}` }} />
+      <Stack.Screen
+        name="Parts"
+        component={PartsScreen}
+        options={({ navigation }) => ({
+          title: `⚙️ ${t('parts')}`,
+          headerRight: () => <CreateHeaderButton navigation={navigation} />,
+        })}
+      />
       <Stack.Screen name="PartDetails" component={PartDetailsScreen} options={{ title: t('details') }} />
       <Stack.Screen name="SellerProfile" component={SellerProfileScreen} options={{ title: 'ملف المعلن' }} />
       <Stack.Screen name="CreatePart" component={CreatePartScreen} options={{ title: 'أضف قطعة' }} />
@@ -74,27 +133,19 @@ function PartsStack() {
 function RequestsStack() {
   return (
     <Stack.Navigator id="requests-stack" screenOptions={screenOptions}>
-      <Stack.Screen name="Requests" component={RequestsScreen} options={{ title: `📋 ${t('requests')}` }} />
+      <Stack.Screen
+        name="Requests"
+        component={RequestsScreen}
+        options={({ navigation }) => ({
+          title: `📋 ${t('requests')}`,
+          headerRight: () => <CreateHeaderButton navigation={navigation} />,
+        })}
+      />
       <Stack.Screen name="SellerProfile" component={SellerProfileScreen} options={{ title: 'ملف المعلن' }} />
       <Stack.Screen name="CreateRequest" component={CreateRequestScreen} options={{ title: 'إنشاء طلب' }} />
       <Stack.Screen name="CreateListingHub" component={CreateListingHubScreen} options={{ title: 'وش تبي تنشر؟' }} />
     </Stack.Navigator>
   );
-}
-
-function AddTabButton({ onPress }: { onPress: () => void }) {
-  return (
-    <TouchableOpacity activeOpacity={0.9} onPress={onPress} style={tabStyles.addWrap}>
-      <View style={tabStyles.addBtn}>
-        <Text style={tabStyles.addPlus}>+</Text>
-      </View>
-      <Text style={tabStyles.addLabel}>إضافة</Text>
-    </TouchableOpacity>
-  );
-}
-
-function EmptyScreen() {
-  return <View style={{ flex: 1, backgroundColor: colors.dark }} />;
 }
 
 function AuthStack() {
@@ -109,8 +160,21 @@ function AuthStack() {
 function AccountStack() {
   return (
     <Stack.Navigator id="account-stack" screenOptions={screenOptions}>
-      <Stack.Screen name="Account" component={AccountScreen} options={{ title: t('myAccount') }} />
-      <Stack.Screen name="MyListings" component={MyListingsScreen} options={{ title: 'إعلاناتي' }} />
+      <Stack.Screen
+        name="Account"
+        component={AccountScreen}
+        options={({ navigation }) => ({
+          title: t('myAccount'),
+          headerRight: () => <CreateHeaderButton navigation={navigation} />,
+        })}
+      />
+      <Stack.Screen
+        name="MyListings"
+        component={MyListingsScreen}
+        options={({ route }: any) => ({ title: route?.params?.adminView ? 'إدارة السوق' : 'إعلاناتي' })}
+      />
+      <Stack.Screen name="UserManagement" component={UserManagementScreen} options={{ title: 'إدارة المستخدمين' }} />
+      <Stack.Screen name="SellerProfile" component={SellerProfileScreen} options={{ title: 'تفاصيل المستخدم' }} />
       <Stack.Screen name="CreateListingHub" component={CreateListingHubScreen} options={{ title: 'وش تبي تنشر؟' }} />
       <Stack.Screen name="CreateCar" component={CreateCarScreen} options={{ title: 'أضف سيارة' }} />
       <Stack.Screen name="CreatePart" component={CreatePartScreen} options={{ title: 'أضف قطعة' }} />
@@ -131,8 +195,47 @@ function TabIcon({ icon, focused }: { icon: string; focused: boolean }) {
 export default function AppNavigator() {
   const { user, loading } = useAuth();
   const [showIntro, setShowIntro] = React.useState(true);
+  const [showLaunchNotice, setShowLaunchNotice] = React.useState(false);
+  const [launchNoticeReady, setLaunchNoticeReady] = React.useState(false);
 
-  if (loading) {
+  React.useEffect(() => {
+    let mounted = true;
+
+    const loadLaunchNoticeState = async () => {
+      try {
+        const accepted = await AsyncStorage.getItem(LAUNCH_NOTICE_ACCEPTED_KEY);
+        if (!mounted) {
+          return;
+        }
+
+        setShowLaunchNotice(accepted !== 'true');
+      } catch {
+        if (mounted) {
+          setShowLaunchNotice(true);
+        }
+      } finally {
+        if (mounted) {
+          setLaunchNoticeReady(true);
+        }
+      }
+    };
+
+    loadLaunchNoticeState();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const handleLaunchNoticeAgree = React.useCallback(async () => {
+    try {
+      await AsyncStorage.setItem(LAUNCH_NOTICE_ACCEPTED_KEY, 'true');
+    } finally {
+      setShowLaunchNotice(false);
+    }
+  }, []);
+
+  if (loading || !launchNoticeReady) {
     return (
       <View style={tabStyles.splash}>
         <Text style={tabStyles.splashQ8}>Q8</Text>
@@ -144,6 +247,10 @@ export default function AppNavigator() {
 
   if (showIntro) {
     return <IntroSplashScreen onDone={() => setShowIntro(false)} />;
+  }
+
+  if (showLaunchNotice) {
+    return <LaunchNoticeScreen onAgree={handleLaunchNoticeAgree} />;
   }
 
   return (
@@ -168,31 +275,6 @@ export default function AppNavigator() {
       <Tab.Screen name="HomeTab" component={HomeStack} options={{ tabBarLabel: t('home'), tabBarIcon: ({ focused }) => <TabIcon icon="🔥" focused={focused} /> }} />
       <Tab.Screen name="CarsTab" component={CarsStack} options={{ tabBarLabel: t('cars'), tabBarIcon: ({ focused }) => <TabIcon icon="🏎️" focused={focused} /> }} />
       <Tab.Screen name="PartsTab" component={PartsStack} options={{ tabBarLabel: t('parts'), tabBarIcon: ({ focused }) => <TabIcon icon="⚙️" focused={focused} /> }} />
-
-      <Tab.Screen
-        name="AddTab"
-        component={EmptyScreen}
-        listeners={{
-          tabPress: e => {
-            e.preventDefault();
-          },
-        }}
-        options={({ navigation }) => ({
-          tabBarLabel: '',
-          tabBarButton: () => (
-            <AddTabButton
-              onPress={() => {
-                if (!user) {
-                  navigation.navigate('AccountTab');
-                  return;
-                }
-                navigation.navigate('HomeTab', { screen: 'CreateListingHub' });
-              }}
-            />
-          ),
-        })}
-      />
-
       <Tab.Screen name="RequestsTab" component={RequestsStack} options={{ tabBarLabel: t('requests'), tabBarIcon: ({ focused }) => <TabIcon icon="📋" focused={focused} /> }} />
       <Tab.Screen
         name="AccountTab"
@@ -213,21 +295,51 @@ const tabStyles = StyleSheet.create({
   splashSport: { fontSize: 20, fontWeight: '800', color: colors.white, letterSpacing: 4 },
   splashLine: { width: 40, height: 3, backgroundColor: colors.primary, borderRadius: 2, marginTop: 16 },
 
-  addWrap: { alignItems: 'center', justifyContent: 'flex-start', width: 78, marginTop: -18 },
-  addBtn: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
+  brandWrap: { alignItems: 'center', justifyContent: 'center' },
+  brandRow: { flexDirection: 'row', alignItems: 'baseline', gap: 4 },
+  brandQ8: {
+    color: colors.primary,
+    fontSize: 24,
+    fontWeight: '900',
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+  },
+  brandSport: {
+    color: colors.white,
+    fontSize: 17,
+    fontWeight: '900',
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
+  },
+  brandCar: {
+    color: colors.silverLight,
+    fontSize: 17,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    fontStyle: 'italic',
+    textTransform: 'uppercase',
+  },
+  brandAccent: {
+    marginTop: 2,
+    width: 54,
+    height: 3,
+    borderRadius: 999,
+    backgroundColor: colors.primary,
+  },
+
+  headerAddBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: colors.darkCard,
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: colors.primary,
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
   },
-  addPlus: { color: colors.primary, fontSize: 30, fontWeight: '900', marginTop: -2 },
-  addLabel: { color: colors.silver, fontSize: 10, fontWeight: '800', marginTop: 6 },
+  headerAddIcon: { color: colors.primary, fontSize: 24, fontWeight: '900', lineHeight: 24 },
 });

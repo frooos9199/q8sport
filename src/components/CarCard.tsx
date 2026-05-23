@@ -48,8 +48,11 @@ export default function CarCard({ car, onPress, onWhatsApp }: Props) {
               <Text style={s.price}>{car.price?.toLocaleString()}</Text>
               <Text style={s.kwd}>{t('kwd')}</Text>
             </View>
-            <TouchableOpacity style={s.waBtn} onPress={onWhatsApp}>
-              <Text style={s.waBtnIcon}>💬</Text>
+            <TouchableOpacity activeOpacity={0.88} style={s.waActionBtn} onPress={onWhatsApp}>
+              <View style={s.waIconWrap}>
+                <Text style={s.waBtnIcon}>💬</Text>
+              </View>
+              <Text style={s.waBtnText}>تواصل</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -67,6 +70,18 @@ const s = StyleSheet.create({
   gradient: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 80 },
   yearBadge: { position: 'absolute', top: 12, left: 12, backgroundColor: colors.primary, paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.sm },
   yearText: { color: colors.white, fontSize: 12, fontWeight: '800' },
+  waActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'transparent',
+    borderRadius: radius.full,
+    paddingLeft: 6,
+    paddingRight: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(37, 211, 102, 0.35)',
+  },
   soldOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center' },
   soldBadge: { backgroundColor: colors.primary, paddingHorizontal: 20, paddingVertical: 8, borderRadius: radius.md },
   soldText: { color: colors.white, fontSize: 18, fontWeight: '900' },
@@ -76,6 +91,14 @@ const s = StyleSheet.create({
   bottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   price: { color: colors.primary, fontWeight: '900', fontSize: 22 },
   kwd: { color: colors.silver, fontSize: 11 },
-  waBtn: { backgroundColor: colors.whatsapp, width: 42, height: 42, borderRadius: radius.md, justifyContent: 'center', alignItems: 'center', ...shadows.card },
-  waBtnIcon: { fontSize: 20 },
+  waIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(37, 211, 102, 0.16)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  waBtnIcon: { fontSize: 15 },
+  waBtnText: { color: colors.white, fontSize: 12, fontWeight: '800' },
 });

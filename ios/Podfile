@@ -9,6 +9,9 @@ platform :ios, min_ios_version_supported
 prepare_react_native_project!
 
 $RNFirebaseAsStaticFramework = true
+ENV['RCT_USE_RN_DEP'] = '0'
+ENV['RCT_USE_PREBUILT_RNCORE'] = '0'
+ENV['RCT_BUILD_HERMES_FROM_SOURCE'] = 'true'
 
 target 'Q8SportApp' do
   config = use_native_modules!
@@ -33,9 +36,217 @@ target 'Q8SportApp' do
       :mac_catalyst_enabled => false,
     )
 
+    hermes_copy_script = File.join(installer.sandbox.root.to_s, 'Target Support Files', 'hermes-engine', 'hermes-engine-xcframeworks.sh')
+    if File.exist?(hermes_copy_script)
+      hermes_copy_contents = File.read(hermes_copy_script)
+
+      unless hermes_copy_contents.include?('fix_hermes_minimum_os_version')
+        hermes_copy_contents.sub!(
+          "SELECT_SLICE_RETVAL=\"\"\n",
+          <<~'SH'
+            SELECT_SLICE_RETVAL=""
+
+            fix_hermes_minimum_os_version() {
+              local framework_dir="$1"
+              local plist_path="${framework_dir}/Info.plist"
+
+              if [ -f "$plist_path" ]; then
+                local deployment_target="${IPHONEOS_DEPLOYMENT_TARGET:-8.0}"
+                /usr/libexec/PlistBuddy -c "Set :MinimumOSVersion ${deployment_target}" "$plist_path" >/dev/null 2>&1 || \
+                  /usr/libexec/PlistBuddy -c "Add :MinimumOSVersion string ${deployment_target}" "$plist_path" >/dev/null 2>&1
+              fi
+            }
+
+          SH
+        )
+
+        hermes_copy_contents.sub!(
+          "  copy_dir \"$source/\" \"$destination\"\n  echo \"Copied $source to $destination\"\n",
+          <<~'SH'
+              copy_dir "$source/" "$destination"
+              if [ -d "$destination/hermesvm.framework" ]; then
+                fix_hermes_minimum_os_version "$destination/hermesvm.framework"
+              fi
+              echo "Copied $source to $destination"
+          SH
+        )
+
+        File.write(hermes_copy_script, hermes_copy_contents)
+      end
+    end
+
+    hermes_build_script = File.join(config[:reactNativePath], 'sdks', 'hermes-engine', 'utils', 'build-hermes-xcode.sh')
+    if File.exist?(hermes_build_script)
+      hermes_build_contents = File.read(hermes_build_script)
+
+      unless hermes_build_contents.include?('rm -rf "${PODS_ROOT}/hermes-engine/build/${PLATFORM_NAME}"')
+        hermes_build_contents.sub!(
+          "echo \"Configure Apple framework\"\n",
+          <<~'SH'
+            echo "Configure Apple framework"
+
+            rm -rf "${PODS_ROOT}/hermes-engine/build/${PLATFORM_NAME}"
+          SH
+        )
+
+        File.write(hermes_build_script, hermes_build_contents)
+      end
+
+      unless hermes_build_contents.include?('build_jobs="${HERMES_BUILD_JOBS:-$(sysctl -n hw.ncpu)}"')
+        hermes_build_contents.sub!(
+          "echo \"Build Apple framework\"\n",
+          <<~'SH'
+            echo "Build Apple framework"
+
+            build_jobs="${HERMES_BUILD_JOBS:-$(sysctl -n hw.ncpu)}"
+          SH
+        )
+
+        hermes_build_contents.sub!(
+          "  -j \"$(sysctl -n hw.ncpu)\"\n",
+          "  -j \"$build_jobs\"\n"
+        )
+
+        File.write(hermes_build_script, hermes_build_contents)
+      end
+
+      hermes_build_contents = File.read(hermes_build_script)
+      if hermes_build_contents.include?('build_jobs="${HERMES_BUILD_JOBS:-1}"')
+        File.write(
+          hermes_build_script,
+          hermes_build_contents.gsub(
+            'build_jobs="${HERMES_BUILD_JOBS:-1}"',
+            'build_jobs="${HERMES_BUILD_JOBS:-$(sysctl -n hw.ncpu)}"'
+          )
+        )
+      end
+
+      hermes_build_contents = File.read(hermes_build_script)
+      unless hermes_build_contents.include?('DEVELOPER_DIR="$DEVELOPER_DIR"')
+        hermes_build_contents.sub!(
+          "\"$CMAKE_BINARY\" \\\n  -S",
+          <<~'SH'
+            env -i \
+              PATH="$PATH" \
+              HOME="$HOME" \
+              SDKROOT="$SDKROOT" \
+              DEVELOPER_DIR="$DEVELOPER_DIR" \
+              "$CMAKE_BINARY" \
+              -S
+          SH
+        )
+
+        hermes_build_contents.sub!(
+          "\"$CMAKE_BINARY\" \\\n  --build",
+          <<~'SH'
+            env -i \
+              PATH="$PATH" \
+              HOME="$HOME" \
+              SDKROOT="$SDKROOT" \
+              DEVELOPER_DIR="$DEVELOPER_DIR" \
+              "$CMAKE_BINARY" \
+              --build
+          SH
+        )
+
+        File.write(hermes_build_script, hermes_build_contents)
+      end
+    end
+
+    hermesc_build_script = File.join(config[:reactNativePath], 'sdks', 'hermes-engine', 'utils', 'build-hermesc-xcode.sh')
+    if File.exist?(hermesc_build_script)
+      hermesc_build_contents = File.read(hermesc_build_script)
+
+      if hermesc_build_contents.include?("\nrm -rf \"$hermesc_dir_path\"\n")
+        hermesc_build_contents = hermesc_build_contents.sub("\nrm -rf \"$hermesc_dir_path\"\n", "\n")
+        File.write(hermesc_build_script, hermesc_build_contents)
+      end
+
+      unless hermesc_build_contents.include?('HOME="$HOME"')
+        hermesc_build_contents = hermesc_build_contents.gsub(
+          "env -i \\\n  PATH=\"$PATH\" \\\n  SDKROOT=\"$SDKROOT\" \\\n",
+          <<~'SH'
+            env -i \
+              PATH="$PATH" \
+              HOME="$HOME" \
+              SDKROOT="$SDKROOT" \
+          SH
+        )
+
+        File.write(hermesc_build_script, hermesc_build_contents)
+      end
+    end
+
+    fmt_base_header = File.join(installer.sandbox.root.to_s, 'fmt', 'include', 'fmt', 'base.h')
+    if File.exist?(fmt_base_header)
+      fmt_header_contents = File.read(fmt_base_header)
+      fmt_original_gate = <<~'FMT'
+        // Detect consteval, C++20 constexpr extensions and std::is_constant_evaluated.
+        #if !defined(__cpp_lib_is_constant_evaluated)
+        #  define FMT_USE_CONSTEVAL 0
+        #elif FMT_CPLUSPLUS < 201709L
+        #  define FMT_USE_CONSTEVAL 0
+        #elif FMT_GLIBCXX_RELEASE && FMT_GLIBCXX_RELEASE < 10
+        #  define FMT_USE_CONSTEVAL 0
+        #elif FMT_LIBCPP_VERSION && FMT_LIBCPP_VERSION < 10000
+        #  define FMT_USE_CONSTEVAL 0
+        #elif defined(__apple_build_version__) && __apple_build_version__ < 14000029L
+        #  define FMT_USE_CONSTEVAL 0  // consteval is broken in Apple clang < 14.
+        #elif FMT_MSC_VERSION && FMT_MSC_VERSION < 1929
+        #  define FMT_USE_CONSTEVAL 0  // consteval is broken in MSVC VS2019 < 16.10.
+        #elif defined(__cpp_consteval)
+        #  define FMT_USE_CONSTEVAL 1
+        #elif FMT_GCC_VERSION >= 1002 || FMT_CLANG_VERSION >= 1101
+        #  define FMT_USE_CONSTEVAL 1
+        #else
+        #  define FMT_USE_CONSTEVAL 0
+        #endif
+      FMT
+      fmt_patched_gate = <<~'FMT'
+        // Detect consteval, C++20 constexpr extensions and std::is_constant_evaluated.
+        #ifndef FMT_USE_CONSTEVAL
+        #if !defined(__cpp_lib_is_constant_evaluated)
+        #  define FMT_USE_CONSTEVAL 0
+        #elif FMT_CPLUSPLUS < 201709L
+        #  define FMT_USE_CONSTEVAL 0
+        #elif FMT_GLIBCXX_RELEASE && FMT_GLIBCXX_RELEASE < 10
+        #  define FMT_USE_CONSTEVAL 0
+        #elif FMT_LIBCPP_VERSION && FMT_LIBCPP_VERSION < 10000
+        #  define FMT_USE_CONSTEVAL 0
+        #elif defined(__apple_build_version__) && __apple_build_version__ < 14000029L
+        #  define FMT_USE_CONSTEVAL 0  // consteval is broken in Apple clang < 14.
+        #elif FMT_MSC_VERSION && FMT_MSC_VERSION < 1929
+        #  define FMT_USE_CONSTEVAL 0  // consteval is broken in MSVC VS2019 < 16.10.
+        #elif defined(__cpp_consteval)
+        #  define FMT_USE_CONSTEVAL 1
+        #elif FMT_GCC_VERSION >= 1002 || FMT_CLANG_VERSION >= 1101
+        #  define FMT_USE_CONSTEVAL 1
+        #else
+        #  define FMT_USE_CONSTEVAL 0
+        #endif
+        #endif
+      FMT
+
+      if fmt_header_contents.include?(fmt_original_gate)
+        File.write(fmt_base_header, fmt_header_contents.sub(fmt_original_gate, fmt_patched_gate))
+      end
+    end
+
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |build_config|
         build_config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+
+        if build_config.name == 'Release'
+          build_config.build_settings['DEBUG_INFORMATION_FORMAT'] = 'dwarf-with-dsym'
+          build_config.build_settings['GCC_GENERATE_DEBUGGING_SYMBOLS'] = 'YES'
+        end
+
+        if target.name == 'fmt'
+          definitions = build_config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] || ['$(inherited)']
+          definitions = [definitions] if definitions.is_a?(String)
+          definitions << 'FMT_USE_CONSTEVAL=0' unless definitions.include?('FMT_USE_CONSTEVAL=0')
+          build_config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = definitions
+        end
       end
 
       # Fix RNFirebase: disable modules so RCT_EXPORT_MODULE macros work
@@ -50,6 +261,71 @@ target 'Q8SportApp' do
           build_config.build_settings['OTHER_CFLAGS'] = flags
         end
       end
+    end
+
+    installer.aggregate_targets.each do |aggregate_target|
+      aggregate_target.user_project.native_targets.each do |target|
+        target.build_configurations.each do |build_config|
+          next unless build_config.name == 'Release'
+
+          build_config.build_settings['DEBUG_INFORMATION_FORMAT'] = 'dwarf-with-dsym'
+          build_config.build_settings['GCC_GENERATE_DEBUGGING_SYMBOLS'] = 'YES'
+        end
+      end
+
+      aggregate_target.user_project.save
+    end
+
+    installer.aggregate_targets.each do |aggregate_target|
+      aggregate_target.user_project.native_targets.each do |target|
+        next unless target.product_type == 'com.apple.product-type.application'
+
+        phase_name = '[CP-User] Generate Hermes dSYM'
+        shell_phase = target.shell_script_build_phases.find { |phase| phase.name == phase_name }
+        shell_phase ||= target.new_shell_script_build_phase(phase_name)
+        shell_phase.shell_path = '/bin/sh'
+        shell_phase.shell_script = <<~'SH'
+          set -e
+
+          if [ "${CONFIGURATION}" != "Release" ]; then
+            exit 0
+          fi
+
+          HERMES_DSYM="${DWARF_DSYM_FOLDER_PATH}/hermesvm.framework.dSYM"
+          HERMES_BINARY=""
+
+          if [ -z "${DWARF_DSYM_FOLDER_PATH:-}" ]; then
+            exit 0
+          fi
+
+          for candidate in \
+            "${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermesvm.framework/hermesvm" \
+            "${BUILT_PRODUCTS_DIR}/hermes-engine/hermesvm.framework/hermesvm" \
+            "${PODS_ROOT}/hermes-engine/destroot/Library/Frameworks/ios/hermesvm.framework/hermesvm" \
+            "${PODS_ROOT}/hermes-engine/build/iphoneos/lib/hermesvm.framework/hermesvm"
+          do
+            if [ -f "${candidate}" ]; then
+              HERMES_BINARY="${candidate}"
+              break
+            fi
+          done
+
+          if [ -z "${HERMES_BINARY}" ]; then
+            echo "warning: hermesvm binary not found; skipping dSYM generation"
+            exit 0
+          fi
+
+          rm -rf "${HERMES_DSYM}"
+          xcrun dsymutil "${HERMES_BINARY}" --out "${HERMES_DSYM}"
+
+          if [ ! -f "${HERMES_DSYM}/Contents/Resources/DWARF/hermesvm" ]; then
+            echo "error: Failed to generate hermesvm.framework.dSYM"
+            exit 1
+          fi
+        SH
+      end
+
+      aggregate_target.user_project.save
     end
   end
 end

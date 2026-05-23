@@ -14,9 +14,13 @@
 - `FIREBASE_PROJECT_ID=q8sportcar`
 - `FIREBASE_DATABASE_URL=https://q8sportcar-default-rtdb.firebaseio.com`
 - `FIREBASE_STORAGE_BUCKET=q8sportcar.firebasestorage.app`
+- `FIREBASE_ADMIN_CLIENT_EMAIL=...`
+- `FIREBASE_ADMIN_PRIVATE_KEY=...`
+- `ADMIN_API_TOKEN=...`
 
 المسار `NEXT_PUBLIC_*` مطلوب للقراءة والرفع من المتصفح.
 المسار غير العام مطلوب لعمليات السيرفر مثل `app/api/publish`.
+والمتغيرات الإدارية مطلوبة لمسارات الإدارة الحساسة مثل حذف المستخدم من Firebase Authentication.
 
 ## 2. إعداد الدومين
 

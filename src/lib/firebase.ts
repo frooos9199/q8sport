@@ -14,8 +14,18 @@ const configuredDatabaseURL: string | undefined = appOptions?.databaseURL;
 const inferredDatabaseURL =
 	!configuredDatabaseURL && projectId ? `https://${projectId}-default-rtdb.firebaseio.com` : undefined;
 
-const db = inferredDatabaseURL ? getDatabase(app, inferredDatabaseURL) : getDatabase(app);
+const effectiveDatabaseURL = configuredDatabaseURL || inferredDatabaseURL;
+
+const db = effectiveDatabaseURL ? getDatabase(app, effectiveDatabaseURL) : getDatabase(app);
 const storageInstance = getStorage(app);
+
+export const firebaseDebugInfo = {
+	projectId,
+	configuredDatabaseURL,
+	inferredDatabaseURL,
+	effectiveDatabaseURL,
+	isUsingInferredDatabaseURL: Boolean(!configuredDatabaseURL && inferredDatabaseURL),
+};
 
 if (__DEV__) {
 	try {
@@ -27,6 +37,8 @@ if (__DEV__) {
 			options?.projectId,
 			'hasDatabaseURL:',
 			Boolean(options?.databaseURL),
+			'effectiveDatabaseURL:',
+			effectiveDatabaseURL,
 			'hasStorageBucket:',
 			Boolean(options?.storageBucket),
 		);
