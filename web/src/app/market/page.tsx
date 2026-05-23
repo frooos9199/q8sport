@@ -1,7 +1,23 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 
 import { loadMarketData } from "@/lib/market-data";
+import { absoluteUrl, siteConfig } from "@/lib/site";
+
+export const metadata: Metadata = {
+  title: 'السوق',
+  description: 'تصفح سيارات السبورت وقطع الغيار والمطلوبات المباشرة في سوق Q8 Sport Market بالكويت.',
+  alternates: {
+    canonical: absoluteUrl('/market'),
+  },
+  openGraph: {
+    title: `السوق | ${siteConfig.name}`,
+    description: 'تصفح أحدث معروضات السيارات والقطع والمطلوبات المباشرة في الكويت.',
+    url: absoluteUrl('/market'),
+    type: 'website',
+  },
+};
 
 export default async function MarketPage() {
   const { carListings, partListings, sellers, source, wantedListings } = await loadMarketData();

@@ -1,0 +1,17 @@
+{
+  "rules": {
+    ".read": true,
+    "cars": {
+      ".write": true
+    },
+    "parts": {
+      ".write": true
+    },
+    "requests": {
+      ".write": true
+    },
+    "users": {
+      ".write": true
+    }
+  }
+}

@@ -1,6 +1,22 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
+import { absoluteUrl, siteConfig } from "@/lib/site";
 import PublishForm from "./publish-form";
+
+export const metadata: Metadata = {
+  title: 'انشر إعلانك',
+  description: 'انشر سيارة أو قطعة أو مطلوب مباشرة على Q8 Sport Market بدون طبقة موافقات.',
+  alternates: {
+    canonical: absoluteUrl('/sell'),
+  },
+  openGraph: {
+    title: `انشر إعلانك | ${siteConfig.name}`,
+    description: 'أضف إعلانك مباشرة إلى السوق الكويتي للسيارات السبورت وقطع الغيار.',
+    url: absoluteUrl('/sell'),
+    type: 'website',
+  },
+};
 
 export default function SellPage() {
   return (

@@ -1,8 +1,43 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getCar, getSeller } from "@/lib/market-data";
+import { absoluteUrl, siteConfig } from "@/lib/site";
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const car = await getCar(slug);
+
+  if (!car) {
+    return {
+      title: 'إعلان غير موجود',
+    };
+  }
+
+  return {
+    title: car.title,
+    description: car.summary,
+    alternates: {
+      canonical: absoluteUrl(`/cars/${car.slug}`),
+    },
+    openGraph: {
+      title: `${car.title} | ${siteConfig.name}`,
+      description: car.summary,
+      url: absoluteUrl(`/cars/${car.slug}`),
+      type: 'article',
+      images: car.images[0]
+        ? [
+            {
+              url: car.images[0],
+              alt: car.title,
+            },
+          ]
+        : undefined,
+    },
+  };
+}
 
 export default async function CarDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

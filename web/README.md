@@ -33,6 +33,7 @@ cp .env.local.example .env.local
 
 المتغيرات الأساسية:
 
+- `NEXT_PUBLIC_SITE_URL`
 - `NEXT_PUBLIC_FIREBASE_API_KEY`
 - `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
 - `NEXT_PUBLIC_FIREBASE_DATABASE_URL`
@@ -76,3 +77,7 @@ https://<project-id>-default-rtdb.firebaseio.com
 - `web-uploads/**`
 
 ويعتمد على نفس قاعدة البيانات الموجودة أصلًا. إذا كانت قواعد Realtime Database تمنع الكتابة من هذا المسار فسيظهر خطأ واضح داخل النموذج، وعندها يلزم ضبط القواعد أو إضافة مصادقة كاملة لاحقًا.
+
+## Production
+
+راجع [DEPLOYMENT.md](DEPLOYMENT.md) لإعدادات Vercel والدومين وقواعد Firebase المطلوبة للإنتاج.

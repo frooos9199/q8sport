@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { absoluteUrl, siteConfig } from "@/lib/site";
+
 export default function Home() {
   const featuredCars = [
     { name: "Porsche 911 Turbo S", price: "41,500 د.ك", meta: "2022 • 18 ألف كم" },
@@ -20,8 +22,33 @@ export default function Home() {
     "مطلوب كورفيت Z06 وكالة أو نظيف جدًا",
   ];
 
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebSite',
+        name: siteConfig.name,
+        url: siteConfig.url,
+        description: siteConfig.description,
+        inLanguage: 'ar-KW',
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: `${siteConfig.url}/market`,
+          'query-input': 'required name=query',
+        },
+      },
+      {
+        '@type': 'Organization',
+        name: siteConfig.name,
+        url: siteConfig.url,
+        logo: absoluteUrl('/favicon.ico'),
+      },
+    ],
+  };
+
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col px-5 pb-20 pt-5 sm:px-8 lg:px-10">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
       <header className="sticky top-0 z-20 mb-6 rounded-full border border-line bg-black/40 px-5 py-4 backdrop-blur-xl">
         <div className="flex items-center justify-between gap-4">
           <div>

@@ -14,6 +14,7 @@ const COMPATIBLE_BRANDS = ["Porsche", "BMW", "Mercedes-Benz", "Audi", "Ford", "C
 const initialState = {
   sellerName: "",
   sellerWhatsapp: "",
+  website: "",
   title: "",
   description: "",
   imageUrls: "",
@@ -110,6 +111,7 @@ export default function PublishForm() {
           type,
           sellerName: form.sellerName,
           sellerWhatsapp: form.sellerWhatsapp,
+          website: form.website,
           title: form.title,
           description: form.description,
           imageUrls: [...uploadedImageUrls, ...manualImageUrls],
@@ -163,6 +165,7 @@ export default function PublishForm() {
           <div className="mt-5 grid gap-4">
             <Field label="اسم المعلن" value={form.sellerName} onChange={(value) => setField("sellerName", value)} placeholder="مثال: فيصل الجراج" />
             <Field label="واتساب" value={form.sellerWhatsapp} onChange={(value) => setField("sellerWhatsapp", value)} placeholder="96590001122" />
+            <ViewTrap value={form.website} onChange={(value) => setField("website", value)} />
             <Field label="عنوان الإعلان" value={form.title} onChange={(value) => setField("title", value)} placeholder="مثال: مكينة موستنغ 5.0 كاملة" />
             <Field label="الوصف" value={form.description} onChange={(value) => setField("description", value)} placeholder="اكتب التفاصيل المهمة والحالة والملاحظات" multiline />
             <label className="grid gap-2">
@@ -301,5 +304,16 @@ function Picker({ active, label, onClick, compact = false }: { active: boolean; 
     >
       {label}
     </button>
+  );
+}
+
+function ViewTrap({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  return (
+    <div className="hidden" aria-hidden="true">
+      <label className="grid gap-2">
+        <span>Website</span>
+        <input tabIndex={-1} autoComplete="off" value={value} onChange={(event) => onChange(event.target.value)} />
+      </label>
+    </div>
   );
 }

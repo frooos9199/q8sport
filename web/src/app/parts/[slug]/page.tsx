@@ -1,8 +1,43 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getPart, getSeller } from "@/lib/market-data";
+import { absoluteUrl, siteConfig } from "@/lib/site";
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const part = await getPart(slug);
+
+  if (!part) {
+    return {
+      title: 'إعلان غير موجود',
+    };
+  }
+
+  return {
+    title: part.title,
+    description: part.summary,
+    alternates: {
+      canonical: absoluteUrl(`/parts/${part.slug}`),
+    },
+    openGraph: {
+      title: `${part.title} | ${siteConfig.name}`,
+      description: part.summary,
+      url: absoluteUrl(`/parts/${part.slug}`),
+      type: 'article',
+      images: part.images[0]
+        ? [
+            {
+              url: part.images[0],
+              alt: part.title,
+            },
+          ]
+        : undefined,
+    },
+  };
+}
 
 export default async function PartDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

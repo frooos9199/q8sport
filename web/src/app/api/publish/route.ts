@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 
+import { runtimeConfig } from "@/lib/runtime-config";
+
 type PublishType = "car" | "part" | "request";
 
 type PublishPayload = {
   type: PublishType;
   sellerName: string;
   sellerWhatsapp: string;
+  website?: string;
   title: string;
   description: string;
   imageUrls?: string[];
@@ -25,11 +28,11 @@ type PublishPayload = {
 };
 
 function getProjectId() {
-  return process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || "q8sportcar";
+  return runtimeConfig.firebase.projectId;
 }
 
 function getDatabaseUrl() {
-  return process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL || process.env.FIREBASE_DATABASE_URL || `https://${getProjectId()}-default-rtdb.firebaseio.com`;
+  return runtimeConfig.firebase.databaseUrl || `https://${getProjectId()}-default-rtdb.firebaseio.com`;
 }
 
 function digits(value: string) {
@@ -79,6 +82,9 @@ async function write(path: string, method: "POST" | "PUT", body: unknown) {
 }
 
 function validateCommon(payload: PublishPayload) {
+  if ((payload.website || '').trim().length > 0) {
+    return 'تعذر إرسال النموذج';
+  }
   if (payload.sellerName.trim().length < 2) {
     return "اسم المعلن قصير جدًا";
   }
@@ -90,6 +96,12 @@ function validateCommon(payload: PublishPayload) {
   }
   if (payload.description.trim().length < 10) {
     return "الوصف يحتاج تفاصيل أكثر";
+  }
+  if (payload.title.trim().length > 120) {
+    return 'عنوان الإعلان أطول من اللازم';
+  }
+  if (payload.description.trim().length > 3000) {
+    return 'الوصف أطول من اللازم';
   }
   return null;
 }

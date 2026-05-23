@@ -1,7 +1,34 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getSeller, getWanted } from "@/lib/market-data";
+import { absoluteUrl, siteConfig } from "@/lib/site";
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const wanted = await getWanted(slug);
+
+  if (!wanted) {
+    return {
+      title: 'مطلوب غير موجود',
+    };
+  }
+
+  return {
+    title: wanted.title,
+    description: wanted.summary,
+    alternates: {
+      canonical: absoluteUrl(`/wanted/${wanted.slug}`),
+    },
+    openGraph: {
+      title: `${wanted.title} | ${siteConfig.name}`,
+      description: wanted.summary,
+      url: absoluteUrl(`/wanted/${wanted.slug}`),
+      type: 'article',
+    },
+  };
+}
 
 export default async function WantedDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
