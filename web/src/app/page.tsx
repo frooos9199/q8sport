@@ -206,6 +206,21 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <footer className="mt-8 flex flex-col gap-4 rounded-[2rem] border border-line bg-panel px-6 py-6 text-sm text-zinc-300 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+        <p>Q8 Sport Market على الويب والتطبيق.</p>
+        <div className="flex flex-wrap items-center gap-4">
+          <Link className="font-black text-foreground transition hover:text-brand" href="/privacy-policy">
+            سياسة الخصوصية
+          </Link>
+          <Link className="transition hover:text-foreground" href="/market">
+            السوق
+          </Link>
+          <Link className="transition hover:text-foreground" href="/sell">
+            انشر إعلانك
+          </Link>
+        </div>
+      </footer>
     </main>
   );
 }
