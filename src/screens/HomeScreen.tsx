@@ -9,11 +9,15 @@ import { getDbSnapshot } from '../lib/firebaseDatabase';
 import { sortListingsByFreshnessAndStatus } from '../lib/listingSort';
 import { colors, radius, shadows, spacing } from '../lib/theme';
 import { t } from '../i18n';
-import { Car, Part, Request } from '../types';
+import { BannerAd, Car, Part, Request } from '../types';
 import CarCard from '../components/CarCard';
 import { CarCardSkeleton } from '../components/Shimmer';
+import LazyImage from '../components/LazyImage';
+import { fetchActiveBanners } from '../lib/bannerAds';
 
 const { width } = Dimensions.get('window');
+const HOME_BANNER_CARD_SPACING = 14;
+const HOME_BANNER_AUTO_SLIDE_MS = 4000;
 
 export default function HomeScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
@@ -21,20 +25,27 @@ export default function HomeScreen({ navigation }: any) {
   const [cars, setCars] = useState<Car[]>([]);
   const [parts, setParts] = useState<Part[]>([]);
   const [requests, setRequests] = useState<Request[]>([]);
+  const [banners, setBanners] = useState<BannerAd[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const heroAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  const bannerListRef = useRef<FlatList<BannerAd> | null>(null);
+  const bannerIndexRef = useRef(0);
+  const bannerCardWidth = Math.max(280, Math.min(width - spacing.xl * 2, width * 0.88));
+  const bannerSnapInterval = bannerCardWidth + HOME_BANNER_CARD_SPACING;
 
   const fetchData = async () => {
     try {
       const carsQuery = query(dbRef(db, 'cars'), orderByChild('createdAt'));
       const partsQuery = query(dbRef(db, 'parts'), orderByChild('createdAt'));
       const requestsQuery = query(dbRef(db, 'requests'), orderByChild('createdAt'));
-      const [carsSnap, partsSnap, requestsSnap] = await Promise.all([
+      const [carsSnap, partsSnap, requestsSnap, activeBanners] = await Promise.all([
         getDbSnapshot(carsQuery, 'cars'),
         getDbSnapshot(partsQuery, 'parts'),
         getDbSnapshot(requestsQuery, 'requests'),
+        fetchActiveBanners('home'),
       ]);
       const carsData: Car[] = [];
       carsSnap.forEach((child: any) => { carsData.push({ id: child.key, ...child.val() }); return undefined; });
@@ -45,6 +56,7 @@ export default function HomeScreen({ navigation }: any) {
       setCars(sortListingsByFreshnessAndStatus(carsData).slice(0, 8));
       setParts(sortListingsByFreshnessAndStatus(partsData).slice(0, 6));
       setRequests(sortListingsByFreshnessAndStatus(requestsData).slice(0, 4));
+      setBanners(activeBanners);
     } catch (e) {
       console.log('Fetch error:', e);
     }
@@ -68,6 +80,47 @@ export default function HomeScreen({ navigation }: any) {
   const openWhatsApp = (phone: string, msg: string) => {
     Linking.openURL(`https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(msg)}`);
   };
+
+  const openBannerTarget = async (targetUrl?: string) => {
+    if (!targetUrl) return;
+
+    const normalizedUrl = /^https?:\/\//i.test(targetUrl) ? targetUrl : `https://${targetUrl}`;
+
+    try {
+      const canOpen = await Linking.canOpenURL(normalizedUrl);
+      if (canOpen) {
+        await Linking.openURL(normalizedUrl);
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    bannerIndexRef.current = 0;
+
+    if (banners.length > 0) {
+      bannerListRef.current?.scrollToOffset({ offset: 0, animated: false });
+    }
+
+    if (banners.length <= 1) {
+      return;
+    }
+
+    const intervalId = setInterval(() => {
+      const nextIndex = (bannerIndexRef.current + 1) % banners.length;
+
+      bannerListRef.current?.scrollToIndex({
+        index: nextIndex,
+        animated: true,
+        viewPosition: 0,
+      });
+
+      bannerIndexRef.current = nextIndex;
+    }, HOME_BANNER_AUTO_SLIDE_MS);
+
+    return () => clearInterval(intervalId);
+  }, [banners.length]);
 
   const renderPartCard = ({ item }: { item: Part }) => (
     <TouchableOpacity style={s.partCard} activeOpacity={0.85} onPress={() => navigation.navigate('PartDetails', { id: item.id })}>
@@ -137,6 +190,53 @@ export default function HomeScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
       </Animated.View>
+
+      {banners.length ? (
+        <Animated.View style={[s.section, { opacity: fadeAnim }] }>
+          <View style={s.sectionHeader}>
+            <View style={s.sectionTitleWrap}>
+              <View style={[s.sectionDot, { backgroundColor: colors.primary }]} />
+              <Text style={s.sectionTitle}>إعلانات</Text>
+            </View>
+          </View>
+
+          <FlatList
+            ref={bannerListRef}
+            data={banners}
+            horizontal
+            keyExtractor={item => item.id}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: spacing.xl }}
+            snapToInterval={bannerSnapInterval}
+            decelerationRate="fast"
+            getItemLayout={(_, index) => ({
+              length: bannerSnapInterval,
+              offset: bannerSnapInterval * index,
+              index,
+            })}
+            onMomentumScrollEnd={event => {
+              const nextIndex = Math.round(event.nativeEvent.contentOffset.x / bannerSnapInterval);
+              bannerIndexRef.current = Math.max(0, Math.min(nextIndex, banners.length - 1));
+            }}
+            onScrollToIndexFailed={info => {
+              bannerListRef.current?.scrollToOffset({
+                offset: bannerSnapInterval * info.index,
+                animated: true,
+              });
+            }}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[s.bannerCard, { width: bannerCardWidth }]}
+                activeOpacity={item.targetUrl ? 0.88 : 1}
+                onPress={() => openBannerTarget(item.targetUrl)}
+                disabled={!item.targetUrl}
+              >
+                <LazyImage uri={item.imageUrl} style={s.bannerCardImage} resizeMode="cover" />
+              </TouchableOpacity>
+            )}
+          />
+        </Animated.View>
+      ) : null}
 
       <Animated.View style={[s.section, { opacity: fadeAnim }] }>
         <View style={s.sectionHeader}>
@@ -322,5 +422,16 @@ const s = StyleSheet.create({
   ctaBtnGradient: { width: '100%', paddingVertical: 16, paddingHorizontal: 32, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center' },
   ctaBtnGradientFill: { ...StyleSheet.absoluteFillObject },
   ctaBtnText: { color: colors.white, fontWeight: '800', fontSize: 16 },
+
+  bannerCard: {
+    backgroundColor: colors.darkCard,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.metalBorder,
+    overflow: 'hidden',
+    marginRight: HOME_BANNER_CARD_SPACING,
+    ...shadows.card,
+  },
+  bannerCardImage: { width: '100%', aspectRatio: 2.2, backgroundColor: colors.darkLight },
 });
 

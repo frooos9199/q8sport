@@ -33,6 +33,8 @@ export default function RegisterScreen({ navigation }: any) {
 
       if (code === 'auth/email-already-in-use') {
         Alert.alert('خطأ', 'هذا البريد مستخدم من قبل');
+      } else if (code === 'app/phone-already-in-use') {
+        Alert.alert('خطأ', 'هذا رقم الجوال مستخدم من قبل');
       } else if (code === 'auth/invalid-email') {
         Alert.alert('خطأ', 'البريد الإلكتروني غير صحيح');
       } else if (code === 'auth/weak-password') {

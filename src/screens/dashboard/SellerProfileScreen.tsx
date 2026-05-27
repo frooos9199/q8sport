@@ -1,14 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, FlatList, Image, Linking, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, Linking, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ref as dbRef, update } from '@react-native-firebase/database';
 
+import LazyImage from '../../components/LazyImage';
 import { useAuth } from '../../hooks/useAuth';
 import { deleteUserAccountFromMarketplace } from '../../lib/adminUserManagement';
 import { db } from '../../lib/firebase';
 import { getDbSnapshot } from '../../lib/firebaseDatabase';
+import { prefetchListingImages, runAfterFirstPaint } from '../../lib/listingFeed';
 import { sortListingsByFreshnessAndStatus } from '../../lib/listingSort';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { Car, Part, Request, User } from '../../types';
+
+const INITIAL_SELLER_FEED_ITEMS = 10;
+const INITIAL_SELLER_IMAGE_PREFETCH = 6;
 
 type SellerFeedItem =
   | { type: 'car'; item: Car }
@@ -17,7 +22,7 @@ type SellerFeedItem =
 
 export default function SellerProfileScreen({ route, navigation }: any) {
   const { user } = useAuth();
-  const { sellerId, sellerName, sellerWhatsapp } = route.params;
+  const { sellerId, sellerName, sellerWhatsapp, sellerPhone } = route.params;
   const [cars, setCars] = useState<Car[]>([]);
   const [parts, setParts] = useState<Part[]>([]);
   const [requests, setRequests] = useState<Request[]>([]);
@@ -46,7 +51,7 @@ export default function SellerProfileScreen({ route, navigation }: any) {
 
     partsSnap.forEach((child: any) => {
       const value = child.val();
-      if (value?.userId === sellerId) nextParts.push({ id: child.key, ...value });
+      if (value?.userId === sellerId && value?.category?.trim() !== 'عادم') nextParts.push({ id: child.key, ...value });
       return undefined;
     });
 
@@ -56,10 +61,19 @@ export default function SellerProfileScreen({ route, navigation }: any) {
       return undefined;
     });
 
-    setCars(sortListingsByFreshnessAndStatus(nextCars));
-    setParts(sortListingsByFreshnessAndStatus(nextParts));
-    setRequests(sortListingsByFreshnessAndStatus(nextRequests));
+    const sortedCars = sortListingsByFreshnessAndStatus(nextCars);
+    const sortedParts = sortListingsByFreshnessAndStatus(nextParts);
+    const sortedRequests = sortListingsByFreshnessAndStatus(nextRequests);
+
+    setCars(sortedCars);
+    setParts(sortedParts);
+    setRequests(sortedRequests);
     setSellerUser(userSnap.exists() ? { uid: sellerId, ...userSnap.val() } : null);
+
+    await prefetchListingImages(
+      [...sortedCars, ...sortedParts, ...sortedRequests].slice(0, INITIAL_SELLER_IMAGE_PREFETCH),
+      INITIAL_SELLER_IMAGE_PREFETCH,
+    );
   }, [sellerId]);
 
   useEffect(() => {
@@ -103,14 +117,37 @@ export default function SellerProfileScreen({ route, navigation }: any) {
     });
   }, [cars, parts, requests]);
 
+  const visibleFeed = useMemo(() => feed.slice(0, INITIAL_SELLER_FEED_ITEMS), [feed]);
+
+  useEffect(() => {
+    runAfterFirstPaint(() => {
+      if (feed.length <= INITIAL_SELLER_FEED_ITEMS) return;
+      return prefetchListingImages(
+        feed.slice(INITIAL_SELLER_FEED_ITEMS).map(entry => entry.item),
+        INITIAL_SELLER_IMAGE_PREFETCH,
+      );
+    });
+  }, [feed]);
+
   const openWhatsApp = () => {
-    const phone = String(sellerUser?.whatsapp || sellerUser?.phone || sellerWhatsapp || '').replace(/[^0-9]/g, '');
+    const phone = String(sellerUser?.whatsapp || sellerUser?.phone || sellerWhatsapp || sellerPhone || '').replace(/[^0-9]/g, '');
     if (!phone) {
       Alert.alert('تنبيه', 'لا يوجد رقم واتساب لهذا المستخدم');
       return;
     }
     Linking.openURL(`https://wa.me/${phone}?text=${encodeURIComponent(`مرحبا ${sellerName}، عندي اهتمام بمعروضاتك في Q8 Sport Market`)}`);
   };
+
+  const openCall = () => {
+    const phone = String(sellerUser?.phone || sellerPhone || sellerUser?.whatsapp || sellerWhatsapp || '').replace(/[^0-9]/g, '');
+    if (!phone) {
+      Alert.alert('تنبيه', 'لا يوجد رقم اتصال لهذا المستخدم');
+      return;
+    }
+    Linking.openURL(`tel:${phone}`);
+  };
+
+  const hasCallNumber = Boolean(String(sellerUser?.phone || sellerPhone || '').replace(/[^0-9]/g, ''));
 
   const isAdminViewer = Boolean(user?.isAdmin);
   const isSelfProfile = user?.uid === sellerId;
@@ -214,8 +251,12 @@ export default function SellerProfileScreen({ route, navigation }: any) {
   return (
     <FlatList
       style={s.container}
-      data={feed}
+      data={visibleFeed}
       keyExtractor={entry => `${entry.type}-${entry.item.id}`}
+      initialNumToRender={6}
+      maxToRenderPerBatch={6}
+      windowSize={5}
+      removeClippedSubviews
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
       contentContainerStyle={{ padding: spacing.xl, paddingBottom: 40 }}
       ListHeaderComponent={
@@ -223,7 +264,11 @@ export default function SellerProfileScreen({ route, navigation }: any) {
           <View style={s.profileCard}>
             <View style={s.avatar}>
               {sellerUser?.avatar ? (
-                <Image source={{ uri: sellerUser.avatar }} style={s.avatarImage} />
+                <LazyImage
+                  uri={sellerUser.avatar}
+                  style={s.avatarImage}
+                  fallback={<Text style={s.avatarText}>{sellerName?.[0] || '?'}</Text>}
+                />
               ) : (
                 <Text style={s.avatarText}>{sellerName?.[0] || '?'}</Text>
               )}
@@ -252,8 +297,14 @@ export default function SellerProfileScreen({ route, navigation }: any) {
             </View>
 
             <TouchableOpacity style={s.cta} activeOpacity={0.88} onPress={openWhatsApp}>
-              <Text style={s.ctaText}>💬 تواصل مع المعلن</Text>
+              <Text style={s.ctaText}>💬 واتساب</Text>
             </TouchableOpacity>
+
+            {hasCallNumber ? (
+              <TouchableOpacity style={[s.cta, s.callCta]} activeOpacity={0.88} onPress={openCall}>
+                <Text style={s.callCtaText}>📞 اتصال</Text>
+              </TouchableOpacity>
+            ) : null}
 
             {isAdminViewer ? (
               <View style={s.adminToolsCard}>
@@ -373,6 +424,8 @@ const s = StyleSheet.create({
   trustLine: { color: colors.silverLight, fontSize: 13, lineHeight: 20, marginBottom: 4 },
   cta: { backgroundColor: colors.whatsapp, borderRadius: radius.xl, paddingVertical: 15, alignItems: 'center' },
   ctaText: { color: colors.white, fontWeight: '900', fontSize: 15 },
+  callCta: { backgroundColor: colors.metal, borderWidth: 1, borderColor: colors.metalBorder, marginTop: 10 },
+  callCtaText: { color: colors.white, fontWeight: '900', fontSize: 15 },
   adminToolsCard: { backgroundColor: colors.metal, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.metalBorder, padding: 16, marginTop: 14 },
   adminToolsTitle: { color: colors.white, fontSize: 15, fontWeight: '900' },
   adminToolsSub: { color: colors.silver, fontSize: 12, marginTop: 4, marginBottom: 12 },

@@ -20,6 +20,23 @@ function normalizeEmail(email: string) {
   return (email || '').trim().toLowerCase();
 }
 
+function onlyDigits(value: string) {
+  return (value || '').replace(/\D+/g, '');
+}
+
+function normalizePhoneDigits(value: string) {
+  const digits = onlyDigits(value);
+  // Kuwait common formats: 8 digits local, or 965 + 8 digits.
+  if (digits.length === 11 && digits.startsWith('965')) return digits.slice(3);
+  return digits;
+}
+
+function makeAppError(code: string, message: string) {
+  const error: any = new Error(message);
+  error.code = code;
+  return error;
+}
+
 const ADMIN_EMAILS = new Set(['summit_kw@hotmail.com']);
 
 function isAdminEmail(email?: string | null) {
@@ -41,6 +58,30 @@ function buildFallbackUser(firebaseUser: any): User {
 
 async function readUserRecord(uid: string) {
   return getDbSnapshot(dbRef(db, `users/${uid}`), `users/${uid}`, { showAlert: false });
+}
+
+async function assertPhoneNotUsed(phone: string, options?: { excludeUid?: string }) {
+  const phoneDigits = normalizePhoneDigits(phone);
+  if (!phoneDigits) return;
+
+  const snap = await getDbSnapshot(dbRef(db, 'users'), 'users', { showAlert: false });
+
+  let foundUid: string | null = null;
+  snap.forEach((child: any) => {
+    const uid = child.key as string;
+    if (options?.excludeUid && uid === options.excludeUid) return undefined;
+    const value = child.val() as Partial<User> | null;
+    const existingDigits = normalizePhoneDigits(String(value?.phone || ''));
+    if (existingDigits && existingDigits === phoneDigits) {
+      foundUid = uid;
+      return true;
+    }
+    return undefined;
+  });
+
+  if (foundUid) {
+    throw makeAppError('app/phone-already-in-use', 'phone already in use');
+  }
 }
 
 type AuthContextType = {
@@ -198,6 +239,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = async (data: { email: string; password: string; name: string; phone: string; whatsapp: string }) => {
     const normalizedEmail = normalizeEmail(data.email);
+
+    // Enforce phone uniqueness across real accounts only (users/*).
+    // Guest/manual listings do not create users records, so they never block registration.
+    await assertPhoneNotUsed(data.phone);
+
     const cred = await createUserWithEmailAndPassword(auth as any, normalizedEmail, data.password);
 
     try {
@@ -264,6 +310,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const sanitizedPhone = data.phone.trim();
     const sanitizedWhatsapp = data.whatsapp.trim();
+
+    await assertPhoneNotUsed(sanitizedPhone, { excludeUid: user.uid });
 
     const nextUser: User = {
       ...user,

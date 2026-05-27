@@ -40,9 +40,12 @@ cp .env.local.example .env.local
 - `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
 - `FIREBASE_PROJECT_ID`
 - `FIREBASE_DATABASE_URL`
+- `FIREBASE_STORAGE_BUCKET`
 - `FIREBASE_ADMIN_CLIENT_EMAIL`
 - `FIREBASE_ADMIN_PRIVATE_KEY`
 - `ADMIN_API_TOKEN`
+- `PUBLISH_RATE_LIMIT_MAX_ATTEMPTS`
+- `PUBLISH_RATE_LIMIT_WINDOW_MS`
 
 إذا لم تضبط `NEXT_PUBLIC_FIREBASE_DATABASE_URL` فالموقع سيحاول افتراض المسار الافتراضي بالشكل التالي:
 
@@ -62,7 +65,7 @@ https://<project-id>-default-rtdb.firebaseio.com
 
 ## النشر من الويب
 
-المسار `/sell` يرسل البيانات إلى `app/api/publish/route.ts` ثم يكتب مباشرة في:
+المسار `/sell` يرسل البيانات إلى `app/api/publish/route.ts` ثم يقوم السيرفر برفع الصور والكتابة في:
 
 - `users`
 - `cars`
@@ -75,13 +78,22 @@ https://<project-id>-default-rtdb.firebaseio.com
 - نشر قطعة
 - نشر مطلوب
 
-كما يدعم رفع الصور مباشرة من المتصفح إلى Firebase Storage قبل إرسال روابطها إلى قاعدة البيانات.
+كما يدعم رفع الصور من خلال السيرفر بدل الكتابة العامة المباشرة من المتصفح.
 
-لكي يعمل رفع الصور من الويب يجب أن تسمح قواعد Storage بهذا المسار أو تضيف مصادقة لاحقًا:
+المسار نفسه عليه rate limiting من جهة السيرفر بحسب IP ورقم الواتساب ونوع الإعلان لتقليل السبام.
+
+الصور التي ينشرها الويب تُحفظ في:
 
 - `web-uploads/**`
 
-ويعتمد على نفس قاعدة البيانات الموجودة أصلًا. إذا كانت قواعد Realtime Database تمنع الكتابة من هذا المسار فسيظهر خطأ واضح داخل النموذج، وعندها يلزم ضبط القواعد أو إضافة مصادقة كاملة لاحقًا.
+أما التطبيق الأصلي فيرفع الملفات بعد تسجيل الدخول إلى مسارات مرتبطة بالمستخدم:
+
+- `users/{uid}/**`
+- `cars/{uid}/{listingId}/**`
+- `parts/{uid}/{listingId}/**`
+- `requests/{uid}/{listingId}/**`
+
+وبالتالي يمكن إبقاء قواعد Realtime Database وStorage مشددة بدون كسر نموذج النشر في الويب.
 
 ## Production
 
@@ -115,3 +127,25 @@ curl -X POST http://localhost:3000/api/admin/delete-user \
 - حذف المستخدم من Firebase Authentication
 - حذف سياراته وقطعه وطلباته من Realtime Database
 - تحويل سجل المستخدم إلى حساب محذوف داخل `users/{uid}`
+
+## توليد imageThumbs للإعلانات القديمة
+
+إذا أضفت ميزة `imageThumbs` بعد وجود بيانات قديمة، شغّل migration من داخل مجلد `web`:
+
+```bash
+npm run migrate:image-thumbs -- --dry-run
+```
+
+وعند التأكد من النتيجة:
+
+```bash
+npm run migrate:image-thumbs -- --write
+```
+
+خيارات مفيدة:
+
+- `--collection cars`
+- `--collection cars,parts`
+- `--limit 20`
+
+هذا السكربت يحتاج نفس متغيرات Firebase Admin المستخدمة في الويب، ويضيف `imageThumbs` فقط بدون تعديل `updatedAt` حتى لا يعيد رفع الإعلانات القديمة للأعلى.

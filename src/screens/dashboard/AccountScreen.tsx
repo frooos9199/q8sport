@@ -1,12 +1,14 @@
 import React from 'react';
-import { Alert, View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput, Image, ActivityIndicator } from 'react-native';
+import { Alert, View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import LinearGradient from 'react-native-linear-gradient';
+import LazyImage from '../../components/LazyImage';
 import { useAuth } from '../../hooks/useAuth';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { t } from '../../i18n';
 
 export default function AccountScreen({ navigation }: any) {
+  const { width } = useWindowDimensions();
   const { user, logout, updateContactInfo, updateProfileAvatar } = useAuth();
   const [phone, setPhone] = React.useState('');
   const [whatsapp, setWhatsapp] = React.useState('');
@@ -19,6 +21,9 @@ export default function AccountScreen({ navigation }: any) {
   }, [user?.phone, user?.whatsapp]);
 
   if (!user) return null;
+
+  const screenPadding = width < 380 ? spacing.lg : spacing.xl;
+  const compactScreen = width < 360;
 
   const navigateToTab = (tabName: string, params?: object) => {
     const parent = navigation?.getParent?.();
@@ -48,6 +53,13 @@ export default function AccountScreen({ navigation }: any) {
           label: 'إدارة المستخدمين',
           desc: 'عرض كل الحسابات والبحث فيها ومنح أو سحب صلاحية الإدارة',
           onPress: () => navigation.navigate('UserManagement'),
+        },
+        {
+          key: 'banners',
+          icon: '🖼️',
+          label: 'إدارة البانرات',
+          desc: 'رفع بانرات إعلانية وتفعيلها أو إخفاؤها من التطبيق',
+          onPress: () => navigation.navigate('BannerManagement'),
         },
       ]
     : [
@@ -97,7 +109,7 @@ export default function AccountScreen({ navigation }: any) {
   };
 
   const pickAvatar = async () => {
-    const result = await launchImageLibrary({ mediaType: 'photo', selectionLimit: 1, quality: 0.85 });
+    const result = await launchImageLibrary({ mediaType: 'photo', selectionLimit: 1, quality: 0.8 });
     if (result.didCancel) return;
 
     const avatarUri = result.assets?.[0]?.uri;
@@ -115,14 +127,23 @@ export default function AccountScreen({ navigation }: any) {
   };
 
   return (
-    <ScrollView style={s.container} showsVerticalScrollIndicator={false}>
+    <ScrollView style={s.container} contentContainerStyle={{ padding: screenPadding }} showsVerticalScrollIndicator={false}>
       {/* Profile Card */}
-      <View style={s.profileCard}>
+      <View style={[s.profileCard, compactScreen && s.profileCardCompact]}>
         <LinearGradient colors={['rgba(227,30,36,0.1)', 'transparent']} style={s.profileGlow} />
         <View style={s.avatarWrap}>
           <View style={s.avatar}>
             {user.avatar ? (
-              <Image source={{ uri: user.avatar }} style={s.avatarImage} />
+              <LazyImage
+                uri={user.avatar}
+                style={s.avatarImage}
+                fallback={
+                  <>
+                    <LinearGradient colors={colors.gradient.primary as string[]} style={s.avatarFill} />
+                    <Text style={s.avatarText}>{user.name?.[0] || '?'}</Text>
+                  </>
+                }
+              />
             ) : (
               <>
                 <LinearGradient colors={colors.gradient.primary as string[]} style={s.avatarFill} />
@@ -179,13 +200,13 @@ export default function AccountScreen({ navigation }: any) {
       {/* Menu */}
       <View style={s.menuSection}>
         {menuItems.map((item, i) => (
-          <TouchableOpacity key={item.key ?? i} style={s.menuItem} activeOpacity={0.85} onPress={item.onPress}>
+          <TouchableOpacity key={item.key ?? i} style={[s.menuItem, compactScreen && s.menuItemCompact]} activeOpacity={0.85} onPress={item.onPress}>
             <View style={s.menuIconWrap}><Text style={s.menuIcon}>{item.icon}</Text></View>
             <View style={s.menuContent}>
               <Text style={s.menuLabel}>{item.label}</Text>
               <Text style={s.menuDesc}>{item.desc}</Text>
             </View>
-            <Text style={s.menuArrow}>←</Text>
+            {!compactScreen ? <Text style={s.menuArrow}>←</Text> : null}
           </TouchableOpacity>
         ))}
       </View>
@@ -201,10 +222,11 @@ export default function AccountScreen({ navigation }: any) {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.dark, padding: spacing.xl },
+  container: { flex: 1, backgroundColor: colors.dark },
 
   // Profile
   profileCard: { alignItems: 'center', backgroundColor: colors.darkCard, borderRadius: radius.xxl, borderWidth: 1, borderColor: colors.metalBorder, padding: 28, marginBottom: 16, overflow: 'hidden', ...shadows.card },
+  profileCardCompact: { padding: 22 },
   profileGlow: { position: 'absolute', top: 0, left: 0, right: 0, height: 100 },
   avatarWrap: { position: 'relative', marginBottom: 14 },
   avatar: { width: 80, height: 80, borderRadius: 40, overflow: 'hidden', justifyContent: 'center', alignItems: 'center' },
@@ -231,6 +253,7 @@ const s = StyleSheet.create({
   // Menu
   menuSection: { marginBottom: 20 },
   menuItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.darkCard, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.metalBorder, padding: 16, marginBottom: 10 },
+  menuItemCompact: { alignItems: 'flex-start' },
   menuIconWrap: { width: 44, height: 44, borderRadius: 14, backgroundColor: colors.metal, justifyContent: 'center', alignItems: 'center', marginRight: 14 },
   menuIcon: { fontSize: 20 },
   menuContent: { flex: 1 },

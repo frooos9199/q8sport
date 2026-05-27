@@ -280,7 +280,7 @@ export default function UserManagementScreen({ navigation }: any) {
                     style={[s.secondaryBtn, isPending && s.actionBtnDisabled]}
                     activeOpacity={0.85}
                     disabled={isPending}
-                    onPress={() => navigation.navigate('SellerProfile', { sellerId: item.uid, sellerName: item.name || item.email || 'مستخدم', sellerWhatsapp: item.whatsapp || item.phone || '' })}
+                    onPress={() => navigation.navigate('SellerProfile', { sellerId: item.uid, sellerName: item.name || item.email || 'مستخدم', sellerWhatsapp: item.whatsapp || item.phone || '', sellerPhone: item.phone || '' })}
                   >
                     <Text style={s.secondaryBtnText}>عرض التفاصيل</Text>
                   </TouchableOpacity>

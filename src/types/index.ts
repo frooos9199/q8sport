@@ -18,6 +18,7 @@ export interface Car {
   userId: string;
   userName: string;
   userWhatsapp: string;
+  userPhone?: string;
   userAvatar?: string;
   title: { ar: string; en: string };
   description: { ar: string; en: string };
@@ -30,8 +31,10 @@ export interface Car {
   transmission: "automatic" | "manual";
   fuelType: "petrol" | "diesel" | "electric" | "hybrid";
   images: string[];
+  imageThumbs?: string[];
   status: "active" | "sold" | "pending";
   createdAt: any;
+  updatedAt?: any;
 }
 
 export interface Part {
@@ -39,6 +42,7 @@ export interface Part {
   userId: string;
   userName: string;
   userWhatsapp: string;
+  userPhone?: string;
   userAvatar?: string;
   title: { ar: string; en: string };
   description: { ar: string; en: string };
@@ -47,8 +51,10 @@ export interface Part {
   price: number;
   condition: "new" | "used";
   images: string[];
+  imageThumbs?: string[];
   status: "active" | "sold" | "pending";
   createdAt: any;
+  updatedAt?: any;
 }
 
 export interface Request {
@@ -56,19 +62,37 @@ export interface Request {
   userId: string;
   userName: string;
   userWhatsapp: string;
+  userPhone?: string;
   userAvatar?: string;
   title: { ar: string; en: string };
   description: { ar: string; en: string };
   category: "car" | "part" | "other";
   budget?: number;
   images?: string[];
+  imageThumbs?: string[];
   status: "open" | "closed";
   createdAt: any;
+  updatedAt?: any;
 }
+
+export interface BannerAd {
+  id: string;
+  title?: string;
+  imageUrl: string;
+  targetUrl?: string;
+  placements?: BannerPlacement[];
+  isActive: boolean;
+  createdBy: string;
+  createdAt: any;
+  updatedAt?: any;
+  sortOrder?: number;
+}
+
+export type BannerPlacement = 'home' | 'cars' | 'parts';
 
 export const CAR_BRANDS = [
   "Porsche", "Ferrari", "Lamborghini", "McLaren", "Bugatti",
   "Aston Martin", "Maserati", "BMW", "Mercedes-Benz", "Audi",
-  "Nissan", "Toyota", "Chevrolet", "Ford", "Dodge",
+  "Nissan", "Toyota", "Mitsubishi", "Subaru", "Honda", "Chevrolet", "Ford", "Dodge",
   "Jaguar", "Bentley", "Rolls-Royce", "Lexus", "Other"
 ];

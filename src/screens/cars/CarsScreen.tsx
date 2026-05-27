@@ -7,11 +7,19 @@ import { getDbSnapshot } from '../../lib/firebaseDatabase';
 import { sortListingsByFreshnessAndStatus } from '../../lib/listingSort';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { t } from '../../i18n';
-import { Car } from '../../types';
+import { BannerAd, Car } from '../../types';
 import { ListCardSkeleton } from '../../components/Shimmer';
+import { fetchActiveBanners } from '../../lib/bannerAds';
+import SponsoredBannerCard from '../../components/SponsoredBannerCard';
+import { formatListingPublishedAt } from '../../lib/listingDate';
+
+type CarsFeedItem =
+  | { kind: 'car'; id: string; car: Car; carIndex: number }
+  | { kind: 'banner'; id: string; banner: BannerAd };
 
 export default function CarsScreen({ navigation }: any) {
   const [cars, setCars] = useState<Car[]>([]);
+  const [banners, setBanners] = useState<BannerAd[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
@@ -19,10 +27,14 @@ export default function CarsScreen({ navigation }: any) {
   const fetchCars = async () => {
     try {
       const carsQuery = query(dbRef(db, 'cars'), orderByChild('createdAt'));
-      const snap = await getDbSnapshot(carsQuery, 'cars');
+      const [snap, activeBanners] = await Promise.all([
+        getDbSnapshot(carsQuery, 'cars'),
+        fetchActiveBanners('cars'),
+      ]);
       const data: Car[] = [];
       snap.forEach((child: any) => { data.push({ id: child.key, ...child.val() }); return undefined; });
       setCars(sortListingsByFreshnessAndStatus(data));
+      setBanners(activeBanners);
     } catch (e) {
       console.log('Error:', e);
     }
@@ -42,9 +54,16 @@ export default function CarsScreen({ navigation }: any) {
     Linking.openURL(`https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(msg)}`);
   };
 
-  const renderItem = ({ item, index }: { item: Car; index: number }) => (
-    <AnimatedCard item={item} index={index} navigation={navigation} openWhatsApp={openWhatsApp} />
-  );
+  const feedItems: CarsFeedItem[] = [];
+  filtered.forEach((car, carIndex) => {
+    feedItems.push({ kind: 'car', id: car.id, car, carIndex });
+
+    if ((carIndex + 1) % 4 === 0 && banners.length > 0) {
+      const bannerIndex = Math.floor(carIndex / 4) % banners.length;
+      const banner = banners[bannerIndex];
+      feedItems.push({ kind: 'banner', id: `banner-${banner.id}-${carIndex}`, banner });
+    }
+  });
 
   return (
     <View style={s.container}>
@@ -78,8 +97,25 @@ export default function CarsScreen({ navigation }: any) {
         </View>
       ) : (
         <FlatList
-          data={filtered}
-          renderItem={renderItem}
+          data={feedItems}
+          renderItem={({ item, index }) => {
+            if (item.kind === 'banner') {
+              return (
+                <View style={s.bannerWrap}>
+                  <SponsoredBannerCard banner={item.banner} />
+                </View>
+              );
+            }
+
+            return (
+              <AnimatedCard
+                item={item.car}
+                index={item.carIndex}
+                navigation={navigation}
+                openWhatsApp={openWhatsApp}
+              />
+            );
+          }}
           keyExtractor={i => i.id}
           contentContainerStyle={{ padding: spacing.lg, paddingBottom: 100 }}
           ListEmptyComponent={
@@ -121,6 +157,9 @@ function AnimatedCard({ item, index, navigation, openWhatsApp }: any) {
             <Text style={s.cardTitle} numberOfLines={1}>{item.title?.ar}</Text>
             <Text style={s.cardSub} numberOfLines={1}>{item.brand} • {item.model}</Text>
             {item.mileage ? <Text style={s.mileageText}>{item.mileage?.toLocaleString()} {t('km')}</Text> : null}
+            {formatListingPublishedAt(item.createdAt) ? (
+              <Text style={s.publishedAtText}>📅 {formatListingPublishedAt(item.createdAt)}</Text>
+            ) : null}
           </View>
           <View style={s.cardBottom}>
             <View>
@@ -214,8 +253,13 @@ const s = StyleSheet.create({
   cardPrice: { color: colors.primary, fontWeight: '900', fontSize: 17 },
   cardKwd: { color: colors.silver, fontSize: 11, fontWeight: '700', marginTop: 2 },
   mileageText: { color: colors.silver, fontSize: 11, textAlign: 'right' },
+  publishedAtText: { color: colors.silver, fontSize: 11, textAlign: 'right' },
 
   emptyWrap: { alignItems: 'center', padding: 60 },
   emptyIcon: { fontSize: 50, marginBottom: 12 },
   emptyText: { color: colors.silver, fontSize: 15 },
+
+  bannerWrap: {
+    marginBottom: 14,
+  },
 });

@@ -12,7 +12,6 @@ export default function Home() {
   const featuredParts = [
     "مكينة موستنغ 5.0",
     "رنجات AMG أصلية",
-    "عادم بورش سبورت",
     "قير GT-R نظيف",
   ];
 

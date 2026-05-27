@@ -1,29 +1,48 @@
 import React, { useMemo, useState } from 'react';
-import { Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { push, ref as dbRef, serverTimestamp, set as dbSet, update } from '@react-native-firebase/database';
-import { ref as storageRef } from '@react-native-firebase/storage';
 
 import PremiumButton from '../../components/PremiumButton';
 import { useAuth } from '../../hooks/useAuth';
-import { db, storage } from '../../lib/firebase';
+import { db } from '../../lib/firebase';
+import { ListingMediaItem, uploadListingMedia } from '../../lib/listingImages';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 
-const CATEGORIES = ['مكينة', 'قير', 'رنجات', 'عادم', 'داخلية', 'بودي كت', 'فرامل', 'كمبيوتر', 'أخرى'];
-const BRANDS = ['Porsche', 'BMW', 'Mercedes-Benz', 'Audi', 'Ford', 'Chevrolet', 'Dodge', 'Nissan', 'Toyota'];
+const CATEGORIES = ['مكينة', 'قير', 'رنجات', 'داخلية', 'الخارجية', 'بودي كت', 'فرامل', 'كمبيوتر', 'أخرى'];
+const BRANDS = ['Porsche', 'BMW', 'Mercedes-Benz', 'Audi', 'Ford', 'Chevrolet', 'Dodge', 'Nissan', 'Toyota', 'Mitsubishi', 'Subaru', 'Honda'];
 
 export default function CreatePartScreen({ navigation, route }: any) {
+  const { width } = useWindowDimensions();
   const { user } = useAuth();
   const listing = route?.params?.listing;
   const isEditing = Boolean(listing?.id);
+  const isAdmin = Boolean(user?.isAdmin);
   const [title, setTitle] = useState(listing?.title?.ar || '');
   const [description, setDescription] = useState(listing?.description?.ar || '');
-  const [category, setCategory] = useState(listing?.category || 'مكينة');
+  const [category, setCategory] = useState(CATEGORIES.includes(listing?.category) ? listing.category : 'مكينة');
   const [price, setPrice] = useState(listing?.price ? String(listing.price) : '');
   const [condition, setCondition] = useState<'new' | 'used'>(listing?.condition || 'used');
-  const [images, setImages] = useState<string[]>(listing?.images || []);
+  const [sellerMode, setSellerMode] = useState<'self' | 'manual'>(() => {
+    if (!isAdmin) return 'self';
+    if (!isEditing) return 'self';
+    const listingUserId = String(listing?.userId || '');
+    return listingUserId && listingUserId !== String(user?.uid || '') ? 'manual' : 'self';
+  });
+  const [manualSellerName, setManualSellerName] = useState(listing?.userName || '');
+  const [manualSellerPhone, setManualSellerPhone] = useState(listing?.userPhone || '');
+  const [manualSellerWhatsapp, setManualSellerWhatsapp] = useState(listing?.userWhatsapp || '');
+  const [imageItems, setImageItems] = useState<ListingMediaItem[]>(() =>
+    (listing?.images || []).map((image: string, index: number) => ({
+      image,
+      thumb: listing?.imageThumbs?.[index] || image,
+    })),
+  );
   const [compatibleBrands, setCompatibleBrands] = useState<string[]>(listing?.compatibleBrands || ['Ford']);
   const [submitting, setSubmitting] = useState(false);
+  const screenPadding = width < 380 ? spacing.lg : spacing.xl;
+  const compactScreen = width < 390;
+  const previewSize = width < 380 ? 76 : 88;
 
   const canSubmit = useMemo(() => {
     return !!user && title.trim().length >= 3 && price.trim().length >= 1 && compatibleBrands.length >= 1 && !submitting;
@@ -34,28 +53,11 @@ export default function CreatePartScreen({ navigation, route }: any) {
     if (result.didCancel) return;
     const uris = (result.assets || []).map(asset => asset.uri).filter((uri): uri is string => Boolean(uri));
     if (!uris.length) return;
-    setImages(prev => [...prev, ...uris].slice(0, 6));
+    setImageItems(prev => [...prev, ...uris.map(uri => ({ image: uri }))].slice(0, 6));
   };
 
   const toggleBrand = (brandName: string) => {
     setCompatibleBrands(prev => prev.includes(brandName) ? prev.filter(item => item !== brandName) : [...prev, brandName]);
-  };
-
-  const uploadImages = async (partId: string) => {
-    const uploadedUrls: string[] = [];
-    for (let index = 0; index < images.length; index += 1) {
-      const uri = images[index];
-      if (/^https?:\/\//.test(uri)) {
-        uploadedUrls.push(uri);
-        continue;
-      }
-      const cleanUri = Platform.OS === 'ios' ? uri.replace('file://', '') : uri;
-      const imageRef = storageRef(storage, `parts/${partId}/${Date.now()}-${index}.jpg`);
-      await imageRef.putFile(cleanUri);
-      const url = await imageRef.getDownloadURL();
-      uploadedUrls.push(url);
-    }
-    return uploadedUrls;
   };
 
   const submit = async () => {
@@ -64,9 +66,46 @@ export default function CreatePartScreen({ navigation, route }: any) {
       return;
     }
 
+    const digits = (value: unknown) => String(value || '').replace(/[^0-9]/g, '');
+    const manualMode = isAdmin && sellerMode === 'manual';
+    const sellerNameValue = (manualMode ? manualSellerName : user.name || '').trim();
+    let sellerPhoneValue = (manualMode ? manualSellerPhone : user.phone || '').trim();
+    let sellerWhatsappValue = (manualMode ? manualSellerWhatsapp : user.whatsapp || '').trim();
+
+    if (manualMode) {
+      const phoneDigits = digits(sellerPhoneValue);
+      const waDigits = digits(sellerWhatsappValue);
+      const selfWaDigits = digits(user?.whatsapp);
+      const selfPhoneDigits = digits(user?.phone);
+
+      if (phoneDigits && (!waDigits || waDigits === selfWaDigits || waDigits === selfPhoneDigits)) {
+        sellerWhatsappValue = sellerPhoneValue;
+      }
+      if (!phoneDigits && waDigits) {
+        sellerPhoneValue = sellerWhatsappValue;
+      }
+    }
+
+    if (manualMode) {
+      const contactDigits = digits(sellerWhatsappValue || sellerPhoneValue);
+      if (sellerNameValue.length < 2) {
+        Alert.alert('خطأ', 'اكتب اسم المعلن');
+        return;
+      }
+      if (!contactDigits) {
+        Alert.alert('خطأ', 'لازم تضيف رقم اتصال أو رقم واتساب');
+        return;
+      }
+    }
+
     const numericPrice = Number(price);
     if (Number.isNaN(numericPrice)) {
       Alert.alert('خطأ', 'السعر لازم يكون رقم صحيح');
+      return;
+    }
+
+    if (!CATEGORIES.includes(category)) {
+      Alert.alert('خطأ', 'فئة القطعة غير مسموح بها');
       return;
     }
 
@@ -74,20 +113,32 @@ export default function CreatePartScreen({ navigation, route }: any) {
     try {
       const newRef = isEditing ? dbRef(db, `parts/${listing.id}`) : push(dbRef(db, 'parts'));
       const partId = (isEditing ? listing.id : newRef.key) as string;
-      const imageUrls = images.length ? await uploadImages(partId) : [];
+      const media = imageItems.length ? await uploadListingMedia('parts', partId, imageItems) : { images: [], imageThumbs: [] };
+
+      const derivedGuestId = () => {
+        const contactDigits = digits(sellerWhatsappValue || sellerPhoneValue);
+        const unique = `${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+        return contactDigits ? `guest-${contactDigits}-${unique}` : `guest-${unique}`;
+      };
+
+      const sellerIdValue = manualMode
+        ? (isEditing && listing?.userId ? String(listing.userId) : derivedGuestId())
+        : user.uid;
 
       const payload = {
-        userId: user.uid,
-        userName: user.name,
-        userWhatsapp: user.whatsapp,
-        userAvatar: user.avatar || '',
+        userId: sellerIdValue,
+        userName: sellerNameValue,
+        userPhone: sellerPhoneValue,
+        userWhatsapp: sellerWhatsappValue,
+        userAvatar: manualMode ? '' : user.avatar || '',
         title: { ar: title.trim(), en: title.trim() },
         description: { ar: description.trim(), en: description.trim() },
         category,
         compatibleBrands,
         price: numericPrice,
         condition,
-        images: imageUrls,
+        images: media.images,
+        imageThumbs: media.imageThumbs,
         status: 'active',
         ...(isEditing ? { updatedAt: serverTimestamp() } : { createdAt: serverTimestamp() }),
       };
@@ -108,16 +159,35 @@ export default function CreatePartScreen({ navigation, route }: any) {
   };
 
   const removeImage = (uri: string) => {
-    setImages(prev => prev.filter(item => item !== uri));
+    setImageItems(prev => prev.filter(item => item.image !== uri));
   };
 
   return (
     <KeyboardAvoidingView style={s.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[s.content, { padding: screenPadding }]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <View style={s.heroCard}>
           <Text style={s.heroTitle}>{isEditing ? 'حدث إعلان القطعة' : 'القطعة تنزل فورًا'}</Text>
           <Text style={s.heroSub}>{isEditing ? 'عدل المعلومات والصور وخلك ظاهر مباشرة.' : 'حدد نوع القطعة وتوافقها وصورها، وخلك جاهز للتواصل المباشر.'}</Text>
         </View>
+
+        {isAdmin ? (
+          <View style={s.adminCard}>
+            <Text style={s.adminTitle}>أدوات الإدارة</Text>
+            <Text style={s.adminSub}>تقدر تنشر الإعلان لحسابك أو نيابة عن شخص ما عنده حساب.</Text>
+            <View style={s.adminModeRow}>
+              <Chip label="حسابي" active={sellerMode === 'self'} onPress={() => setSellerMode('self')} />
+              <Chip label="بدون حساب" active={sellerMode === 'manual'} onPress={() => setSellerMode('manual')} />
+            </View>
+
+            {sellerMode === 'manual' ? (
+              <View style={{ marginTop: 10 }}>
+                <Field label="اسم المعلن" value={manualSellerName} onChangeText={setManualSellerName} placeholder="مثال: أبو فهد" />
+                <Field label="رقم الهاتف (اتصال)" value={manualSellerPhone} onChangeText={setManualSellerPhone} placeholder="+965..." keyboardType="phone-pad" />
+                <Field label="رقم واتساب" value={manualSellerWhatsapp} onChangeText={setManualSellerWhatsapp} placeholder="+965..." keyboardType="phone-pad" />
+              </View>
+            ) : null}
+          </View>
+        ) : null}
 
         <Field label="عنوان القطعة" value={title} onChangeText={setTitle} placeholder="مثال: مكينة موستنغ 5.0 كاملة" />
         <Field label="الوصف" value={description} onChangeText={setDescription} placeholder="اكتب الحالة والتفاصيل وما يشمله البيع" multiline />
@@ -132,7 +202,7 @@ export default function CreatePartScreen({ navigation, route }: any) {
         <Field label="السعر" value={price} onChangeText={setPrice} placeholder="750" keyboardType="number-pad" />
 
         <Text style={s.label}>الحالة</Text>
-        <View style={s.inlineRow}>
+        <View style={[s.inlineRow, compactScreen && s.inlineRowWrap]}>
           <Chip label="مستعمل" active={condition === 'used'} onPress={() => setCondition('used')} />
           <Chip label="جديد" active={condition === 'new'} onPress={() => setCondition('new')} />
         </View>
@@ -149,12 +219,12 @@ export default function CreatePartScreen({ navigation, route }: any) {
           <Text style={s.imagePickerText}>📸 اختر صور القطعة</Text>
           <Text style={s.imagePickerHint}>حتى 6 صور</Text>
         </TouchableOpacity>
-        {!!images.length && (
+        {!!imageItems.length && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.previewRow}>
-            {images.map(uri => (
-              <View key={uri} style={s.previewWrap}>
-                <Image source={{ uri }} style={s.previewImage} />
-                <TouchableOpacity style={s.previewRemove} onPress={() => removeImage(uri)}>
+            {imageItems.map(item => (
+              <View key={item.image} style={s.previewWrap}>
+                <Image source={{ uri: item.image }} style={[s.previewImage, { width: previewSize, height: previewSize }]} />
+                <TouchableOpacity style={s.previewRemove} onPress={() => removeImage(item.image)}>
                   <Text style={s.previewRemoveText}>✕</Text>
                 </TouchableOpacity>
               </View>
@@ -197,6 +267,10 @@ const s = StyleSheet.create({
   heroCard: { backgroundColor: colors.darkCard, borderRadius: radius.xxl, borderWidth: 1, borderColor: colors.primaryBorder, padding: 20, marginBottom: 18 },
   heroTitle: { color: colors.white, fontSize: 22, fontWeight: '900', marginBottom: 6 },
   heroSub: { color: colors.silverLight, fontSize: 14, lineHeight: 22 },
+  adminCard: { backgroundColor: colors.metal, borderRadius: radius.xxl, borderWidth: 1, borderColor: colors.metalBorder, padding: 16, marginBottom: 18, ...shadows.card },
+  adminTitle: { color: colors.white, fontSize: 15, fontWeight: '900' },
+  adminSub: { color: colors.silver, fontSize: 12, marginTop: 6, lineHeight: 18 },
+  adminModeRow: { flexDirection: 'row', gap: 10, marginTop: 12, flexWrap: 'wrap' },
   fieldWrap: { marginBottom: 14 },
   label: { color: colors.silver, fontSize: 12, fontWeight: '800', marginBottom: 8 },
   input: { backgroundColor: colors.darkCard, borderWidth: 1, borderColor: colors.metalBorder, borderRadius: radius.lg, paddingHorizontal: 14, paddingVertical: 14, color: colors.white, fontWeight: '700' },
@@ -213,7 +287,7 @@ const s = StyleSheet.create({
   imagePickerHint: { color: colors.silver, marginTop: 5, fontSize: 12 },
   previewRow: { paddingTop: 14 },
   previewWrap: { marginRight: 10 },
-  previewImage: { width: 88, height: 88, borderRadius: radius.lg, marginRight: 10 },
+  previewImage: { borderRadius: radius.lg, marginRight: 10 },
   previewRemove: { position: 'absolute', top: 6, right: 6, width: 22, height: 22, borderRadius: 11, backgroundColor: 'rgba(0,0,0,0.8)', alignItems: 'center', justifyContent: 'center' },
   previewRemoveText: { color: colors.white, fontWeight: '900', fontSize: 11 },
 });

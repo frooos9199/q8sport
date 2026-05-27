@@ -1,4 +1,4 @@
-package com.q8sportapp
+package com.q8sportcar.app
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, Linking } from 'react-native';
+import { Alert, View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking, useWindowDimensions } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { ref as dbRef } from '@react-native-firebase/database';
 
+import LazyImage from '../../components/LazyImage';
 import { db } from '../../lib/firebase';
 import { getDbSnapshot } from '../../lib/firebaseDatabase';
+import { formatListingPublishedAt } from '../../lib/listingDate';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { Part } from '../../types';
 import { t } from '../../i18n';
 import { shareListing } from '../../lib/shareListing';
 
 export default function PartDetailsScreen({ route, navigation }: any) {
+  const { width } = useWindowDimensions();
   const { id } = route.params;
   const [part, setPart] = useState<Part | null>(null);
   const [loading, setLoading] = useState(true);
@@ -22,7 +25,10 @@ export default function PartDetailsScreen({ route, navigation }: any) {
       try {
         const snap = await getDbSnapshot(dbRef(db, `parts/${id}`), `parts/${id}`);
         if (mounted && snap.exists()) {
-          setPart({ id: snap.key, ...snap.val() });
+          const nextPart = { id: snap.key, ...snap.val() };
+          if (nextPart.category?.trim() !== 'عادم') {
+            setPart(nextPart);
+          }
         }
       } catch (e) {
         console.log('PartDetails fetch error:', e);
@@ -54,9 +60,24 @@ export default function PartDetailsScreen({ route, navigation }: any) {
   }
 
   const contactSeller = () => {
-    const phone = part.userWhatsapp?.replace(/[^0-9]/g, '');
+    const phone = String(part.userWhatsapp || part.userPhone || '').replace(/[^0-9]/g, '');
+    if (!phone) {
+      Alert.alert('تنبيه', 'لا يوجد رقم واتساب لهذا الإعلان');
+      return;
+    }
     Linking.openURL(`https://wa.me/${phone}?text=${encodeURIComponent(`مرحبا، عندي اهتمام بخصوص القطعة: ${part.title?.ar}`)}`);
   };
+
+  const callSeller = () => {
+    const phone = String(part.userPhone || part.userWhatsapp || '').replace(/[^0-9]/g, '');
+    if (!phone) {
+      Alert.alert('تنبيه', 'لا يوجد رقم اتصال لهذا الإعلان');
+      return;
+    }
+    Linking.openURL(`tel:${phone}`);
+  };
+
+  const callDigits = String(part.userPhone || part.userWhatsapp || '').replace(/[^0-9]/g, '');
 
   const shareMessage = [
     `إعلان من تطبيق Q8 Sport Car`,
@@ -66,14 +87,16 @@ export default function PartDetailsScreen({ route, navigation }: any) {
     part.description?.ar || '',
     'حمّل التطبيق وتابع المزيد من القطع والسيارات المميزة.',
   ].filter(Boolean).join('\n');
+  const heroHeight = Math.max(250, Math.min(width * 0.88, 340));
+  const shareChipWidth = width < 360 ? '100%' : '47%';
 
   return (
     <ScrollView style={s.container} contentContainerStyle={{ paddingBottom: 36 }} showsVerticalScrollIndicator={false}>
       <View style={s.heroWrap}>
         {part.images?.[0] ? (
-          <Image source={{ uri: part.images[0] }} style={s.heroImage} />
+          <LazyImage uri={part.images[0]} style={[s.heroImage, { height: heroHeight }]} fallback={<Text style={s.placeholderIcon}>⚙️</Text>} />
         ) : (
-          <View style={[s.heroImage, s.placeholder]}>
+          <View style={[s.heroImage, { height: heroHeight }, s.placeholder]}>
             <Text style={s.placeholderIcon}>⚙️</Text>
           </View>
         )}
@@ -98,6 +121,10 @@ export default function PartDetailsScreen({ route, navigation }: any) {
             <Text style={s.detailValue}>{part.condition === 'new' ? t('new') : t('used')}</Text>
           </View>
           <View style={s.detailRow}>
+            <Text style={s.detailLabel}>{t('publishedOn')}</Text>
+            <Text style={s.detailValue}>{formatListingPublishedAt(part.createdAt) || '—'}</Text>
+          </View>
+          <View style={s.detailRow}>
             <Text style={s.detailLabel}>الحالة في السوق</Text>
             <Text style={s.detailValue}>{part.status === 'active' ? 'معروض الآن' : part.status === 'sold' ? t('sold') : t('pending')}</Text>
           </View>
@@ -117,11 +144,11 @@ export default function PartDetailsScreen({ route, navigation }: any) {
         <TouchableOpacity
           style={s.sellerCard}
           activeOpacity={0.88}
-          onPress={() => navigation.navigate('SellerProfile', { sellerId: part.userId, sellerName: part.userName, sellerWhatsapp: part.userWhatsapp })}
+          onPress={() => navigation.navigate('SellerProfile', { sellerId: part.userId, sellerName: part.userName, sellerWhatsapp: part.userWhatsapp, sellerPhone: part.userPhone })}
         >
           <View style={s.sellerAvatar}>
             {part.userAvatar ? (
-              <Image source={{ uri: part.userAvatar }} style={s.sellerAvatarImage} />
+              <LazyImage uri={part.userAvatar} style={s.sellerAvatarImage} fallback={<Text style={s.sellerAvatarText}>{part.userName?.[0] || '?'}</Text>} />
             ) : (
               <Text style={s.sellerAvatarText}>{part.userName?.[0] || '?'}</Text>
             )}
@@ -131,25 +158,32 @@ export default function PartDetailsScreen({ route, navigation }: any) {
             <Text style={s.sellerName}>{part.userName}</Text>
             <Text style={s.sellerHint}>تواصل مباشر بدون وسيط • اضغط لعرض الملف</Text>
           </View>
-          <TouchableOpacity style={s.sellerWhatsappBtn} activeOpacity={0.88} onPress={contactSeller}>
-            <Text style={s.sellerWhatsappIcon}>💬</Text>
-          </TouchableOpacity>
+          <View style={s.sellerActions}>
+            <TouchableOpacity style={s.sellerWhatsappBtn} activeOpacity={0.88} onPress={contactSeller}>
+              <Text style={s.sellerWhatsappIcon}>💬</Text>
+            </TouchableOpacity>
+            {callDigits ? (
+              <TouchableOpacity style={s.sellerCallBtn} activeOpacity={0.88} onPress={callSeller}>
+                <Text style={s.sellerCallIcon}>📞</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
         </TouchableOpacity>
 
         <View style={s.shareCard}>
           <Text style={s.shareTitle}>شارك الإعلان</Text>
           <Text style={s.shareSubtitle}>انشر القطعة في واتساب أو انستقرام أو تيكتوك أو سناب</Text>
           <View style={s.shareGrid}>
-            <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => shareListing('whatsapp', shareMessage)}>
+            <TouchableOpacity style={[s.shareChip, { width: shareChipWidth }]} activeOpacity={0.88} onPress={() => shareListing('whatsapp', shareMessage)}>
               <Text style={s.shareChipText}>واتساب</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => shareListing('instagram', shareMessage)}>
+            <TouchableOpacity style={[s.shareChip, { width: shareChipWidth }]} activeOpacity={0.88} onPress={() => shareListing('instagram', shareMessage)}>
               <Text style={s.shareChipText}>انستقرام</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => shareListing('tiktok', shareMessage)}>
+            <TouchableOpacity style={[s.shareChip, { width: shareChipWidth }]} activeOpacity={0.88} onPress={() => shareListing('tiktok', shareMessage)}>
               <Text style={s.shareChipText}>تيكتوك</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => shareListing('snapchat', shareMessage)}>
+            <TouchableOpacity style={[s.shareChip, { width: shareChipWidth }]} activeOpacity={0.88} onPress={() => shareListing('snapchat', shareMessage)}>
               <Text style={s.shareChipText}>سناب</Text>
             </TouchableOpacity>
           </View>
@@ -165,7 +199,7 @@ const s = StyleSheet.create({
   loadingText: { color: colors.silver, fontSize: 15 },
 
   heroWrap: { position: 'relative' },
-  heroImage: { width: '100%', height: 320, backgroundColor: colors.darkCard },
+  heroImage: { width: '100%', backgroundColor: colors.darkCard },
   placeholder: { justifyContent: 'center', alignItems: 'center' },
   placeholderIcon: { fontSize: 56 },
   heroGradient: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 140 },
@@ -195,6 +229,7 @@ const s = StyleSheet.create({
   sellerLabel: { color: colors.silver, fontSize: 12, marginBottom: 6 },
   sellerName: { color: colors.white, fontWeight: '900', fontSize: 18, marginBottom: 4 },
   sellerHint: { color: colors.silverLight, fontSize: 12 },
+  sellerActions: { flexDirection: 'row', alignItems: 'center', gap: 10, marginLeft: 12 },
   sellerWhatsappBtn: {
     width: 46,
     height: 46,
@@ -202,9 +237,19 @@ const s = StyleSheet.create({
     backgroundColor: colors.whatsapp,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 12,
   },
   sellerWhatsappIcon: { color: colors.white, fontSize: 18 },
+  sellerCallBtn: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: colors.metal,
+    borderWidth: 1,
+    borderColor: colors.metalBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sellerCallIcon: { color: colors.white, fontSize: 18 },
   shareCard: { backgroundColor: colors.darkCard, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.metalBorder, padding: 18, marginBottom: 16, ...shadows.card },
   shareTitle: { color: colors.white, fontSize: 16, fontWeight: '900', marginBottom: 6 },
   shareSubtitle: { color: colors.silver, fontSize: 12, lineHeight: 20, marginBottom: 14 },

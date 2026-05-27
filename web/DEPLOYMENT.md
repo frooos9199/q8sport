@@ -17,9 +17,11 @@
 - `FIREBASE_ADMIN_CLIENT_EMAIL=...`
 - `FIREBASE_ADMIN_PRIVATE_KEY=...`
 - `ADMIN_API_TOKEN=...`
+- `PUBLISH_RATE_LIMIT_MAX_ATTEMPTS=3`
+- `PUBLISH_RATE_LIMIT_WINDOW_MS=900000`
 
-المسار `NEXT_PUBLIC_*` مطلوب للقراءة والرفع من المتصفح.
-المسار غير العام مطلوب لعمليات السيرفر مثل `app/api/publish`.
+المسار `NEXT_PUBLIC_*` مطلوب لقراءة البيانات من المتصفح.
+المسار غير العام مطلوب لعمليات السيرفر مثل `app/api/publish` ورفع الصور عبر Firebase Admin.
 والمتغيرات الإدارية مطلوبة لمسارات الإدارة الحساسة مثل حذف المستخدم من Firebase Authentication.
 
 ## 2. إعداد الدومين
@@ -29,23 +31,37 @@
 
 ## 3. قواعد Firebase Realtime Database
 
-إذا أردت بقاء النشر المفتوح الحالي من الموقع، فالحد الأدنى للقواعد يجب أن يسمح بالقراءة العامة والكتابة على المسارات المستخدمة.
-
-مثال مرن للبداية فقط:
+القواعد الحالية بعد التشديد تبقي القراءة عامة، لكنها تمنع الكتابة إلا للمستخدم الموثق صاحب الإعلان أو المشرف:
 
 ```json
 {
   "rules": {
     ".read": true,
-    "cars": { ".write": true },
-    "parts": { ".write": true },
-    "requests": { ".write": true },
-    "users": { ".write": true }
+    "cars": {
+      "$carId": {
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('isAdmin').val() === true || (!data.exists() && newData.child('userId').val() === auth.uid) || (data.exists() && data.child('userId').val() === auth.uid))"
+      }
+    },
+    "parts": {
+      "$partId": {
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('isAdmin').val() === true || (!data.exists() && newData.child('userId').val() === auth.uid) || (data.exists() && data.child('userId').val() === auth.uid))"
+      }
+    },
+    "requests": {
+      "$requestId": {
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('isAdmin').val() === true || (!data.exists() && newData.child('userId').val() === auth.uid) || (data.exists() && data.child('userId').val() === auth.uid))"
+      }
+    },
+    "users": {
+      "$uid": {
+        ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('isAdmin').val() === true)"
+      }
+    }
   }
 }
 ```
 
-هذا مناسب للإطلاق السريع فقط، وليس للأمان النهائي.
+الموقع نفسه لم يعد يحتاج كتابة عامة من المتصفح، لأن `/api/publish` أصبح يرفع الصور ويكتب البيانات من جهة السيرفر عبر Firebase Admin.
 
 هذه القواعد أصبحت محفوظة داخل الريبو في:
 
@@ -54,25 +70,44 @@
 
 ## 4. قواعد Firebase Storage
 
-رفع الصور من الويب يستخدم المسار التالي:
+رفع الصور من الويب يتم الآن من جهة السيرفر إلى المسار التالي:
 
 - `web-uploads/**`
 
-مثال بداية مرن:
+والكتابة العامة من المتصفح أصبحت مقفلة. التطبيق الأصلي يرفع إلى مسارات مرتبطة بالمستخدم الموثق:
+
+- `users/{uid}/**`
+- `cars/{uid}/{listingId}/**`
+- `parts/{uid}/{listingId}/**`
+- `requests/{uid}/{listingId}/**`
+
+مثال القواعد الحالية:
 
 ```text
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    match /users/{uid}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    match /{listingType}/{uid}/{listingId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null
+        && listingType in ['cars', 'parts', 'requests']
+        && request.auth.uid == uid;
+    }
+
     match /web-uploads/{allPaths=**} {
       allow read: if true;
-      allow write: if true;
+      allow write: if false;
     }
   }
 }
 ```
 
-مرة أخرى: هذا مؤقت للإطلاق السريع. التشديد الصحيح لاحقًا يكون بمصادقة مستخدمين وقواعد مرتبطة بالهوية.
+هذه هي الصيغة المناسبة قبل الإطلاق، لأنها تمنع الرفع العام وتبقي الرفع من التطبيق الأصلي مرتبطًا بالمستخدم الموثق.
 
 ## 5. فحص ما بعد النشر
 
@@ -82,11 +117,12 @@ service firebase.storage {
 - صفحة السوق تعمل
 - صفحات الإعلان الفردية تعمل
 - صفحة `/sell` تفتح
-- رفع الصور ينجح من المتصفح
+- رفع الصور ينجح من المتصفح عبر `/api/publish`
+- إذا كررت النشر بسرعة من نفس المصدر تحصل على `429`
 - `/robots.txt` و`/sitemap.xml` يفتحان بشكل صحيح
 
 ## 6. الترتيب التالي بعد الإطلاق
 
 - إضافة Firebase Auth للويب
-- تحويل النشر والرفع إلى مستخدم موثق
-- تشديد قواعد Database وStorage
+- إضافة rate limiting وCAPTCHA إلى `/api/publish`
+- إضافة مراجعة آلية لقواعد Database وStorage عبر Emulator أو CI

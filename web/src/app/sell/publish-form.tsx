@@ -1,15 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-
-import { canUseFirebaseStorage, storage } from "@/lib/firebase-client";
 
 type PublishType = "car" | "part" | "request";
 
-const CAR_BRANDS = ["Porsche", "BMW", "Mercedes-Benz", "Audi", "Ford", "Chevrolet", "Dodge", "Nissan", "Toyota", "Other"];
-const PART_CATEGORIES = ["مكينة", "قير", "رنجات", "عادم", "داخلية", "بودي كت", "فرامل", "كمبيوتر", "أخرى"];
-const COMPATIBLE_BRANDS = ["Porsche", "BMW", "Mercedes-Benz", "Audi", "Ford", "Chevrolet", "Dodge", "Nissan", "Toyota"];
+const CAR_BRANDS = ["Porsche", "BMW", "Mercedes-Benz", "Audi", "Ford", "Chevrolet", "Dodge", "Nissan", "Toyota", "Mitsubishi", "Subaru", "Honda", "Other"];
+const PART_CATEGORIES = ["مكينة", "قير", "رنجات", "داخلية", "الخارجية", "بودي كت", "فرامل", "كمبيوتر", "أخرى"];
+const COMPATIBLE_BRANDS = ["Porsche", "BMW", "Mercedes-Benz", "Audi", "Ford", "Chevrolet", "Dodge", "Nissan", "Toyota", "Mitsubishi", "Subaru", "Honda"];
 
 const initialState = {
   sellerName: "",
@@ -60,75 +57,44 @@ export default function PublishForm() {
     setSelectedFiles(files.slice(0, 6));
   };
 
-  const uploadSelectedFiles = async () => {
-    if (!selectedFiles.length) return [] as string[];
-
-    if (!canUseFirebaseStorage()) {
-      throw new Error("إعدادات Firebase Storage غير مكتملة على الويب");
-    }
-
-    setUploading(true);
-    try {
-      const folder = `${type}/${Date.now()}-${crypto.randomUUID()}`;
-      const uploadedUrls = await Promise.all(
-        selectedFiles.map(async (file, index) => {
-          const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
-          const safeName = file.name.replace(/[^a-zA-Z0-9.-]+/g, "-").toLowerCase();
-          const fileRef = ref(storage, `web-uploads/${folder}/${index}-${safeName || `image.${extension}`}`);
-
-          await uploadBytes(fileRef, file, {
-            contentType: file.type || `image/${extension}`,
-          });
-
-          return getDownloadURL(fileRef);
-        }),
-      );
-
-      return uploadedUrls;
-    } finally {
-      setUploading(false);
-    }
-  };
-
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSubmitting(true);
     setMessage(null);
 
     try {
-      const uploadedImageUrls = await uploadSelectedFiles();
       const manualImageUrls = form.imageUrls
         .split("\n")
         .map((line) => line.trim())
         .filter(Boolean);
 
+      const body = new FormData();
+      body.set("type", type);
+      body.set("sellerName", form.sellerName);
+      body.set("sellerWhatsapp", form.sellerWhatsapp);
+      body.set("website", form.website);
+      body.set("title", form.title);
+      body.set("description", form.description);
+      body.set("brand", form.brand);
+      body.set("model", form.model);
+      body.set("year", form.year);
+      body.set("price", form.price);
+      body.set("mileage", form.mileage);
+      body.set("color", form.color);
+      body.set("transmission", form.transmission);
+      body.set("fuelType", form.fuelType);
+      body.set("category", form.category);
+      body.set("condition", form.condition);
+      body.set("budget", form.budget);
+      body.set("requestCategory", form.requestCategory);
+
+      manualImageUrls.forEach((url) => body.append("imageUrls", url));
+      form.compatibleBrands.forEach((brand) => body.append("compatibleBrands", brand));
+      selectedFiles.forEach((file) => body.append("imageFiles", file));
+
       const response = await fetch("/api/publish", {
         method: "POST",
-        headers: {
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          type,
-          sellerName: form.sellerName,
-          sellerWhatsapp: form.sellerWhatsapp,
-          website: form.website,
-          title: form.title,
-          description: form.description,
-          imageUrls: [...uploadedImageUrls, ...manualImageUrls],
-          brand: form.brand,
-          model: form.model,
-          year: form.year,
-          price: form.price,
-          mileage: form.mileage,
-          color: form.color,
-          transmission: form.transmission,
-          fuelType: form.fuelType,
-          category: form.category,
-          condition: form.condition,
-          compatibleBrands: form.compatibleBrands,
-          budget: form.budget,
-          requestCategory: form.requestCategory,
-        }),
+        body,
       });
 
       const result = (await response.json()) as { error?: string; sellerId?: string };
@@ -178,7 +144,7 @@ export default function PublishForm() {
                 onChange={onFileChange}
                 className="w-full rounded-[1.1rem] border border-dashed border-white/15 bg-white/[0.03] px-4 py-4 text-sm font-bold text-white file:mr-3 file:rounded-full file:border-0 file:bg-brand file:px-4 file:py-2 file:text-sm file:font-black file:text-white"
               />
-              <p className="text-xs leading-6 text-zinc-500">يمكنك رفع حتى 6 صور مباشرة إلى Firebase Storage.</p>
+              <p className="text-xs leading-6 text-zinc-500">يمكنك رفع حتى 6 صور، وسيتم إرسالها عبر السيرفر بشكل آمن.</p>
               {selectedFiles.length ? (
                 <div className="rounded-[1rem] border border-white/8 bg-white/[0.03] p-3 text-xs font-bold text-zinc-300">
                   {selectedFiles.map((file) => file.name).join(" • ")}
@@ -251,7 +217,7 @@ export default function PublishForm() {
             <button type="submit" disabled={submitting || uploading} className="rounded-full bg-brand px-6 py-4 text-sm font-black text-white transition hover:bg-[#ff5b4e] disabled:cursor-not-allowed disabled:opacity-60">
               {uploading ? "جاري رفع الصور..." : submitting ? "جاري النشر..." : "نشر مباشرة"}
             </button>
-            <p className="text-sm leading-7 text-zinc-400">يتم النشر فورًا على نفس مسارات السوق بدون طبقة موافقات.</p>
+            <p className="text-sm leading-7 text-zinc-400">يتم النشر فورًا على نفس مسارات السوق بدون طبقة موافقات. أول 10 معلنين نشطين يتأهلون لامتياز الإعلانات المجانية.</p>
           </div>
 
           {message ? (

@@ -2,6 +2,7 @@ import React from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
 import { useAuth } from '../hooks/useAuth';
 import { colors } from '../lib/theme';
@@ -23,6 +24,7 @@ import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import AccountScreen from '../screens/dashboard/AccountScreen';
 import UserManagementScreen from '../screens/dashboard/UserManagementScreen';
+import BannerManagementScreen from '../screens/dashboard/BannerManagementScreen';
 import IntroSplashScreen from '../screens/IntroSplashScreen';
 import LaunchNoticeScreen from '../screens/LaunchNoticeScreen';
 
@@ -174,6 +176,7 @@ function AccountStack() {
         options={({ route }: any) => ({ title: route?.params?.adminView ? 'إدارة السوق' : 'إعلاناتي' })}
       />
       <Stack.Screen name="UserManagement" component={UserManagementScreen} options={{ title: 'إدارة المستخدمين' }} />
+      <Stack.Screen name="BannerManagement" component={BannerManagementScreen} options={{ title: 'إدارة البانرات' }} />
       <Stack.Screen name="SellerProfile" component={SellerProfileScreen} options={{ title: 'تفاصيل المستخدم' }} />
       <Stack.Screen name="CreateListingHub" component={CreateListingHubScreen} options={{ title: 'وش تبي تنشر؟' }} />
       <Stack.Screen name="CreateCar" component={CreateCarScreen} options={{ title: 'أضف سيارة' }} />
@@ -193,6 +196,7 @@ function TabIcon({ icon, focused }: { icon: string; focused: boolean }) {
 }
 
 export default function AppNavigator() {
+  const insets = useSafeAreaInsets();
   const { user, loading } = useAuth();
   const [showIntro, setShowIntro] = React.useState(true);
   const [showLaunchNotice, setShowLaunchNotice] = React.useState(false);
@@ -262,8 +266,8 @@ export default function AppNavigator() {
           backgroundColor: colors.dark,
           borderTopColor: colors.metalBorder,
           borderTopWidth: 1,
-          height: 88,
-          paddingBottom: 22,
+          height: 66 + Math.max(insets.bottom, 10),
+          paddingBottom: Math.max(insets.bottom, 10),
           paddingTop: 10,
           overflow: 'visible',
         },

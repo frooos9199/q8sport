@@ -2,12 +2,6 @@ import { Linking, Share } from 'react-native';
 
 type ShareTarget = 'whatsapp' | 'instagram' | 'tiktok' | 'snapchat';
 
-const APP_SCHEMES: Record<Exclude<ShareTarget, 'whatsapp'>, string> = {
-  instagram: 'instagram://app',
-  tiktok: 'snssdk1233://',
-  snapchat: 'snapchat://',
-};
-
 export async function shareListing(target: ShareTarget, message: string) {
   const trimmedMessage = message.trim();
 

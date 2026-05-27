@@ -1,9 +1,26 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    match /users/{uid}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    match /{listingType}/{uid}/{listingId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null
+        && listingType in ['cars', 'parts', 'requests']
+        && request.auth.uid == uid;
+    }
+
+    match /banners/{uid}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
     match /web-uploads/{allPaths=**} {
       allow read: if true;
-      allow write: if true;
+      allow write: if false;
     }
   }
 }

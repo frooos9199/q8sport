@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
-import { adminAuth, adminDb } from '@/lib/firebase-admin';
+import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin';
+import { syncSellerCampaignState } from '@/lib/seller-campaign-sync';
 
 export const runtime = 'nodejs';
 
@@ -17,6 +18,7 @@ function getAdminToken() {
 }
 
 async function deleteUserMarketplaceData(uid: string) {
+  const adminDb = getAdminDb();
   const [carsSnap, partsSnap, requestsSnap, userSnap] = await Promise.all([
     adminDb.ref('cars').get(),
     adminDb.ref('parts').get(),
@@ -59,6 +61,7 @@ async function deleteUserMarketplaceData(uid: string) {
   };
 
   await adminDb.ref().update(updates);
+  await syncSellerCampaignState();
 }
 
 export async function POST(request: Request) {
@@ -70,6 +73,7 @@ export async function POST(request: Request) {
   }
 
   try {
+    const adminAuth = getAdminAuth();
     const payload = (await request.json()) as DeleteUserPayload;
     const uid = String(payload.uid || '').trim();
 

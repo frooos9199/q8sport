@@ -8,6 +8,10 @@ export type Seller = {
   bio: string;
 };
 
+export type SellerCampaignEntry = import("@/lib/seller-campaign").SellerCampaignEntry;
+
+export type SellerCampaign = import("@/lib/seller-campaign").SellerCampaign;
+
 export type CarListing = {
   slug: string;
   sellerSlug: string;
@@ -50,6 +54,7 @@ export type MarketSnapshot = {
   carListings: CarListing[];
   partListings: PartListing[];
   wantedListings: WantedListing[];
+  campaign: SellerCampaign;
 };
 
 type RawLocalizedText = string | { ar?: string; en?: string } | null | undefined;
@@ -95,6 +100,10 @@ type RawPart = {
   createdAt?: unknown;
 };
 
+function isBlockedPartCategory(category: unknown) {
+  return typeof category === "string" && category.trim() === "عادم";
+}
+
 type RawRequest = {
   userId?: string;
   userName?: string;
@@ -106,6 +115,8 @@ type RawRequest = {
   status?: string;
   createdAt?: unknown;
 };
+
+import { buildSellerCampaign } from "@/lib/seller-campaign";
 
 const fallbackSellers: Seller[] = [
   {
@@ -203,16 +214,6 @@ const fallbackPartListings: PartListing[] = [
     images: [],
   },
   {
-    slug: "porsche-sport-exhaust",
-    sellerSlug: "turbo-zone",
-    title: "عادم بورش سبورت",
-    price: "720 د.ك",
-    category: "عادم",
-    fitment: "Porsche 911 / 992",
-    condition: "مستعمل ممتاز",
-    summary: "عادم بصوت واضح ومحبوب، تركيب مباشر، ومناسب للي يبي Presence حقيقي.",
-    images: [],
-  },
 ];
 
 const fallbackWantedListings: WantedListing[] = [
@@ -251,6 +252,20 @@ const fallbackSnapshot: MarketSnapshot = {
   carListings: fallbackCarListings,
   partListings: fallbackPartListings,
   wantedListings: fallbackWantedListings,
+  campaign: buildSellerCampaign(
+    fallbackSellers.map((seller) => ({
+      slug: seller.slug,
+      name: seller.name,
+      whatsapp: seller.whatsapp,
+      joinedLabel: seller.joinedLabel,
+    })),
+    [
+      ...fallbackCarListings.map((item, index) => ({ sellerSlug: item.sellerSlug, kind: "car" as const, createdAt: index + 1, isActive: item.status === "معروض الآن" })),
+      ...fallbackPartListings.map((item, index) => ({ sellerSlug: item.sellerSlug, kind: "part" as const, createdAt: fallbackCarListings.length + index + 1, isActive: true })),
+      ...fallbackWantedListings.map((item, index) => ({ sellerSlug: item.sellerSlug, kind: "wanted" as const, createdAt: fallbackCarListings.length + fallbackPartListings.length + index + 1, isActive: true })),
+    ],
+    { now: fallbackCarListings.length + fallbackPartListings.length + fallbackWantedListings.length + 30 },
+  ),
 };
 
 function getProjectId() {
@@ -438,6 +453,9 @@ export async function loadMarketData(): Promise<MarketSnapshot> {
       fallbackWhatsapp: item.userWhatsapp || "",
     })),
     ...Object.entries(partsNode || {}).map(([, item]) => ({
+    ...Object.entries(partsNode || {})
+      .filter(([, item]) => !isBlockedPartCategory(item.category))
+      .map(([, item]) => ({
       sellerSlug: item.userId || "unknown-seller",
       fallbackName: item.userName || "معلن قطعة",
       fallbackWhatsapp: item.userWhatsapp || "",
@@ -471,12 +489,15 @@ export async function loadMarketData(): Promise<MarketSnapshot> {
         specs: specs.length ? specs : ["تفاصيل أكثر داخل الإعلان"],
         images: normalizeImages(item.images),
         createdAt: normalizeTimestamp(item.createdAt),
+        isActive: item.status !== "sold" && item.status !== "pending",
       };
     })
     .sort((left, right) => right.createdAt - left.createdAt)
     .map(withoutCreatedAt);
 
   const partListings = Object.entries(partsNode || {})
+  const partListings = Object.entries(partsNode || {})
+    .filter(([, item]) => !isBlockedPartCategory(item.category))
     .map(([slug, item]) => ({
       slug,
       sellerSlug: item.userId || "unknown-seller",
@@ -488,6 +509,7 @@ export async function loadMarketData(): Promise<MarketSnapshot> {
       summary: summarize(item.description, "إعلان قطعة غيار مباشرة من التطبيق."),
       images: normalizeImages(item.images),
       createdAt: normalizeTimestamp(item.createdAt),
+      isActive: item.status !== "sold" && item.status !== "pending",
     }))
     .sort((left, right) => right.createdAt - left.createdAt)
     .map(withoutCreatedAt);
@@ -502,6 +524,7 @@ export async function loadMarketData(): Promise<MarketSnapshot> {
       urgency: mapRequestStatus(item.status),
       summary: summarize(item.description, "طلب مباشر من السوق."),
       createdAt: normalizeTimestamp(item.createdAt),
+      isActive: item.status !== "closed",
     }))
     .sort((left, right) => right.createdAt - left.createdAt)
     .map(withoutCreatedAt);
@@ -519,12 +542,45 @@ export async function loadMarketData(): Promise<MarketSnapshot> {
     seller.bio = `يعرض ${value.cars} سيارة و${value.parts} قطعة و${value.wanted} طلبات حالية داخل السوق.`;
   });
 
+  const campaign = buildSellerCampaign(
+    Array.from(sellers.values()).map((seller) => ({
+      slug: seller.slug,
+      name: seller.name,
+      whatsapp: seller.whatsapp,
+      joinedLabel: seller.joinedLabel,
+    })),
+    [
+      ...Object.entries(carsNode || {}).map(([, item]) => ({
+        sellerSlug: item.userId || "unknown-seller",
+        kind: "car" as const,
+        createdAt: normalizeTimestamp(item.createdAt),
+        isActive: item.status !== "sold" && item.status !== "pending",
+      })),
+      ...Object.entries(partsNode || {}).map(([, item]) => ({
+      ...Object.entries(partsNode || {})
+        .filter(([, item]) => !isBlockedPartCategory(item.category))
+        .map(([, item]) => ({
+        sellerSlug: item.userId || "unknown-seller",
+        kind: "part" as const,
+        createdAt: normalizeTimestamp(item.createdAt),
+        isActive: item.status !== "sold" && item.status !== "pending",
+      })),
+      ...Object.entries(requestsNode || {}).map(([, item]) => ({
+        sellerSlug: item.userId || "unknown-seller",
+        kind: "wanted" as const,
+        createdAt: normalizeTimestamp(item.createdAt),
+        isActive: item.status !== "closed",
+      })),
+    ].filter((item) => item.sellerSlug !== "unknown-seller"),
+  );
+
   return {
     source: "firebase",
     sellers: Array.from(sellers.values()),
     carListings,
     partListings,
     wantedListings,
+    campaign,
   };
 }
 

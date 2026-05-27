@@ -1,4 +1,4 @@
-package com.q8sportapp
+package com.q8sportcar.app
 
 import android.app.Application
 import com.facebook.react.PackageList

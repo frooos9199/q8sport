@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 };
 
 export default async function MarketPage() {
-  const { carListings, partListings, sellers, source, wantedListings } = await loadMarketData();
+  const { campaign, carListings, partListings, sellers, source, wantedListings } = await loadMarketData();
   const sellerMap = new Map(sellers.map((seller) => [seller.slug, seller]));
 
   return (
@@ -40,6 +40,59 @@ export default async function MarketPage() {
           <Link href="/sell" className="rounded-full bg-brand px-6 py-4 text-center text-sm font-black text-white transition hover:bg-[#ff5b4e]">
             انشر إعلان جديد
           </Link>
+        </div>
+      </section>
+
+      <section className="mt-8 rounded-[2rem] border border-brand/20 bg-[linear-gradient(135deg,rgba(255,90,73,0.14),rgba(13,13,13,0.96))] px-6 py-8 sm:px-8 sm:py-10">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.35em] text-sand">Founders Program</p>
+            <h2 className="mt-3 text-3xl font-black text-foreground sm:text-4xl">الأوائل النشطون يحصلون على إعلانات مجانية</h2>
+            <p className="mt-4 max-w-3xl text-sm leading-8 text-zinc-200 sm:text-base">
+              النظام يحسب النشاط تلقائيًا من السيارات والقطع والمطلوبات المنشورة. أول {campaign.founderLimit} معلنين يتجاوزون {campaign.minimumScore} نقطة ويبقون نشطين يدخلون فئة المؤسسين ويحصلون على امتياز الإعلانات المجانية.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <StatCard value={String(campaign.qualifiedFounders)} label="مؤسسون متأهلون" />
+            <StatCard value={String(campaign.entries.filter((entry) => entry.freeAdsEligible).length)} label="امتياز مجاني مفعل" />
+          </div>
+        </div>
+
+        <div className="mt-8 grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+          {campaign.entries.map((entry) => (
+            <div key={entry.sellerSlug} className="rounded-[1.5rem] border border-white/10 bg-black/25 p-5 backdrop-blur-sm">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.25em] text-sand">{entry.tierLabel}</p>
+                  <h3 className="mt-2 text-2xl font-black text-foreground">{entry.sellerName}</h3>
+                  <p className="mt-2 text-sm font-bold text-zinc-300">{entry.joinedLabel}</p>
+                </div>
+                <div className="rounded-full border border-white/12 bg-white/10 px-3 py-2 text-sm font-black text-white">
+                  {entry.activityScore} نقطة
+                </div>
+              </div>
+
+              <div className="mt-5 flex flex-wrap gap-2 text-xs font-bold text-zinc-200">
+                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-2">سيارات {entry.listingCounts.cars}</span>
+                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-2">قطع {entry.listingCounts.parts}</span>
+                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-2">مطلوبات {entry.listingCounts.wanted}</span>
+                <span className="rounded-full border border-mint/20 bg-mint/10 px-3 py-2 text-mint">نشط {entry.listingCounts.active}</span>
+              </div>
+
+              <div className="mt-5 rounded-[1.25rem] border px-4 py-4 text-sm font-bold leading-7 ${entry.freeAdsEligible ? "border-mint/25 bg-mint/10 text-mint" : "border-white/10 bg-white/5 text-zinc-200"}">
+                {entry.freeAdsEligible
+                  ? `مقعد مؤسس #${entry.founderPosition} مفعل. ${entry.rewardLabel}`
+                  : entry.rewardLabel}
+              </div>
+
+              <div className="mt-5 flex items-center justify-between gap-3 text-sm text-zinc-300">
+                <Link href={`/sellers/${entry.sellerSlug}`} className="font-black text-brand transition hover:text-[#ff8a80]">
+                  عرض ملف المعلن
+                </Link>
+                <span dir="ltr">{entry.whatsapp || "واتساب غير متاح"}</span>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -99,6 +152,15 @@ export default async function MarketPage() {
         </div>
       </Section>
     </main>
+  );
+}
+
+function StatCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[1.5rem] border border-white/10 bg-black/25 px-5 py-4 text-center backdrop-blur-sm">
+      <div className="text-3xl font-black text-white">{value}</div>
+      <div className="mt-2 text-xs font-bold uppercase tracking-[0.25em] text-zinc-300">{label}</div>
+    </div>
   );
 }
 

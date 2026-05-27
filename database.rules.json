@@ -2,16 +2,32 @@
   "rules": {
     ".read": true,
     "cars": {
-      ".write": true
+      ".indexOn": ["createdAt", "updatedAt"],
+      "$carId": {
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('isAdmin').val() === true || (!data.exists() && newData.child('userId').val() === auth.uid) || (data.exists() && data.child('userId').val() === auth.uid))"
+      }
     },
     "parts": {
-      ".write": true
+      ".indexOn": ["createdAt", "updatedAt"],
+      "$partId": {
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('isAdmin').val() === true || (!data.exists() && newData.child('userId').val() === auth.uid) || (data.exists() && data.child('userId').val() === auth.uid))"
+      }
     },
     "requests": {
-      ".write": true
+      ".indexOn": ["createdAt", "updatedAt"],
+      "$requestId": {
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('isAdmin').val() === true || (!data.exists() && newData.child('userId').val() === auth.uid) || (data.exists() && data.child('userId').val() === auth.uid))"
+      }
     },
     "users": {
-      ".write": true
+      "$uid": {
+        ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('isAdmin').val() === true)"
+      }
+    },
+    "banners": {
+      "$bannerId": {
+        ".write": "auth != null && root.child('users').child(auth.uid).child('isAdmin').val() === true"
+      }
     }
   }
 }

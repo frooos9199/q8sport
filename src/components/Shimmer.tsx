@@ -3,8 +3,8 @@ import { View, Animated, StyleSheet, ViewStyle } from 'react-native';
 import { colors, radius } from '../lib/theme';
 
 interface Props {
-  width: number | string;
-  height: number;
+  width: ViewStyle['width'];
+  height: ViewStyle['height'];
   style?: ViewStyle;
   borderRadius?: number;
 }
@@ -19,12 +19,13 @@ export default function Shimmer({ width: w, height, style, borderRadius = radius
         Animated.timing(anim, { toValue: 0, duration: 1000, useNativeDriver: true }),
       ])
     ).start();
-  }, []);
+  }, [anim]);
 
   return (
     <Animated.View
       style={[
-        { width: w as any, height, borderRadius, backgroundColor: colors.metal, opacity: anim.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0.7] }) },
+        { width: w, height, borderRadius, backgroundColor: colors.metal },
+        { opacity: anim.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0.7] }) },
         style,
       ]}
     />

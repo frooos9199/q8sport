@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { ref as dbRef, remove, update } from '@react-native-firebase/database';
 
 import { useAuth } from '../../hooks/useAuth';
@@ -21,11 +21,14 @@ type ListingRow = {
 };
 
 export default function MyListingsScreen({ navigation }: any) {
+  const { width } = useWindowDimensions();
   const { user } = useAuth();
   const [items, setItems] = useState<ListingRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<FilterType>('all');
+  const compactScreen = width < 390;
+  const screenPadding = width < 380 ? spacing.lg : spacing.xl;
 
   const loadListings = useCallback(async () => {
     if (!user) return;
@@ -70,7 +73,7 @@ export default function MyListingsScreen({ navigation }: any) {
 
     partsSnap.forEach((child: any) => {
       const value = child.val();
-      if (shouldIncludeListing(value?.userId)) {
+      if (shouldIncludeListing(value?.userId) && value?.category?.trim() !== 'عادم') {
         const seller = sellerLine(value);
         nextItems.push({
           id: child.key,
@@ -221,7 +224,7 @@ export default function MyListingsScreen({ navigation }: any) {
       style={s.container}
       data={filteredItems}
       keyExtractor={item => `${item.type}-${item.id}`}
-      contentContainerStyle={{ padding: spacing.xl, paddingBottom: 40 }}
+      contentContainerStyle={{ padding: screenPadding, paddingBottom: 40 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
       ListHeaderComponent={
         <>
@@ -260,21 +263,21 @@ export default function MyListingsScreen({ navigation }: any) {
       }
       renderItem={({ item }) => (
         <View style={s.card}>
-          <View style={s.topRow}>
+          <View style={[s.topRow, compactScreen && s.topRowCompact]}>
             <View style={s.typeBadge}><Text style={s.typeText}>{item.type === 'car' ? 'سيارة' : item.type === 'part' ? 'قطعة' : 'مطلوب'}</Text></View>
             <Text style={s.status}>{item.status}</Text>
           </View>
           <Text style={s.title}>{item.title}</Text>
           <Text style={s.subtitle}>{item.subtitle || 'بدون تفاصيل إضافية'}</Text>
           <Text style={s.price}>{item.priceLine}</Text>
-          <View style={s.actionsRow}>
-            <TouchableOpacity style={s.editBtn} activeOpacity={0.85} onPress={() => editListing(item)}>
+          <View style={[s.actionsRow, compactScreen && s.actionsRowCompact]}>
+            <TouchableOpacity style={[s.editBtn, compactScreen && s.actionBtnCompact]} activeOpacity={0.85} onPress={() => editListing(item)}>
               <Text style={s.editText}>تعديل</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={s.statusBtn} activeOpacity={0.85} onPress={() => toggleListingStatus(item)}>
+            <TouchableOpacity style={[s.statusBtn, compactScreen && s.actionBtnCompact]} activeOpacity={0.85} onPress={() => toggleListingStatus(item)}>
               <Text style={s.statusBtnText}>{statusActionLabel(item)}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={s.deleteBtn} activeOpacity={0.85} onPress={() => deleteListing(item)}>
+            <TouchableOpacity style={[s.deleteBtn, compactScreen && s.actionBtnCompact]} activeOpacity={0.85} onPress={() => deleteListing(item)}>
               <Text style={s.deleteText}>حذف</Text>
             </TouchableOpacity>
           </View>
@@ -302,6 +305,7 @@ const s = StyleSheet.create({
   emptySub: { color: colors.silver, fontSize: 13, textAlign: 'center', lineHeight: 21 },
   card: { backgroundColor: colors.darkCard, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.metalBorder, padding: 18, marginBottom: 12, ...shadows.card },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  topRowCompact: { alignItems: 'flex-start', gap: 8 },
   typeBadge: { backgroundColor: colors.primaryGlow, borderRadius: radius.full, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: colors.primaryBorder },
   typeText: { color: colors.primary, fontWeight: '900', fontSize: 11 },
   status: { color: colors.silver, fontSize: 11, fontWeight: '700' },
@@ -309,6 +313,8 @@ const s = StyleSheet.create({
   subtitle: { color: colors.silverLight, fontSize: 13, marginBottom: 8 },
   price: { color: colors.primary, fontSize: 14, fontWeight: '900', marginBottom: 14 },
   actionsRow: { flexDirection: 'row', gap: 10 },
+  actionsRowCompact: { flexWrap: 'wrap' },
+  actionBtnCompact: { minWidth: '48%' },
   editBtn: { flex: 1, backgroundColor: colors.metal, borderRadius: radius.lg, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: colors.metalBorder },
   editText: { color: colors.white, fontWeight: '800' },
   statusBtn: { flex: 1, backgroundColor: colors.dark, borderRadius: radius.lg, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: colors.primaryBorder },

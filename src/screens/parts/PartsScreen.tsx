@@ -7,10 +7,18 @@ import { getDbSnapshot } from '../../lib/firebaseDatabase';
 import { sortListingsByFreshnessAndStatus } from '../../lib/listingSort';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { t } from '../../i18n';
-import { Part } from '../../types';
+import { BannerAd, Part } from '../../types';
+import { fetchActiveBanners } from '../../lib/bannerAds';
+import SponsoredBannerCard from '../../components/SponsoredBannerCard';
+import { formatListingPublishedAt } from '../../lib/listingDate';
+
+type PartsFeedItem =
+  | { kind: 'row'; id: string; parts: Part[]; startIndex: number }
+  | { kind: 'banner'; id: string; banner: BannerAd };
 
 export default function PartsScreen({ navigation }: any) {
   const [parts, setParts] = useState<Part[]>([]);
+  const [banners, setBanners] = useState<BannerAd[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
@@ -18,10 +26,14 @@ export default function PartsScreen({ navigation }: any) {
   const fetchParts = async () => {
     try {
       const partsQuery = query(dbRef(db, 'parts'), orderByChild('createdAt'));
-      const snap = await getDbSnapshot(partsQuery, 'parts');
+      const [snap, activeBanners] = await Promise.all([
+        getDbSnapshot(partsQuery, 'parts'),
+        fetchActiveBanners('parts'),
+      ]);
       const data: Part[] = [];
       snap.forEach((child: any) => { data.push({ id: child.key, ...child.val() }); return undefined; });
       setParts(sortListingsByFreshnessAndStatus(data));
+      setBanners(activeBanners);
     } catch (e) {
       console.log('Error:', e);
     }
@@ -35,9 +47,21 @@ export default function PartsScreen({ navigation }: any) {
     p.title?.ar?.includes(search) || p.title?.en?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const renderItem = ({ item, index }: { item: Part; index: number }) => (
-    <AnimatedPartCard item={item} index={index} navigation={navigation} />
-  );
+  const rows: Part[][] = [];
+  for (let index = 0; index < filtered.length; index += 2) {
+    rows.push(filtered.slice(index, index + 2));
+  }
+
+  const feedItems: PartsFeedItem[] = [];
+  rows.forEach((rowParts, rowIndex) => {
+    feedItems.push({ kind: 'row', id: `row-${rowIndex}`, parts: rowParts, startIndex: rowIndex * 2 });
+
+    if ((rowIndex + 1) % 2 === 0 && banners.length > 0) {
+      const bannerIndex = Math.floor(rowIndex / 2) % banners.length;
+      const banner = banners[bannerIndex];
+      feedItems.push({ kind: 'banner', id: `banner-${banner.id}-${rowIndex}`, banner });
+    }
+  });
 
   return (
     <View style={s.container}>
@@ -52,11 +76,31 @@ export default function PartsScreen({ navigation }: any) {
       {!loading && <Text style={s.count}>{filtered.length} {t('parts')}</Text>}
 
       <FlatList
-        data={filtered}
-        renderItem={renderItem}
+        data={feedItems}
+        renderItem={({ item }) => {
+          if (item.kind === 'banner') {
+            return (
+              <View style={s.bannerWrap}>
+                <SponsoredBannerCard banner={item.banner} />
+              </View>
+            );
+          }
+
+          const left = item.parts[0];
+          const right = item.parts[1];
+
+          return (
+            <View style={s.row}>
+              <View style={s.rowItem}>
+                <AnimatedPartCard item={left} index={item.startIndex} navigation={navigation} />
+              </View>
+              <View style={s.rowItem}>
+                {right ? <AnimatedPartCard item={right} index={item.startIndex + 1} navigation={navigation} /> : <View style={s.rowSpacer} />}
+              </View>
+            </View>
+          );
+        }}
         keyExtractor={i => i.id}
-        numColumns={2}
-        columnWrapperStyle={{ gap: 12 }}
         contentContainerStyle={{ padding: spacing.lg, paddingBottom: 100 }}
         ListEmptyComponent={
           loading ? null : (
@@ -99,6 +143,9 @@ function AnimatedPartCard({ item, index, navigation }: any) {
         <View style={s.info}>
           <Text style={s.title} numberOfLines={2}>{item.title?.ar}</Text>
           <Text style={s.price}>{item.price?.toLocaleString()} {t('kwd')}</Text>
+          {formatListingPublishedAt(item.createdAt) ? (
+            <Text style={s.publishedAtText}>📅 {formatListingPublishedAt(item.createdAt)}</Text>
+          ) : null}
           <TouchableOpacity
             style={s.waBtn}
             onPress={() => Linking.openURL(`https://wa.me/${item.userWhatsapp?.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`مرحبا، أبي أستفسر عن: ${item.title?.ar}`)}`)}
@@ -122,6 +169,20 @@ const s = StyleSheet.create({
   clearText: { color: colors.silver, fontSize: 16, padding: 6 },
   count: { color: colors.silver, fontSize: 12, paddingHorizontal: spacing.xl, marginBottom: 4 },
 
+  row: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  rowItem: {
+    flex: 1,
+  },
+  rowSpacer: {
+    flex: 1,
+  },
+  bannerWrap: {
+    marginBottom: 12,
+  },
+
   cardWrap: { flex: 1 },
   card: { backgroundColor: colors.darkCard, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.metalBorder, overflow: 'hidden', marginBottom: 12, ...shadows.card },
   imgWrap: { position: 'relative' },
@@ -133,6 +194,7 @@ const s = StyleSheet.create({
   info: { padding: 12 },
   title: { color: colors.white, fontWeight: '700', fontSize: 13, marginBottom: 6, lineHeight: 18 },
   price: { color: colors.primary, fontWeight: '900', fontSize: 16, marginBottom: 10 },
+  publishedAtText: { color: colors.silver, fontSize: 11, marginBottom: 10, textAlign: 'right' },
   waBtn: {
     flexDirection: 'row',
     alignItems: 'center',

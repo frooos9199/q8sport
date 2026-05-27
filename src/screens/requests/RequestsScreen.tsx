@@ -1,12 +1,16 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Linking, Animated, RefreshControl, Image } from 'react-native';
-import { db } from '../../lib/firebase';
-import { orderByChild, query, ref as dbRef } from '@react-native-firebase/database';
-import { getDbSnapshot } from '../../lib/firebaseDatabase';
-import { sortListingsByFreshnessAndStatus } from '../../lib/listingSort';
+import { Alert, View, Text, FlatList, TouchableOpacity, StyleSheet, Linking, Animated, RefreshControl } from 'react-native';
+import LazyImage from '../../components/LazyImage';
+import { formatListingPublishedAt } from '../../lib/listingDate';
+import { getListingPreviewImage } from '../../lib/listingImages';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { t } from '../../i18n';
 import { Request } from '../../types';
+import { fetchSortedListings, prefetchListingImages, runAfterFirstPaint } from '../../lib/listingFeed';
+
+const INITIAL_VISIBLE_REQUESTS = 10;
+const INITIAL_REQUEST_IMAGE_PREFETCH = 4;
+const REQUEST_CARD_IMAGE_ASPECT_RATIO = 16 / 10;
 
 export default function RequestsScreen({ navigation }: any) {
   const [requests, setRequests] = useState<Request[]>([]);
@@ -15,15 +19,20 @@ export default function RequestsScreen({ navigation }: any) {
 
   const fetchRequests = async () => {
     try {
-      const requestsQuery = query(dbRef(db, 'requests'), orderByChild('createdAt'));
-      const snap = await getDbSnapshot(requestsQuery, 'requests');
-      const data: Request[] = [];
-      snap.forEach((child: any) => { data.push({ id: child.key, ...child.val() }); return undefined; });
-      setRequests(sortListingsByFreshnessAndStatus(data));
+      const initialRequests = await fetchSortedListings<Request>('requests', INITIAL_VISIBLE_REQUESTS);
+      setRequests(initialRequests);
+      await prefetchListingImages(initialRequests, INITIAL_REQUEST_IMAGE_PREFETCH);
+      setLoading(false);
+
+      runAfterFirstPaint(async () => {
+        const fullRequests = await fetchSortedListings<Request>('requests');
+        setRequests(currentRequests => (fullRequests.length > currentRequests.length ? fullRequests : currentRequests));
+        prefetchListingImages(fullRequests.slice(INITIAL_VISIBLE_REQUESTS)).catch(() => undefined);
+      });
     } catch (e) {
       console.log('Error:', e);
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => { fetchRequests(); }, []);
@@ -39,6 +48,10 @@ export default function RequestsScreen({ navigation }: any) {
         data={requests}
         renderItem={renderItem}
         keyExtractor={i => i.id}
+        initialNumToRender={6}
+        maxToRenderPerBatch={6}
+        windowSize={5}
+        removeClippedSubviews
         contentContainerStyle={{ padding: spacing.lg, paddingBottom: 100 }}
         ListEmptyComponent={
           loading ? null : (
@@ -54,6 +67,10 @@ export default function RequestsScreen({ navigation }: any) {
 
 function AnimatedRequestCard({ item, index, navigation }: { item: Request; index: number; navigation: any }) {
   const anim = useRef(new Animated.Value(0)).current;
+  const previewImage = getListingPreviewImage(item);
+  const publishedAt = formatListingPublishedAt(item.createdAt);
+  const whatsappDigits = String(item.userWhatsapp || '').replace(/[^0-9]/g, '');
+  const phoneDigits = String(item.userPhone || '').replace(/[^0-9]/g, '');
 
   useEffect(() => {
     Animated.timing(anim, { toValue: 1, duration: 400, delay: index * 80, useNativeDriver: true }).start();
@@ -63,8 +80,10 @@ function AnimatedRequestCard({ item, index, navigation }: { item: Request; index
 
   return (
     <Animated.View style={[s.card, { opacity: anim, transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }]}>
-      {item.images?.[0] ? (
-        <Image source={{ uri: item.images[0] }} style={s.cardImage} />
+      {previewImage ? (
+        <View style={s.cardImageWrap}>
+          <LazyImage uri={previewImage} style={s.cardImage} resizeMode="contain" placeholderColor={colors.darkLight} />
+        </View>
       ) : null}
       <View style={s.cardHeader}>
         <View style={[s.badge, item.status === 'open' ? s.openBg : s.closedBg]}>
@@ -78,6 +97,7 @@ function AnimatedRequestCard({ item, index, navigation }: { item: Request; index
 
       <Text style={s.title}>{item.title?.ar}</Text>
       <Text style={s.desc} numberOfLines={2}>{item.description?.ar}</Text>
+      {publishedAt ? <Text style={s.metaText}>{t('publishedOn')}: {publishedAt}</Text> : null}
 
       {item.budget && (
         <View style={s.budgetWrap}>
@@ -90,11 +110,11 @@ function AnimatedRequestCard({ item, index, navigation }: { item: Request; index
         <TouchableOpacity
           style={s.userWrap}
           activeOpacity={0.85}
-          onPress={() => navigation.navigate('SellerProfile', { sellerId: item.userId, sellerName: item.userName, sellerWhatsapp: item.userWhatsapp })}
+          onPress={() => navigation.navigate('SellerProfile', { sellerId: item.userId, sellerName: item.userName, sellerWhatsapp: item.userWhatsapp, sellerPhone: item.userPhone })}
         >
           <View style={s.userAvatar}>
             {item.userAvatar ? (
-              <Image source={{ uri: item.userAvatar }} style={s.userAvatarImage} />
+              <LazyImage uri={item.userAvatar} style={s.userAvatarImage} fallback={<Text style={s.userAvatarText}>{item.userName?.[0] || '?'}</Text>} />
             ) : (
               <Text style={s.userAvatarText}>{item.userName?.[0] || '?'}</Text>
             )}
@@ -104,9 +124,19 @@ function AnimatedRequestCard({ item, index, navigation }: { item: Request; index
         <TouchableOpacity
           style={s.waBtn}
           activeOpacity={0.85}
-          onPress={() => Linking.openURL(`https://wa.me/${item.userWhatsapp?.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`مرحبا، بخصوص طلبك: ${item.title?.ar}`)}`)}
+          onPress={() => {
+            if (whatsappDigits) {
+              Linking.openURL(`https://wa.me/${whatsappDigits}?text=${encodeURIComponent(`مرحبا، بخصوص طلبك: ${item.title?.ar}`)}`);
+              return;
+            }
+            if (phoneDigits) {
+              Linking.openURL(`tel:${phoneDigits}`);
+              return;
+            }
+            Alert.alert('تنبيه', 'لا يوجد رقم تواصل لهذا الإعلان');
+          }}
         >
-          <Text style={s.waBtnText}>💬 تواصل</Text>
+          <Text style={s.waBtnText}>{whatsappDigits ? '💬 واتساب' : '📞 اتصال'}</Text>
         </TouchableOpacity>
       </View>
     </Animated.View>
@@ -117,7 +147,8 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark },
 
   card: { backgroundColor: colors.darkCard, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.metalBorder, padding: 18, marginBottom: 14, ...shadows.card },
-  cardImage: { width: '100%', height: 170, borderRadius: radius.lg, marginBottom: 14 },
+  cardImageWrap: { marginBottom: 14 },
+  cardImage: { width: '100%', aspectRatio: REQUEST_CARD_IMAGE_ASPECT_RATIO, borderRadius: radius.lg },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   badge: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 5, borderRadius: radius.full },
   openBg: { backgroundColor: colors.greenGlow },
@@ -129,6 +160,7 @@ const s = StyleSheet.create({
 
   title: { color: colors.white, fontWeight: '800', fontSize: 18, marginBottom: 6 },
   desc: { color: colors.silver, fontSize: 13, lineHeight: 20, marginBottom: 12 },
+  metaText: { color: colors.silverLight, fontSize: 11, marginBottom: 12 },
 
   budgetWrap: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.primaryGlow, paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.md, marginBottom: 14, alignSelf: 'flex-start' },
   budgetLabel: { color: colors.silver, fontSize: 12 },

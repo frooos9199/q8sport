@@ -1,20 +1,22 @@
 import React, { useMemo, useState } from 'react';
-import { Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { push, ref as dbRef, serverTimestamp, set as dbSet, update } from '@react-native-firebase/database';
-import { ref as storageRef } from '@react-native-firebase/storage';
 
 import PremiumButton from '../../components/PremiumButton';
 import { useAuth } from '../../hooks/useAuth';
-import { db, storage } from '../../lib/firebase';
+import { db } from '../../lib/firebase';
+import { ListingMediaItem, uploadListingMedia } from '../../lib/listingImages';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 
-const BRANDS = ['Porsche', 'BMW', 'Mercedes-Benz', 'Audi', 'Ford', 'Chevrolet', 'Dodge', 'Nissan', 'Toyota', 'Other'];
+const BRANDS = ['Porsche', 'BMW', 'Mercedes-Benz', 'Audi', 'Ford', 'Chevrolet', 'Dodge', 'Nissan', 'Toyota', 'Mitsubishi', 'Subaru', 'Honda', 'Other'];
 
 export default function CreateCarScreen({ navigation, route }: any) {
+  const { width } = useWindowDimensions();
   const { user } = useAuth();
   const initialListing = route?.params?.listing;
   const isEditing = Boolean(initialListing?.id);
+  const isAdmin = Boolean(user?.isAdmin);
 
   const [title, setTitle] = useState(initialListing?.title?.ar || '');
   const [description, setDescription] = useState(initialListing?.description?.ar || '');
@@ -26,8 +28,25 @@ export default function CreateCarScreen({ navigation, route }: any) {
   const [color, setColor] = useState(initialListing?.color || '');
   const [transmission, setTransmission] = useState<'automatic' | 'manual'>(initialListing?.transmission || 'automatic');
   const [fuelType, setFuelType] = useState<'petrol' | 'diesel' | 'electric' | 'hybrid'>(initialListing?.fuelType || 'petrol');
-  const [images, setImages] = useState<string[]>(initialListing?.images || []);
+  const [sellerMode, setSellerMode] = useState<'self' | 'manual'>(() => {
+    if (!isAdmin) return 'self';
+    if (!isEditing) return 'self';
+    const listingUserId = String(initialListing?.userId || '');
+    return listingUserId && listingUserId !== String(user?.uid || '') ? 'manual' : 'self';
+  });
+  const [manualSellerName, setManualSellerName] = useState(initialListing?.userName || '');
+  const [manualSellerPhone, setManualSellerPhone] = useState(initialListing?.userPhone || '');
+  const [manualSellerWhatsapp, setManualSellerWhatsapp] = useState(initialListing?.userWhatsapp || '');
+  const [imageItems, setImageItems] = useState<ListingMediaItem[]>(() =>
+    (initialListing?.images || []).map((image: string, index: number) => ({
+      image,
+      thumb: initialListing?.imageThumbs?.[index] || image,
+    })),
+  );
   const [submitting, setSubmitting] = useState(false);
+  const compactScreen = width < 390;
+  const screenPadding = width < 380 ? spacing.lg : spacing.xl;
+  const previewSize = width < 380 ? 76 : 88;
 
   const canSubmit = useMemo(() => {
     return !!user && title.trim().length >= 3 && model.trim().length >= 1 && year.trim().length === 4 && price.trim().length >= 1 && !submitting;
@@ -38,30 +57,45 @@ export default function CreateCarScreen({ navigation, route }: any) {
     if (result.didCancel) return;
     const uris = (result.assets || []).map(asset => asset.uri).filter((uri): uri is string => Boolean(uri));
     if (!uris.length) return;
-    setImages(prev => [...prev, ...uris].slice(0, 6));
-  };
-
-  const uploadImages = async (carId: string) => {
-    const uploadedUrls: string[] = [];
-    for (let index = 0; index < images.length; index += 1) {
-      const uri = images[index];
-      if (/^https?:\/\//.test(uri)) {
-        uploadedUrls.push(uri);
-        continue;
-      }
-      const cleanUri = Platform.OS === 'ios' ? uri.replace('file://', '') : uri;
-      const imageRef = storageRef(storage, `cars/${carId}/${Date.now()}-${index}.jpg`);
-      await imageRef.putFile(cleanUri);
-      const url = await imageRef.getDownloadURL();
-      uploadedUrls.push(url);
-    }
-    return uploadedUrls;
+    setImageItems(prev => [...prev, ...uris.map(uri => ({ image: uri }))].slice(0, 6));
   };
 
   const submit = async () => {
     if (!user) {
       Alert.alert('تسجيل الدخول', 'لازم تسجل دخول قبل النشر');
       return;
+    }
+
+    const digits = (value: unknown) => String(value || '').replace(/[^0-9]/g, '');
+    const manualMode = isAdmin && sellerMode === 'manual';
+    const sellerNameValue = (manualMode ? manualSellerName : user.name || '').trim();
+    let sellerPhoneValue = (manualMode ? manualSellerPhone : user.phone || '').trim();
+    let sellerWhatsappValue = (manualMode ? manualSellerWhatsapp : user.whatsapp || '').trim();
+
+    if (manualMode) {
+      const phoneDigits = digits(sellerPhoneValue);
+      const waDigits = digits(sellerWhatsappValue);
+      const selfWaDigits = digits(user?.whatsapp);
+      const selfPhoneDigits = digits(user?.phone);
+
+      if (phoneDigits && (!waDigits || waDigits === selfWaDigits || waDigits === selfPhoneDigits)) {
+        sellerWhatsappValue = sellerPhoneValue;
+      }
+      if (!phoneDigits && waDigits) {
+        sellerPhoneValue = sellerWhatsappValue;
+      }
+    }
+
+    if (manualMode) {
+      const contactDigits = digits(sellerWhatsappValue || sellerPhoneValue);
+      if (sellerNameValue.length < 2) {
+        Alert.alert('خطأ', 'اكتب اسم المعلن');
+        return;
+      }
+      if (!contactDigits) {
+        Alert.alert('خطأ', 'لازم تضيف رقم اتصال أو رقم واتساب');
+        return;
+      }
     }
 
     const numericYear = Number(year);
@@ -76,13 +110,24 @@ export default function CreateCarScreen({ navigation, route }: any) {
     try {
       const newRef = isEditing ? dbRef(db, `cars/${initialListing.id}`) : push(dbRef(db, 'cars'));
       const carId = (isEditing ? initialListing.id : newRef.key) as string;
-      const imageUrls = images.length ? await uploadImages(carId) : [];
+      const media = imageItems.length ? await uploadListingMedia('cars', carId, imageItems) : { images: [], imageThumbs: [] };
+
+      const derivedGuestId = () => {
+        const contactDigits = digits(sellerWhatsappValue || sellerPhoneValue);
+        const unique = `${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+        return contactDigits ? `guest-${contactDigits}-${unique}` : `guest-${unique}`;
+      };
+
+      const sellerIdValue = manualMode
+        ? (isEditing && initialListing?.userId ? String(initialListing.userId) : derivedGuestId())
+        : user.uid;
 
       const payload = {
-        userId: user.uid,
-        userName: user.name,
-        userWhatsapp: user.whatsapp,
-        userAvatar: user.avatar || '',
+        userId: sellerIdValue,
+        userName: sellerNameValue,
+        userPhone: sellerPhoneValue,
+        userWhatsapp: sellerWhatsappValue,
+        userAvatar: manualMode ? '' : user.avatar || '',
         title: { ar: title.trim(), en: title.trim() },
         description: { ar: description.trim(), en: description.trim() },
         brand,
@@ -93,7 +138,8 @@ export default function CreateCarScreen({ navigation, route }: any) {
         color: color.trim(),
         transmission,
         fuelType,
-        images: imageUrls,
+        images: media.images,
+        imageThumbs: media.imageThumbs,
         status: 'active',
         ...(isEditing ? { updatedAt: serverTimestamp() } : { createdAt: serverTimestamp() }),
       };
@@ -114,16 +160,35 @@ export default function CreateCarScreen({ navigation, route }: any) {
   };
 
   const removeImage = (uri: string) => {
-    setImages(prev => prev.filter(item => item !== uri));
+    setImageItems(prev => prev.filter(item => item.image !== uri));
   };
 
   return (
     <KeyboardAvoidingView style={s.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[s.content, { padding: screenPadding }]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <View style={s.heroCard}>
           <Text style={s.heroTitle}>{isEditing ? 'حدث إعلان سيارتك' : 'سيارتك تدخل السوق فورًا'}</Text>
           <Text style={s.heroSub}>{isEditing ? 'عدل البيانات والصور وحدث الإعلان مباشرة.' : 'اكتب أهم المعلومات، وارفع الصور، وخلك ظاهر مباشرة.'}</Text>
         </View>
+
+        {isAdmin ? (
+          <View style={s.adminCard}>
+            <Text style={s.adminTitle}>أدوات الإدارة</Text>
+            <Text style={s.adminSub}>تقدر تنشر الإعلان لحسابك أو نيابة عن شخص ما عنده حساب.</Text>
+            <View style={s.adminModeRow}>
+              <Chip label="حسابي" active={sellerMode === 'self'} onPress={() => setSellerMode('self')} />
+              <Chip label="بدون حساب" active={sellerMode === 'manual'} onPress={() => setSellerMode('manual')} />
+            </View>
+
+            {sellerMode === 'manual' ? (
+              <View style={{ marginTop: 10 }}>
+                <Field label="اسم المعلن" value={manualSellerName} onChangeText={setManualSellerName} placeholder="مثال: أبو فهد" />
+                <Field label="رقم الهاتف (اتصال)" value={manualSellerPhone} onChangeText={setManualSellerPhone} placeholder="+965..." keyboardType="phone-pad" />
+                <Field label="رقم واتساب" value={manualSellerWhatsapp} onChangeText={setManualSellerWhatsapp} placeholder="+965..." keyboardType="phone-pad" />
+              </View>
+            ) : null}
+          </View>
+        ) : null}
 
         <Field label="عنوان الإعلان" value={title} onChangeText={setTitle} placeholder="مثال: موستنغ GT 5.0 فل كامل" />
         <Field label="الوصف" value={description} onChangeText={setDescription} placeholder="اكتب حالة السيارة والتعديلات وأي ملاحظات" multiline />
@@ -136,17 +201,17 @@ export default function CreateCarScreen({ navigation, route }: any) {
         </ScrollView>
 
         <Field label="الموديل" value={model} onChangeText={setModel} placeholder="GT-R / Panamera / M4 ..." />
-        <DualRow>
-          <Field label="السنة" value={year} onChangeText={setYear} placeholder="2020" keyboardType="number-pad" compact />
-          <Field label="السعر" value={price} onChangeText={setPrice} placeholder="18500" keyboardType="number-pad" compact />
+        <DualRow compact={compactScreen}>
+          <Field label="السنة" value={year} onChangeText={setYear} placeholder="2020" keyboardType="number-pad" compact={!compactScreen} />
+          <Field label="السعر" value={price} onChangeText={setPrice} placeholder="18500" keyboardType="number-pad" compact={!compactScreen} />
         </DualRow>
-        <DualRow>
-          <Field label="الكيلومترات" value={mileage} onChangeText={setMileage} placeholder="64000" keyboardType="number-pad" compact />
-          <Field label="اللون" value={color} onChangeText={setColor} placeholder="أسود / رمادي" compact />
+        <DualRow compact={compactScreen}>
+          <Field label="الكيلومترات" value={mileage} onChangeText={setMileage} placeholder="64000" keyboardType="number-pad" compact={!compactScreen} />
+          <Field label="اللون" value={color} onChangeText={setColor} placeholder="أسود / رمادي" compact={!compactScreen} />
         </DualRow>
 
         <Text style={s.label}>ناقل الحركة</Text>
-        <View style={s.inlineRow}>
+        <View style={[s.inlineRow, compactScreen && s.inlineRowWrap] }>
           <Chip label="أوتوماتيك" active={transmission === 'automatic'} onPress={() => setTransmission('automatic')} />
           <Chip label="عادي" active={transmission === 'manual'} onPress={() => setTransmission('manual')} />
         </View>
@@ -164,12 +229,12 @@ export default function CreateCarScreen({ navigation, route }: any) {
           <Text style={s.imagePickerText}>📸 اختر صور الإعلان</Text>
           <Text style={s.imagePickerHint}>حتى 6 صور</Text>
         </TouchableOpacity>
-        {!!images.length && (
+        {!!imageItems.length && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.previewRow}>
-            {images.map(uri => (
-              <View key={uri} style={s.previewWrap}>
-                <Image source={{ uri }} style={s.previewImage} />
-                <TouchableOpacity style={s.previewRemove} onPress={() => removeImage(uri)}>
+            {imageItems.map(item => (
+              <View key={item.image} style={s.previewWrap}>
+                <Image source={{ uri: item.image }} style={[s.previewImage, { width: previewSize, height: previewSize }]} />
+                <TouchableOpacity style={s.previewRemove} onPress={() => removeImage(item.image)}>
                   <Text style={s.previewRemoveText}>✕</Text>
                 </TouchableOpacity>
               </View>
@@ -198,8 +263,8 @@ function Field({ label, compact, multiline, ...props }: any) {
   );
 }
 
-function DualRow({ children }: any) {
-  return <View style={s.dualRow}>{children}</View>;
+function DualRow({ children, compact }: any) {
+  return <View style={[s.dualRow, compact && s.dualRowCompact]}>{children}</View>;
 }
 
 function Chip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
@@ -216,9 +281,14 @@ const s = StyleSheet.create({
   heroCard: { backgroundColor: colors.darkCard, borderRadius: radius.xxl, borderWidth: 1, borderColor: colors.primaryBorder, padding: 20, marginBottom: 18 },
   heroTitle: { color: colors.white, fontSize: 22, fontWeight: '900', marginBottom: 6 },
   heroSub: { color: colors.silverLight, fontSize: 14, lineHeight: 22 },
+  adminCard: { backgroundColor: colors.metal, borderRadius: radius.xxl, borderWidth: 1, borderColor: colors.metalBorder, padding: 16, marginBottom: 18 },
+  adminTitle: { color: colors.white, fontSize: 15, fontWeight: '900' },
+  adminSub: { color: colors.silver, fontSize: 12, marginTop: 6, lineHeight: 18 },
+  adminModeRow: { flexDirection: 'row', gap: 10, marginTop: 12, flexWrap: 'wrap' },
   fieldWrap: { marginBottom: 14 },
   compactField: { flex: 1 },
   dualRow: { flexDirection: 'row', gap: 12 },
+  dualRowCompact: { flexDirection: 'column', gap: 0 },
   label: { color: colors.silver, fontSize: 12, fontWeight: '800', marginBottom: 8 },
   input: { backgroundColor: colors.darkCard, borderWidth: 1, borderColor: colors.metalBorder, borderRadius: radius.lg, paddingHorizontal: 14, paddingVertical: 14, color: colors.white, fontWeight: '700' },
   textarea: { minHeight: 120 },
@@ -234,7 +304,7 @@ const s = StyleSheet.create({
   imagePickerHint: { color: colors.silver, marginTop: 5, fontSize: 12 },
   previewRow: { paddingTop: 14 },
   previewWrap: { marginRight: 10 },
-  previewImage: { width: 88, height: 88, borderRadius: radius.lg, marginRight: 10 },
+  previewImage: { borderRadius: radius.lg, marginRight: 10 },
   previewRemove: { position: 'absolute', top: 6, right: 6, width: 22, height: 22, borderRadius: 11, backgroundColor: 'rgba(0,0,0,0.8)', alignItems: 'center', justifyContent: 'center' },
   previewRemoveText: { color: colors.white, fontWeight: '900', fontSize: 11 },
 });
