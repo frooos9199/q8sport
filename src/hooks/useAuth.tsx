@@ -31,6 +31,43 @@ function normalizePhoneDigits(value: string) {
   return digits;
 }
 
+async function claimGuestListingsForUser(nextUser: Pick<User, 'uid' | 'phone' | 'whatsapp'>) {
+  const phoneDigits = normalizePhoneDigits(String(nextUser.phone || ''));
+  const whatsappDigits = normalizePhoneDigits(String(nextUser.whatsapp || ''));
+  const candidates = new Set([phoneDigits, whatsappDigits].filter(Boolean));
+  if (!candidates.size) return;
+
+  const rootUpdates: Record<string, any> = {};
+
+  for (const collection of ['cars', 'parts', 'requests'] as const) {
+    const snap = await getDbSnapshot(dbRef(db, collection), collection, { showAlert: false });
+
+    snap.forEach((child: any) => {
+      const value = child.val();
+      const listingUserId = String(value?.userId || '');
+      if (!listingUserId.startsWith('guest-')) return undefined;
+
+      const listingPhoneDigits = normalizePhoneDigits(String(value?.userPhone || ''));
+      const listingWhatsappDigits = normalizePhoneDigits(String(value?.userWhatsapp || ''));
+      const contactDigits = normalizePhoneDigits(String(value?.contactDigits || ''));
+
+      const matches =
+        (contactDigits && candidates.has(contactDigits)) ||
+        (listingPhoneDigits && candidates.has(listingPhoneDigits)) ||
+        (listingWhatsappDigits && candidates.has(listingWhatsappDigits));
+
+      if (!matches) return undefined;
+
+      rootUpdates[`${collection}/${child.key}/userId`] = nextUser.uid;
+      return undefined;
+    });
+  }
+
+  if (Object.keys(rootUpdates).length) {
+    await update(dbRef(db), rootUpdates);
+  }
+}
+
 function makeAppError(code: string, message: string) {
   const error: any = new Error(message);
   error.code = code;
@@ -258,6 +295,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email: normalizedEmail,
       phone: data.phone,
       whatsapp: data.whatsapp,
+      phoneDigits: normalizePhoneDigits(data.phone),
+      whatsappDigits: normalizePhoneDigits(data.whatsapp),
       isAdmin: isAdminEmail(normalizedEmail),
       createdAt: serverTimestamp() as any,
     };
@@ -269,6 +308,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     setUser(userData);
+
+    void claimGuestListingsForUser(userData).catch(() => {
+      // Best-effort claim; ignore failures (rules/network) to avoid blocking registration.
+    });
   };
 
   const signInWithApple = async () => {
@@ -317,12 +360,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       ...user,
       phone: sanitizedPhone,
       whatsapp: sanitizedWhatsapp,
+      phoneDigits: normalizePhoneDigits(sanitizedPhone),
+      whatsappDigits: normalizePhoneDigits(sanitizedWhatsapp),
     };
 
     try {
       await update(dbRef(db, `users/${user.uid}`), {
         phone: sanitizedPhone,
         whatsapp: sanitizedWhatsapp,
+        phoneDigits: normalizePhoneDigits(sanitizedPhone),
+        whatsappDigits: normalizePhoneDigits(sanitizedWhatsapp),
         updatedAt: Date.now(),
       });
     } catch (error) {
@@ -331,6 +378,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     setUser(nextUser);
+
+    void claimGuestListingsForUser(nextUser).catch(() => {
+      // Best-effort claim; ignore failures.
+    });
   };
 
   const updateProfileAvatar = async (fileUri: string) => {

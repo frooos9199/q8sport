@@ -130,6 +130,7 @@ export default function CreatePartScreen({ navigation, route }: any) {
         userName: sellerNameValue,
         userPhone: sellerPhoneValue,
         userWhatsapp: sellerWhatsappValue,
+        contactDigits: digits(sellerWhatsappValue || sellerPhoneValue),
         userAvatar: manualMode ? '' : user.avatar || '',
         title: { ar: title.trim(), en: title.trim() },
         description: { ar: description.trim(), en: description.trim() },

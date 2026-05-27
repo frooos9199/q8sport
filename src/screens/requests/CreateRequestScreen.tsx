@@ -132,6 +132,7 @@ export default function CreateRequestScreen({ navigation, route }: any) {
         userName: sellerNameValue,
         userPhone: sellerPhoneValue,
         userWhatsapp: sellerWhatsappValue,
+        contactDigits: digits(sellerWhatsappValue || sellerPhoneValue),
         userAvatar: manualMode ? '' : user.avatar || '',
         title: { ar: titleValue, en: titleValue },
         description: { ar: descriptionValue, en: descriptionValue },

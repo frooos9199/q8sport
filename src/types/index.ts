@@ -6,6 +6,8 @@ export interface User {
   email: string;
   phone: string;
   whatsapp: string;
+  phoneDigits?: string;
+  whatsappDigits?: string;
   isAdmin?: boolean;
   disabled?: boolean;
   deletedAt?: any;
