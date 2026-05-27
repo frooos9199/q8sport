@@ -42,7 +42,9 @@ export default function CarCard({ car }: { car: Car }) {
           <Link href={`/${locale}/cars/${car.id}`} className="btn-secondary text-sm !py-2 flex-1 text-center">
             {t.cars.details}
           </Link>
-          <WhatsAppButton phone={car.userWhatsapp} message={`مرحبا، أبي أستفسر عن: ${car.title.ar}`} />
+          <div className="relative -top-1">
+            <WhatsAppButton phone={car.userWhatsapp} message={`مرحبا، أبي أستفسر عن: ${car.title.ar}`} />
+          </div>
         </div>
       </div>
     </div>
