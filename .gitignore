@@ -29,6 +29,9 @@ build/
 .gradle
 local.properties
 android/key.properties
+android/key.properties.example
+android/app/google-services.json
+android/upload_certificate.pem
 *.iml
 *.hprof
 .cxx/
@@ -67,6 +70,7 @@ ios/*.log
 
 # testing
 /coverage
+jest-results.json
 
 # Yarn
 .yarn/*
