@@ -401,7 +401,7 @@ const s = StyleSheet.create({
     borderRadius: radius.full,
     borderWidth: 1,
     borderColor: 'rgba(37, 211, 102, 0.35)',
-    transform: [{ translateY: -3 }],
+    transform: [{ translateY: -5 }],
   },
   waIconWrap: {
     width: 28,
