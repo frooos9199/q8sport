@@ -149,13 +149,17 @@ export default function SellerProfileScreen({ route, navigation }: any) {
 
   const hasCallNumber = Boolean(String(sellerUser?.phone || sellerPhone || '').replace(/[^0-9]/g, ''));
 
-  const isAdminViewer = Boolean(user?.isAdmin);
+  const isAdminViewer = Boolean(user?.isSuperAdmin);
   const isSelfProfile = user?.uid === sellerId;
 
   const toggleSellerAdmin = async () => {
     if (!sellerUser) return;
     if (sellerUser.deletedAt) {
       Alert.alert('تنبيه', 'هذا الحساب محذوف بالفعل');
+      return;
+    }
+    if (sellerUser.isSuperAdmin) {
+      Alert.alert('تنبيه', 'لا يمكن سحب صلاحية السوبر أدمن');
       return;
     }
     if (isSelfProfile) {
@@ -183,6 +187,10 @@ export default function SellerProfileScreen({ route, navigation }: any) {
       Alert.alert('تنبيه', 'هذا الحساب محذوف بالفعل');
       return;
     }
+    if (sellerUser.isSuperAdmin) {
+      Alert.alert('تنبيه', 'لا يمكن تعطيل حساب السوبر أدمن');
+      return;
+    }
     if (isSelfProfile) {
       Alert.alert('تنبيه', 'ما تقدر تعطل حسابك من هذه الصفحة');
       return;
@@ -206,6 +214,10 @@ export default function SellerProfileScreen({ route, navigation }: any) {
     if (!sellerUser) return;
     if (sellerUser.deletedAt) {
       Alert.alert('تنبيه', 'هذا الحساب محذوف بالفعل');
+      return;
+    }
+    if (sellerUser.isSuperAdmin) {
+      Alert.alert('تنبيه', 'لا يمكن حذف حساب السوبر أدمن');
       return;
     }
     if (isSelfProfile) {
@@ -278,7 +290,11 @@ export default function SellerProfileScreen({ route, navigation }: any) {
 
             {sellerUser ? (
               <View style={s.badgesRow}>
-                {sellerUser.isAdmin ? <View style={s.adminBadge}><Text style={s.adminBadgeText}>مشرف</Text></View> : null}
+                {sellerUser.isSuperAdmin ? (
+                  <View style={s.adminBadge}><Text style={s.adminBadgeText}>سوبر أدمن</Text></View>
+                ) : sellerUser.isAdmin ? (
+                  <View style={s.adminBadge}><Text style={s.adminBadgeText}>أدمن</Text></View>
+                ) : null}
                 {sellerUser.disabled ? <View style={s.disabledBadge}><Text style={s.disabledBadgeText}>الحساب معطل</Text></View> : null}
                 {sellerUser.deletedAt ? <View style={s.deletedBadge}><Text style={s.deletedBadgeText}>الحساب محذوف</Text></View> : null}
               </View>

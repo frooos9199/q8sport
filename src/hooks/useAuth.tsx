@@ -74,20 +74,34 @@ function makeAppError(code: string, message: string) {
   return error;
 }
 
-const ADMIN_EMAILS = new Set(['summit_kw@hotmail.com']);
+const SUPER_ADMIN_EMAILS = new Set(['summit_kw@hotmail.com']);
 
-function isAdminEmail(email?: string | null) {
-  return ADMIN_EMAILS.has(normalizeEmail(email || ''));
+function isSuperAdminEmail(email?: string | null) {
+  return SUPER_ADMIN_EMAILS.has(normalizeEmail(email || ''));
+}
+
+function deriveAdminFlags(input: { email?: string | null; isAdmin?: unknown; isSuperAdmin?: unknown }) {
+  const emailValue = normalizeEmail(String(input.email || ''));
+  const emailIsSuper = isSuperAdminEmail(emailValue);
+  const recordIsSuper = input.isSuperAdmin === true;
+  const isSuperAdmin = recordIsSuper || emailIsSuper;
+
+  const recordIsAdmin = input.isAdmin === true;
+  const isAdmin = recordIsAdmin || isSuperAdmin;
+
+  return { isAdmin, isSuperAdmin };
 }
 
 function buildFallbackUser(firebaseUser: any): User {
+  const flags = deriveAdminFlags({ email: firebaseUser.email });
   return {
     uid: firebaseUser.uid,
     name: firebaseUser.displayName || '',
     email: normalizeEmail(firebaseUser.email || ''),
     phone: '',
     whatsapp: '',
-    isAdmin: isAdminEmail(firebaseUser.email),
+    isAdmin: flags.isAdmin,
+    isSuperAdmin: flags.isSuperAdmin,
     disabled: false,
     createdAt: serverTimestamp() as any,
   };
@@ -189,9 +203,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return;
           }
 
+          const flags = deriveAdminFlags({
+            email: existingUser.email || u.email || '',
+            isAdmin: existingUser.isAdmin,
+            isSuperAdmin: existingUser.isSuperAdmin,
+          });
+
+          // Ensure super-admin is persisted for the super-admin email(s), so RTDB rules can enforce privileges.
+          if (flags.isSuperAdmin && !existingUser.isSuperAdmin) {
+            void update(dbRef(db, `users/${u.uid}`), {
+              isSuperAdmin: true,
+              isAdmin: true,
+              updatedAt: Date.now(),
+            }).catch(() => {
+              // Best-effort; ignore failures.
+            });
+          }
+
           setUser({
             ...existingUser,
-            isAdmin: existingUser.isAdmin ?? isAdminEmail(existingUser.email || u.email || ''),
+            ...flags,
             disabled: Boolean(existingUser.disabled),
           });
         } else {
@@ -259,7 +290,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email: existingData?.email || fallbackEmail,
       phone: existingData?.phone || '',
       whatsapp: existingData?.whatsapp || '',
-      isAdmin: existingData?.isAdmin ?? isAdminEmail(existingData?.email || fallbackEmail),
+      phoneDigits: normalizePhoneDigits(String(existingData?.phone || '')),
+      whatsappDigits: normalizePhoneDigits(String(existingData?.whatsapp || '')),
+      ...deriveAdminFlags({ email: existingData?.email || fallbackEmail, isAdmin: existingData?.isAdmin, isSuperAdmin: (existingData as any)?.isSuperAdmin }),
       disabled: Boolean(existingData?.disabled),
       avatar: existingData?.avatar,
       createdAt: existingData?.createdAt || (serverTimestamp() as any),
@@ -297,7 +330,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       whatsapp: data.whatsapp,
       phoneDigits: normalizePhoneDigits(data.phone),
       whatsappDigits: normalizePhoneDigits(data.whatsapp),
-      isAdmin: isAdminEmail(normalizedEmail),
+      ...deriveAdminFlags({ email: normalizedEmail }),
       createdAt: serverTimestamp() as any,
     };
 

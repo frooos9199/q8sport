@@ -41,6 +41,7 @@ export async function deleteUserAccountFromMarketplace(targetUser: Pick<User, 'u
     phone: '',
     whatsapp: '',
     isAdmin: false,
+    isSuperAdmin: false,
     disabled: true,
     deletedAt: Date.now(),
     updatedAt: Date.now(),

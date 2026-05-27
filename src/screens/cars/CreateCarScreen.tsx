@@ -16,7 +16,7 @@ export default function CreateCarScreen({ navigation, route }: any) {
   const { user } = useAuth();
   const initialListing = route?.params?.listing;
   const isEditing = Boolean(initialListing?.id);
-  const isAdmin = Boolean(user?.isAdmin);
+  const isAdmin = Boolean(user?.isAdmin || user?.isSuperAdmin);
 
   const [title, setTitle] = useState(initialListing?.title?.ar || '');
   const [description, setDescription] = useState(initialListing?.description?.ar || '');

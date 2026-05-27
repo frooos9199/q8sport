@@ -29,6 +29,7 @@ export default function MyListingsScreen({ navigation }: any) {
   const [filter, setFilter] = useState<FilterType>('all');
   const compactScreen = width < 390;
   const screenPadding = width < 380 ? spacing.lg : spacing.xl;
+  const canManageAllListings = Boolean(user?.isAdmin || user?.isSuperAdmin);
 
   const loadListings = useCallback(async () => {
     if (!user) return;
@@ -40,7 +41,6 @@ export default function MyListingsScreen({ navigation }: any) {
     ]);
 
     const nextItems: ListingRow[] = [];
-    const canManageAllListings = Boolean(user?.isAdmin);
 
     const shouldIncludeListing = (ownerUserId?: string) => canManageAllListings || ownerUserId === user.uid;
 
@@ -114,7 +114,7 @@ export default function MyListingsScreen({ navigation }: any) {
     });
 
     setItems(nextItems);
-  }, [user]);
+  }, [user, canManageAllListings]);
 
   useEffect(() => {
     let mounted = true;
@@ -229,9 +229,9 @@ export default function MyListingsScreen({ navigation }: any) {
       ListHeaderComponent={
         <>
           <View style={s.heroCard}>
-            <Text style={s.heroTitle}>{user?.isAdmin ? 'إدارة كل الإعلانات' : 'إعلاناتك في السوق'}</Text>
+            <Text style={s.heroTitle}>{canManageAllListings ? 'إدارة كل الإعلانات' : 'إعلاناتك في السوق'}</Text>
             <Text style={s.heroSub}>
-              {user?.isAdmin
+              {canManageAllListings
                 ? 'بصفتك أدمن، تراجع وتعدل وتحذف وتغيّر حالة أي سيارة أو قطعة أو مطلوب في السوق.'
                 : 'من هنا تعدل أو تحذف أو تغيّر حالة أي سيارة أو قطعة أو مطلوب نزلته.'}
             </Text>
@@ -253,9 +253,9 @@ export default function MyListingsScreen({ navigation }: any) {
       }
       ListEmptyComponent={
         <View style={s.centerCard}>
-          <Text style={s.emptyTitle}>{user?.isAdmin ? 'ما فيه عناصر على هذا الفلتر' : 'ما عندك عناصر على هذا الفلتر'}</Text>
+          <Text style={s.emptyTitle}>{canManageAllListings ? 'ما فيه عناصر على هذا الفلتر' : 'ما عندك عناصر على هذا الفلتر'}</Text>
           <Text style={s.emptySub}>
-            {user?.isAdmin
+            {canManageAllListings
               ? 'جرّب تغيير الفلتر أو انتظر حتى يضاف إعلان جديد ليظهر هنا مباشرة.'
               : 'ابدأ بنشر أول سيارة أو قطعة أو مطلوب، وبعدها راح تظهر هنا كلها.'}
           </Text>

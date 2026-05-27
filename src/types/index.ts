@@ -9,6 +9,7 @@ export interface User {
   phoneDigits?: string;
   whatsappDigits?: string;
   isAdmin?: boolean;
+  isSuperAdmin?: boolean;
   disabled?: boolean;
   deletedAt?: any;
   avatar?: string;

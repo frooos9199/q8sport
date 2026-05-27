@@ -17,7 +17,7 @@ export default function CreatePartScreen({ navigation, route }: any) {
   const { user } = useAuth();
   const listing = route?.params?.listing;
   const isEditing = Boolean(listing?.id);
-  const isAdmin = Boolean(user?.isAdmin);
+  const isAdmin = Boolean(user?.isAdmin || user?.isSuperAdmin);
   const [title, setTitle] = useState(listing?.title?.ar || '');
   const [description, setDescription] = useState(listing?.description?.ar || '');
   const [category, setCategory] = useState(CATEGORIES.includes(listing?.category) ? listing.category : 'مكينة');

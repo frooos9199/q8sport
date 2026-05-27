@@ -16,7 +16,7 @@ export default function CreateRequestScreen({ navigation, route }: any) {
   const { user } = useAuth();
   const listing = route?.params?.listing;
   const isEditing = Boolean(listing?.id);
-  const isAdmin = Boolean(user?.isAdmin);
+  const isAdmin = Boolean(user?.isAdmin || user?.isSuperAdmin);
 
   const [category, setCategory] = useState<Category>(listing?.category || 'car');
   const [title, setTitle] = useState(listing?.title?.ar || '');

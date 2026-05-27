@@ -22,6 +22,9 @@ export default function AccountScreen({ navigation }: any) {
 
   if (!user) return null;
 
+  const isSuperAdmin = Boolean(user.isSuperAdmin);
+  const isAdmin = Boolean(user.isAdmin || user.isSuperAdmin);
+
   const screenPadding = width < 380 ? spacing.lg : spacing.xl;
   const compactScreen = width < 360;
 
@@ -31,7 +34,7 @@ export default function AccountScreen({ navigation }: any) {
     else navigation.navigate(tabName, params);
   };
 
-  const menuItems = user.isAdmin
+  const menuItems = isSuperAdmin
     ? [
         {
           key: 'adminListings',
@@ -62,6 +65,23 @@ export default function AccountScreen({ navigation }: any) {
           onPress: () => navigation.navigate('BannerManagement'),
         },
       ]
+    : isAdmin
+      ? [
+          {
+            key: 'adminListings',
+            icon: '🛡️',
+            label: 'إدارة السوق',
+            desc: 'إدارة كل السيارات والقطع والطلبات مع تعديل وحذف وتغيير الحالة',
+            onPress: () => navigation.navigate('MyListings', { adminView: true }),
+          },
+          {
+            key: 'publish',
+            icon: '➕',
+            label: 'مركز النشر',
+            desc: 'إضافة سيارة أو قطعة أو مطلوب جديد من مكان واحد',
+            onPress: () => navigateToTab('AccountTab', { screen: 'CreateListingHub' }),
+          },
+        ]
     : [
         {
           key: 'publish',
@@ -158,7 +178,7 @@ export default function AccountScreen({ navigation }: any) {
         <Text style={s.name}>{user.name}</Text>
         <Text style={s.email}>{user.email}</Text>
         <View style={s.marketBadge}>
-          <Text style={s.marketText}>{user.isAdmin ? 'صلاحية إدارة كاملة' : 'KUWAIT SPORT MARKET'}</Text>
+          <Text style={s.marketText}>{isSuperAdmin ? 'سوبر أدمن' : isAdmin ? 'أدمن' : 'KUWAIT SPORT MARKET'}</Text>
         </View>
       </View>
 

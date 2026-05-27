@@ -51,8 +51,10 @@ export default function UserManagementScreen({ navigation }: any) {
         return left.disabled ? 1 : -1;
       }
 
-      if (Boolean(left.isAdmin) !== Boolean(right.isAdmin)) {
-        return left.isAdmin ? -1 : 1;
+      const leftRoleRank = left.isSuperAdmin ? 2 : left.isAdmin ? 1 : 0;
+      const rightRoleRank = right.isSuperAdmin ? 2 : right.isAdmin ? 1 : 0;
+      if (leftRoleRank !== rightRoleRank) {
+        return rightRoleRank - leftRoleRank;
       }
 
       const leftTime = toMillis((left as any).updatedAt ?? left.createdAt);
@@ -104,11 +106,21 @@ export default function UserManagementScreen({ navigation }: any) {
     );
   }, [search, users]);
 
-  const adminCount = users.filter(item => item.isAdmin).length;
+  const adminCount = users.filter(item => item.isAdmin || item.isSuperAdmin).length;
 
   const toggleAdmin = async (item: User) => {
+    if (!user?.isSuperAdmin) {
+      Alert.alert('غير مصرح', 'هذه العملية للسوبر أدمن فقط');
+      return;
+    }
+
     if (item.uid === user?.uid) {
       Alert.alert('تنبيه', 'ما تقدر تسحب صلاحية الإدارة من حسابك من هذه الشاشة');
+      return;
+    }
+
+    if (item.isSuperAdmin) {
+      Alert.alert('تنبيه', 'لا يمكن تعديل صلاحية السوبر أدمن');
       return;
     }
 
@@ -130,8 +142,18 @@ export default function UserManagementScreen({ navigation }: any) {
   };
 
   const toggleDisabled = async (item: User) => {
+    if (!user?.isSuperAdmin) {
+      Alert.alert('غير مصرح', 'هذه العملية للسوبر أدمن فقط');
+      return;
+    }
+
     if (item.deletedAt) {
       Alert.alert('تنبيه', 'هذا الحساب محذوف بالفعل');
+      return;
+    }
+
+    if (item.isSuperAdmin) {
+      Alert.alert('تنبيه', 'لا يمكن تعطيل حساب السوبر أدمن');
       return;
     }
 
@@ -158,8 +180,18 @@ export default function UserManagementScreen({ navigation }: any) {
   };
 
   const deleteAccount = (item: User) => {
+    if (!user?.isSuperAdmin) {
+      Alert.alert('غير مصرح', 'هذه العملية للسوبر أدمن فقط');
+      return;
+    }
+
     if (item.uid === user?.uid) {
       Alert.alert('تنبيه', 'ما تقدر حذف حسابك من شاشة الإدارة');
+      return;
+    }
+
+    if (item.isSuperAdmin) {
+      Alert.alert('تنبيه', 'لا يمكن حذف حساب السوبر أدمن');
       return;
     }
 
@@ -192,11 +224,11 @@ export default function UserManagementScreen({ navigation }: any) {
     );
   };
 
-  if (!user?.isAdmin) {
+  if (!user?.isSuperAdmin) {
     return (
       <View style={s.centerState}>
-        <Text style={s.centerTitle}>هذه الصفحة للمشرف فقط</Text>
-        <Text style={s.centerSub}>صلاحيات إدارة المستخدمين متاحة فقط لحسابات الإدارة.</Text>
+        <Text style={s.centerTitle}>هذه الصفحة للسوبر أدمن فقط</Text>
+        <Text style={s.centerSub}>صلاحيات إدارة المستخدمين متاحة فقط للسوبر أدمن.</Text>
       </View>
     );
   }
@@ -257,8 +289,10 @@ export default function UserManagementScreen({ navigation }: any) {
                   <View style={s.userMain}>
                     <View style={s.nameRow}>
                       <Text style={s.userName}>{item.name || 'بدون اسم'}</Text>
-                      {item.isAdmin ? (
-                        <View style={s.adminBadge}><Text style={s.adminBadgeText}>مشرف</Text></View>
+                      {item.isSuperAdmin ? (
+                        <View style={s.adminBadge}><Text style={s.adminBadgeText}>سوبر أدمن</Text></View>
+                      ) : item.isAdmin ? (
+                        <View style={s.adminBadge}><Text style={s.adminBadgeText}>أدمن</Text></View>
                       ) : null}
                       {item.disabled ? (
                         <View style={s.disabledBadge}><Text style={s.disabledBadgeText}>معطل</Text></View>
@@ -288,7 +322,7 @@ export default function UserManagementScreen({ navigation }: any) {
                   <TouchableOpacity
                     style={[s.deleteBtn, (isPending || isSelf || Boolean(item.deletedAt)) && s.actionBtnDisabled]}
                     activeOpacity={0.85}
-                    disabled={isPending || isSelf || Boolean(item.deletedAt)}
+                    disabled={isPending || isSelf || Boolean(item.deletedAt) || Boolean(item.isSuperAdmin)}
                     onPress={() => deleteAccount(item)}
                   >
                     <Text style={s.deleteBtnText}>{isPending ? 'جاري...' : 'حذف الحساب'}</Text>
@@ -297,7 +331,7 @@ export default function UserManagementScreen({ navigation }: any) {
                   <TouchableOpacity
                     style={[s.actionBtn, item.disabled ? s.actionBtnPrimary : s.actionBtnMuted, (isPending || isSelf) && s.actionBtnDisabled]}
                     activeOpacity={0.85}
-                    disabled={isPending || isSelf || Boolean(item.deletedAt)}
+                    disabled={isPending || isSelf || Boolean(item.deletedAt) || Boolean(item.isSuperAdmin)}
                     onPress={() => toggleDisabled(item)}
                   >
                     <Text style={[s.actionBtnText, item.disabled ? s.actionBtnTextPrimary : s.actionBtnTextMuted]}>
@@ -308,7 +342,7 @@ export default function UserManagementScreen({ navigation }: any) {
                   <TouchableOpacity
                     style={[s.actionBtn, item.isAdmin ? s.actionBtnMuted : s.actionBtnPrimary, (isPending || isSelf) && s.actionBtnDisabled]}
                     activeOpacity={0.85}
-                    disabled={isPending || isSelf || Boolean(item.deletedAt)}
+                    disabled={isPending || isSelf || Boolean(item.deletedAt) || Boolean(item.isSuperAdmin)}
                     onPress={() => toggleAdmin(item)}
                   >
                     <Text style={[s.actionBtnText, item.isAdmin ? s.actionBtnTextMuted : s.actionBtnTextPrimary]}>

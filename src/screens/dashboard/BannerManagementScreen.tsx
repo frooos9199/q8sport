@@ -98,7 +98,7 @@ export default function BannerManagementScreen() {
   };
 
   const saveBanner = async () => {
-    if (!user?.isAdmin || !user.uid) {
+    if (!user?.isSuperAdmin || !user.uid) {
       Alert.alert('غير مصرح', 'هذه الصفحة مخصصة للإدارة فقط');
       return;
     }
@@ -185,11 +185,11 @@ export default function BannerManagementScreen() {
     ]);
   };
 
-  if (!user?.isAdmin) {
+  if (!user?.isSuperAdmin) {
     return (
       <View style={s.centeredState}>
-        <Text style={s.centeredTitle}>هذه الصفحة للإدارة فقط</Text>
-        <Text style={s.centeredSub}>سجّل بحساب أدمن حتى تضيف بانرات إعلانية وتديرها.</Text>
+        <Text style={s.centeredTitle}>هذه الصفحة للسوبر أدمن فقط</Text>
+        <Text style={s.centeredSub}>صلاحية إدارة البانرات متاحة فقط للسوبر أدمن.</Text>
       </View>
     );
   }
