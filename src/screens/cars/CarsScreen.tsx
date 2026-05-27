@@ -23,6 +23,11 @@ export default function CarsScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
+  const [smartFilterOpen, setSmartFilterOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'available' | 'sold'>('all');
+  const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
+  const [selectedModel, setSelectedModel] = useState<string | null>(null);
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
 
   const fetchCars = async () => {
     try {
@@ -45,10 +50,46 @@ export default function CarsScreen({ navigation }: any) {
 
   const onRefresh = async () => { setRefreshing(true); await fetchCars(); setRefreshing(false); };
 
-  const filtered = cars.filter(c =>
-    c.title?.ar?.includes(search) || c.title?.en?.toLowerCase().includes(search.toLowerCase()) ||
-    c.brand?.toLowerCase().includes(search.toLowerCase()) || c.model?.toLowerCase().includes(search.toLowerCase())
-  );
+  const searchQuery = search.trim().toLowerCase();
+  const matchesSearch = (value?: string) => (value || '').toLowerCase().includes(searchQuery);
+  const searchFiltered = cars.filter(c => {
+    if (!searchQuery) return true;
+    return (
+      (c.title?.ar || '').includes(search.trim()) ||
+      matchesSearch(c.title?.en) ||
+      matchesSearch(c.brand) ||
+      matchesSearch(c.model)
+    );
+  });
+
+  const filtered = searchFiltered.filter(c => {
+    if (statusFilter === 'available' && c.status === 'sold') return false;
+    if (statusFilter === 'sold' && c.status !== 'sold') return false;
+    if (selectedBrand && c.brand !== selectedBrand) return false;
+    if (selectedModel && c.model !== selectedModel) return false;
+    if (selectedYear && c.year !== selectedYear) return false;
+    return true;
+  });
+
+  const brandOptions = Array.from(new Set(searchFiltered.map(c => c.brand).filter(Boolean))).slice(0, 10) as string[];
+  const modelOptions = Array.from(
+    new Set(
+      searchFiltered
+        .filter(c => (selectedBrand ? c.brand === selectedBrand : true))
+        .map(c => c.model)
+        .filter(Boolean)
+    )
+  ).slice(0, 10) as string[];
+  const yearOptions = Array.from(new Set(searchFiltered.map(c => c.year).filter(Boolean)))
+    .sort((a, b) => b - a)
+    .slice(0, 10) as number[];
+
+  const clearSmartFilters = () => {
+    setStatusFilter('all');
+    setSelectedBrand(null);
+    setSelectedModel(null);
+    setSelectedYear(null);
+  };
 
   const openWhatsApp = (phone: string, msg: string) => {
     Linking.openURL(`https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(msg)}`);
@@ -77,12 +118,97 @@ export default function CarsScreen({ navigation }: any) {
           value={search}
           onChangeText={setSearch}
         />
+
+        <TouchableOpacity
+          onPress={() => setSmartFilterOpen(v => !v)}
+          activeOpacity={0.85}
+          style={s.filterBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Smart filter"
+        >
+          <Text style={s.filterBtnIcon}>🎛️</Text>
+        </TouchableOpacity>
+
         {search.length > 0 && (
           <TouchableOpacity onPress={() => setSearch('')} style={s.clearBtn}>
             <Text style={s.clearText}>✕</Text>
           </TouchableOpacity>
         )}
       </View>
+
+      {smartFilterOpen && !loading && (
+        <View style={s.smartFilterCard}>
+          <View style={s.smartFilterHeader}>
+            <Text style={s.smartFilterTitle}>فلتر ذكي</Text>
+            <View style={s.smartFilterHeaderActions}>
+              <TouchableOpacity onPress={clearSmartFilters} activeOpacity={0.85} style={s.smartFilterActionBtn}>
+                <Text style={s.smartFilterActionText}>مسح</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setSmartFilterOpen(false)} activeOpacity={0.85} style={s.smartFilterCloseBtn}>
+                <Text style={s.smartFilterCloseText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <Text style={s.smartFilterLabel}>الحالة</Text>
+          <View style={s.chipsRow}>
+            <Chip label="الكل" active={statusFilter === 'all'} onPress={() => setStatusFilter('all')} />
+            <Chip label="المتوفر" active={statusFilter === 'available'} onPress={() => setStatusFilter('available')} />
+            <Chip label="المباع" active={statusFilter === 'sold'} onPress={() => setStatusFilter('sold')} />
+          </View>
+
+          {brandOptions.length > 0 && (
+            <>
+              <Text style={s.smartFilterLabel}>الماركة</Text>
+              <View style={s.chipsRow}>
+                {brandOptions.map(brand => (
+                  <Chip
+                    key={brand}
+                    label={brand}
+                    active={selectedBrand === brand}
+                    onPress={() => {
+                      setSelectedBrand(current => (current === brand ? null : brand));
+                      setSelectedModel(null);
+                    }}
+                  />
+                ))}
+              </View>
+            </>
+          )}
+
+          {modelOptions.length > 0 && (
+            <>
+              <Text style={s.smartFilterLabel}>الموديل</Text>
+              <View style={s.chipsRow}>
+                {modelOptions.map(model => (
+                  <Chip
+                    key={model}
+                    label={model}
+                    active={selectedModel === model}
+                    onPress={() => setSelectedModel(current => (current === model ? null : model))}
+                  />
+                ))}
+              </View>
+            </>
+          )}
+
+          {yearOptions.length > 0 && (
+            <>
+              <Text style={s.smartFilterLabel}>السنة</Text>
+              <View style={s.chipsRow}>
+                {yearOptions.map(year => (
+                  <Chip
+                    key={String(year)}
+                    label={String(year)}
+                    active={selectedYear === year}
+                    onPress={() => setSelectedYear(current => (current === year ? null : year))}
+                  />
+                ))}
+              </View>
+            </>
+          )}
+        </View>
+      )}
 
       {/* Results count */}
       {!loading && (
@@ -129,6 +255,20 @@ export default function CarsScreen({ navigation }: any) {
         />
       )}
     </View>
+  );
+}
+
+function Chip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  return (
+    <TouchableOpacity
+      activeOpacity={0.85}
+      onPress={onPress}
+      style={[s.chip, active ? s.chipActive : s.chipIdle]}
+    >
+      <Text style={[s.chipText, active ? s.chipTextActive : s.chipTextIdle]} numberOfLines={1}>
+        {label}
+      </Text>
+    </TouchableOpacity>
   );
 }
 
@@ -197,8 +337,38 @@ const s = StyleSheet.create({
   searchWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.darkCard, margin: spacing.lg, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.metalBorder, paddingHorizontal: spacing.lg },
   searchIcon: { fontSize: 16, marginRight: 8 },
   search: { flex: 1, paddingVertical: 14, color: colors.white, fontSize: 15 },
+  filterBtn: { paddingVertical: 10, paddingLeft: 10, paddingRight: 6 },
+  filterBtnIcon: { fontSize: 18 },
   clearBtn: { padding: 6 },
   clearText: { color: colors.silver, fontSize: 16 },
+
+  smartFilterCard: {
+    marginHorizontal: spacing.lg,
+    marginTop: -6,
+    marginBottom: 8,
+    backgroundColor: colors.darkCard,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.metalBorder,
+    padding: spacing.lg,
+    ...shadows.card,
+  },
+  smartFilterHeader: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+  smartFilterTitle: { color: colors.white, fontWeight: '900', fontSize: 14 },
+  smartFilterHeaderActions: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10 },
+  smartFilterActionBtn: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: radius.md, backgroundColor: colors.metal },
+  smartFilterActionText: { color: colors.white, fontWeight: '800', fontSize: 12 },
+  smartFilterCloseBtn: { paddingHorizontal: 8, paddingVertical: 6, borderRadius: radius.md, backgroundColor: colors.metal },
+  smartFilterCloseText: { color: colors.silver, fontSize: 14, fontWeight: '900' },
+  smartFilterLabel: { color: colors.silver, fontSize: 12, marginTop: 10, marginBottom: 8, textAlign: 'right' },
+
+  chipsRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 8 },
+  chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: radius.full, borderWidth: 1, maxWidth: '100%' },
+  chipIdle: { backgroundColor: 'transparent', borderColor: colors.metalBorder },
+  chipActive: { backgroundColor: colors.primaryGlow, borderColor: colors.primary },
+  chipText: { fontSize: 12, fontWeight: '800' },
+  chipTextIdle: { color: colors.silver },
+  chipTextActive: { color: colors.primary },
 
   countRow: { paddingHorizontal: spacing.xl, marginBottom: 4 },
   countText: { color: colors.silver, fontSize: 12 },

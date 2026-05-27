@@ -22,6 +22,9 @@ export default function PartsScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
+  const [smartFilterOpen, setSmartFilterOpen] = useState(false);
+  const [conditionFilter, setConditionFilter] = useState<'all' | 'new' | 'used'>('all');
+  const [withImagesOnly, setWithImagesOnly] = useState(false);
 
   const fetchParts = async () => {
     try {
@@ -43,9 +46,24 @@ export default function PartsScreen({ navigation }: any) {
   useEffect(() => { fetchParts(); }, []);
   const onRefresh = async () => { setRefreshing(true); await fetchParts(); setRefreshing(false); };
 
-  const filtered = parts.filter(p =>
-    p.title?.ar?.includes(search) || p.title?.en?.toLowerCase().includes(search.toLowerCase())
-  );
+  const searchQuery = search.trim().toLowerCase();
+  const matchesSearch = (value?: string) => (value || '').toLowerCase().includes(searchQuery);
+
+  const searchFiltered = parts.filter(p => {
+    if (!searchQuery) return true;
+    return (p.title?.ar || '').includes(search.trim()) || matchesSearch(p.title?.en);
+  });
+
+  const filtered = searchFiltered.filter(p => {
+    if (conditionFilter !== 'all' && p.condition !== conditionFilter) return false;
+    if (withImagesOnly && !(p.images && p.images.length)) return false;
+    return true;
+  });
+
+  const clearSmartFilters = () => {
+    setConditionFilter('all');
+    setWithImagesOnly(false);
+  };
 
   const rows: Part[][] = [];
   for (let index = 0; index < filtered.length; index += 2) {
@@ -68,10 +86,53 @@ export default function PartsScreen({ navigation }: any) {
       <View style={s.searchWrap}>
         <Text style={s.searchIcon}>🔍</Text>
         <TextInput style={s.search} placeholder={t('search')} placeholderTextColor={colors.silver + '50'} value={search} onChangeText={setSearch} />
+
+        <TouchableOpacity
+          onPress={() => setSmartFilterOpen(v => !v)}
+          activeOpacity={0.85}
+          style={s.filterBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Smart filter"
+        >
+          <Text style={s.filterBtnIcon}>🎛️</Text>
+        </TouchableOpacity>
+
         {search.length > 0 && (
           <TouchableOpacity onPress={() => setSearch('')}><Text style={s.clearText}>✕</Text></TouchableOpacity>
         )}
       </View>
+
+      {smartFilterOpen && !loading && (
+        <View style={s.smartFilterCard}>
+          <View style={s.smartFilterHeader}>
+            <Text style={s.smartFilterTitle}>فلتر ذكي</Text>
+            <View style={s.smartFilterHeaderActions}>
+              <TouchableOpacity onPress={clearSmartFilters} activeOpacity={0.85} style={s.smartFilterActionBtn}>
+                <Text style={s.smartFilterActionText}>مسح</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setSmartFilterOpen(false)} activeOpacity={0.85} style={s.smartFilterCloseBtn}>
+                <Text style={s.smartFilterCloseText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <Text style={s.smartFilterLabel}>الحالة</Text>
+          <View style={s.chipsRow}>
+            <Chip label="الكل" active={conditionFilter === 'all'} onPress={() => setConditionFilter('all')} />
+            <Chip label={t('new')} active={conditionFilter === 'new'} onPress={() => setConditionFilter('new')} />
+            <Chip label={t('used')} active={conditionFilter === 'used'} onPress={() => setConditionFilter('used')} />
+          </View>
+
+          <Text style={s.smartFilterLabel}>صور</Text>
+          <View style={s.chipsRow}>
+            <Chip
+              label={withImagesOnly ? 'مع صور ✓' : 'مع صور'}
+              active={withImagesOnly}
+              onPress={() => setWithImagesOnly(v => !v)}
+            />
+          </View>
+        </View>
+      )}
 
       {!loading && <Text style={s.count}>{filtered.length} {t('parts')}</Text>}
 
@@ -111,6 +172,20 @@ export default function PartsScreen({ navigation }: any) {
         showsVerticalScrollIndicator={false}
       />
     </View>
+  );
+}
+
+function Chip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  return (
+    <TouchableOpacity
+      activeOpacity={0.85}
+      onPress={onPress}
+      style={[s.chip, active ? s.chipActive : s.chipIdle]}
+    >
+      <Text style={[s.chipText, active ? s.chipTextActive : s.chipTextIdle]} numberOfLines={1}>
+        {label}
+      </Text>
+    </TouchableOpacity>
   );
 }
 
@@ -166,8 +241,38 @@ const s = StyleSheet.create({
   searchWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.darkCard, margin: spacing.lg, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.metalBorder, paddingHorizontal: spacing.lg },
   searchIcon: { fontSize: 16, marginRight: 8 },
   search: { flex: 1, paddingVertical: 14, color: colors.white, fontSize: 15 },
+  filterBtn: { paddingVertical: 10, paddingLeft: 10, paddingRight: 6 },
+  filterBtnIcon: { fontSize: 18 },
   clearText: { color: colors.silver, fontSize: 16, padding: 6 },
   count: { color: colors.silver, fontSize: 12, paddingHorizontal: spacing.xl, marginBottom: 4 },
+
+  smartFilterCard: {
+    marginHorizontal: spacing.lg,
+    marginTop: -6,
+    marginBottom: 8,
+    backgroundColor: colors.darkCard,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.metalBorder,
+    padding: spacing.lg,
+    ...shadows.card,
+  },
+  smartFilterHeader: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+  smartFilterTitle: { color: colors.white, fontWeight: '900', fontSize: 14 },
+  smartFilterHeaderActions: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10 },
+  smartFilterActionBtn: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: radius.md, backgroundColor: colors.metal },
+  smartFilterActionText: { color: colors.white, fontWeight: '800', fontSize: 12 },
+  smartFilterCloseBtn: { paddingHorizontal: 8, paddingVertical: 6, borderRadius: radius.md, backgroundColor: colors.metal },
+  smartFilterCloseText: { color: colors.silver, fontSize: 14, fontWeight: '900' },
+  smartFilterLabel: { color: colors.silver, fontSize: 12, marginTop: 10, marginBottom: 8, textAlign: 'right' },
+
+  chipsRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 8 },
+  chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: radius.full, borderWidth: 1, maxWidth: '100%' },
+  chipIdle: { backgroundColor: 'transparent', borderColor: colors.metalBorder },
+  chipActive: { backgroundColor: colors.primaryGlow, borderColor: colors.primary },
+  chipText: { fontSize: 12, fontWeight: '800' },
+  chipTextIdle: { color: colors.silver },
+  chipTextActive: { color: colors.primary },
 
   row: {
     flexDirection: 'row',
