@@ -133,7 +133,7 @@ function AnimatedRequestCard({ item, index, navigation }: { item: Request; index
               Linking.openURL(`tel:${phoneDigits}`);
               return;
             }
-            Alert.alert('تنبيه', 'لا يوجد رقم تواصل لهذا الإعلان');
+            Alert.alert('تنبيه', 'لا يوجد رقم واتساب لهذا الإعلان');
           }}
         >
           <Text style={s.waBtnText}>{whatsappDigits ? '💬 واتساب' : '📞 اتصال'}</Text>

@@ -55,7 +55,7 @@ export default function CarCard({ car, onPress, onWhatsApp }: Props) {
               <View style={s.waIconWrap}>
                 <Text style={s.waBtnIcon}>💬</Text>
               </View>
-              <Text style={s.waBtnText}>تواصل</Text>
+              <Text style={s.waBtnText}>واتساب</Text>
             </TouchableOpacity>
           </View>
         </View>

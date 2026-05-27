@@ -33,7 +33,7 @@ export const ar = {
     condition: "الحالة",
     new: "جديد",
     used: "مستعمل",
-    contactWhatsapp: "تواصل واتساب",
+    contactWhatsapp: "واتساب",
     kwd: "د.ك",
     km: "كم",
     sold: "مباع",

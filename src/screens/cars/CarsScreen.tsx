@@ -310,7 +310,7 @@ function AnimatedCard({ item, index, navigation, openWhatsApp }: any) {
               <View style={s.waIconWrap}>
                 <Text style={s.waOverlayIcon}>💬</Text>
               </View>
-              <Text style={s.waOverlayText}>تواصل</Text>
+              <Text style={s.waOverlayText}>واتساب</Text>
             </TouchableOpacity>
           </View>
         </View>
