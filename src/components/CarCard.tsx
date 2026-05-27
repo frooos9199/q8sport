@@ -4,6 +4,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import { colors, radius, shadows, spacing } from '../lib/theme';
 import { t } from '../i18n';
 import { Car } from '../types';
+import { formatListingPublishedAt } from '../lib/listingDate';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.75;
@@ -16,6 +17,7 @@ interface Props {
 
 export default function CarCard({ car, onPress, onWhatsApp }: Props) {
   const scale = useRef(new Animated.Value(1)).current;
+  const publishedAt = formatListingPublishedAt(car.createdAt);
 
   const onPressIn = () => Animated.spring(scale, { toValue: 0.96, useNativeDriver: true }).start();
   const onPressOut = () => Animated.spring(scale, { toValue: 1, friction: 3, useNativeDriver: true }).start();
@@ -43,6 +45,7 @@ export default function CarCard({ car, onPress, onWhatsApp }: Props) {
         <View style={s.info}>
           <Text style={s.title} numberOfLines={1}>{car.title.ar}</Text>
           <Text style={s.sub}>{car.brand} • {car.model}</Text>
+          {publishedAt ? <Text style={s.publishedAtText}>{t('publishedOn')}: {publishedAt}</Text> : null}
           <View style={s.bottom}>
             <View>
               <Text style={s.price}>{car.price?.toLocaleString()}</Text>
@@ -88,6 +91,7 @@ const s = StyleSheet.create({
   info: { padding: spacing.lg },
   title: { color: colors.white, fontWeight: '800', fontSize: 17, marginBottom: 3 },
   sub: { color: colors.silver, fontSize: 12, marginBottom: spacing.md },
+  publishedAtText: { color: colors.silverLight, fontSize: 11, marginBottom: spacing.md },
   bottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   price: { color: colors.primary, fontWeight: '900', fontSize: 22 },
   kwd: { color: colors.silver, fontSize: 11 },

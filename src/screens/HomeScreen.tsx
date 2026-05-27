@@ -14,6 +14,7 @@ import CarCard from '../components/CarCard';
 import { CarCardSkeleton } from '../components/Shimmer';
 import LazyImage from '../components/LazyImage';
 import { fetchActiveBanners } from '../lib/bannerAds';
+import { formatListingPublishedAt } from '../lib/listingDate';
 
 const { width } = Dimensions.get('window');
 const HOME_BANNER_CARD_SPACING = 14;
@@ -133,6 +134,9 @@ export default function HomeScreen({ navigation }: any) {
       <View style={s.partOverlay}>
         <Text style={s.partTitle} numberOfLines={1}>{item.title.ar}</Text>
         <Text style={s.partPrice}>{item.price?.toLocaleString()} {t('kwd')}</Text>
+        {formatListingPublishedAt(item.createdAt) ? (
+          <Text style={s.partMeta}>{t('publishedOn')}: {formatListingPublishedAt(item.createdAt)}</Text>
+        ) : null}
       </View>
       {item.condition === 'new' && (
         <View style={s.newBadge}><Text style={s.newBadgeText}>{t('new')}</Text></View>
@@ -142,6 +146,7 @@ export default function HomeScreen({ navigation }: any) {
 
   const renderRequestCard = ({ item }: { item: Request }) => {
     const catLabel = item.category === 'car' ? 'سيارة' : item.category === 'part' ? 'قطعة' : 'طلب خاص';
+    const publishedAt = formatListingPublishedAt(item.createdAt);
     return (
       <TouchableOpacity
         style={s.requestCard}
@@ -156,6 +161,7 @@ export default function HomeScreen({ navigation }: any) {
         </View>
         <Text style={s.requestTitle} numberOfLines={2}>{item.title?.ar}</Text>
         <Text style={s.requestDesc} numberOfLines={2}>{item.description?.ar}</Text>
+        {publishedAt ? <Text style={s.requestMeta}>{t('publishedOn')}: {publishedAt}</Text> : null}
         <View style={s.requestFooter}>
           <Text style={s.requestUser}>{item.userName}</Text>
           <Text style={s.requestBudget}>{item.budget ? `${item.budget.toLocaleString()} ${t('kwd')}` : 'بدون ميزانية محددة'}</Text>
@@ -172,17 +178,6 @@ export default function HomeScreen({ navigation }: any) {
     >
       <Animated.View style={[s.hero, { paddingTop: insets.top + 24, opacity: heroAnim, transform: [{ translateY: heroAnim.interpolate({ inputRange: [0, 1], outputRange: [-20, 0] }) }] }]}>
         <View style={s.heroBtns}>
-          <TouchableOpacity style={s.btnPrimary} activeOpacity={0.85} onPress={() => navigation.navigate('CarsTab')}>
-            <View style={s.btnGradient}>
-              <LinearGradient
-                colors={colors.gradient.primary as string[]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={s.btnGradientFill}
-              />
-              <Text style={s.btnText} numberOfLines={1} ellipsizeMode="tail">🏎️  {t('cars')}</Text>
-            </View>
-          </TouchableOpacity>
           <TouchableOpacity style={s.btnSecondary} activeOpacity={0.85} onPress={() => navigation.navigate('HomeTab', { screen: 'CreateListingHub' })}>
             <View style={s.btnSecondaryInner}>
               <Text style={s.btnSecText} numberOfLines={1} ellipsizeMode="tail">➕ نزل إعلانك</Text>
@@ -398,6 +393,7 @@ const s = StyleSheet.create({
   partOverlay: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 12 },
   partTitle: { color: colors.white, fontWeight: '700', fontSize: 13, marginBottom: 2 },
   partPrice: { color: colors.primary, fontWeight: '800', fontSize: 15 },
+  partMeta: { color: colors.silverLight, fontSize: 10, marginTop: 6, textAlign: 'right' },
   newBadge: { position: 'absolute', top: 8, left: 8, backgroundColor: colors.green, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.sm },
   newBadgeText: { color: colors.white, fontSize: 10, fontWeight: '700' },
 
@@ -409,6 +405,7 @@ const s = StyleSheet.create({
   requestCategory: { color: colors.silver, fontSize: 12, fontWeight: '700' },
   requestTitle: { color: colors.white, fontSize: 18, fontWeight: '900', marginBottom: 8 },
   requestDesc: { color: colors.silverLight, fontSize: 13, lineHeight: 20, marginBottom: 16 },
+  requestMeta: { color: colors.silverLight, fontSize: 11, marginBottom: 14, textAlign: 'right' },
   requestFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: colors.metalBorder, paddingTop: 14 },
   requestUser: { color: colors.white, fontWeight: '700', fontSize: 12 },
   requestBudget: { color: colors.primary, fontWeight: '800', fontSize: 12 },
