@@ -79,7 +79,7 @@ export default async function MarketPage() {
                 <span className="rounded-full border border-mint/20 bg-mint/10 px-3 py-2 text-mint">نشط {entry.listingCounts.active}</span>
               </div>
 
-              <div className="mt-5 rounded-[1.25rem] border px-4 py-4 text-sm font-bold leading-7 ${entry.freeAdsEligible ? "border-mint/25 bg-mint/10 text-mint" : "border-white/10 bg-white/5 text-zinc-200"}">
+              <div className={`mt-5 rounded-[1.25rem] border px-4 py-4 text-sm font-bold leading-7 ${entry.freeAdsEligible ? "border-mint/25 bg-mint/10 text-mint" : "border-white/10 bg-white/5 text-zinc-200"}`}>
                 {entry.freeAdsEligible
                   ? `مقعد مؤسس #${entry.founderPosition} مفعل. ${entry.rewardLabel}`
                   : entry.rewardLabel}

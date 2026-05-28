@@ -213,7 +213,6 @@ const fallbackPartListings: PartListing[] = [
     summary: "مقاس 21، نظيفة جدًا، وتصلح للي يبي شكل عدواني بدون لعب.",
     images: [],
   },
-  {
 ];
 
 const fallbackWantedListings: WantedListing[] = [
@@ -452,7 +451,6 @@ export async function loadMarketData(): Promise<MarketSnapshot> {
       fallbackName: item.userName || "معلن سيارة",
       fallbackWhatsapp: item.userWhatsapp || "",
     })),
-    ...Object.entries(partsNode || {}).map(([, item]) => ({
     ...Object.entries(partsNode || {})
       .filter(([, item]) => !isBlockedPartCategory(item.category))
       .map(([, item]) => ({
@@ -495,7 +493,6 @@ export async function loadMarketData(): Promise<MarketSnapshot> {
     .sort((left, right) => right.createdAt - left.createdAt)
     .map(withoutCreatedAt);
 
-  const partListings = Object.entries(partsNode || {})
   const partListings = Object.entries(partsNode || {})
     .filter(([, item]) => !isBlockedPartCategory(item.category))
     .map(([slug, item]) => ({
@@ -556,7 +553,6 @@ export async function loadMarketData(): Promise<MarketSnapshot> {
         createdAt: normalizeTimestamp(item.createdAt),
         isActive: item.status !== "sold" && item.status !== "pending",
       })),
-      ...Object.entries(partsNode || {}).map(([, item]) => ({
       ...Object.entries(partsNode || {})
         .filter(([, item]) => !isBlockedPartCategory(item.category))
         .map(([, item]) => ({
