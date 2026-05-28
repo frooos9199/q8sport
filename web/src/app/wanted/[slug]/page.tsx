@@ -39,7 +39,7 @@ export default async function WantedDetailPage({ params }: { params: Promise<{ s
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col px-5 pb-20 pt-6 sm:px-8 lg:px-10">
-      <Link href="/market" className="mb-6 text-sm font-bold text-sand">← رجوع إلى السوق</Link>
+      <Link href="/wanted" className="mb-6 text-sm font-bold text-sand">← رجوع للمطلوبات</Link>
       <section className="grid gap-5 lg:grid-cols-[1.05fr_0.95fr]">
         <div className="rounded-[2rem] border border-mint/20 bg-[linear-gradient(180deg,rgba(94,226,182,0.08),rgba(17,17,17,0.95))] p-6 sm:p-8">
           <p className="text-xs font-bold uppercase tracking-[0.35em] text-sand">Wanted Detail</p>

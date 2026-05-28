@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import { absoluteUrl, siteConfig } from "@/lib/site";
+import Navbar from "@/components/Navbar";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -40,50 +41,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   );
 }
 
-function Navbar() {
-  return (
-    <header className="sticky top-0 z-50 border-b border-metal-border bg-background/80 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
-        <Link href="/" className="flex items-baseline gap-2">
-          <span className="text-2xl font-black text-brand">Q8</span>
-          <span className="text-sm font-bold tracking-widest text-foreground">SPORT CAR</span>
-        </Link>
-
-        <nav className="hidden items-center gap-8 text-sm font-semibold text-sand md:flex">
-          <Link href="/market" className="transition hover:text-foreground">السوق</Link>
-          <Link href="/cars" className="transition hover:text-foreground">السيارات</Link>
-          <Link href="/parts" className="transition hover:text-foreground">قطع الغيار</Link>
-          <Link href="/wanted" className="transition hover:text-foreground">المطلوب</Link>
-        </nav>
-
-        <div className="flex items-center gap-3">
-          <Link href="/sell" className="hidden rounded-xl bg-metal px-4 py-2.5 text-sm font-bold text-foreground border border-metal-border transition hover:bg-panel-soft sm:block">
-            انشر إعلان
-          </Link>
-          <Link href="/login" className="rounded-xl bg-brand px-5 py-2.5 text-sm font-bold text-white transition hover:bg-brand-dark">
-            تسجيل الدخول
-          </Link>
-        </div>
-      </div>
-    </header>
-  );
-}
-
 function Footer() {
   return (
-    <footer className="border-t border-metal-border bg-panel">
+    <footer className="border-t border-[var(--metal-border)] bg-[var(--panel)]">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-5 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-8">
         <div>
           <div className="flex items-baseline gap-2">
-            <span className="text-xl font-black text-brand">Q8</span>
-            <span className="text-xs font-bold tracking-widest text-foreground">SPORT CAR</span>
+            <span className="text-xl font-black text-[var(--brand)]">Q8</span>
+            <span className="text-xs font-bold tracking-widest text-[var(--foreground)]">SPORT CAR</span>
           </div>
-          <p className="mt-2 text-sm text-sand">منصة كويتية لسيارات السبورت وقطع الغيار</p>
+          <p className="mt-2 text-sm text-[var(--sand)]">منصة كويتية لسيارات السبورت وقطع الغيار</p>
         </div>
-        <div className="flex flex-wrap gap-6 text-sm text-sand">
-          <Link href="/market" className="transition hover:text-foreground">السوق</Link>
-          <Link href="/sell" className="transition hover:text-foreground">انشر إعلان</Link>
-          <Link href="/privacy-policy" className="transition hover:text-foreground">الخصوصية</Link>
+        <div className="flex flex-wrap gap-6 text-sm text-[var(--sand)]">
+          <Link href="/market" className="transition hover:text-[var(--foreground)]">السوق</Link>
+          <Link href="/sell" className="transition hover:text-[var(--foreground)]">انشر إعلان</Link>
+          <Link href="/privacy-policy" className="transition hover:text-[var(--foreground)]">الخصوصية</Link>
         </div>
       </div>
     </footer>
