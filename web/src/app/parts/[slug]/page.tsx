@@ -1,40 +1,26 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getPart, getSeller } from "@/lib/market-data";
 import { absoluteUrl, siteConfig } from "@/lib/site";
+import ImageGallery from "@/components/ImageGallery";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const part = await getPart(slug);
-
-  if (!part) {
-    return {
-      title: 'إعلان غير موجود',
-    };
-  }
+  if (!part) return { title: "إعلان غير موجود" };
 
   return {
     title: part.title,
     description: part.summary,
-    alternates: {
-      canonical: absoluteUrl(`/parts/${part.slug}`),
-    },
+    alternates: { canonical: absoluteUrl(`/parts/${part.slug}`) },
     openGraph: {
       title: `${part.title} | ${siteConfig.name}`,
       description: part.summary,
       url: absoluteUrl(`/parts/${part.slug}`),
-      type: 'article',
-      images: part.images[0]
-        ? [
-            {
-              url: part.images[0],
-              alt: part.title,
-            },
-          ]
-        : undefined,
+      type: "article",
+      images: part.images[0] ? [{ url: part.images[0], alt: part.title }] : undefined,
     },
   };
 }
@@ -47,66 +33,90 @@ export default async function PartDetailPage({ params }: { params: Promise<{ slu
   const seller = await getSeller(part.sellerSlug);
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-col px-5 pb-20 pt-6 sm:px-8 lg:px-10">
-      <Link href="/market" className="mb-6 text-sm font-bold text-sand">← رجوع إلى السوق</Link>
-      <section className="grid gap-5 lg:grid-cols-[1.05fr_0.95fr]">
-        <div className="rounded-[2rem] border border-line bg-panel p-6 sm:p-8">
-          <ListingHero title={part.title} image={part.images[0]} />
-          <p className="text-xs font-bold uppercase tracking-[0.35em] text-sand">Part Details</p>
-          <h1 className="mt-3 text-4xl font-black text-foreground">{part.title}</h1>
-          <p className="mt-5 text-sm leading-8 text-zinc-300 sm:text-base">{part.summary}</p>
-          <div className="mt-8 grid gap-3 sm:grid-cols-2">
-            <Info label="السعر" value={part.price} />
-            <Info label="التصنيف" value={part.category} />
-            <Info label="التوافق" value={part.fitment} />
-            <Info label="الحالة" value={part.condition} />
+    <main className="mx-auto flex w-full max-w-6xl flex-col px-5 pb-20 pt-6 sm:px-8">
+      <Link href="/parts" className="mb-6 text-sm font-bold text-sand transition hover:text-foreground">← رجوع لقطع الغيار</Link>
+
+      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="space-y-6">
+          {/* Gallery */}
+          <div className="rounded-2xl border border-metal-border bg-panel p-5">
+            <ImageGallery images={part.images} title={part.title} />
+          </div>
+
+          {/* Title & Price */}
+          <div className="rounded-2xl border border-metal-border bg-panel p-6">
+            <div className="flex flex-wrap items-center gap-3 mb-4">
+              <span className="rounded-lg bg-sand/10 border border-sand/20 px-3 py-1.5 text-xs font-bold text-sand">{part.category}</span>
+              <span className={`rounded-lg px-3 py-1.5 text-xs font-bold ${part.condition === "جديد" ? "bg-mint/10 text-mint border border-mint/20" : "bg-yellow-500/10 text-yellow-500 border border-yellow-500/20"}`}>
+                {part.condition}
+              </span>
+            </div>
+            <h1 className="text-3xl font-black text-foreground">{part.title}</h1>
+            <div className="mt-4 flex items-baseline gap-3 rounded-xl border border-brand/20 bg-brand-glow p-5">
+              <span className="text-3xl font-black text-brand">{part.price}</span>
+            </div>
+          </div>
+
+          {/* Info */}
+          <div className="rounded-2xl border border-metal-border bg-panel p-6">
+            <h2 className="text-lg font-bold text-foreground mb-4">التفاصيل</h2>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <SpecCard icon="📂" label="التصنيف" value={part.category} />
+              <SpecCard icon="🔧" label="التوافق" value={part.fitment} />
+              <SpecCard icon="✅" label="الحالة" value={part.condition} />
+            </div>
+          </div>
+
+          {/* Description */}
+          <div className="rounded-2xl border border-metal-border bg-panel p-6">
+            <h2 className="text-lg font-bold text-foreground mb-4">الوصف</h2>
+            <p className="text-sm leading-8 text-sand whitespace-pre-wrap">{part.summary}</p>
           </div>
         </div>
 
-        <aside className="rounded-[2rem] border border-line bg-[linear-gradient(180deg,#171717_0%,#0b0b0b_100%)] p-6 sm:p-8">
-          <p className="text-xs font-bold uppercase tracking-[0.35em] text-sand">Seller</p>
-          <h2 className="mt-3 text-3xl font-black text-foreground">{seller?.name}</h2>
-          <p className="mt-3 text-sm leading-7 text-zinc-300">{seller?.bio}</p>
-          <div className="mt-6 space-y-3 text-sm text-zinc-400">
-            <p>{seller?.city}</p>
-            <p>{seller?.joinedLabel}</p>
-            <p>{seller?.responseLabel}</p>
-          </div>
-          <div className="mt-8 flex flex-wrap gap-3">
-            {seller?.whatsapp ? (
-              <a href={`https://wa.me/${seller.whatsapp.replace(/[^0-9]/g, "")}`} className="inline-flex rounded-full bg-brand px-5 py-3 text-sm font-black text-white transition hover:bg-[#ff5b4e]">
-                تواصل واتساب
-              </a>
-            ) : null}
-            {seller ? (
-              <Link href={`/sellers/${seller.slug}`} className="inline-flex rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-black text-white transition hover:bg-white/10">
-                افتح ملف البائع
+        {/* Right */}
+        <div className="space-y-6">
+          {seller?.whatsapp && (
+            <a
+              href={`https://wa.me/${seller.whatsapp.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`مرحبا، أبي أستفسر عن: ${part.title}`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block rounded-2xl bg-whatsapp p-5 text-center text-lg font-black text-white transition hover:opacity-90"
+            >
+              💬 تواصل واتساب
+            </a>
+          )}
+
+          {seller && (
+            <div className="rounded-2xl border border-metal-border bg-panel p-6">
+              <p className="text-xs font-bold text-sand mb-3">المعلن</p>
+              <div className="flex items-center gap-4">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand text-xl font-black text-white">
+                  {seller.name[0]}
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-foreground">{seller.name}</h3>
+                  <p className="text-xs text-sand">{seller.city} • {seller.joinedLabel}</p>
+                </div>
+              </div>
+              <p className="mt-4 text-sm leading-7 text-sand">{seller.bio}</p>
+              <Link href={`/sellers/${seller.slug}`} className="mt-4 block rounded-xl border border-metal-border bg-metal py-3 text-center text-sm font-bold text-foreground transition hover:bg-panel-soft">
+                عرض ملف المعلن
               </Link>
-            ) : null}
-          </div>
-        </aside>
-      </section>
+            </div>
+          )}
+        </div>
+      </div>
     </main>
   );
 }
 
-function ListingHero({ image, title }: { image?: string; title: string }) {
-  if (image) {
-    return <Image src={image} alt={title} width={1280} height={720} className="mb-6 h-72 w-full rounded-[1.5rem] object-cover" unoptimized />;
-  }
-
+function SpecCard({ icon, label, value }: { icon: string; label: string; value: string }) {
   return (
-    <div className="mb-6 flex h-72 w-full items-end rounded-[1.5rem] border border-white/8 bg-[linear-gradient(135deg,rgba(217,198,164,0.22),rgba(17,17,17,0.92))] p-5">
-      <span className="text-lg font-black text-foreground">{title}</span>
-    </div>
-  );
-}
-
-function Info({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-[1.25rem] border border-white/8 bg-white/[0.03] p-4">
-      <p className="text-xs font-bold text-zinc-500">{label}</p>
-      <p className="mt-2 text-lg font-black text-foreground">{value}</p>
+    <div className="rounded-xl border border-metal-border bg-panel-soft p-4">
+      <span className="text-lg">{icon}</span>
+      <p className="mt-1 text-xs text-sand">{label}</p>
+      <p className="mt-1 text-sm font-bold text-foreground">{value}</p>
     </div>
   );
 }
