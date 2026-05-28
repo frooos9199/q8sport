@@ -10,7 +10,7 @@ const firebaseConfig = getFirebasePublicConfig();
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-const ADMIN_EMAILS = ["admin@q8sportcar.com"];
+const ADMIN_EMAILS = ["admin@q8sportcar.com", "summit_kw@hotmail.com"];
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");

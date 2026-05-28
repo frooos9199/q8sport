@@ -12,7 +12,7 @@ const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
-const ADMIN_EMAILS = ["admin@q8sportcar.com"];
+const ADMIN_EMAILS = ["admin@q8sportcar.com", "summit_kw@hotmail.com"];
 
 type Listing = { id: string; title: string; status?: string; userName?: string; createdAt?: number };
 
