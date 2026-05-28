@@ -51,7 +51,7 @@ export default async function CarDetailPage({ params }: { params: Promise<{ slug
       <Link href="/market" className="mb-6 text-sm font-bold text-sand">← رجوع إلى السوق</Link>
       <section className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="rounded-[2rem] border border-line bg-panel p-6 sm:p-8">
-          <ListingHero title={car.title} image={car.images[0]} />
+          <ListingGallery images={car.images} title={car.title} />
           <p className="text-xs font-bold uppercase tracking-[0.35em] text-sand">Car Details</p>
           <h1 className="mt-3 text-4xl font-black text-foreground">{car.title}</h1>
           <p className="mt-5 text-sm leading-8 text-zinc-300 sm:text-base">{car.summary}</p>
@@ -98,14 +98,25 @@ export default async function CarDetailPage({ params }: { params: Promise<{ slug
   );
 }
 
-function ListingHero({ image, title }: { image?: string; title: string }) {
-  if (image) {
-    return <Image src={image} alt={title} width={1280} height={720} className="mb-6 h-72 w-full rounded-[1.5rem] object-cover" unoptimized />;
+function ListingGallery({ images, title }: { images: string[]; title: string }) {
+  if (!images.length) {
+    return (
+      <div className="mb-6 flex h-72 w-full items-end rounded-[1.5rem] border border-white/8 bg-[linear-gradient(135deg,rgba(239,59,45,0.24),rgba(17,17,17,0.9))] p-5">
+        <span className="text-lg font-black text-foreground">{title}</span>
+      </div>
+    );
   }
 
   return (
-    <div className="mb-6 flex h-72 w-full items-end rounded-[1.5rem] border border-white/8 bg-[linear-gradient(135deg,rgba(239,59,45,0.24),rgba(17,17,17,0.9))] p-5">
-      <span className="text-lg font-black text-foreground">{title}</span>
+    <div className="mb-6 space-y-3">
+      <Image src={images[0]} alt={title} width={1280} height={720} className="h-72 w-full rounded-[1.5rem] object-cover" unoptimized />
+      {images.length > 1 && (
+        <div className="grid grid-cols-4 gap-2">
+          {images.slice(1).map((img, i) => (
+            <Image key={i} src={img} alt={`${title} ${i + 2}`} width={300} height={200} className="h-20 w-full rounded-xl object-cover" unoptimized />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
