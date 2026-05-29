@@ -2,15 +2,15 @@ import React from 'react';
 import { ActivityIndicator, Alert, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { push, ref as dbRef, remove, set, update } from '@react-native-firebase/database';
-import { ref as storageRef } from '@react-native-firebase/storage';
 import LinearGradient from 'react-native-linear-gradient';
 
-import LazyImage from '../../components/LazyImage';
+import FastAdImage from '../../components/FastAdImage';
 import { useAuth } from '../../hooks/useAuth';
 import { bannerHasPlacement, bannerPlacementOptions, fetchAllBanners } from '../../lib/bannerAds';
-import { db, storage } from '../../lib/firebase';
+import { db } from '../../lib/firebase';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { BannerAd, BannerPlacement } from '../../types';
+import { uploadListingMedia } from '../../lib/listingImages';
 
 export default function BannerManagementScreen() {
   const { width } = useWindowDimensions();
@@ -70,7 +70,7 @@ export default function BannerManagementScreen() {
     const asset = result.assets?.[0];
     if (!asset?.uri) return;
 
-    setSelectedImageUri(asset.uri.replace('file://', ''));
+    setSelectedImageUri(asset.uri);
     setSelectedPreviewUri(asset.uri);
   };
 
@@ -124,14 +124,14 @@ export default function BannerManagementScreen() {
         throw new Error('تعذر إنشاء معرف البانر');
       }
 
-      const imageRef = storageRef(storage, `banners/${user.uid}/${bannerId}.jpg`);
-      await imageRef.putFile(selectedImageUri);
-      const imageUrl = await imageRef.getDownloadURL();
+      const media = await uploadListingMedia('banners', bannerId, [{ image: selectedImageUri }]);
 
       await set(bannerRef, {
         title: title.trim() || '',
         targetUrl: targetUrl.trim() || '',
-        imageUrl,
+        imageUrl: media.imageUrl,
+        mediumUrl: media.mediumUrl,
+        thumbnailUrl: media.thumbnailUrl,
         placements,
         isActive: true,
         createdBy: user.uid,
@@ -239,7 +239,7 @@ export default function BannerManagementScreen() {
 
         {selectedPreviewUri ? (
           <View style={s.previewCard}>
-            <LazyImage uri={selectedPreviewUri} style={s.previewImage} resizeMode="cover" />
+            <FastAdImage uri={selectedPreviewUri} style={s.previewImage} placeholderColor={colors.darkLight} />
           </View>
         ) : null}
 
@@ -267,7 +267,7 @@ export default function BannerManagementScreen() {
 
             return (
               <View key={item.id} style={s.bannerItem}>
-                <LazyImage uri={item.imageUrl} style={s.bannerImage} resizeMode="cover" />
+                <FastAdImage uri={item.thumbnailUrl || item.imageUrl} style={s.bannerImage} placeholderColor={colors.darkLight} />
                 <View style={s.bannerBody}>
                   <View style={[s.bannerTitleRow, compactScreen && s.bannerTitleRowCompact]}>
                     <Text style={s.bannerTitle} numberOfLines={1}>{item.title?.trim() || 'بدون عنوان'}</Text>

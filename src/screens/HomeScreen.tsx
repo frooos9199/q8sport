@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions, FlatList, Image, Linking, Animated, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions, FlatList, Linking, Animated, RefreshControl } from 'react-native';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
@@ -15,6 +15,9 @@ import { CarCardSkeleton } from '../components/Shimmer';
 import LazyImage from '../components/LazyImage';
 import { fetchActiveBanners } from '../lib/bannerAds';
 import { formatListingPublishedAt } from '../lib/listingDate';
+import FastAdImage from '../components/FastAdImage';
+import { getListingThumbnailUrl } from '../lib/listingImages';
+import { prefetchAdImages } from '../lib/prefetchAdImages';
 
 const { width } = Dimensions.get('window');
 const HOME_BANNER_CARD_SPACING = 14;
@@ -54,10 +57,17 @@ export default function HomeScreen({ navigation }: any) {
       partsSnap.forEach((child: any) => { partsData.push({ id: child.key, ...child.val() }); return undefined; });
       const requestsData: Request[] = [];
       requestsSnap.forEach((child: any) => { requestsData.push({ id: child.key, ...child.val() }); return undefined; });
-      setCars(sortListingsByFreshnessAndStatus(carsData).slice(0, 8));
-      setParts(sortListingsByFreshnessAndStatus(partsData).slice(0, 6));
+      const nextCars = sortListingsByFreshnessAndStatus(carsData).slice(0, 8);
+      const nextParts = sortListingsByFreshnessAndStatus(partsData).slice(0, 6);
+      setCars(nextCars);
+      setParts(nextParts);
       setRequests(sortListingsByFreshnessAndStatus(requestsData).slice(0, 4));
       setBanners(activeBanners);
+
+      prefetchAdImages([
+        ...nextCars.map(getListingThumbnailUrl),
+        ...nextParts.map(getListingThumbnailUrl),
+      ], 10);
     } catch (e) {
       console.log('Fetch error:', e);
     }
@@ -125,8 +135,8 @@ export default function HomeScreen({ navigation }: any) {
 
   const renderPartCard = ({ item }: { item: Part }) => (
     <TouchableOpacity style={s.partCard} activeOpacity={0.85} onPress={() => navigation.navigate('PartDetails', { id: item.id })}>
-      {item.images?.[0] ? (
-        <Image source={{ uri: item.images[0] }} style={s.partImg} />
+      {getListingThumbnailUrl(item) ? (
+        <FastAdImage uri={getListingThumbnailUrl(item)} style={s.partImg} fallback={<Text style={{ fontSize: 30 }}>⚙️</Text>} />
       ) : (
         <View style={[s.partImg, s.placeholder]}><Text style={{ fontSize: 30 }}>⚙️</Text></View>
       )}

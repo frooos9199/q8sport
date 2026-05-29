@@ -11,6 +11,8 @@ import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { Part } from '../../types';
 import { t } from '../../i18n';
 import { shareListing } from '../../lib/shareListing';
+import FastAdImage from '../../components/FastAdImage';
+import { getListingMediumUrl } from '../../lib/listingImages';
 
 export default function PartDetailsScreen({ route, navigation }: any) {
   const { width } = useWindowDimensions();
@@ -93,8 +95,8 @@ export default function PartDetailsScreen({ route, navigation }: any) {
   return (
     <ScrollView style={s.container} contentContainerStyle={{ paddingBottom: 36 }} showsVerticalScrollIndicator={false}>
       <View style={s.heroWrap}>
-        {part.images?.[0] ? (
-          <LazyImage uri={part.images[0]} style={[s.heroImage, { height: heroHeight }]} fallback={<Text style={s.placeholderIcon}>⚙️</Text>} />
+        {getListingMediumUrl(part) ? (
+          <FastAdImage uri={getListingMediumUrl(part)} style={[s.heroImage, { height: heroHeight }]} fallback={<Text style={s.placeholderIcon}>⚙️</Text>} placeholderColor={colors.darkCard} />
         ) : (
           <View style={[s.heroImage, { height: heroHeight }, s.placeholder]}>
             <Text style={s.placeholderIcon}>⚙️</Text>

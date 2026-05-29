@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Image, StyleSheet, TextInput, Linking, Animated, RefreshControl } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Linking, Animated, RefreshControl } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { db } from '../../lib/firebase';
 import { orderByChild, query, ref as dbRef } from '@react-native-firebase/database';
@@ -11,14 +11,33 @@ import { BannerAd, Part } from '../../types';
 import { fetchActiveBanners } from '../../lib/bannerAds';
 import SponsoredBannerCard from '../../components/SponsoredBannerCard';
 import { formatListingPublishedAt } from '../../lib/listingDate';
+import FastAdImage from '../../components/FastAdImage';
+import { getListingThumbnailUrl } from '../../lib/listingImages';
+import { prefetchAdImages } from '../../lib/prefetchAdImages';
 
 type PartsFeedItem =
   | { kind: 'row'; id: string; parts: Part[]; startIndex: number }
-  | { kind: 'banner'; id: string; banner: BannerAd };
+  | { kind: 'banner'; id: string; bannerSlot: number };
+
+function AutoRotatingBanner({ banner }: { banner: BannerAd }) {
+  const opacity = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    opacity.setValue(0);
+    Animated.timing(opacity, { toValue: 1, duration: 260, useNativeDriver: true }).start();
+  }, [banner.id, opacity]);
+
+  return (
+    <Animated.View style={{ opacity }}>
+      <SponsoredBannerCard banner={banner} />
+    </Animated.View>
+  );
+}
 
 export default function PartsScreen({ navigation }: any) {
   const [parts, setParts] = useState<Part[]>([]);
   const [banners, setBanners] = useState<BannerAd[]>([]);
+  const [bannerRotationIndex, setBannerRotationIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
@@ -35,8 +54,14 @@ export default function PartsScreen({ navigation }: any) {
       ]);
       const data: Part[] = [];
       snap.forEach((child: any) => { data.push({ id: child.key, ...child.val() }); return undefined; });
-      setParts(sortListingsByFreshnessAndStatus(data));
+      const sortedParts = sortListingsByFreshnessAndStatus(data);
+      setParts(sortedParts);
       setBanners(activeBanners);
+
+      prefetchAdImages([
+        ...activeBanners.map(b => b.thumbnailUrl || b.imageUrl),
+        ...sortedParts.map(getListingThumbnailUrl),
+      ], 10);
     } catch (e) {
       console.log('Error:', e);
     }
@@ -44,6 +69,20 @@ export default function PartsScreen({ navigation }: any) {
   };
 
   useEffect(() => { fetchParts(); }, []);
+
+  useEffect(() => {
+    setBannerRotationIndex(0);
+
+    if (banners.length <= 1) {
+      return;
+    }
+
+    const intervalId = setInterval(() => {
+      setBannerRotationIndex(current => (current + 1) % banners.length);
+    }, 4200);
+
+    return () => clearInterval(intervalId);
+  }, [banners.length]);
   const onRefresh = async () => { setRefreshing(true); await fetchParts(); setRefreshing(false); };
 
   const searchQuery = search.trim().toLowerCase();
@@ -71,13 +110,13 @@ export default function PartsScreen({ navigation }: any) {
   }
 
   const feedItems: PartsFeedItem[] = [];
+  let bannerSlot = 0;
   rows.forEach((rowParts, rowIndex) => {
     feedItems.push({ kind: 'row', id: `row-${rowIndex}`, parts: rowParts, startIndex: rowIndex * 2 });
 
     if ((rowIndex + 1) % 2 === 0 && banners.length > 0) {
-      const bannerIndex = Math.floor(rowIndex / 2) % banners.length;
-      const banner = banners[bannerIndex];
-      feedItems.push({ kind: 'banner', id: `banner-${banner.id}-${rowIndex}`, banner });
+      feedItems.push({ kind: 'banner', id: `banner-slot-${bannerSlot}-${rowIndex}`, bannerSlot });
+      bannerSlot += 1;
     }
   });
 
@@ -140,9 +179,14 @@ export default function PartsScreen({ navigation }: any) {
         data={feedItems}
         renderItem={({ item }) => {
           if (item.kind === 'banner') {
+            const bannerIndex = banners.length
+              ? (item.bannerSlot + bannerRotationIndex) % banners.length
+              : 0;
+            const banner = banners[bannerIndex];
+
             return (
               <View style={s.bannerWrap}>
-                <SponsoredBannerCard banner={item.banner} />
+                {banner ? <AutoRotatingBanner banner={banner} /> : null}
               </View>
             );
           }
@@ -162,6 +206,11 @@ export default function PartsScreen({ navigation }: any) {
           );
         }}
         keyExtractor={i => i.id}
+        initialNumToRender={8}
+        maxToRenderPerBatch={8}
+        windowSize={7}
+        removeClippedSubviews={true}
+        updateCellsBatchingPeriod={50}
         contentContainerStyle={{ padding: spacing.lg, paddingBottom: 100 }}
         ListEmptyComponent={
           loading ? null : (
@@ -192,6 +241,7 @@ function Chip({ label, active, onPress }: { label: string; active: boolean; onPr
 function AnimatedPartCard({ item, index, navigation }: any) {
   const anim = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(1)).current;
+  const thumbnailUrl = getListingThumbnailUrl(item);
 
   useEffect(() => {
     Animated.timing(anim, { toValue: 1, duration: 400, delay: index * 60, useNativeDriver: true }).start();
@@ -205,8 +255,8 @@ function AnimatedPartCard({ item, index, navigation }: any) {
         onPress={() => navigation.navigate('PartDetails', { id: item.id })}
       >
         <View style={s.imgWrap}>
-          {item.images?.[0] ? (
-            <Image source={{ uri: item.images[0] }} style={s.img} />
+          {thumbnailUrl ? (
+            <FastAdImage uri={thumbnailUrl} style={s.img} fallback={<Text style={{ fontSize: 30 }}>⚙️</Text>} />
           ) : (
             <View style={[s.img, s.placeholder]}><Text style={{ fontSize: 30 }}>⚙️</Text></View>
           )}

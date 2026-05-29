@@ -1,10 +1,12 @@
 import React, { useRef } from 'react';
-import { View, Text, Image, TouchableOpacity, Animated, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, Animated, StyleSheet, Dimensions } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { colors, radius, shadows, spacing } from '../lib/theme';
 import { t } from '../i18n';
 import { Car } from '../types';
 import { formatListingPublishedAt } from '../lib/listingDate';
+import FastAdImage from './FastAdImage';
+import { getListingThumbnailUrl } from '../lib/listingImages';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.75;
@@ -18,6 +20,7 @@ interface Props {
 export default function CarCard({ car, onPress, onWhatsApp }: Props) {
   const scale = useRef(new Animated.Value(1)).current;
   const publishedAt = formatListingPublishedAt(car.createdAt);
+  const thumbnailUrl = getListingThumbnailUrl(car);
 
   const onPressIn = () => Animated.spring(scale, { toValue: 0.96, useNativeDriver: true }).start();
   const onPressOut = () => Animated.spring(scale, { toValue: 1, friction: 3, useNativeDriver: true }).start();
@@ -26,8 +29,8 @@ export default function CarCard({ car, onPress, onWhatsApp }: Props) {
     <Animated.View style={[s.wrapper, { transform: [{ scale }] }]}>
       <TouchableOpacity activeOpacity={0.9} onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut} style={s.card}>
         <View style={s.imgWrap}>
-          {car.images?.[0] ? (
-            <Image source={{ uri: car.images[0] }} style={s.img} />
+          {thumbnailUrl ? (
+            <FastAdImage uri={thumbnailUrl} style={s.img} fallback={<Text style={{ fontSize: 50 }}>🏎️</Text>} />
           ) : (
             <View style={[s.img, s.placeholder]}><Text style={{ fontSize: 50 }}>🏎️</Text></View>
           )}

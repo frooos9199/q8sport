@@ -1,15 +1,18 @@
-import { Image, InteractionManager } from 'react-native';
+import { InteractionManager } from 'react-native';
 import { limitToLast, orderByChild, query, ref as dbRef } from '@react-native-firebase/database';
 
 import { db } from './firebase';
 import { getDbSnapshot } from './firebaseDatabase';
-import { getListingPreviewImage } from './listingImages';
+import { getListingThumbnailUrl } from './listingImages';
+import { prefetchAdImages } from './prefetchAdImages';
 import { sortListingsByFreshnessAndStatus } from './listingSort';
 
 type ListingWithImages = {
   id: string;
+  thumbnailUrl?: string;
   images?: string[];
   imageThumbs?: string[];
+  imageMediums?: string[];
   status?: string;
   createdAt?: any;
   updatedAt?: any;
@@ -45,7 +48,7 @@ export async function fetchSortedListings<T extends ListingWithImages>(path: str
 export async function prefetchListingImages<T extends ListingWithImages>(items: T[], count = 10) {
   const urls = items
     .flatMap(item => {
-      const image = getListingPreviewImage(item);
+      const image = getListingThumbnailUrl(item);
       return image ? [image] : [];
     })
     .slice(0, count);
@@ -53,7 +56,7 @@ export async function prefetchListingImages<T extends ListingWithImages>(items: 
   if (!urls.length) return;
 
   await Promise.race([
-    Promise.allSettled(urls.map(url => Image.prefetch(url))),
+    Promise.resolve(prefetchAdImages(urls, count)),
     new Promise(resolve => setTimeout(resolve, IMAGE_PREFETCH_TIMEOUT_MS)),
   ]);
 }

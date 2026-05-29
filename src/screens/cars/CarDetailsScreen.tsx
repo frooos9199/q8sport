@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, Dimensions, Linking, Modal, Animated, StatusBar } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions, Linking, Modal, Animated, StatusBar } from 'react-native';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
@@ -10,6 +10,9 @@ import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { t } from '../../i18n';
 import { Car } from '../../types';
 import { shareListing } from '../../lib/shareListing';
+import FastImage from 'react-native-fast-image';
+import FastAdImage from '../../components/FastAdImage';
+import { getListingMediumUrl, getListingOriginalUrl, getListingThumbnailUrl } from '../../lib/listingImages';
 
 const { width } = Dimensions.get('window');
 
@@ -84,14 +87,21 @@ export default function CarDetailsScreen({ route, navigation }: any) {
     { icon: '⚙️', label: t('transmission'), value: car.transmission === 'automatic' ? t('automatic') : t('manual') },
   ];
 
+  const activeMediumUrl =
+    car.imageMediums?.[imgIndex] ||
+    (imgIndex === 0 ? car.mediumUrl : undefined) ||
+    car.images?.[imgIndex] ||
+    getListingMediumUrl(car);
+  const activeOriginalUrl = getListingOriginalUrl(car, imgIndex);
+
   return (
     <View style={s.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Image Gallery */}
         <View style={[s.imageSection, { marginTop: insets.top + 52 }] }>
           <TouchableOpacity activeOpacity={0.95} onPress={() => setLightbox(true)}>
-            {car.images?.[imgIndex] ? (
-              <Image source={{ uri: car.images[imgIndex] }} style={s.mainImg} />
+            {activeMediumUrl ? (
+              <FastAdImage uri={activeMediumUrl} style={s.mainImg} fallback={<Text style={{ fontSize: 70 }}>🏎️</Text>} />
             ) : (
               <View style={[s.mainImg, s.placeholder]}><Text style={{ fontSize: 70 }}>🏎️</Text></View>
             )}
@@ -118,7 +128,11 @@ export default function CarDetailsScreen({ route, navigation }: any) {
           <ScrollView horizontal style={s.thumbRow} showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: spacing.xl }}>
             {car.images.map((img, i) => (
               <TouchableOpacity key={i} onPress={() => setImgIndex(i)} style={[s.thumb, imgIndex === i && s.thumbActive]}>
-                <Image source={{ uri: img }} style={s.thumbImg} />
+                <FastAdImage
+                  uri={car.imageThumbs?.[i] || (i === 0 ? getListingThumbnailUrl(car) : undefined) || undefined}
+                  style={s.thumbImg}
+                  placeholderColor={colors.darkLight}
+                />
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -176,7 +190,7 @@ export default function CarDetailsScreen({ route, navigation }: any) {
           >
             <View style={s.sellerAvatar}>
               {car.userAvatar ? (
-                <Image source={{ uri: car.userAvatar }} style={s.sellerAvatarImage} />
+                <FastAdImage uri={car.userAvatar} style={s.sellerAvatarImage} fallback={<Text style={s.sellerAvatarText}>{car.userName?.[0] || '?'}</Text>} placeholderColor={colors.primary} />
               ) : (
                 <Text style={s.sellerAvatarText}>{car.userName?.[0] || '?'}</Text>
               )}
@@ -220,7 +234,17 @@ export default function CarDetailsScreen({ route, navigation }: any) {
           <TouchableOpacity style={[s.closeBtn, { top: insets.top + 16 }]} onPress={() => setLightbox(false)}>
             <View style={s.closeBtnBg}><Text style={s.closeText}>✕</Text></View>
           </TouchableOpacity>
-          {car.images?.[imgIndex] && <Image source={{ uri: car.images[imgIndex] }} style={s.lightboxImg} resizeMode="contain" />}
+          {activeOriginalUrl ? (
+            <FastImage
+              source={{
+                uri: activeOriginalUrl,
+                cache: FastImage.cacheControl.immutable,
+                priority: FastImage.priority.high,
+              }}
+              style={s.lightboxImg}
+              resizeMode={FastImage.resizeMode.contain}
+            />
+          ) : null}
           {car.images && car.images.length > 1 && (
             <View style={[s.lightboxNav, { bottom: insets.bottom + 20 }]}>
               <TouchableOpacity onPress={() => setImgIndex(Math.max(0, imgIndex - 1))} style={s.navBtn}>

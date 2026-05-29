@@ -33,8 +33,12 @@ export interface Car {
   color: string;
   transmission: "automatic" | "manual";
   fuelType: "petrol" | "diesel" | "electric" | "hybrid";
+  imageUrl?: string;
+  mediumUrl?: string;
+  thumbnailUrl?: string;
   images: string[];
   imageThumbs?: string[];
+  imageMediums?: string[];
   status: "active" | "sold" | "pending";
   createdAt: any;
   updatedAt?: any;
@@ -53,8 +57,12 @@ export interface Part {
   compatibleBrands: string[];
   price: number;
   condition: "new" | "used";
+  imageUrl?: string;
+  mediumUrl?: string;
+  thumbnailUrl?: string;
   images: string[];
   imageThumbs?: string[];
+  imageMediums?: string[];
   status: "active" | "sold" | "pending";
   createdAt: any;
   updatedAt?: any;
@@ -71,8 +79,12 @@ export interface Request {
   description: { ar: string; en: string };
   category: "car" | "part" | "other";
   budget?: number;
+  imageUrl?: string;
+  mediumUrl?: string;
+  thumbnailUrl?: string;
   images?: string[];
   imageThumbs?: string[];
+  imageMediums?: string[];
   status: "open" | "closed";
   createdAt: any;
   updatedAt?: any;
@@ -82,6 +94,8 @@ export interface BannerAd {
   id: string;
   title?: string;
   imageUrl: string;
+  mediumUrl?: string;
+  thumbnailUrl?: string;
   targetUrl?: string;
   placements?: BannerPlacement[];
   isActive: boolean;

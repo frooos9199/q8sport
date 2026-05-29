@@ -45,5 +45,5 @@ export async function fetchAllBanners() {
 
 export async function fetchActiveBanners(placement?: BannerPlacement) {
   const items = await fetchAllBanners();
-  return items.filter(item => item.isActive && item.imageUrl && (!placement || bannerHasPlacement(item, placement)));
+  return items.filter(item => item.isActive && (item.thumbnailUrl || item.imageUrl) && (!placement || bannerHasPlacement(item, placement)));
 }

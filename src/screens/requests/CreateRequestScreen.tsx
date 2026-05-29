@@ -115,7 +115,9 @@ export default function CreateRequestScreen({ navigation, route }: any) {
     try {
       const newRef = isEditing ? dbRef(db, `requests/${listing.id}`) : push(dbRef(db, 'requests'));
       const requestId = (isEditing ? listing.id : newRef.key) as string;
-      const media = imageItems.length ? await uploadListingMedia('requests', requestId, imageItems) : { images: [], imageThumbs: [] };
+      const media = imageItems.length
+        ? await uploadListingMedia('requests', requestId, imageItems)
+        : { images: [], imageThumbs: [], imageMediums: [], imageUrl: '', mediumUrl: '', thumbnailUrl: '' };
 
       const derivedGuestId = () => {
         const contactDigits = digits(sellerWhatsappValue || sellerPhoneValue);
@@ -138,8 +140,12 @@ export default function CreateRequestScreen({ navigation, route }: any) {
         description: { ar: descriptionValue, en: descriptionValue },
         category,
         budget: budgetNumber,
+        imageUrl: media.imageUrl,
+        mediumUrl: media.mediumUrl,
+        thumbnailUrl: media.thumbnailUrl,
         images: media.images,
         imageThumbs: media.imageThumbs,
+        imageMediums: media.imageMediums,
         status: 'open',
         ...(isEditing ? { updatedAt: serverTimestamp() } : { createdAt: serverTimestamp() }),
       };

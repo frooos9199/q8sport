@@ -113,7 +113,9 @@ export default function CreatePartScreen({ navigation, route }: any) {
     try {
       const newRef = isEditing ? dbRef(db, `parts/${listing.id}`) : push(dbRef(db, 'parts'));
       const partId = (isEditing ? listing.id : newRef.key) as string;
-      const media = imageItems.length ? await uploadListingMedia('parts', partId, imageItems) : { images: [], imageThumbs: [] };
+      const media = imageItems.length
+        ? await uploadListingMedia('parts', partId, imageItems)
+        : { images: [], imageThumbs: [], imageMediums: [], imageUrl: '', mediumUrl: '', thumbnailUrl: '' };
 
       const derivedGuestId = () => {
         const contactDigits = digits(sellerWhatsappValue || sellerPhoneValue);
@@ -138,8 +140,12 @@ export default function CreatePartScreen({ navigation, route }: any) {
         compatibleBrands,
         price: numericPrice,
         condition,
+        imageUrl: media.imageUrl,
+        mediumUrl: media.mediumUrl,
+        thumbnailUrl: media.thumbnailUrl,
         images: media.images,
         imageThumbs: media.imageThumbs,
+        imageMediums: media.imageMediums,
         status: 'active',
         ...(isEditing ? { updatedAt: serverTimestamp() } : { createdAt: serverTimestamp() }),
       };

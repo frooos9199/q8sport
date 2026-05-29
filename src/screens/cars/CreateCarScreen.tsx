@@ -110,7 +110,9 @@ export default function CreateCarScreen({ navigation, route }: any) {
     try {
       const newRef = isEditing ? dbRef(db, `cars/${initialListing.id}`) : push(dbRef(db, 'cars'));
       const carId = (isEditing ? initialListing.id : newRef.key) as string;
-      const media = imageItems.length ? await uploadListingMedia('cars', carId, imageItems) : { images: [], imageThumbs: [] };
+      const media = imageItems.length
+        ? await uploadListingMedia('cars', carId, imageItems)
+        : { images: [], imageThumbs: [], imageMediums: [], imageUrl: '', mediumUrl: '', thumbnailUrl: '' };
 
       const derivedGuestId = () => {
         const contactDigits = digits(sellerWhatsappValue || sellerPhoneValue);
@@ -139,8 +141,12 @@ export default function CreateCarScreen({ navigation, route }: any) {
         color: color.trim(),
         transmission,
         fuelType,
+        imageUrl: media.imageUrl,
+        mediumUrl: media.mediumUrl,
+        thumbnailUrl: media.thumbnailUrl,
         images: media.images,
         imageThumbs: media.imageThumbs,
+        imageMediums: media.imageMediums,
         status: 'active',
         ...(isEditing ? { updatedAt: serverTimestamp() } : { createdAt: serverTimestamp() }),
       };

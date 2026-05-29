@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Image, StyleSheet, TextInput, Linking, Animated, RefreshControl } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Linking, Animated, RefreshControl } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { db } from '../../lib/firebase';
 import { orderByChild, query, ref as dbRef } from '@react-native-firebase/database';
@@ -12,14 +12,33 @@ import { ListCardSkeleton } from '../../components/Shimmer';
 import { fetchActiveBanners } from '../../lib/bannerAds';
 import SponsoredBannerCard from '../../components/SponsoredBannerCard';
 import { formatListingPublishedAt } from '../../lib/listingDate';
+import FastAdImage from '../../components/FastAdImage';
+import { getListingThumbnailUrl } from '../../lib/listingImages';
+import { prefetchAdImages } from '../../lib/prefetchAdImages';
 
 type CarsFeedItem =
   | { kind: 'car'; id: string; car: Car; carIndex: number }
-  | { kind: 'banner'; id: string; banner: BannerAd };
+  | { kind: 'banner'; id: string; bannerSlot: number };
+
+function AutoRotatingBanner({ banner }: { banner: BannerAd }) {
+  const opacity = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    opacity.setValue(0);
+    Animated.timing(opacity, { toValue: 1, duration: 260, useNativeDriver: true }).start();
+  }, [banner.id, opacity]);
+
+  return (
+    <Animated.View style={{ opacity }}>
+      <SponsoredBannerCard banner={banner} />
+    </Animated.View>
+  );
+}
 
 export default function CarsScreen({ navigation }: any) {
   const [cars, setCars] = useState<Car[]>([]);
   const [banners, setBanners] = useState<BannerAd[]>([]);
+  const [bannerRotationIndex, setBannerRotationIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
@@ -38,8 +57,14 @@ export default function CarsScreen({ navigation }: any) {
       ]);
       const data: Car[] = [];
       snap.forEach((child: any) => { data.push({ id: child.key, ...child.val() }); return undefined; });
-      setCars(sortListingsByFreshnessAndStatus(data));
+      const sortedCars = sortListingsByFreshnessAndStatus(data);
+      setCars(sortedCars);
       setBanners(activeBanners);
+
+      prefetchAdImages([
+        ...activeBanners.map(b => b.thumbnailUrl || b.imageUrl),
+        ...sortedCars.map(getListingThumbnailUrl),
+      ], 10);
     } catch (e) {
       console.log('Error:', e);
     }
@@ -47,6 +72,20 @@ export default function CarsScreen({ navigation }: any) {
   };
 
   useEffect(() => { fetchCars(); }, []);
+
+  useEffect(() => {
+    setBannerRotationIndex(0);
+
+    if (banners.length <= 1) {
+      return;
+    }
+
+    const intervalId = setInterval(() => {
+      setBannerRotationIndex(current => (current + 1) % banners.length);
+    }, 4200);
+
+    return () => clearInterval(intervalId);
+  }, [banners.length]);
 
   const onRefresh = async () => { setRefreshing(true); await fetchCars(); setRefreshing(false); };
 
@@ -96,13 +135,13 @@ export default function CarsScreen({ navigation }: any) {
   };
 
   const feedItems: CarsFeedItem[] = [];
+  let bannerSlot = 0;
   filtered.forEach((car, carIndex) => {
     feedItems.push({ kind: 'car', id: car.id, car, carIndex });
 
     if ((carIndex + 1) % 4 === 0 && banners.length > 0) {
-      const bannerIndex = Math.floor(carIndex / 4) % banners.length;
-      const banner = banners[bannerIndex];
-      feedItems.push({ kind: 'banner', id: `banner-${banner.id}-${carIndex}`, banner });
+      feedItems.push({ kind: 'banner', id: `banner-slot-${bannerSlot}-${carIndex}`, bannerSlot });
+      bannerSlot += 1;
     }
   });
 
@@ -226,9 +265,14 @@ export default function CarsScreen({ navigation }: any) {
           data={feedItems}
           renderItem={({ item, index }) => {
             if (item.kind === 'banner') {
+              const bannerIndex = banners.length
+                ? (item.bannerSlot + bannerRotationIndex) % banners.length
+                : 0;
+              const banner = banners[bannerIndex];
+
               return (
                 <View style={s.bannerWrap}>
-                  <SponsoredBannerCard banner={item.banner} />
+                  {banner ? <AutoRotatingBanner banner={banner} /> : null}
                 </View>
               );
             }
@@ -243,6 +287,11 @@ export default function CarsScreen({ navigation }: any) {
             );
           }}
           keyExtractor={i => i.id}
+          initialNumToRender={8}
+          maxToRenderPerBatch={8}
+          windowSize={7}
+          removeClippedSubviews={true}
+          updateCellsBatchingPeriod={50}
           contentContainerStyle={{ padding: spacing.lg, paddingBottom: 100 }}
           ListEmptyComponent={
             <View style={s.emptyWrap}>
@@ -273,6 +322,7 @@ function Chip({ label, active, onPress }: { label: string; active: boolean; onPr
 }
 
 function AnimatedCard({ item, index, navigation, openWhatsApp }: any) {
+    const thumbnailUrl = getListingThumbnailUrl(item);
   const anim = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(1)).current;
 
@@ -315,8 +365,8 @@ function AnimatedCard({ item, index, navigation, openWhatsApp }: any) {
           </View>
         </View>
         <View style={s.cardImgWrap}>
-          {item.images?.[0] ? (
-            <Image source={{ uri: item.images[0] }} style={s.cardImg} />
+          {thumbnailUrl ? (
+            <FastAdImage uri={thumbnailUrl} style={s.cardImg} fallback={<Text style={{ fontSize: 32 }}>🏎️</Text>} />
           ) : (
             <View style={[s.cardImg, s.placeholder]}><Text style={{ fontSize: 32 }}>🏎️</Text></View>
           )}

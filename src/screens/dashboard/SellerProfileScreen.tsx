@@ -7,7 +7,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { deleteUserAccountFromMarketplace } from '../../lib/adminUserManagement';
 import { db } from '../../lib/firebase';
 import { getDbSnapshot } from '../../lib/firebaseDatabase';
-import { prefetchListingImages, runAfterFirstPaint } from '../../lib/listingFeed';
+import { prefetchListingImages } from '../../lib/listingFeed';
 import { sortListingsByFreshnessAndStatus } from '../../lib/listingSort';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { Car, Part, Request, User } from '../../types';
@@ -119,15 +119,6 @@ export default function SellerProfileScreen({ route, navigation }: any) {
 
   const visibleFeed = useMemo(() => feed.slice(0, INITIAL_SELLER_FEED_ITEMS), [feed]);
 
-  useEffect(() => {
-    runAfterFirstPaint(() => {
-      if (feed.length <= INITIAL_SELLER_FEED_ITEMS) return;
-      return prefetchListingImages(
-        feed.slice(INITIAL_SELLER_FEED_ITEMS).map(entry => entry.item),
-        INITIAL_SELLER_IMAGE_PREFETCH,
-      );
-    });
-  }, [feed]);
 
   const openWhatsApp = () => {
     const phone = String(sellerUser?.whatsapp || sellerUser?.phone || sellerWhatsapp || sellerPhone || '').replace(/[^0-9]/g, '');

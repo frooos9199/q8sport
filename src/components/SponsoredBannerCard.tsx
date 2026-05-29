@@ -1,7 +1,7 @@
 import React from 'react';
 import { Alert, Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-import LazyImage from './LazyImage';
+import FastAdImage from './FastAdImage';
 import { colors, radius, shadows, spacing } from '../lib/theme';
 import { BannerAd } from '../types';
 
@@ -37,7 +37,7 @@ export default function SponsoredBannerCard({ banner }: SponsoredBannerCardProps
       onPress={openBannerTarget}
     >
       <View style={styles.imageFrame}>
-        <LazyImage uri={banner.imageUrl} style={styles.image} resizeMode="cover" />
+        <FastAdImage uri={banner.thumbnailUrl || banner.imageUrl} style={styles.image} placeholderColor={colors.darkLight} />
       </View>
       <View style={styles.body}>
         <View style={styles.metaRow}>

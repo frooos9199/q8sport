@@ -28,6 +28,7 @@
     "@shopify/flash-list": "^2.3.1",
     "react": "19.2.3",
     "react-native": "0.84.1",
+    "react-native-fast-image": "^8.6.3",
     "react-native-haptic-feedback": "^3.0.0",
     "react-native-image-picker": "^8.2.1",
     "react-native-linear-gradient": "^2.8.3",
