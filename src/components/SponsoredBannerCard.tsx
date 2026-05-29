@@ -15,15 +15,17 @@ export default function SponsoredBannerCard({ banner }: SponsoredBannerCardProps
       return;
     }
 
+    const normalizedUrl = /^https?:\/\//i.test(banner.targetUrl) ? banner.targetUrl : `https://${banner.targetUrl}`;
+
     try {
-      const supported = await Linking.canOpenURL(banner.targetUrl);
+      const supported = await Linking.canOpenURL(normalizedUrl);
 
       if (!supported) {
         Alert.alert('الرابط غير صالح', 'تعذر فتح الرابط المرفق مع هذا الإعلان.');
         return;
       }
 
-      await Linking.openURL(banner.targetUrl);
+      await Linking.openURL(normalizedUrl);
     } catch {
       Alert.alert('تعذر فتح الإعلان', 'حاول مرة ثانية بعد قليل.');
     }
