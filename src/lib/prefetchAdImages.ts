@@ -3,7 +3,7 @@ import FastImage from 'react-native-fast-image';
 export function prefetchAdImages(images: Array<string | null | undefined>, count = 10) {
   const urls = images
     .map(url => (typeof url === 'string' ? url.trim() : ''))
-    .filter(Boolean);
+    .filter(url => Boolean(url) && /^https?:\/\//i.test(url));
 
   if (!urls.length) return;
 

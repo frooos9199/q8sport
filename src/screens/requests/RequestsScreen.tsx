@@ -7,6 +7,7 @@ import { t } from '../../i18n';
 import { Request } from '../../types';
 import { fetchSortedListings, prefetchListingImages } from '../../lib/listingFeed';
 import FastAdImage from '../../components/FastAdImage';
+import LazyImage from '../../components/LazyImage';
 
 const INITIAL_VISIBLE_REQUESTS = 10;
 const INITIAL_REQUEST_IMAGE_PREFETCH = 4;

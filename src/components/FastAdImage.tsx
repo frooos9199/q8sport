@@ -20,20 +20,29 @@ export default function FastAdImage({
   fallback,
   placeholderColor = colors.metal,
 }: Props) {
-  const opacity = useRef(new Animated.Value(uri ? 0 : 1)).current;
-  const [showPlaceholder, setShowPlaceholder] = useState(Boolean(uri));
+  const safeUri = useMemo(() => {
+    if (typeof uri !== 'string') return null;
+    const trimmed = uri.trim();
+    if (!trimmed) return null;
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    if (/^file:\/\//i.test(trimmed)) return trimmed;
+    return null;
+  }, [uri]);
+
+  const opacity = useRef(new Animated.Value(safeUri ? 0 : 1)).current;
+  const [showPlaceholder, setShowPlaceholder] = useState(Boolean(safeUri));
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     setHasError(false);
-    setShowPlaceholder(Boolean(uri));
-    opacity.setValue(uri ? 0 : 1);
-  }, [opacity, uri]);
+    setShowPlaceholder(Boolean(safeUri));
+    opacity.setValue(safeUri ? 0 : 1);
+  }, [opacity, safeUri]);
 
   const flattenedStyle = useMemo(() => StyleSheet.flatten(style) || {}, [style]);
   const borderRadius = typeof flattenedStyle.borderRadius === 'number' ? flattenedStyle.borderRadius : 0;
 
-  if (!uri || hasError) {
+  if (!safeUri || hasError) {
     return (
       <View style={[s.container, style, { backgroundColor: placeholderColor }]}>
         {fallback}
@@ -51,7 +60,7 @@ export default function FastAdImage({
 
       <AnimatedFastImage
         source={{
-          uri,
+          uri: safeUri,
           cache: FastImage.cacheControl.immutable,
           priority: FastImage.priority.high,
         }}
