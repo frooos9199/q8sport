@@ -318,7 +318,14 @@ export default function SellerProfileScreen({ route, navigation }: any) {
                 <Text style={s.avatarText}>{sellerName?.[0] || '?'}</Text>
               )}
             </View>
-            <Text style={s.name}>{sellerName}</Text>
+            <View style={s.nameRow}>
+              <Text style={s.name}>{sellerName}</Text>
+              {sellerUser?.campaign?.founderPosition ? (
+                <View style={s.tierBadge}>
+                  <Text style={s.tierBadgeText}>{sellerUser?.campaign?.tierLabel || 'مؤسس'}</Text>
+                </View>
+              ) : null}
+            </View>
             <Text style={s.handle}>معلن مباشر في السوق</Text>
 
             {sellerUser ? (
@@ -493,7 +500,10 @@ const s = StyleSheet.create({
   avatar: { width: 76, height: 76, borderRadius: 38, backgroundColor: colors.primaryGlow, alignItems: 'center', justifyContent: 'center', marginBottom: 14, alignSelf: 'center' },
   avatarImage: { width: '100%', height: '100%' },
   avatarText: { color: colors.primary, fontSize: 28, fontWeight: '900' },
+  nameRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
   name: { color: colors.white, fontSize: 24, fontWeight: '900', textAlign: 'center' },
+  tierBadge: { backgroundColor: colors.primaryGlow, borderRadius: radius.full, borderWidth: 1, borderColor: colors.primaryBorder, paddingHorizontal: 10, paddingVertical: 5 },
+  tierBadgeText: { color: colors.primary, fontSize: 11, fontWeight: '900' },
   handle: { color: colors.silver, fontSize: 13, textAlign: 'center', marginTop: 6, marginBottom: 18 },
   badgesRow: { flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 18 },
   adminBadge: { backgroundColor: colors.primaryGlow, borderRadius: radius.full, borderWidth: 1, borderColor: colors.primaryBorder, paddingHorizontal: 12, paddingVertical: 5 },

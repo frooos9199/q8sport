@@ -293,6 +293,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       whatsapp: existingData?.whatsapp || '',
       phoneDigits: normalizePhoneDigits(String(existingData?.phone || '')),
       whatsappDigits: normalizePhoneDigits(String(existingData?.whatsapp || '')),
+      campaign: (existingData as any)?.campaign,
       ...deriveAdminFlags({ email: existingData?.email || fallbackEmail, isAdmin: existingData?.isAdmin, isSuperAdmin: (existingData as any)?.isSuperAdmin }),
       disabled: Boolean(existingData?.disabled),
       avatar: existingData?.avatar,

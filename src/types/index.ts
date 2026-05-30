@@ -8,6 +8,21 @@ export interface User {
   whatsapp: string;
   phoneDigits?: string;
   whatsappDigits?: string;
+  campaign?: {
+    activityScore?: number;
+    founderPosition?: number;
+    freeAdsEligible?: boolean;
+    tierLabel?: string;
+    rewardLabel?: string;
+    listingCounts?: {
+      cars: number;
+      parts: number;
+      wanted: number;
+      active: number;
+      total: number;
+    };
+    updatedAt?: number;
+  };
   isAdmin?: boolean;
   isSuperAdmin?: boolean;
   disabled?: boolean;

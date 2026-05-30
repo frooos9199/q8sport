@@ -197,7 +197,14 @@ export default function AccountScreen({ navigation }: any) {
             {avatarUploading ? <ActivityIndicator size="small" color={colors.white} /> : <Text style={s.avatarEditText}>📷</Text>}
           </TouchableOpacity>
         </View>
-        <Text style={s.name}>{user.name}</Text>
+        <View style={s.nameRow}>
+          <Text style={s.name}>{user.name}</Text>
+          {user.campaign?.founderPosition ? (
+            <View style={s.tierBadge}>
+              <Text style={s.tierBadgeText}>{user.campaign?.tierLabel || 'مؤسس'}</Text>
+            </View>
+          ) : null}
+        </View>
         <Text style={s.email}>{user.email}</Text>
         <View style={s.marketBadge}>
           <Text style={s.marketText}>{isSuperAdmin ? 'سوبر أدمن' : isAdmin ? 'أدمن' : 'KUWAIT SPORT MARKET'}</Text>
@@ -279,7 +286,10 @@ const s = StyleSheet.create({
   avatarText: { color: colors.white, fontSize: 32, fontWeight: '900' },
   avatarEditBtn: { position: 'absolute', right: -2, bottom: -2, width: 32, height: 32, borderRadius: 16, backgroundColor: colors.primary, borderWidth: 2, borderColor: colors.darkCard, alignItems: 'center', justifyContent: 'center' },
   avatarEditText: { fontSize: 14 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 8 },
   name: { color: colors.white, fontSize: 22, fontWeight: '900' },
+  tierBadge: { backgroundColor: colors.primaryGlow, borderRadius: radius.full, borderWidth: 1, borderColor: colors.primaryBorder, paddingHorizontal: 10, paddingVertical: 5 },
+  tierBadgeText: { color: colors.primary, fontSize: 11, fontWeight: '900' },
   email: { color: colors.silver, fontSize: 13, marginTop: 4 },
   marketBadge: { backgroundColor: colors.primaryGlow, borderWidth: 1, borderColor: colors.primaryBorder, paddingHorizontal: 14, paddingVertical: 5, borderRadius: radius.full, marginTop: 12 },
   marketText: { color: colors.primary, fontWeight: '800', fontSize: 12 },
