@@ -3,6 +3,7 @@ import { Alert, FlatList, Linking, RefreshControl, StyleSheet, Text, TouchableOp
 import { ref as dbRef, update } from '@react-native-firebase/database';
 
 import LazyImage from '../../components/LazyImage';
+import GccPhoneInput from '../../components/GccPhoneInput';
 import { useAuth } from '../../hooks/useAuth';
 import { deleteUserAccountFromMarketplace } from '../../lib/adminUserManagement';
 import { db } from '../../lib/firebase';
@@ -11,7 +12,7 @@ import { prefetchListingImages } from '../../lib/listingFeed';
 import { sortListingsByFreshnessAndStatus } from '../../lib/listingSort';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { Car, Part, Request, User } from '../../types';
-import { toWaMeDigits } from '../../lib/gccPhone';
+import { buildE164, parseToGccNumber, toWaMeDigits, type GccCountry } from '../../lib/gccPhone';
 
 const INITIAL_SELLER_FEED_ITEMS = 10;
 const INITIAL_SELLER_IMAGE_PREFETCH = 6;
@@ -22,7 +23,7 @@ type SellerFeedItem =
   | { type: 'request'; item: Request };
 
 export default function SellerProfileScreen({ route, navigation }: any) {
-  const { user } = useAuth();
+  const { user, adminUpdateUserContactInfo } = useAuth();
   const { sellerId, sellerName, sellerWhatsapp, sellerPhone } = route.params;
   const [cars, setCars] = useState<Car[]>([]);
   const [parts, setParts] = useState<Part[]>([]);
@@ -31,6 +32,24 @@ export default function SellerProfileScreen({ route, navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [updatingUser, setUpdatingUser] = useState(false);
+
+  const canEditSellerContacts = Boolean(user?.isAdmin || user?.isSuperAdmin);
+  const isGuestSeller = String(sellerId || '').startsWith('guest-');
+  const canEditThisSellerContacts = canEditSellerContacts && !isGuestSeller && Boolean(sellerUser) && !Boolean(sellerUser?.deletedAt);
+
+  const [sellerPhoneCountry, setSellerPhoneCountry] = useState<GccCountry['code']>('KW');
+  const [sellerPhoneNational, setSellerPhoneNational] = useState('');
+  const [sellerWhatsappCountry, setSellerWhatsappCountry] = useState<GccCountry['code']>('KW');
+  const [sellerWhatsappNational, setSellerWhatsappNational] = useState('');
+
+  useEffect(() => {
+    const parsedPhone = parseToGccNumber(String(sellerUser?.phone || ''), { defaultCountry: 'KW' });
+    const parsedWhatsapp = parseToGccNumber(String(sellerUser?.whatsapp || ''), { defaultCountry: 'KW' });
+    setSellerPhoneCountry(parsedPhone.country);
+    setSellerPhoneNational(parsedPhone.nationalNumber);
+    setSellerWhatsappCountry(parsedWhatsapp.country);
+    setSellerWhatsappNational(parsedWhatsapp.nationalNumber);
+  }, [sellerUser?.phone, sellerUser?.whatsapp]);
 
   const loadSellerData = useCallback(async () => {
     const [carsSnap, partsSnap, requestsSnap, userSnap] = await Promise.all([
@@ -143,6 +162,28 @@ export default function SellerProfileScreen({ route, navigation }: any) {
 
   const isAdminViewer = Boolean(user?.isSuperAdmin);
   const isSelfProfile = user?.uid === sellerId;
+
+  const saveSellerContacts = async () => {
+    if (!sellerUser) return;
+    if (!canEditThisSellerContacts) {
+      Alert.alert('تنبيه', 'لا تملك صلاحية تعديل بيانات هذا المستخدم');
+      return;
+    }
+
+    const nextPhone = buildE164(sellerPhoneCountry, sellerPhoneNational);
+    const nextWhatsapp = buildE164(sellerWhatsappCountry, sellerWhatsappNational);
+
+    setUpdatingUser(true);
+    try {
+      await adminUpdateUserContactInfo(sellerId, { phone: nextPhone, whatsapp: nextWhatsapp });
+      await loadSellerData();
+      Alert.alert('تم', 'تم تحديث بيانات الهاتف والواتساب');
+    } catch (error: any) {
+      Alert.alert('خطأ', error?.message || 'تعذر تحديث بيانات التواصل');
+    } finally {
+      setUpdatingUser(false);
+    }
+  };
 
   const toggleSellerAdmin = async () => {
     if (!sellerUser) return;
@@ -352,6 +393,44 @@ export default function SellerProfileScreen({ route, navigation }: any) {
                 </View>
               </View>
             ) : null}
+
+            {canEditThisSellerContacts ? (
+              <View style={s.adminToolsCard}>
+                <Text style={s.adminToolsTitle}>تعديل بروفايل المستخدم</Text>
+                <Text style={s.adminToolsSub}>يتم تعديل بيانات الحساب (وليس بيانات الإعلان).</Text>
+
+                <Text style={s.contactLabel}>رقم الهاتف (البروفايل)</Text>
+                <GccPhoneInput
+                  icon="📞"
+                  country={sellerPhoneCountry}
+                  onCountryChange={setSellerPhoneCountry}
+                  nationalNumber={sellerPhoneNational}
+                  onNationalNumberChange={setSellerPhoneNational}
+                  placeholder="اكتب الرقم بدون فتح الخط"
+                  editable={!updatingUser}
+                />
+
+                <Text style={[s.contactLabel, { marginTop: 12 }]}>رقم واتساب (البروفايل)</Text>
+                <GccPhoneInput
+                  icon="💬"
+                  country={sellerWhatsappCountry}
+                  onCountryChange={setSellerWhatsappCountry}
+                  nationalNumber={sellerWhatsappNational}
+                  onNationalNumberChange={setSellerWhatsappNational}
+                  placeholder="اكتب الرقم بدون فتح الخط"
+                  editable={!updatingUser}
+                />
+
+                <TouchableOpacity
+                  style={[s.saveContactsBtn, updatingUser && s.adminActionDisabled]}
+                  activeOpacity={0.85}
+                  disabled={updatingUser}
+                  onPress={saveSellerContacts}
+                >
+                  <Text style={s.saveContactsText}>{updatingUser ? 'جاري الحفظ...' : 'حفظ التعديل'}</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
           </View>
 
           <View style={s.sectionHeader}>
@@ -438,6 +517,9 @@ const s = StyleSheet.create({
   adminToolsTitle: { color: colors.white, fontSize: 15, fontWeight: '900' },
   adminToolsSub: { color: colors.silver, fontSize: 12, marginTop: 4, marginBottom: 12 },
   adminActionsRow: { flexDirection: 'row', gap: 10 },
+  contactLabel: { color: colors.silver, fontSize: 12, fontWeight: '800', marginBottom: 8 },
+  saveContactsBtn: { marginTop: 14, backgroundColor: colors.primaryGlow, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.primaryBorder, paddingVertical: 13, alignItems: 'center' },
+  saveContactsText: { color: colors.primary, fontSize: 13, fontWeight: '900' },
   adminActionBtn: { flex: 1, borderRadius: radius.lg, borderWidth: 1, paddingVertical: 13, alignItems: 'center' },
   adminActionPrimary: { backgroundColor: colors.primaryGlow, borderColor: colors.primaryBorder },
   adminActionMuted: { backgroundColor: colors.darkCard, borderColor: colors.metalBorder },

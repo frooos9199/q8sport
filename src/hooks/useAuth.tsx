@@ -143,6 +143,7 @@ type AuthContextType = {
   register: (data: { email: string; password: string; name: string; phone: string; whatsapp: string }) => Promise<void>;
   signInWithApple: () => Promise<void>;
   updateContactInfo: (data: { phone: string; whatsapp: string }) => Promise<void>;
+  adminUpdateUserContactInfo: (targetUid: string, data: { phone: string; whatsapp: string }) => Promise<void>;
   updateProfileAvatar: (fileUri: string) => Promise<void>;
   logout: () => Promise<void>;
 };
@@ -417,6 +418,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  const adminUpdateUserContactInfo = async (targetUid: string, data: { phone: string; whatsapp: string }) => {
+    if (!user) {
+      throw new Error('user-not-found');
+    }
+
+    if (!user.isAdmin && !user.isSuperAdmin) {
+      throw new Error('not-authorized');
+    }
+
+    const uid = String(targetUid || '').trim();
+    if (!uid) {
+      throw new Error('target-user-not-found');
+    }
+
+    const sanitizedPhone = String(data.phone || '').trim();
+    const sanitizedWhatsapp = String(data.whatsapp || '').trim();
+
+    await assertPhoneNotUsed(sanitizedPhone, { excludeUid: uid });
+
+    const rootUpdates: Record<string, any> = {
+      [`users/${uid}/phone`]: sanitizedPhone,
+      [`users/${uid}/whatsapp`]: sanitizedWhatsapp,
+      [`users/${uid}/phoneDigits`]: normalizePhoneDigits(sanitizedPhone),
+      [`users/${uid}/whatsappDigits`]: normalizePhoneDigits(sanitizedWhatsapp),
+      [`users/${uid}/updatedAt`]: Date.now(),
+    };
+
+    try {
+      await update(dbRef(db), rootUpdates);
+    } catch (error) {
+      reportRealtimeDatabaseError(`users/${uid}`, error, false);
+      throw error;
+    }
+
+    if (uid === user.uid) {
+      const nextUser: User = {
+        ...user,
+        phone: sanitizedPhone,
+        whatsapp: sanitizedWhatsapp,
+        phoneDigits: normalizePhoneDigits(sanitizedPhone),
+        whatsappDigits: normalizePhoneDigits(sanitizedWhatsapp),
+      };
+      setUser(nextUser);
+      void claimGuestListingsForUser(nextUser).catch(() => {
+        // Best-effort claim; ignore failures.
+      });
+    }
+  };
+
   const updateProfileAvatar = async (fileUri: string) => {
     if (!user) {
       throw new Error('user-not-found');
@@ -451,7 +501,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, fbUser, loading, login, register, signInWithApple, updateContactInfo, updateProfileAvatar, logout }}>
+    <AuthContext.Provider value={{ user, fbUser, loading, login, register, signInWithApple, updateContactInfo, adminUpdateUserContactInfo, updateProfileAvatar, logout }}>
       {children}
     </AuthContext.Provider>
   );

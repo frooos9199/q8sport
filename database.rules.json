@@ -21,7 +21,22 @@
     },
     "users": {
       "$uid": {
-        ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('isSuperAdmin').val() === true)"
+        ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('isSuperAdmin').val() === true)",
+        "phone": {
+          ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('isSuperAdmin').val() === true || root.child('users').child(auth.uid).child('isAdmin').val() === true)"
+        },
+        "whatsapp": {
+          ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('isSuperAdmin').val() === true || root.child('users').child(auth.uid).child('isAdmin').val() === true)"
+        },
+        "phoneDigits": {
+          ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('isSuperAdmin').val() === true || root.child('users').child(auth.uid).child('isAdmin').val() === true)"
+        },
+        "whatsappDigits": {
+          ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('isSuperAdmin').val() === true || root.child('users').child(auth.uid).child('isAdmin').val() === true)"
+        },
+        "updatedAt": {
+          ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('isSuperAdmin').val() === true || root.child('users').child(auth.uid).child('isAdmin').val() === true)"
+        }
       }
     },
     "banners": {
