@@ -28,8 +28,23 @@ export default async function PartsPage() {
   const { partListings, sellers } = await loadMarketData();
   const sellerMap = new Map(sellers.map((s) => [s.slug, s]));
 
+  const MAX_ITEMS = 100;
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: `قطع الغيار | ${siteConfig.name}`,
+    itemListElement: partListings.slice(0, MAX_ITEMS).map((part, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      url: absoluteUrl(`/parts/${part.slug}`),
+      name: part.title,
+    })),
+  };
+
   return (
     <main className="mx-auto w-full max-w-7xl px-5 pb-20 pt-6 sm:px-8">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
+
       <div className="mb-8">
         <div className="flex items-center gap-3">
           <div className="h-2 w-2 rounded-full bg-yellow-500" />

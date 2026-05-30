@@ -27,8 +27,23 @@ export const metadata: Metadata = {
 export default async function CarsPage() {
   const { carListings } = await loadMarketData();
 
+  const MAX_ITEMS = 100;
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: `السيارات | ${siteConfig.name}`,
+    itemListElement: carListings.slice(0, MAX_ITEMS).map((car, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      url: absoluteUrl(`/cars/${car.slug}`),
+      name: car.title,
+    })),
+  };
+
   return (
     <main className="mx-auto w-full max-w-7xl px-5 pb-20 pt-6 sm:px-8">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
+
       <div className="mb-8">
         <div className="flex items-center gap-3">
           <div className="h-2 w-2 rounded-full bg-brand" />

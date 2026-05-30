@@ -42,8 +42,20 @@ export default async function PartDetailPage({ params }: { params: Promise<{ slu
 
   const seller = await getSeller(part.sellerSlug);
 
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "الرئيسية", item: absoluteUrl("/") },
+      { "@type": "ListItem", position: 2, name: "قطع الغيار", item: absoluteUrl("/parts") },
+      { "@type": "ListItem", position: 3, name: part.title, item: absoluteUrl(`/parts/${part.slug}`) },
+    ],
+  };
+
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col px-5 pb-20 pt-6 sm:px-8">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
+
       <Link href="/parts" className="mb-6 text-sm font-bold text-sand transition hover:text-foreground">← رجوع لقطع الغيار</Link>
 
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
