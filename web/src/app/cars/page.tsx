@@ -2,12 +2,26 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { loadMarketData } from "@/lib/market-data";
-import { absoluteUrl } from "@/lib/site";
+import { absoluteUrl, siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "السيارات",
-  description: "تصفح سيارات السبورت المعروضة للبيع في الكويت - Q8 Sport Market",
+  description: "تصفح سيارات السبورت المعروضة للبيع في الكويت مع تواصل مباشر عبر واتساب.",
   alternates: { canonical: absoluteUrl("/cars") },
+  openGraph: {
+    title: `السيارات | ${siteConfig.name}`,
+    description: "تصفح سيارات السبورت المعروضة للبيع في الكويت.",
+    url: absoluteUrl("/cars"),
+    type: "website",
+    images: [{ url: absoluteUrl(siteConfig.ogImage), width: 512, height: 512, alt: siteConfig.name }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `السيارات | ${siteConfig.name}`,
+    description: "تصفح سيارات السبورت المعروضة للبيع في الكويت.",
+    images: [absoluteUrl(siteConfig.ogImage)],
+  },
+  keywords: ["سيارات سبورت الكويت", "سيارات للبيع الكويت", "سوق سيارات الكويت", ...siteConfig.keywords],
 };
 
 export default async function CarsPage() {

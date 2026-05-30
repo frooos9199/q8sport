@@ -1,11 +1,25 @@
 import type { Metadata } from "next";
 import { loadMarketData } from "@/lib/market-data";
-import { absoluteUrl } from "@/lib/site";
+import { absoluteUrl, siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "المطلوب الآن",
-  description: "تصفح المطلوبات المباشرة من المستخدمين - سيارات وقطع غيار مطلوبة في الكويت",
+  description: "تصفح المطلوبات المباشرة من المستخدمين: سيارات وقطع غيار مطلوبة في الكويت.",
   alternates: { canonical: absoluteUrl("/wanted") },
+  openGraph: {
+    title: `المطلوب الآن | ${siteConfig.name}`,
+    description: "مطلوبات مباشرة من المستخدمين لسيارات وقطع غيار في الكويت.",
+    url: absoluteUrl("/wanted"),
+    type: "website",
+    images: [{ url: absoluteUrl(siteConfig.ogImage), width: 512, height: 512, alt: siteConfig.name }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `المطلوب الآن | ${siteConfig.name}`,
+    description: "مطلوبات مباشرة من المستخدمين لسيارات وقطع غيار في الكويت.",
+    images: [absoluteUrl(siteConfig.ogImage)],
+  },
+  keywords: ["مطلوب سيارات الكويت", "مطلوب قطع غيار الكويت", ...siteConfig.keywords],
 };
 
 export default async function WantedPage() {

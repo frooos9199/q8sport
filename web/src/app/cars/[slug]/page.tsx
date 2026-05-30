@@ -11,16 +11,26 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const car = await getCar(slug);
   if (!car) return { title: "إعلان غير موجود" };
 
+  const canonical = absoluteUrl(`/cars/${car.slug}`);
+  const imageUrl = car.images[0] || absoluteUrl(siteConfig.ogImage);
+
   return {
     title: car.title,
     description: car.summary,
-    alternates: { canonical: absoluteUrl(`/cars/${car.slug}`) },
+    alternates: { canonical },
+    keywords: [car.title, "سيارات سبورت الكويت", "سيارات للبيع الكويت", ...siteConfig.keywords],
     openGraph: {
       title: `${car.title} | ${siteConfig.name}`,
       description: car.summary,
-      url: absoluteUrl(`/cars/${car.slug}`),
+      url: canonical,
       type: "article",
-      images: car.images[0] ? [{ url: car.images[0], alt: car.title }] : undefined,
+      images: [{ url: imageUrl, alt: car.title }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${car.title} | ${siteConfig.name}`,
+      description: car.summary,
+      images: [imageUrl],
     },
   };
 }

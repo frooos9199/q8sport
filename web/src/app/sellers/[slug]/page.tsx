@@ -16,17 +16,27 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     };
   }
 
+  const canonical = absoluteUrl(`/sellers/${seller.slug}`);
+
   return {
     title: seller.name,
     description: seller.bio,
     alternates: {
-      canonical: absoluteUrl(`/sellers/${seller.slug}`),
+      canonical,
     },
+    keywords: [seller.name, "معلن سيارات الكويت", "سوق سيارات الكويت", ...siteConfig.keywords],
     openGraph: {
       title: `${seller.name} | ${siteConfig.name}`,
       description: seller.bio,
-      url: absoluteUrl(`/sellers/${seller.slug}`),
+      url: canonical,
       type: 'profile',
+      images: [{ url: absoluteUrl(siteConfig.ogImage), width: 512, height: 512, alt: siteConfig.name }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${seller.name} | ${siteConfig.name}`,
+      description: seller.bio,
+      images: [absoluteUrl(siteConfig.ogImage)],
     },
   };
 }

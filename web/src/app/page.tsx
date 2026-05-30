@@ -1,7 +1,28 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { loadMarketData } from "@/lib/market-data";
 import { absoluteUrl, siteConfig } from "@/lib/site";
+
+export const metadata: Metadata = {
+  title: "Q8 Sport Market | سوق سيارات السبورت بالكويت",
+  description: siteConfig.description,
+  alternates: { canonical: absoluteUrl("/") },
+  openGraph: {
+    title: `${siteConfig.name} | سوق سيارات السبورت بالكويت`,
+    description: siteConfig.description,
+    url: absoluteUrl("/"),
+    type: "website",
+    images: [{ url: absoluteUrl(siteConfig.ogImage), width: 512, height: 512, alt: siteConfig.name }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${siteConfig.name} | سوق سيارات السبورت بالكويت`,
+    description: siteConfig.description,
+    images: [absoluteUrl(siteConfig.ogImage)],
+  },
+  keywords: siteConfig.keywords,
+};
 
 export default async function Home() {
   const { carListings, partListings, wantedListings } = await loadMarketData();

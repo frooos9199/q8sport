@@ -2,12 +2,26 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { loadMarketData } from "@/lib/market-data";
-import { absoluteUrl } from "@/lib/site";
+import { absoluteUrl, siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "قطع الغيار",
-  description: "تصفح قطع غيار السيارات السبورت المعروضة في الكويت - Q8 Sport Market",
+  description: "تصفح قطع غيار سيارات السبورت في الكويت مع تواصل مباشر عبر واتساب.",
   alternates: { canonical: absoluteUrl("/parts") },
+  openGraph: {
+    title: `قطع الغيار | ${siteConfig.name}`,
+    description: "تصفح قطع غيار سيارات السبورت في الكويت.",
+    url: absoluteUrl("/parts"),
+    type: "website",
+    images: [{ url: absoluteUrl(siteConfig.ogImage), width: 512, height: 512, alt: siteConfig.name }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `قطع الغيار | ${siteConfig.name}`,
+    description: "تصفح قطع غيار سيارات السبورت في الكويت.",
+    images: [absoluteUrl(siteConfig.ogImage)],
+  },
+  keywords: ["قطع غيار الكويت", "قطع سبورت", "قطع سيارات سبورت", ...siteConfig.keywords],
 };
 
 export default async function PartsPage() {

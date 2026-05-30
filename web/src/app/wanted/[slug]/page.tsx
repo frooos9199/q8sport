@@ -15,17 +15,27 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     };
   }
 
+  const canonical = absoluteUrl(`/wanted/${wanted.slug}`);
+
   return {
     title: wanted.title,
     description: wanted.summary,
     alternates: {
-      canonical: absoluteUrl(`/wanted/${wanted.slug}`),
+      canonical,
     },
+    keywords: [wanted.title, "مطلوب سيارات الكويت", "مطلوب قطع غيار الكويت", ...siteConfig.keywords],
     openGraph: {
       title: `${wanted.title} | ${siteConfig.name}`,
       description: wanted.summary,
-      url: absoluteUrl(`/wanted/${wanted.slug}`),
+      url: canonical,
       type: 'article',
+      images: [{ url: absoluteUrl(siteConfig.ogImage), width: 512, height: 512, alt: siteConfig.name }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${wanted.title} | ${siteConfig.name}`,
+      description: wanted.summary,
+      images: [absoluteUrl(siteConfig.ogImage)],
     },
   };
 }
