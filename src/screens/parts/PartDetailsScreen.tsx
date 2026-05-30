@@ -19,6 +19,7 @@ export default function PartDetailsScreen({ route, navigation }: any) {
   const { id } = route.params;
   const [part, setPart] = useState<Part | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -30,6 +31,7 @@ export default function PartDetailsScreen({ route, navigation }: any) {
           const nextPart = { id: snap.key, ...snap.val() };
           if (nextPart.category?.trim() !== 'عادم') {
             setPart(nextPart);
+            setSelectedImageIndex(0);
           }
         }
       } catch (e) {
@@ -92,11 +94,43 @@ export default function PartDetailsScreen({ route, navigation }: any) {
   const heroHeight = Math.max(250, Math.min(width * 0.88, 340));
   const shareChipWidth = width < 360 ? '100%' : '47%';
 
+  const toStringArray = (value: unknown): string[] => {
+    if (Array.isArray(value)) {
+      return value.filter((item): item is string => typeof item === 'string' && Boolean(item.trim()));
+    }
+
+    if (value && typeof value === 'object') {
+      const record = value as Record<string, unknown>;
+      const numericKeys = Object.keys(record)
+        .filter(key => /^\d+$/.test(key))
+        .map(key => Number(key))
+        .sort((a, b) => a - b);
+
+      return numericKeys
+        .map(key => record[String(key)])
+        .filter((item): item is string => typeof item === 'string' && Boolean(item.trim()));
+    }
+
+    return [];
+  };
+
+  const imageMediums = toStringArray((part as any)?.imageMediums);
+  const imageThumbs = toStringArray((part as any)?.imageThumbs);
+  const images = toStringArray((part as any)?.images);
+  const gallery = (imageMediums.length ? imageMediums : images).length
+    ? (imageMediums.length ? imageMediums : images)
+    : [];
+
+  const heroUri =
+    gallery[selectedImageIndex] ||
+    getListingMediumUrl(part) ||
+    undefined;
+
   return (
     <ScrollView style={s.container} contentContainerStyle={{ paddingBottom: 36 }} showsVerticalScrollIndicator={false}>
       <View style={s.heroWrap}>
-        {getListingMediumUrl(part) ? (
-          <FastAdImage uri={getListingMediumUrl(part)} style={[s.heroImage, { height: heroHeight }]} fallback={<Text style={s.placeholderIcon}>⚙️</Text>} placeholderColor={colors.darkCard} />
+        {heroUri ? (
+          <FastAdImage uri={heroUri} style={[s.heroImage, { height: heroHeight }]} fallback={<Text style={s.placeholderIcon}>⚙️</Text>} placeholderColor={colors.darkCard} />
         ) : (
           <View style={[s.heroImage, { height: heroHeight }, s.placeholder]}>
             <Text style={s.placeholderIcon}>⚙️</Text>
@@ -107,6 +141,35 @@ export default function PartDetailsScreen({ route, navigation }: any) {
           <Text style={s.conditionText}>{part.condition === 'new' ? t('new') : t('used')}</Text>
         </View>
       </View>
+
+      {gallery.length > 1 ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={s.galleryRow}
+        >
+          {gallery.map((uri, index) => {
+            const thumbUri = imageThumbs[index] || uri;
+            const active = index === selectedImageIndex;
+
+            return (
+              <TouchableOpacity
+                key={`${uri}-${index}`}
+                activeOpacity={0.9}
+                onPress={() => setSelectedImageIndex(index)}
+                style={[s.galleryThumbWrap, active ? s.galleryThumbActive : s.galleryThumbIdle]}
+              >
+                <FastAdImage
+                  uri={thumbUri}
+                  style={s.galleryThumb}
+                  fallback={<Text style={{ fontSize: 22 }}>⚙️</Text>}
+                  placeholderColor={colors.darkCard}
+                />
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      ) : null}
 
       <View style={s.content}>
         <Text style={s.title}>{part.title?.ar}</Text>
@@ -207,6 +270,12 @@ const s = StyleSheet.create({
   heroGradient: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 140 },
   conditionBadge: { position: 'absolute', top: 18, left: 18, backgroundColor: colors.primary, borderRadius: radius.full, paddingHorizontal: 14, paddingVertical: 7 },
   conditionText: { color: colors.white, fontWeight: '900', fontSize: 12 },
+
+  galleryRow: { paddingHorizontal: spacing.xl, paddingTop: 12, paddingBottom: 6, gap: 10 },
+  galleryThumbWrap: { width: 74, height: 74, borderRadius: radius.lg, overflow: 'hidden', borderWidth: 1 },
+  galleryThumbIdle: { borderColor: colors.metalBorder, backgroundColor: colors.darkCard },
+  galleryThumbActive: { borderColor: colors.primary, backgroundColor: colors.darkCard },
+  galleryThumb: { width: '100%', height: '100%' },
 
   content: { padding: spacing.xl },
   title: { color: colors.white, fontSize: 26, fontWeight: '900', marginBottom: 6 },
