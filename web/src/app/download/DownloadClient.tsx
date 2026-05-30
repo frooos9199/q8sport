@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type Props = {
   device: "ios" | "android" | "desktop";
@@ -37,11 +37,35 @@ function GooglePlayIcon({ className }: { className?: string }) {
 }
 
 export default function DownloadClient({ device, appStoreUrl, playStoreUrl }: Props) {
+  const [views, setViews] = useState<number | null>(null);
+
   const targetUrl = useMemo(() => {
     if (device === "ios") return appStoreUrl;
     if (device === "android") return playStoreUrl;
     return null;
   }, [device, appStoreUrl, playStoreUrl]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch("/api/metrics/download-views", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      keepalive: true,
+    })
+      .then(async res => {
+        const data = (await res.json()) as { views?: unknown };
+        const nextViews = typeof data.views === "number" ? data.views : null;
+        if (!cancelled) setViews(nextViews);
+      })
+      .catch(() => {
+        if (!cancelled) setViews(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!targetUrl) return;
@@ -67,6 +91,12 @@ export default function DownloadClient({ device, appStoreUrl, playStoreUrl }: Pr
               اختر المتجر المناسب لجهازك
             </p>
           )}
+
+          {typeof views === "number" ? (
+            <p className="mt-3 text-xs font-bold text-foreground">
+              المشاهدات: {views.toLocaleString("ar-KW")}
+            </p>
+          ) : null}
         </div>
 
         <div className="mt-8 grid gap-3 sm:grid-cols-2">
