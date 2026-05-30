@@ -13,6 +13,9 @@ export const metadata: Metadata = {
   applicationName: siteConfig.name,
   title: { default: siteConfig.name, template: `%s | ${siteConfig.name}` },
   description: siteConfig.description,
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+  },
   other: {
     // Shows the iOS Smart App Banner in Safari
     'apple-itunes-app': 'app-id=6757956229',
@@ -22,7 +25,6 @@ export const metadata: Metadata = {
     apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
   },
   keywords: siteConfig.keywords,
-  alternates: { canonical: absoluteUrl('/') },
   openGraph: {
     type: 'website', locale: 'ar_KW', url: siteConfig.url,
     title: siteConfig.name, siteName: siteConfig.name, description: siteConfig.description,
