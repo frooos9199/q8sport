@@ -8,6 +8,8 @@ import { db } from '../../lib/firebase';
 import { ListingMediaItem, uploadListingMedia } from '../../lib/listingImages';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import PremiumButton from '../../components/PremiumButton';
+import GccPhoneInput from '../../components/GccPhoneInput';
+import { buildE164, parseToGccNumber, type GccCountry } from '../../lib/gccPhone';
 
 type Category = 'car' | 'part' | 'other';
 
@@ -17,6 +19,9 @@ export default function CreateRequestScreen({ navigation, route }: any) {
   const listing = route?.params?.listing;
   const isEditing = Boolean(listing?.id);
   const isAdmin = Boolean(user?.isAdmin || user?.isSuperAdmin);
+
+  const initialManualPhoneParsed = parseToGccNumber(String(listing?.userPhone || ''), { defaultCountry: 'KW' });
+  const initialManualWhatsappParsed = parseToGccNumber(String(listing?.userWhatsapp || ''), { defaultCountry: 'KW' });
 
   const [category, setCategory] = useState<Category>(listing?.category || 'car');
   const [title, setTitle] = useState(listing?.title?.ar || '');
@@ -31,6 +36,10 @@ export default function CreateRequestScreen({ navigation, route }: any) {
   const [manualSellerName, setManualSellerName] = useState(listing?.userName || '');
   const [manualSellerPhone, setManualSellerPhone] = useState(listing?.userPhone || '');
   const [manualSellerWhatsapp, setManualSellerWhatsapp] = useState(listing?.userWhatsapp || '');
+  const [manualSellerPhoneCountry, setManualSellerPhoneCountry] = useState<GccCountry['code']>(initialManualPhoneParsed.country);
+  const [manualSellerPhoneNational, setManualSellerPhoneNational] = useState(initialManualPhoneParsed.nationalNumber);
+  const [manualSellerWhatsappCountry, setManualSellerWhatsappCountry] = useState<GccCountry['code']>(initialManualWhatsappParsed.country);
+  const [manualSellerWhatsappNational, setManualSellerWhatsappNational] = useState(initialManualWhatsappParsed.nationalNumber);
   const [imageItems, setImageItems] = useState<ListingMediaItem[]>(() =>
     (listing?.images || []).map((image: string, index: number) => ({
       image,
@@ -197,23 +206,37 @@ export default function CreateRequestScreen({ navigation, route }: any) {
                   />
 
                   <Text style={[s.label, { marginTop: 12 }]}>رقم الهاتف (اتصال)</Text>
-                  <TextInput
-                    value={manualSellerPhone}
-                    onChangeText={setManualSellerPhone}
-                    placeholder="+965..."
-                    placeholderTextColor={colors.silver + '66'}
-                    keyboardType="phone-pad"
-                    style={s.input}
+                  <GccPhoneInput
+                    icon="📞"
+                    country={manualSellerPhoneCountry}
+                    onCountryChange={(code) => {
+                      setManualSellerPhoneCountry(code);
+                      setManualSellerPhone(buildE164(code, manualSellerPhoneNational));
+                    }}
+                    nationalNumber={manualSellerPhoneNational}
+                    onNationalNumberChange={(value) => {
+                      setManualSellerPhoneNational(value);
+                      setManualSellerPhone(buildE164(manualSellerPhoneCountry, value));
+                    }}
+                    placeholder="اكتب الرقم بدون فتح الخط"
+                    editable={!submitting}
                   />
 
                   <Text style={[s.label, { marginTop: 12 }]}>رقم واتساب</Text>
-                  <TextInput
-                    value={manualSellerWhatsapp}
-                    onChangeText={setManualSellerWhatsapp}
-                    placeholder="+965..."
-                    placeholderTextColor={colors.silver + '66'}
-                    keyboardType="phone-pad"
-                    style={s.input}
+                  <GccPhoneInput
+                    icon="💬"
+                    country={manualSellerWhatsappCountry}
+                    onCountryChange={(code) => {
+                      setManualSellerWhatsappCountry(code);
+                      setManualSellerWhatsapp(buildE164(code, manualSellerWhatsappNational));
+                    }}
+                    nationalNumber={manualSellerWhatsappNational}
+                    onNationalNumberChange={(value) => {
+                      setManualSellerWhatsappNational(value);
+                      setManualSellerWhatsapp(buildE164(manualSellerWhatsappCountry, value));
+                    }}
+                    placeholder="اكتب الرقم بدون فتح الخط"
+                    editable={!submitting}
                   />
                 </View>
               ) : null}

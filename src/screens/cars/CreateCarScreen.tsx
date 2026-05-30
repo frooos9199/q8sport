@@ -4,9 +4,11 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import { push, ref as dbRef, serverTimestamp, set as dbSet, update } from '@react-native-firebase/database';
 
 import PremiumButton from '../../components/PremiumButton';
+import GccPhoneInput from '../../components/GccPhoneInput';
 import { useAuth } from '../../hooks/useAuth';
 import { db } from '../../lib/firebase';
 import { ListingMediaItem, uploadListingMedia } from '../../lib/listingImages';
+import { buildE164, parseToGccNumber, type GccCountry } from '../../lib/gccPhone';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 
 const BRANDS = ['Porsche', 'BMW', 'Mercedes-Benz', 'Audi', 'Ford', 'Chevrolet', 'Dodge', 'Nissan', 'Toyota', 'Mitsubishi', 'Subaru', 'Honda', 'Other'];
@@ -17,6 +19,9 @@ export default function CreateCarScreen({ navigation, route }: any) {
   const initialListing = route?.params?.listing;
   const isEditing = Boolean(initialListing?.id);
   const isAdmin = Boolean(user?.isAdmin || user?.isSuperAdmin);
+
+  const initialManualPhoneParsed = parseToGccNumber(String(initialListing?.userPhone || ''), { defaultCountry: 'KW' });
+  const initialManualWhatsappParsed = parseToGccNumber(String(initialListing?.userWhatsapp || ''), { defaultCountry: 'KW' });
 
   const [title, setTitle] = useState(initialListing?.title?.ar || '');
   const [description, setDescription] = useState(initialListing?.description?.ar || '');
@@ -37,6 +42,10 @@ export default function CreateCarScreen({ navigation, route }: any) {
   const [manualSellerName, setManualSellerName] = useState(initialListing?.userName || '');
   const [manualSellerPhone, setManualSellerPhone] = useState(initialListing?.userPhone || '');
   const [manualSellerWhatsapp, setManualSellerWhatsapp] = useState(initialListing?.userWhatsapp || '');
+  const [manualSellerPhoneCountry, setManualSellerPhoneCountry] = useState<GccCountry['code']>(initialManualPhoneParsed.country);
+  const [manualSellerPhoneNational, setManualSellerPhoneNational] = useState(initialManualPhoneParsed.nationalNumber);
+  const [manualSellerWhatsappCountry, setManualSellerWhatsappCountry] = useState<GccCountry['code']>(initialManualWhatsappParsed.country);
+  const [manualSellerWhatsappNational, setManualSellerWhatsappNational] = useState(initialManualWhatsappParsed.nationalNumber);
   const [imageItems, setImageItems] = useState<ListingMediaItem[]>(() =>
     (initialListing?.images || []).map((image: string, index: number) => ({
       image,
@@ -190,8 +199,44 @@ export default function CreateCarScreen({ navigation, route }: any) {
             {sellerMode === 'manual' ? (
               <View style={{ marginTop: 10 }}>
                 <Field label="اسم المعلن" value={manualSellerName} onChangeText={setManualSellerName} placeholder="مثال: أبو فهد" />
-                <Field label="رقم الهاتف (اتصال)" value={manualSellerPhone} onChangeText={setManualSellerPhone} placeholder="+965..." keyboardType="phone-pad" />
-                <Field label="رقم واتساب" value={manualSellerWhatsapp} onChangeText={setManualSellerWhatsapp} placeholder="+965..." keyboardType="phone-pad" />
+
+                <Text style={s.label}>رقم الهاتف (اتصال)</Text>
+                <View style={{ marginBottom: 12 }}>
+                  <GccPhoneInput
+                    icon="📞"
+                    country={manualSellerPhoneCountry}
+                    onCountryChange={(code) => {
+                      setManualSellerPhoneCountry(code);
+                      setManualSellerPhone(buildE164(code, manualSellerPhoneNational));
+                    }}
+                    nationalNumber={manualSellerPhoneNational}
+                    onNationalNumberChange={(value) => {
+                      setManualSellerPhoneNational(value);
+                      setManualSellerPhone(buildE164(manualSellerPhoneCountry, value));
+                    }}
+                    placeholder="اكتب الرقم بدون فتح الخط"
+                    editable={!submitting}
+                  />
+                </View>
+
+                <Text style={s.label}>رقم واتساب</Text>
+                <View style={{ marginBottom: 12 }}>
+                  <GccPhoneInput
+                    icon="💬"
+                    country={manualSellerWhatsappCountry}
+                    onCountryChange={(code) => {
+                      setManualSellerWhatsappCountry(code);
+                      setManualSellerWhatsapp(buildE164(code, manualSellerWhatsappNational));
+                    }}
+                    nationalNumber={manualSellerWhatsappNational}
+                    onNationalNumberChange={(value) => {
+                      setManualSellerWhatsappNational(value);
+                      setManualSellerWhatsapp(buildE164(manualSellerWhatsappCountry, value));
+                    }}
+                    placeholder="اكتب الرقم بدون فتح الخط"
+                    editable={!submitting}
+                  />
+                </View>
               </View>
             ) : null}
           </View>
