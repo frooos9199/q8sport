@@ -431,7 +431,7 @@ const s = StyleSheet.create({
     marginBottom: 14,
     overflow: 'hidden',
     flexDirection: 'row-reverse',
-    height: 124,
+    minHeight: 124,
     ...shadows.card,
   },
   cardImgWrap: { position: 'relative', width: '39%', height: '100%' },
