@@ -8,6 +8,7 @@ import { Request } from '../../types';
 import { fetchSortedListings, prefetchListingImages } from '../../lib/listingFeed';
 import FastAdImage from '../../components/FastAdImage';
 import LazyImage from '../../components/LazyImage';
+import { toWaMeDigits } from '../../lib/gccPhone';
 
 const INITIAL_VISIBLE_REQUESTS = 10;
 const INITIAL_REQUEST_IMAGE_PREFETCH = 4;
@@ -68,7 +69,7 @@ function AnimatedRequestCard({ item, index, navigation }: { item: Request; index
   const anim = useRef(new Animated.Value(0)).current;
   const previewImage = getListingThumbnailUrl(item);
   const publishedAt = formatListingPublishedAt(item.createdAt);
-  const whatsappDigits = String(item.userWhatsapp || '').replace(/[^0-9]/g, '');
+  const whatsappDigits = toWaMeDigits(String(item.userWhatsapp || ''));
   const phoneDigits = String(item.userPhone || '').replace(/[^0-9]/g, '');
 
   useEffect(() => {

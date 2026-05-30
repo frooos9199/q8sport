@@ -13,6 +13,7 @@ import { t } from '../../i18n';
 import { shareListing } from '../../lib/shareListing';
 import FastAdImage from '../../components/FastAdImage';
 import { getListingMediumUrl } from '../../lib/listingImages';
+import { toWaMeDigits } from '../../lib/gccPhone';
 
 export default function PartDetailsScreen({ route, navigation }: any) {
   const { width } = useWindowDimensions();
@@ -69,7 +70,7 @@ export default function PartDetailsScreen({ route, navigation }: any) {
       Alert.alert('تنبيه', 'لا يوجد رقم واتساب لهذا الإعلان');
       return;
     }
-    Linking.openURL(`https://wa.me/${phone}?text=${encodeURIComponent(`مرحبا، عندي اهتمام بخصوص القطعة: ${part.title?.ar}`)}`);
+    Linking.openURL(`https://wa.me/${toWaMeDigits(phone)}?text=${encodeURIComponent(`مرحبا، عندي اهتمام بخصوص القطعة: ${part.title?.ar}`)}`);
   };
 
   const callSeller = () => {

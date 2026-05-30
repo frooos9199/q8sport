@@ -11,6 +11,7 @@ import { prefetchListingImages } from '../../lib/listingFeed';
 import { sortListingsByFreshnessAndStatus } from '../../lib/listingSort';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { Car, Part, Request, User } from '../../types';
+import { toWaMeDigits } from '../../lib/gccPhone';
 
 const INITIAL_SELLER_FEED_ITEMS = 10;
 const INITIAL_SELLER_IMAGE_PREFETCH = 6;
@@ -126,7 +127,7 @@ export default function SellerProfileScreen({ route, navigation }: any) {
       Alert.alert('تنبيه', 'لا يوجد رقم واتساب لهذا المستخدم');
       return;
     }
-    Linking.openURL(`https://wa.me/${phone}?text=${encodeURIComponent(`مرحبا ${sellerName}، عندي اهتمام بمعروضاتك في Q8 Sport Market`)}`);
+    Linking.openURL(`https://wa.me/${toWaMeDigits(phone)}?text=${encodeURIComponent(`مرحبا ${sellerName}، عندي اهتمام بمعروضاتك في Q8 Sport Market`)}`);
   };
 
   const openCall = () => {

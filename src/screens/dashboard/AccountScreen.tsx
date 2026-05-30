@@ -3,21 +3,29 @@ import { Alert, View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput,
 import { launchImageLibrary } from 'react-native-image-picker';
 import LinearGradient from 'react-native-linear-gradient';
 import LazyImage from '../../components/LazyImage';
+import GccPhoneInput from '../../components/GccPhoneInput';
 import { useAuth } from '../../hooks/useAuth';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { t } from '../../i18n';
+import { buildE164, parseToGccNumber, getGccCountry, type GccCountry } from '../../lib/gccPhone';
 
 export default function AccountScreen({ navigation }: any) {
   const { width } = useWindowDimensions();
   const { user, logout, updateContactInfo, updateProfileAvatar } = useAuth();
-  const [phone, setPhone] = React.useState('');
-  const [whatsapp, setWhatsapp] = React.useState('');
+  const [phoneCountry, setPhoneCountry] = React.useState<GccCountry['code']>('KW');
+  const [phoneNational, setPhoneNational] = React.useState('');
+  const [whatsappCountry, setWhatsappCountry] = React.useState<GccCountry['code']>('KW');
+  const [whatsappNational, setWhatsappNational] = React.useState('');
   const [saving, setSaving] = React.useState(false);
   const [avatarUploading, setAvatarUploading] = React.useState(false);
 
   React.useEffect(() => {
-    setPhone(user?.phone || '');
-    setWhatsapp(user?.whatsapp || '');
+    const parsedPhone = parseToGccNumber(user?.phone || '', { defaultCountry: 'KW' });
+    const parsedWhatsapp = parseToGccNumber(user?.whatsapp || '', { defaultCountry: 'KW' });
+    setPhoneCountry(parsedPhone.country);
+    setPhoneNational(parsedPhone.nationalNumber);
+    setWhatsappCountry(parsedWhatsapp.country);
+    setWhatsappNational(parsedWhatsapp.nationalNumber);
   }, [user?.phone, user?.whatsapp]);
 
   if (!user) return null;
@@ -106,11 +114,25 @@ export default function AccountScreen({ navigation }: any) {
         },
       ];
 
-  const hasChanges = phone.trim() !== (user.phone || '').trim() || whatsapp.trim() !== (user.whatsapp || '').trim();
+  const nextPhoneValue = buildE164(phoneCountry, phoneNational);
+  const nextWhatsappValue = buildE164(whatsappCountry, whatsappNational);
+  const hasChanges = nextPhoneValue.trim() !== (user.phone || '').trim() || nextWhatsappValue.trim() !== (user.whatsapp || '').trim();
 
   const saveContactInfo = async () => {
-    const phoneValue = phone.trim();
-    const whatsappValue = whatsapp.trim();
+    const phoneExpectedLen = getGccCountry(phoneCountry).nationalNumberLength;
+    const whatsappExpectedLen = getGccCountry(whatsappCountry).nationalNumberLength;
+
+    if (phoneNational && phoneNational.length !== phoneExpectedLen) {
+      Alert.alert('تنبيه', `رقم الموبايل لازم يكون ${phoneExpectedLen} أرقام`);
+      return;
+    }
+    if (whatsappNational && whatsappNational.length !== whatsappExpectedLen) {
+      Alert.alert('تنبيه', `رقم الواتساب لازم يكون ${whatsappExpectedLen} أرقام`);
+      return;
+    }
+
+    const phoneValue = buildE164(phoneCountry, phoneNational).trim();
+    const whatsappValue = buildE164(whatsappCountry, whatsappNational).trim();
 
     if (!phoneValue && !whatsappValue) {
       Alert.alert('تنبيه', 'أدخل رقم الموبايل أو الواتساب على الأقل');
@@ -186,25 +208,27 @@ export default function AccountScreen({ navigation }: any) {
       <View style={s.infoCard}>
         <View style={s.formField}>
           <Text style={s.infoLabel}>{t('phone')}</Text>
-          <TextInput
-            value={phone}
-            onChangeText={setPhone}
-            style={s.input}
+          <GccPhoneInput
+            icon="📱"
+            country={phoneCountry}
+            onCountryChange={setPhoneCountry}
+            nationalNumber={phoneNational}
+            onNationalNumberChange={setPhoneNational}
             placeholder="اكتب رقم الموبايل"
-            placeholderTextColor={colors.silver + '66'}
-            keyboardType="phone-pad"
+            editable={!saving}
           />
         </View>
         <View style={s.infoDivider} />
         <View style={s.formField}>
           <Text style={s.infoLabel}>{t('whatsapp')}</Text>
-          <TextInput
-            value={whatsapp}
-            onChangeText={setWhatsapp}
-            style={s.input}
+          <GccPhoneInput
+            icon="💬"
+            country={whatsappCountry}
+            onCountryChange={setWhatsappCountry}
+            nationalNumber={whatsappNational}
+            onNationalNumberChange={setWhatsappNational}
             placeholder="اكتب رقم الواتساب"
-            placeholderTextColor={colors.silver + '66'}
-            keyboardType="phone-pad"
+            editable={!saving}
           />
         </View>
         <TouchableOpacity

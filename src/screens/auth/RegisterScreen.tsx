@@ -5,8 +5,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import { AppleButton } from '@invertase/react-native-apple-authentication';
 import { useAuth } from '../../hooks/useAuth';
+import GccPhoneInput from '../../components/GccPhoneInput';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { t } from '../../i18n';
+import { buildE164, getGccCountry, type GccCountry } from '../../lib/gccPhone';
 
 export default function RegisterScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
@@ -14,18 +16,45 @@ export default function RegisterScreen({ navigation }: any) {
   const { register, signInWithApple } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [whatsapp, setWhatsapp] = useState('');
+  const [phoneCountry, setPhoneCountry] = useState<GccCountry['code']>('KW');
+  const [phoneNational, setPhoneNational] = useState('');
+  const [whatsappCountry, setWhatsappCountry] = useState<GccCountry['code']>('KW');
+  const [whatsappNational, setWhatsappNational] = useState('');
   const [password, setPassword] = useState('');
   const [samePhone, setSamePhone] = useState(true);
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
-    if (!name || !email || !phone || !password) return;
+    const phoneExpectedLen = getGccCountry(phoneCountry).nationalNumberLength;
+    if (!name || !email || phoneNational.length !== phoneExpectedLen || !password) return;
+
+    if (!samePhone) {
+      const waExpectedLen = getGccCountry(whatsappCountry).nationalNumberLength;
+      if (whatsappNational.length !== waExpectedLen) {
+        Alert.alert('تنبيه', `رقم الواتساب لازم يكون ${waExpectedLen} أرقام`);
+        return;
+      }
+    }
+
+    const phoneE164 = buildE164(phoneCountry, phoneNational);
+    const whatsappE164 = samePhone
+      ? phoneE164
+      : buildE164(whatsappCountry, whatsappNational);
+
+    if (!phoneE164) {
+      Alert.alert('تنبيه', 'اكتب رقم الجوال');
+      return;
+    }
+
+    if (!samePhone && !whatsappE164) {
+      Alert.alert('تنبيه', 'اكتب رقم الواتساب');
+      return;
+    }
+
     if (password.length < 6) { Alert.alert('خطأ', 'كلمة المرور لازم 6 أحرف على الأقل'); return; }
     setLoading(true);
     try {
-      await register({ name, email, phone, whatsapp: samePhone ? phone : whatsapp, password });
+      await register({ name, email, phone: phoneE164, whatsapp: whatsappE164, password });
     } catch (e: any) {
       const code = typeof e?.code === 'string' ? e.code : '';
       const message = typeof e?.message === 'string' ? e.message : '';
@@ -94,16 +123,54 @@ export default function RegisterScreen({ navigation }: any) {
 
           <InputField icon="👤" placeholder={t('name')} value={name} onChangeText={setName} />
           <InputField icon="📧" placeholder={t('email')} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
-          <InputField icon="📱" placeholder={t('phone')} value={phone} onChangeText={(v: string) => { setPhone(v); if (samePhone) setWhatsapp(v); }} keyboardType="phone-pad" />
+          <View style={{ marginBottom: 12 }}>
+            <GccPhoneInput
+              icon="📱"
+              country={phoneCountry}
+              onCountryChange={(code) => {
+                setPhoneCountry(code);
+                if (samePhone) setWhatsappCountry(code);
+              }}
+              nationalNumber={phoneNational}
+              onNationalNumberChange={(value) => {
+                setPhoneNational(value);
+                if (samePhone) setWhatsappNational(value);
+              }}
+              placeholder={t('phone')}
+            />
+          </View>
 
-          <TouchableOpacity style={s.checkRow} onPress={() => setSamePhone(!samePhone)}>
+          <TouchableOpacity
+            style={s.checkRow}
+            onPress={() => {
+              setSamePhone((current) => {
+                const next = !current;
+                if (next) {
+                  setWhatsappCountry(phoneCountry);
+                  setWhatsappNational(phoneNational);
+                }
+                return next;
+              });
+            }}
+          >
             <View style={[s.checkbox, samePhone && s.checked]}>
               {samePhone && <Text style={s.checkMark}>✓</Text>}
             </View>
             <Text style={s.checkText}>رقم الواتساب نفس رقم الجوال</Text>
           </TouchableOpacity>
 
-          {!samePhone && <InputField icon="💬" placeholder={t('whatsapp')} value={whatsapp} onChangeText={setWhatsapp} keyboardType="phone-pad" />}
+          {!samePhone ? (
+            <View style={{ marginBottom: 12 }}>
+              <GccPhoneInput
+                icon="💬"
+                country={whatsappCountry}
+                onCountryChange={setWhatsappCountry}
+                nationalNumber={whatsappNational}
+                onNationalNumberChange={setWhatsappNational}
+                placeholder={t('whatsapp')}
+              />
+            </View>
+          ) : null}
 
           <InputField icon="🔒" placeholder={t('password')} value={password} onChangeText={setPassword} secureTextEntry />
 

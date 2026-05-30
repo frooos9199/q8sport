@@ -14,6 +14,7 @@ import { formatListingPublishedAt } from '../../lib/listingDate';
 import FastAdImage from '../../components/FastAdImage';
 import { getListingThumbnailUrl } from '../../lib/listingImages';
 import { prefetchAdImages } from '../../lib/prefetchAdImages';
+import { toWaMeDigits } from '../../lib/gccPhone';
 
 type PartsFeedItem =
   | { kind: 'row'; id: string; parts: Part[]; startIndex: number }
@@ -273,7 +274,7 @@ function AnimatedPartCard({ item, index, navigation }: any) {
           ) : null}
           <TouchableOpacity
             style={s.waBtn}
-            onPress={() => Linking.openURL(`https://wa.me/${item.userWhatsapp?.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`مرحبا، أبي أستفسر عن: ${item.title?.ar}`)}`)}
+            onPress={() => Linking.openURL(`https://wa.me/${toWaMeDigits(String(item.userWhatsapp || ''))}?text=${encodeURIComponent(`مرحبا، أبي أستفسر عن: ${item.title?.ar}`)}`)}
           >
             <View style={s.waIconWrap}>
               <Text style={s.waBtnIcon}>💬</Text>

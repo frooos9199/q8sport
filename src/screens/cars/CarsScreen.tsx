@@ -15,6 +15,7 @@ import { formatListingPublishedAt } from '../../lib/listingDate';
 import FastAdImage from '../../components/FastAdImage';
 import { getListingThumbnailUrl } from '../../lib/listingImages';
 import { prefetchAdImages } from '../../lib/prefetchAdImages';
+import { toWaMeDigits } from '../../lib/gccPhone';
 
 type CarsFeedItem =
   | { kind: 'car'; id: string; car: Car; carIndex: number }
@@ -131,7 +132,7 @@ export default function CarsScreen({ navigation }: any) {
   };
 
   const openWhatsApp = (phone: string, msg: string) => {
-    Linking.openURL(`https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(msg)}`);
+    Linking.openURL(`https://wa.me/${toWaMeDigits(phone)}?text=${encodeURIComponent(msg)}`);
   };
 
   const feedItems: CarsFeedItem[] = [];

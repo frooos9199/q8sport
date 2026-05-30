@@ -13,6 +13,7 @@ import { shareListing } from '../../lib/shareListing';
 import FastImage from 'react-native-fast-image';
 import FastAdImage from '../../components/FastAdImage';
 import { getListingMediumUrl, getListingOriginalUrl, getListingThumbnailUrl } from '../../lib/listingImages';
+import { toWaMeDigits } from '../../lib/gccPhone';
 
 const { width } = Dimensions.get('window');
 
@@ -66,7 +67,7 @@ export default function CarDetailsScreen({ route, navigation }: any) {
 
   const openWhatsApp = () => {
     const phone = car.userWhatsapp?.replace(/[^0-9]/g, '');
-    Linking.openURL(`https://wa.me/${phone}?text=${encodeURIComponent(`مرحبا، أبي أستفسر عن: ${car.title.ar} - ${car.brand} ${car.model} ${car.year}`)}`);
+    Linking.openURL(`https://wa.me/${toWaMeDigits(phone)}?text=${encodeURIComponent(`مرحبا، أبي أستفسر عن: ${car.title.ar} - ${car.brand} ${car.model} ${car.year}`)}`);
   };
 
   const shareMessage = [
