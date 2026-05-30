@@ -19,6 +19,7 @@ export default function PartDetailsScreen({ route, navigation }: any) {
   const { width } = useWindowDimensions();
   const { id } = route.params;
   const [part, setPart] = useState<Part | null>(null);
+  const [sellerCampaign, setSellerCampaign] = useState<{ founderPosition?: number; tierLabel?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
@@ -47,6 +48,34 @@ export default function PartDetailsScreen({ route, navigation }: any) {
       mounted = false;
     };
   }, [id]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const sellerId = part?.userId;
+    if (!sellerId) {
+      setSellerCampaign(null);
+      return () => {
+        mounted = false;
+      };
+    }
+
+    const run = async () => {
+      try {
+        const snap = await getDbSnapshot(dbRef(db, `users/${sellerId}/campaign`), `users/${sellerId}/campaign`);
+        if (!mounted) return;
+        setSellerCampaign(snap.exists() ? snap.val() : null);
+      } catch (e) {
+        if (!mounted) return;
+        setSellerCampaign(null);
+      }
+    };
+
+    run();
+    return () => {
+      mounted = false;
+    };
+  }, [part?.userId]);
 
   if (loading) {
     return (
@@ -221,7 +250,14 @@ export default function PartDetailsScreen({ route, navigation }: any) {
           </View>
           <View style={s.sellerCopy}>
             <Text style={s.sellerLabel}>البائع</Text>
-            <Text style={s.sellerName}>{part.userName}</Text>
+            <View style={s.sellerNameRow}>
+              <Text style={s.sellerName}>{part.userName}</Text>
+              {Number(sellerCampaign?.founderPosition || 0) > 0 ? (
+                <View style={s.tierBadge}>
+                  <Text style={s.tierBadgeText}>{sellerCampaign?.tierLabel || 'مؤسس'}</Text>
+                </View>
+              ) : null}
+            </View>
             <Text style={s.sellerHint}>تواصل مباشر بدون وسيط • اضغط لعرض الملف</Text>
           </View>
           <View style={s.sellerActions}>
@@ -299,7 +335,10 @@ const s = StyleSheet.create({
   sellerAvatarText: { color: colors.primary, fontSize: 20, fontWeight: '900' },
   sellerCopy: { flex: 1 },
   sellerLabel: { color: colors.silver, fontSize: 12, marginBottom: 6 },
-  sellerName: { color: colors.white, fontWeight: '900', fontSize: 18, marginBottom: 4 },
+  sellerNameRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 4 },
+  sellerName: { color: colors.white, fontWeight: '900', fontSize: 18 },
+  tierBadge: { backgroundColor: colors.primaryGlow, borderRadius: radius.full, borderWidth: 1, borderColor: colors.primaryBorder, paddingHorizontal: 10, paddingVertical: 5 },
+  tierBadgeText: { color: colors.primary, fontSize: 11, fontWeight: '900' },
   sellerHint: { color: colors.silverLight, fontSize: 12 },
   sellerActions: { flexDirection: 'row', alignItems: 'center', gap: 10, marginLeft: 12 },
   sellerWhatsappBtn: {

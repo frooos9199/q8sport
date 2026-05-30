@@ -22,6 +22,7 @@ export default function CarDetailsScreen({ route, navigation }: any) {
   const tabBarHeight = useBottomTabBarHeight();
   const { id } = route.params;
   const [car, setCar] = useState<Car | null>(null);
+  const [sellerCampaign, setSellerCampaign] = useState<{ founderPosition?: number; tierLabel?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [imgIndex, setImgIndex] = useState(0);
   const [lightbox, setLightbox] = useState(false);
@@ -51,6 +52,34 @@ export default function CarDetailsScreen({ route, navigation }: any) {
     run();
     return () => { mounted = false; };
   }, [fadeAnim, id, slideAnim]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const sellerId = car?.userId;
+    if (!sellerId) {
+      setSellerCampaign(null);
+      return () => {
+        mounted = false;
+      };
+    }
+
+    const run = async () => {
+      try {
+        const snap = await getDbSnapshot(dbRef(db, `users/${sellerId}/campaign`), `users/${sellerId}/campaign`);
+        if (!mounted) return;
+        setSellerCampaign(snap.exists() ? snap.val() : null);
+      } catch (e) {
+        if (!mounted) return;
+        setSellerCampaign(null);
+      }
+    };
+
+    run();
+    return () => {
+      mounted = false;
+    };
+  }, [car?.userId]);
 
   if (loading) return (
     <View style={s.loadingWrap}>
@@ -197,7 +226,14 @@ export default function CarDetailsScreen({ route, navigation }: any) {
               )}
             </View>
             <View style={s.sellerInfo}>
-              <Text style={s.sellerName}>{car.userName}</Text>
+              <View style={s.sellerNameRow}>
+                <Text style={s.sellerName}>{car.userName}</Text>
+                {Number(sellerCampaign?.founderPosition || 0) > 0 ? (
+                  <View style={s.tierBadge}>
+                    <Text style={s.tierBadgeText}>{sellerCampaign?.tierLabel || 'مؤسس'}</Text>
+                  </View>
+                ) : null}
+              </View>
               <Text style={s.sellerLabel}>المعلن • اضغط لعرض ملفه</Text>
             </View>
             <TouchableOpacity style={s.sellerWhatsappBtn} activeOpacity={0.88} onPress={openWhatsApp}>
@@ -326,7 +362,10 @@ const s = StyleSheet.create({
   sellerAvatarImage: { width: '100%', height: '100%' },
   sellerAvatarText: { color: colors.white, fontSize: 18, fontWeight: '900' },
   sellerInfo: { flex: 1 },
+  sellerNameRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
   sellerName: { color: colors.white, fontWeight: '700', fontSize: 15 },
+  tierBadge: { backgroundColor: colors.primaryGlow, borderRadius: radius.full, borderWidth: 1, borderColor: colors.primaryBorder, paddingHorizontal: 10, paddingVertical: 5 },
+  tierBadgeText: { color: colors.primary, fontSize: 11, fontWeight: '900' },
   sellerLabel: { color: colors.silver, fontSize: 11, marginTop: 2 },
   sellerWhatsappBtn: {
     width: 46,
