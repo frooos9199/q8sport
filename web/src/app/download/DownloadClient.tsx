@@ -10,6 +10,28 @@ type Props = {
 
 const REDIRECT_DELAY_MS = 1000;
 
+type ClickCounts = {
+  appStore: number;
+  playStore: number;
+};
+
+function safeIncrement(target: "appStore" | "playStore") {
+  const payload = JSON.stringify({ target });
+
+  if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
+    const blob = new Blob([payload], { type: "application/json" });
+    navigator.sendBeacon("/api/metrics/download-clicks", blob);
+    return;
+  }
+
+  fetch("/api/metrics/download-clicks", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: payload,
+    keepalive: true,
+  }).catch(() => undefined);
+}
+
 function AppleIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -38,6 +60,7 @@ function GooglePlayIcon({ className }: { className?: string }) {
 
 export default function DownloadClient({ device, appStoreUrl, playStoreUrl }: Props) {
   const [views, setViews] = useState<number | null>(null);
+  const [clicks, setClicks] = useState<ClickCounts | null>(null);
 
   const targetUrl = useMemo(() => {
     if (device === "ios") return appStoreUrl;
@@ -68,14 +91,50 @@ export default function DownloadClient({ device, appStoreUrl, playStoreUrl }: Pr
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+
+    fetch("/api/metrics/download-clicks", { method: "GET" })
+      .then(async res => {
+        const data = (await res.json()) as { clicks?: unknown };
+        const raw = data.clicks as Partial<ClickCounts> | null | undefined;
+
+        const appStore = typeof raw?.appStore === "number" ? raw.appStore : null;
+        const playStore = typeof raw?.playStore === "number" ? raw.playStore : null;
+
+        if (!cancelled && typeof appStore === "number" && typeof playStore === "number") {
+          setClicks({ appStore, playStore });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setClicks(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!targetUrl) return;
 
     const timeoutId = window.setTimeout(() => {
+      if (device === "ios") safeIncrement("appStore");
+      if (device === "android") safeIncrement("playStore");
       window.location.href = targetUrl;
     }, REDIRECT_DELAY_MS);
 
     return () => window.clearTimeout(timeoutId);
-  }, [targetUrl]);
+  }, [device, targetUrl]);
+
+  function onAppStoreClick() {
+    safeIncrement("appStore");
+    setClicks(current => (current ? { ...current, appStore: current.appStore + 1 } : current));
+  }
+
+  function onPlayStoreClick() {
+    safeIncrement("playStore");
+    setClicks(current => (current ? { ...current, playStore: current.playStore + 1 } : current));
+  }
 
   return (
     <main className="mx-auto flex min-h-[70vh] w-full max-w-2xl items-center px-5 pb-20 pt-10 sm:px-8">
@@ -97,11 +156,19 @@ export default function DownloadClient({ device, appStoreUrl, playStoreUrl }: Pr
               المشاهدات: {views.toLocaleString("ar-KW")}
             </p>
           ) : null}
+
+          {clicks ? (
+            <p className="mt-2 text-xs text-sand">
+              ضغطات App Store: {clicks.appStore.toLocaleString("ar-KW")} · ضغطات Google Play:{" "}
+              {clicks.playStore.toLocaleString("ar-KW")}
+            </p>
+          ) : null}
         </div>
 
         <div className="mt-8 grid gap-3 sm:grid-cols-2">
           <a
             href={appStoreUrl}
+            onClick={onAppStoreClick}
             className="flex items-center justify-center gap-2 rounded-xl bg-brand px-6 py-4 text-sm font-black text-white transition hover:bg-brand-dark"
           >
             <AppleIcon className="h-5 w-5" />
@@ -109,6 +176,7 @@ export default function DownloadClient({ device, appStoreUrl, playStoreUrl }: Pr
           </a>
           <a
             href={playStoreUrl}
+            onClick={onPlayStoreClick}
             className="flex items-center justify-center gap-2 rounded-xl border border-metal-border bg-metal px-6 py-4 text-sm font-bold text-foreground transition hover:bg-panel-soft"
           >
             <GooglePlayIcon className="h-5 w-5" />
