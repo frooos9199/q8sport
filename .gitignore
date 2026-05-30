@@ -72,6 +72,9 @@ ios/*.log
 /coverage
 jest-results.json
 
+# Release artifacts (keep out of git; upload to stores/console separately)
+releases/**/*.aab
+
 # Yarn
 .yarn/*
 !.yarn/patches
