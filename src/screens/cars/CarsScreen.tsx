@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Linking, Animated, RefreshControl } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Linking, Animated, RefreshControl, Platform } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { db } from '../../lib/firebase';
 import { orderByChild, query, ref as dbRef } from '@react-native-firebase/database';
@@ -451,7 +451,7 @@ const s = StyleSheet.create({
     borderRadius: radius.full,
     borderWidth: 1,
     borderColor: 'rgba(37, 211, 102, 0.35)',
-    transform: [{ translateY: -5 }],
+    transform: [{ translateY: Platform.OS === 'ios' ? -8 : -5 }],
   },
   waIconWrap: {
     width: 28,
