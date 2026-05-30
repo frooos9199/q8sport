@@ -365,11 +365,6 @@ function mapFuel(fuelType?: string) {
   return undefined;
 }
 
-function summarize(text: RawLocalizedText, fallback: string) {
-  const normalized = normalizeText(text, fallback);
-  return normalized.length > 160 ? `${normalized.slice(0, 157)}...` : normalized;
-}
-
 function normalizeImages(images: unknown) {
   if (!Array.isArray(images)) return [];
   return images.filter((value): value is string => typeof value === "string" && value.trim().length > 0);

@@ -34,7 +34,7 @@ export default function PublishForm() {
   const [type, setType] = useState<PublishType>("car");
   const [form, setForm] = useState(initialState);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [uploading, setUploading] = useState(false);
+  const [uploading] = useState(false);
   const [fileInputKey, setFileInputKey] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ kind: "success" | "error"; text: string } | null>(null);

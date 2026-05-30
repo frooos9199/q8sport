@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { getApp, getApps, initializeApp } from "firebase/app";
 import { getAuth, onAuthStateChanged, type User as FBUser } from "firebase/auth";
-import { getDatabase, ref, onValue, remove, update } from "firebase/database";
+import { getDatabase, ref, onValue, remove, update, type DataSnapshot } from "firebase/database";
 import { getFirebasePublicConfig } from "@/lib/runtime-config";
 
 const firebaseConfig = getFirebasePublicConfig();
@@ -14,8 +14,31 @@ const db = getDatabase(app);
 
 const ADMIN_EMAILS = ["admin@q8sportcar.com", "summit_kw@hotmail.com"];
 
-type AppUser = { uid: string; name?: string; email?: string; phone?: string; whatsapp?: string; isAdmin?: boolean; isSuperAdmin?: boolean; disabled?: boolean; deletedAt?: any; createdAt?: any };
+type AppUser = {
+  uid: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  whatsapp?: string;
+  isAdmin?: boolean;
+  isSuperAdmin?: boolean;
+  disabled?: boolean;
+  deletedAt?: number;
+  createdAt?: number;
+};
 type Listing = { id: string; type: "car" | "part" | "request"; title: string; status: string; userName?: string; userId?: string; price?: number; createdAt?: number };
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null;
+}
+
+function getString(v: unknown): string | undefined {
+  return typeof v === "string" ? v : undefined;
+}
+
+function getNumber(v: unknown): number | undefined {
+  return typeof v === "number" ? v : undefined;
+}
 
 export default function AdminPage() {
   const [fbUser, setFbUser] = useState<FBUser | null>(null);
@@ -33,17 +56,27 @@ export default function AdminPage() {
   useEffect(() => {
     if (!isAdmin) return;
 
-    const parseListing = (snap: any, type: "car" | "part" | "request"): Listing[] => {
-      if (!snap.val()) return [];
-      return Object.entries(snap.val()).map(([id, data]: any) => ({
-        id, type,
-        title: typeof data.title === "string" ? data.title : data.title?.ar || "بدون عنوان",
-        status: data.status || (type === "request" ? "open" : "active"),
-        userName: data.userName,
-        userId: data.userId,
-        price: data.price,
-        createdAt: data.createdAt,
-      }));
+    const parseListing = (snap: DataSnapshot, type: "car" | "part" | "request"): Listing[] => {
+      const value = snap.val();
+      if (!isRecord(value)) return [];
+
+      return Object.entries(value).flatMap(([id, raw]) => {
+        if (!isRecord(raw)) return [];
+
+        const titleValue = raw.title;
+        const title =
+          getString(titleValue) ||
+          (isRecord(titleValue) ? getString(titleValue.ar) : undefined) ||
+          "بدون عنوان";
+
+        const status = (getString(raw.status) || (type === "request" ? "open" : "active")) as string;
+        const userName = getString(raw.userName);
+        const userId = getString(raw.userId);
+        const price = getNumber(raw.price);
+        const createdAt = getNumber(raw.createdAt);
+
+        return [{ id, type, title, status, userName, userId, price, createdAt }];
+      });
     };
 
     const unsubs: (() => void)[] = [];
@@ -53,8 +86,26 @@ export default function AdminPage() {
     unsubs.push(onValue(ref(db, "parts"), (snap) => { allParts = parseListing(snap, "part"); setListings([...allCars, ...allParts, ...allRequests].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))); }));
     unsubs.push(onValue(ref(db, "requests"), (snap) => { allRequests = parseListing(snap, "request"); setListings([...allCars, ...allParts, ...allRequests].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))); }));
     unsubs.push(onValue(ref(db, "users"), (snap) => {
-      if (!snap.val()) return;
-      setUsers(Object.entries(snap.val()).map(([uid, data]: any) => ({ uid, ...data })));
+      const value = snap.val();
+      if (!isRecord(value)) return;
+      setUsers(
+        Object.entries(value).flatMap(([uid, raw]) => {
+          if (!isRecord(raw)) return [];
+          const u: AppUser = {
+            uid,
+            name: getString(raw.name),
+            email: getString(raw.email),
+            phone: getString(raw.phone),
+            whatsapp: getString(raw.whatsapp),
+            isAdmin: raw.isAdmin === true,
+            isSuperAdmin: raw.isSuperAdmin === true,
+            disabled: raw.disabled === true,
+            deletedAt: getNumber(raw.deletedAt),
+            createdAt: getNumber(raw.createdAt),
+          };
+          return [u];
+        })
+      );
     }));
 
     return () => unsubs.forEach((u) => u());
@@ -90,11 +141,13 @@ export default function AdminPage() {
     const nextStatus = item.type === "request"
       ? (item.status === "open" ? "closed" : "open")
       : (item.status === "sold" ? "active" : "sold");
+    // eslint-disable-next-line react-hooks/purity
     await update(ref(db, `${path}/${item.id}`), { status: nextStatus, updatedAt: Date.now() });
   };
 
   const handleToggleAdmin = async (u: AppUser) => {
     if (u.isSuperAdmin) return;
+    // eslint-disable-next-line react-hooks/purity
     await update(ref(db, `users/${u.uid}`), { isAdmin: !u.isAdmin, updatedAt: Date.now() });
   };
 

@@ -6,6 +6,9 @@ import { absoluteUrl, siteConfig } from "@/lib/site";
 export default async function Home() {
   const { carListings, partListings, wantedListings } = await loadMarketData();
 
+  const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.q8sportcar.app';
+  const APP_STORE_URL = 'https://apps.apple.com/us/app/q8sportapp/id6757956229';
+
   const structuredData = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -51,6 +54,29 @@ export default async function Home() {
             <Link href="/parts" className="rounded-xl border border-metal-border bg-metal px-8 py-4 text-sm font-bold text-foreground transition hover:bg-panel-soft">
               ⚙️  قطع الغيار
             </Link>
+          </div>
+
+          {/* App download */}
+          <div className="mt-8 flex flex-col items-center gap-3 animate-fade-up-delay-2">
+            <div className="text-xs font-black text-sand">حمّل التطبيق وابدأ الآن</div>
+            <div className="flex flex-wrap justify-center gap-3">
+              <a
+                href={APP_STORE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-xl bg-brand px-6 py-3 text-sm font-black text-white transition hover:bg-brand-dark"
+              >
+                 App Store
+              </a>
+              <a
+                href={PLAY_STORE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-xl border border-metal-border bg-metal px-6 py-3 text-sm font-bold text-foreground transition hover:bg-panel-soft"
+              >
+                ▶ Google Play
+              </a>
+            </div>
           </div>
         </div>
       </section>

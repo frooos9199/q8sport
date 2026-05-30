@@ -13,6 +13,10 @@ export const metadata: Metadata = {
   applicationName: siteConfig.name,
   title: { default: siteConfig.name, template: `%s | ${siteConfig.name}` },
   description: siteConfig.description,
+  other: {
+    // Shows the iOS Smart App Banner in Safari
+    'apple-itunes-app': 'app-id=6757956229',
+  },
   icons: {
     icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }, { url: '/favicon.ico' }],
     apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
@@ -42,6 +46,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 }
 
 function Footer() {
+  const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.q8sportcar.app';
+  const APP_STORE_URL = 'https://apps.apple.com/us/app/q8sportapp/id6757956229';
+
   return (
     <footer className="border-t border-[var(--metal-border)] bg-[var(--panel)]">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-5 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-8">
@@ -52,6 +59,26 @@ function Footer() {
           </div>
           <p className="mt-2 text-sm text-[var(--sand)]">منصة كويتية لسيارات السبورت وقطع الغيار</p>
         </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <a
+            href={APP_STORE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-xl border border-[var(--metal-border)] bg-[var(--metal)] px-4 py-2.5 text-sm font-bold text-[var(--foreground)] transition hover:bg-[var(--panel-soft)]"
+          >
+             App Store
+          </a>
+          <a
+            href={PLAY_STORE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-xl border border-[var(--metal-border)] bg-[var(--metal)] px-4 py-2.5 text-sm font-bold text-[var(--foreground)] transition hover:bg-[var(--panel-soft)]"
+          >
+            ▶ Google Play
+          </a>
+        </div>
+
         <div className="flex flex-wrap gap-6 text-sm text-[var(--sand)]">
           <Link href="/market" className="transition hover:text-[var(--foreground)]">السوق</Link>
           <Link href="/sell" className="transition hover:text-[var(--foreground)]">انشر إعلان</Link>

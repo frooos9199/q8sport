@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
+import { Platform, Text, View, StyleSheet, TouchableOpacity } from 'react-native';
 import { useAuth } from '../hooks/useAuth';
 import { colors } from '../lib/theme';
 import { t } from '../i18n';
@@ -198,6 +198,10 @@ function TabIcon({ icon, focused }: { icon: string; focused: boolean }) {
 export default function AppNavigator() {
   const insets = useSafeAreaInsets();
   const { user, loading } = useAuth();
+  const tabBarBottomPad = Math.max(
+    insets.bottom,
+    Platform.OS === 'android' ? 24 : 10,
+  );
   const [showIntro, setShowIntro] = React.useState(true);
   const [showLaunchNotice, setShowLaunchNotice] = React.useState(false);
   const [launchNoticeReady, setLaunchNoticeReady] = React.useState(false);
@@ -266,8 +270,8 @@ export default function AppNavigator() {
           backgroundColor: colors.dark,
           borderTopColor: colors.metalBorder,
           borderTopWidth: 1,
-          height: 66 + Math.max(insets.bottom, 10),
-          paddingBottom: Math.max(insets.bottom, 10),
+          height: 66 + tabBarBottomPad,
+          paddingBottom: tabBarBottomPad,
           paddingTop: 10,
           overflow: 'visible',
         },
