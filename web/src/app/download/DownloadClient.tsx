@@ -10,6 +10,32 @@ type Props = {
 
 const REDIRECT_DELAY_MS = 1000;
 
+function AppleIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path d="M16.7 13.2c0 3.6 3.1 4.8 3.2 4.9-.1.3-.5 1.8-1.6 3.6-1 1.6-2.1 3.1-3.7 3.1-1.6 0-2-.9-3.8-.9-1.7 0-2.3.9-3.8.9-1.6 0-2.7-1.5-3.8-3.1-2.1-3.1-3.7-8.8-1.5-12.7 1.1-1.9 3.1-3.1 5.2-3.1 1.6 0 3.1 1.1 3.8 1.1.7 0 2.4-1.3 4.2-1.1.8 0 3.1.3 4.6 2.4-.1.1-2.7 1.6-2.7 4.9ZM14.6 4.3c.8-1 1.4-2.3 1.2-3.7-1.2.1-2.7.8-3.6 1.8-.8.9-1.5 2.3-1.2 3.6 1.3.1 2.7-.7 3.6-1.7Z" />
+    </svg>
+  );
+}
+
+function GooglePlayIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path d="M3.6 2.7c-.4.4-.6 1-.6 1.7v15.2c0 .7.2 1.3.6 1.7l10-10L3.6 2.7Zm12 9.2 2.5-2.5-11-6.2 8.5 8.7Zm0 .2-8.5 8.7 11-6.2-2.5-2.5Zm3.1-3.6-2.8 2.8 2.8 2.8 2.2-1.3c.8-.5 1.3-1.3 1.3-2.1 0-.9-.5-1.7-1.3-2.1l-2.2-1.3Z" />
+    </svg>
+  );
+}
+
 export default function DownloadClient({ device, appStoreUrl, playStoreUrl }: Props) {
   const targetUrl = useMemo(() => {
     if (device === "ios") return appStoreUrl;
@@ -46,14 +72,16 @@ export default function DownloadClient({ device, appStoreUrl, playStoreUrl }: Pr
         <div className="mt-8 grid gap-3 sm:grid-cols-2">
           <a
             href={appStoreUrl}
-            className="flex items-center justify-center rounded-xl bg-brand px-6 py-4 text-sm font-black text-white transition hover:bg-brand-dark"
+            className="flex items-center justify-center gap-2 rounded-xl bg-brand px-6 py-4 text-sm font-black text-white transition hover:bg-brand-dark"
           >
+            <AppleIcon className="h-5 w-5" />
             Download on App Store
           </a>
           <a
             href={playStoreUrl}
-            className="flex items-center justify-center rounded-xl border border-metal-border bg-metal px-6 py-4 text-sm font-bold text-foreground transition hover:bg-panel-soft"
+            className="flex items-center justify-center gap-2 rounded-xl border border-metal-border bg-metal px-6 py-4 text-sm font-bold text-foreground transition hover:bg-panel-soft"
           >
+            <GooglePlayIcon className="h-5 w-5" />
             Get it on Google Play
           </a>
         </div>
