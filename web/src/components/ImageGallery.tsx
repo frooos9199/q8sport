@@ -21,6 +21,11 @@ export default function ImageGallery({ images, title }: { images: string[]; titl
         {/* Main Image - clickable */}
         <button onClick={() => setLightbox(true)} className="relative h-72 w-full overflow-hidden rounded-2xl border border-[var(--metal-border)] cursor-zoom-in sm:h-80">
           <Image src={images[active]} alt={`${title} - ${active + 1}`} fill className="object-cover transition-all duration-300" unoptimized />
+
+          <div className="absolute bottom-3 right-3 rounded-full bg-black/50 px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white backdrop-blur-sm">
+            Q8SPORTCAR.COM
+          </div>
+
           {images.length > 1 && (
             <div className="absolute bottom-3 left-3 rounded-full bg-black/70 px-3 py-1.5 text-xs font-bold text-white backdrop-blur-sm">
               {active + 1} / {images.length}
@@ -43,6 +48,9 @@ export default function ImageGallery({ images, title }: { images: string[]; titl
                 }`}
               >
                 <Image src={img} alt={`${title} ${i + 1}`} fill className="object-cover" unoptimized />
+                <div className="absolute bottom-1.5 right-1.5 rounded-full bg-black/45 px-2 py-0.5 text-[9px] font-extrabold tracking-wide text-white backdrop-blur-sm">
+                  Q8SPORTCAR.COM
+                </div>
               </button>
             ))}
           </div>
@@ -78,6 +86,10 @@ export default function ImageGallery({ images, title }: { images: string[]; titl
           {/* Image */}
           <div className="relative h-[85vh] w-[90vw] max-w-5xl" onClick={(e) => e.stopPropagation()}>
             <Image src={images[active]} alt={title} fill className="object-contain" unoptimized />
+
+            <div className="absolute bottom-5 right-5 rounded-full bg-black/50 px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white backdrop-blur-sm">
+              Q8SPORTCAR.COM
+            </div>
           </div>
 
           {/* Counter */}

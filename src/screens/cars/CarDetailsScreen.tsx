@@ -272,15 +272,20 @@ export default function CarDetailsScreen({ route, navigation }: any) {
             <View style={s.closeBtnBg}><Text style={s.closeText}>✕</Text></View>
           </TouchableOpacity>
           {activeOriginalUrl ? (
-            <FastImage
-              source={{
-                uri: activeOriginalUrl,
-                cache: FastImage.cacheControl.immutable,
-                priority: FastImage.priority.high,
-              }}
-              style={s.lightboxImg}
-              resizeMode={FastImage.resizeMode.contain}
-            />
+            <View style={s.lightboxImgWrap}>
+              <FastImage
+                source={{
+                  uri: activeOriginalUrl,
+                  cache: FastImage.cacheControl.immutable,
+                  priority: FastImage.priority.high,
+                }}
+                style={s.lightboxImg}
+                resizeMode={FastImage.resizeMode.contain}
+              />
+              <View style={s.lightboxWatermark} pointerEvents="none">
+                <Text style={s.lightboxWatermarkText}>Q8SPORTCAR.COM</Text>
+              </View>
+            </View>
           ) : null}
           {car.images && car.images.length > 1 && (
             <View style={[s.lightboxNav, { bottom: insets.bottom + 20 }]}>
@@ -389,7 +394,18 @@ const s = StyleSheet.create({
   closeBtn: { position: 'absolute', right: 20, zIndex: 10 },
   closeBtnBg: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
   closeText: { color: colors.white, fontSize: 20 },
+  lightboxImgWrap: { width: width, height: width },
   lightboxImg: { width: width, height: width },
+  lightboxWatermark: {
+    position: 'absolute',
+    left: 14,
+    bottom: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: radius.full,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  lightboxWatermarkText: { color: colors.white, fontSize: 12, fontWeight: '900', letterSpacing: 0.4, opacity: 0.9 },
   lightboxNav: { position: 'absolute', flexDirection: 'row', alignItems: 'center', gap: 20 },
   navBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
   navText: { color: colors.white, fontSize: 20 },
