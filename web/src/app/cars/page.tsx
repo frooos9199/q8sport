@@ -66,7 +66,9 @@ export default async function CarsPage() {
                   <>
                     <Image src={car.images[0]} alt={car.title} fill className="object-cover" unoptimized />
                     <div className="absolute bottom-3 right-3 rounded-full bg-black/50 px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white backdrop-blur-sm">
-                      Q8SPORTCAR.COM
+                      <span className="text-brand">Q8</span>
+                      SPORTCAR
+                      <span className="text-brand">.COM</span>
                     </div>
                   </>
                 ) : (

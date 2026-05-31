@@ -23,7 +23,9 @@ export default function ImageGallery({ images, title }: { images: string[]; titl
           <Image src={images[active]} alt={`${title} - ${active + 1}`} fill className="object-cover transition-all duration-300" unoptimized />
 
           <div className="absolute bottom-3 right-3 rounded-full bg-black/50 px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white backdrop-blur-sm">
-            Q8SPORTCAR.COM
+            <span className="text-brand">Q8</span>
+            SPORTCAR
+            <span className="text-brand">.COM</span>
           </div>
 
           {images.length > 1 && (
@@ -49,7 +51,9 @@ export default function ImageGallery({ images, title }: { images: string[]; titl
               >
                 <Image src={img} alt={`${title} ${i + 1}`} fill className="object-cover" unoptimized />
                 <div className="absolute bottom-1.5 right-1.5 rounded-full bg-black/45 px-2 py-0.5 text-[9px] font-extrabold tracking-wide text-white backdrop-blur-sm">
-                  Q8SPORTCAR.COM
+                  <span className="text-brand">Q8</span>
+                  SPORTCAR
+                  <span className="text-brand">.COM</span>
                 </div>
               </button>
             ))}
@@ -88,7 +92,9 @@ export default function ImageGallery({ images, title }: { images: string[]; titl
             <Image src={images[active]} alt={title} fill className="object-contain" unoptimized />
 
             <div className="absolute bottom-5 right-5 rounded-full bg-black/50 px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white backdrop-blur-sm">
-              Q8SPORTCAR.COM
+              <span className="text-brand">Q8</span>
+              SPORTCAR
+              <span className="text-brand">.COM</span>
             </div>
           </div>
 

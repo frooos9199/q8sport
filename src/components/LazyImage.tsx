@@ -13,6 +13,8 @@ interface Props {
   watermarkText?: string;
 }
 
+const DEFAULT_WATERMARK_TEXT = 'Q8SPORTCAR.COM';
+
 export default function LazyImage({
   uri,
   style,
@@ -69,7 +71,15 @@ export default function LazyImage({
 
       {showWatermark ? (
         <View style={s.watermark} pointerEvents="none">
-          <Text style={s.watermarkText}>{watermarkText}</Text>
+          {watermarkText?.trim().toUpperCase() === DEFAULT_WATERMARK_TEXT ? (
+            <Text style={s.watermarkText}>
+              <Text style={s.watermarkBrand}>Q8</Text>
+              SPORTCAR
+              <Text style={s.watermarkBrand}>.COM</Text>
+            </Text>
+          ) : (
+            <Text style={s.watermarkText}>{watermarkText}</Text>
+          )}
         </View>
       ) : null}
     </View>
@@ -99,5 +109,8 @@ const s = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 0.4,
     opacity: 0.85,
+  },
+  watermarkBrand: {
+    color: colors.primary,
   },
 });

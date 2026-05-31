@@ -283,7 +283,11 @@ export default function CarDetailsScreen({ route, navigation }: any) {
                 resizeMode={FastImage.resizeMode.contain}
               />
               <View style={s.lightboxWatermark} pointerEvents="none">
-                <Text style={s.lightboxWatermarkText}>Q8SPORTCAR.COM</Text>
+                <Text style={s.lightboxWatermarkText}>
+                  <Text style={s.lightboxWatermarkBrand}>Q8</Text>
+                  SPORTCAR
+                  <Text style={s.lightboxWatermarkBrand}>.COM</Text>
+                </Text>
               </View>
             </View>
           ) : null}
@@ -406,6 +410,7 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.45)',
   },
   lightboxWatermarkText: { color: colors.white, fontSize: 12, fontWeight: '900', letterSpacing: 0.4, opacity: 0.9 },
+  lightboxWatermarkBrand: { color: colors.primary },
   lightboxNav: { position: 'absolute', flexDirection: 'row', alignItems: 'center', gap: 20 },
   navBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
   navText: { color: colors.white, fontSize: 20 },

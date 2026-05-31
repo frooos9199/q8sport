@@ -110,7 +110,9 @@ function Section({ title, items }: { title: string; items: Array<{ href: string;
               <div className="relative mb-4">
                 <Image src={item.image} alt={item.title} width={960} height={640} className="h-44 w-full rounded-[1.25rem] object-cover" unoptimized />
                 <div className="absolute bottom-3 right-3 rounded-full bg-black/50 px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white backdrop-blur-sm">
-                  Q8SPORTCAR.COM
+                  <span className="text-brand">Q8</span>
+                  SPORTCAR
+                  <span className="text-brand">.COM</span>
                 </div>
               </div>
             ) : null}
