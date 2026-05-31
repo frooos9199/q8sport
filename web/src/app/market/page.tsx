@@ -166,7 +166,14 @@ function StatCard({ label, value }: { label: string; value: string }) {
 
 function ListingMedia({ image, title, tone }: { image?: string; title: string; tone: "brand" | "sand" }) {
   if (image) {
-    return <Image src={image} alt={title} width={960} height={640} className="mb-5 h-52 w-full rounded-[1.25rem] object-cover" unoptimized />;
+    return (
+      <div className="relative mb-5">
+        <Image src={image} alt={title} width={960} height={640} className="h-52 w-full rounded-[1.25rem] object-cover" unoptimized />
+        <div className="absolute bottom-3 right-3 rounded-full bg-black/50 px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white backdrop-blur-sm">
+          Q8SPORTCAR.COM
+        </div>
+      </div>
+    );
   }
 
   const accent = tone === "brand" ? "from-brand/30" : "from-sand/20";

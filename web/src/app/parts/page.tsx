@@ -66,7 +66,12 @@ export default async function PartsPage() {
               <Link key={part.slug} href={`/parts/${part.slug}`} className="group rounded-2xl border border-metal-border bg-panel overflow-hidden transition hover:-translate-y-1 hover:border-brand/30">
                 <div className="relative h-40 bg-metal">
                   {part.images[0] ? (
-                    <Image src={part.images[0]} alt={part.title} fill className="object-cover" unoptimized />
+                    <>
+                      <Image src={part.images[0]} alt={part.title} fill className="object-cover" unoptimized />
+                      <div className="absolute bottom-3 right-3 rounded-full bg-black/50 px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white backdrop-blur-sm">
+                        Q8SPORTCAR.COM
+                      </div>
+                    </>
                   ) : (
                     <div className="flex h-full items-center justify-center text-3xl">⚙️</div>
                   )}

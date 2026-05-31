@@ -106,7 +106,14 @@ function Section({ title, items }: { title: string; items: Array<{ href: string;
       <div className="grid gap-4 lg:grid-cols-3">
         {items.map((item) => (
           <Link key={item.href} href={item.href} className="rounded-[1.5rem] border border-white/8 bg-panel p-5 transition hover:-translate-y-0.5 hover:border-brand/30">
-            {item.image ? <Image src={item.image} alt={item.title} width={960} height={640} className="mb-4 h-44 w-full rounded-[1.25rem] object-cover" unoptimized /> : null}
+            {item.image ? (
+              <div className="relative mb-4">
+                <Image src={item.image} alt={item.title} width={960} height={640} className="h-44 w-full rounded-[1.25rem] object-cover" unoptimized />
+                <div className="absolute bottom-3 right-3 rounded-full bg-black/50 px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white backdrop-blur-sm">
+                  Q8SPORTCAR.COM
+                </div>
+              </div>
+            ) : null}
             <h3 className="text-xl font-black text-foreground">{item.title}</h3>
             <p className="mt-3 text-sm text-zinc-400">{item.meta}</p>
             <p className="mt-5 font-black text-brand">{item.price}</p>
