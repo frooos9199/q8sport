@@ -97,12 +97,12 @@ export default async function MarketPage() {
       </section>
 
       <Section title="السيارات" eyebrow="Cars">
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="grid gap-4 min-[380px]:grid-cols-2 lg:grid-cols-3">
           {carListings.map((car) => (
             <Link
               key={car.slug}
               href={`/cars/${car.slug}`}
-              className={`rounded-[1.5rem] bg-panel p-5 transition hover:-translate-y-0.5 hover:border-brand/30 ${car.featuredAt ? "border-2 border-gold" : "border border-white/8"}`}
+              className={`rounded-[1.5rem] bg-panel p-4 transition hover:-translate-y-0.5 hover:border-brand/30 sm:p-5 ${car.featuredAt ? "border-2 border-gold" : "border border-white/8"}`}
             >
               <ListingMedia title={car.title} image={car.images[0]} tone="brand" featured={Boolean(car.featuredAt)} />
               <div className="flex items-center justify-between gap-3">
@@ -122,12 +122,12 @@ export default async function MarketPage() {
       </Section>
 
       <Section title="قطع الغيار" eyebrow="Parts">
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="grid gap-4 min-[380px]:grid-cols-2 lg:grid-cols-3">
           {partListings.map((part) => (
             <Link
               key={part.slug}
               href={`/parts/${part.slug}`}
-              className={`rounded-[1.5rem] bg-panel p-5 transition hover:-translate-y-0.5 hover:border-brand/30 ${part.featuredAt ? "border-2 border-gold" : "border border-white/8"}`}
+              className={`rounded-[1.5rem] bg-panel p-4 transition hover:-translate-y-0.5 hover:border-brand/30 sm:p-5 ${part.featuredAt ? "border-2 border-gold" : "border border-white/8"}`}
             >
               <ListingMedia title={part.title} image={part.images[0]} tone="sand" featured={Boolean(part.featuredAt)} />
               <p className="text-xs font-bold uppercase tracking-[0.25em] text-sand">{part.category}</p>
@@ -145,7 +145,7 @@ export default async function MarketPage() {
       </Section>
 
       <Section title="المطلوب الآن" eyebrow="Wanted">
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="grid gap-4 min-[380px]:grid-cols-2 lg:grid-cols-3">
           {wantedListings.map((wanted) => (
             <Link key={wanted.slug} href={`/wanted/${wanted.slug}`} className="rounded-[1.5rem] border border-mint/20 bg-[linear-gradient(180deg,rgba(94,226,182,0.09),rgba(17,17,17,0.95))] p-5 transition hover:-translate-y-0.5 hover:border-mint/40">
               <div className="flex items-center justify-between gap-3">
@@ -176,13 +176,13 @@ function ListingMedia({ image, title, tone, featured }: { image?: string; title:
   if (image) {
     return (
       <div className="relative mb-5">
-        <Image src={image} alt={title} width={960} height={640} className="h-52 w-full rounded-[1.25rem] object-cover" unoptimized />
+        <Image src={image} alt={title} width={960} height={640} className="h-44 w-full rounded-[1.25rem] object-cover min-[380px]:h-36 sm:h-52" unoptimized />
         {featured ? (
           <div className="absolute top-3 left-3 rounded-full border-2 border-gold bg-background/60 px-3 py-1 text-[11px] font-black text-gold backdrop-blur-sm">
             إعلان مميز
           </div>
         ) : null}
-        <div className="absolute bottom-3 right-3 rounded-full bg-black/50 px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white backdrop-blur-sm">
+        <div className="absolute bottom-3 right-3 hidden rounded-full bg-black/50 px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white backdrop-blur-sm sm:block">
           <span className="text-brand">Q8</span>
           SPORTCAR
           <span className="text-brand">.COM</span>
@@ -194,7 +194,7 @@ function ListingMedia({ image, title, tone, featured }: { image?: string; title:
   const accent = tone === "brand" ? "from-brand/30" : "from-sand/20";
 
   return (
-    <div className={`relative mb-5 flex h-52 w-full items-end rounded-[1.25rem] border border-white/8 bg-gradient-to-br ${accent} to-black/20 p-4`}>
+    <div className={`relative mb-5 flex h-44 w-full items-end rounded-[1.25rem] border border-white/8 bg-gradient-to-br ${accent} to-black/20 p-4 min-[380px]:h-36 sm:h-52`}>
       {featured ? (
         <div className="absolute top-3 left-3 rounded-full border-2 border-gold bg-background/60 px-3 py-1 text-[11px] font-black text-gold backdrop-blur-sm">
           إعلان مميز

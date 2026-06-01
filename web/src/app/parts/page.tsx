@@ -48,7 +48,7 @@ export default async function PartsPage() {
       <div className="mb-8">
         <div className="flex items-center gap-3">
           <div className="h-2 w-2 rounded-full bg-yellow-500" />
-          <h1 className="text-3xl font-black text-foreground">⚙️ قطع الغيار</h1>
+          <h1 className="text-2xl font-black text-foreground sm:text-3xl">⚙️ قطع الغيار</h1>
         </div>
         <p className="mt-2 text-sm text-sand">{partListings.length} قطعة معروضة</p>
       </div>
@@ -59,7 +59,7 @@ export default async function PartsPage() {
           <p className="mt-4 text-sand">لا توجد قطع غيار حالياً</p>
         </div>
       ) : (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 min-[380px]:grid-cols-2 sm:gap-5 lg:grid-cols-3">
           {partListings.map((part) => {
             const seller = sellerMap.get(part.sellerSlug);
             return (
@@ -68,11 +68,11 @@ export default async function PartsPage() {
                 href={`/parts/${part.slug}`}
                 className={`group rounded-2xl bg-panel overflow-hidden transition hover:-translate-y-1 hover:border-brand/30 ${part.featuredAt ? "border-2 border-gold" : "border border-metal-border"}`}
               >
-                <div className="relative h-40 bg-metal">
+                <div className="relative h-40 bg-metal min-[380px]:h-28 sm:h-40">
                   {part.images[0] ? (
                     <>
                       <Image src={part.images[0]} alt={part.title} fill className="object-cover" unoptimized />
-                      <div className="absolute bottom-3 right-3 rounded-full bg-black/50 px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white backdrop-blur-sm">
+                      <div className="absolute bottom-3 right-3 hidden rounded-full bg-black/50 px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white backdrop-blur-sm sm:block">
                         <span className="text-brand">Q8</span>
                         SPORTCAR
                         <span className="text-brand">.COM</span>
@@ -83,26 +83,26 @@ export default async function PartsPage() {
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
                   {part.featuredAt ? (
-                    <span className="absolute top-3 left-3 rounded-full border-2 border-gold bg-background/60 px-3 py-1 text-[11px] font-black text-gold backdrop-blur-sm">
+                    <span className="absolute top-2 left-2 rounded-full border-2 border-gold bg-background/60 px-2.5 py-1 text-[10px] font-black text-gold backdrop-blur-sm sm:top-3 sm:left-3 sm:px-3 sm:text-[11px]">
                       إعلان مميز
                     </span>
                   ) : null}
                   {part.condition === "جديد" && (
-                    <span className="absolute top-3 right-3 rounded-lg bg-mint px-2.5 py-1 text-xs font-bold text-white">جديد</span>
+                    <span className="absolute top-2 right-2 rounded-lg bg-mint px-2 py-1 text-[11px] font-bold text-white sm:top-3 sm:right-3 sm:px-2.5 sm:text-xs">جديد</span>
                   )}
                   {part.condition === "مستعمل" && (
-                    <span className="absolute top-3 right-3 rounded-lg bg-yellow-500 px-2.5 py-1 text-xs font-bold text-white">مستعمل</span>
+                    <span className="absolute top-2 right-2 rounded-lg bg-yellow-500 px-2 py-1 text-[11px] font-bold text-white sm:top-3 sm:right-3 sm:px-2.5 sm:text-xs">مستعمل</span>
                   )}
                 </div>
-                <div className="p-4">
+                <div className="p-4 min-[380px]:p-3 sm:p-4">
                   <p className="text-xs font-bold text-sand">{part.category}</p>
-                  <h3 className="mt-1 font-bold text-foreground truncate">{part.title}</h3>
-                  <p className="mt-2 text-xs text-sand">{part.fitment}</p>
+                  <h3 className="mt-1 font-bold text-foreground truncate text-sm sm:text-base">{part.title}</h3>
+                  <p className="mt-2 text-xs text-sand block min-[380px]:hidden sm:block">{part.fitment}</p>
                   <div className="mt-3 flex items-center justify-between">
-                    <span className="text-lg font-black text-brand">{part.price}</span>
-                    <span className="rounded-lg bg-whatsapp/10 px-3 py-1.5 text-xs font-bold text-whatsapp">💬 تواصل</span>
+                    <span className="text-base font-black text-brand sm:text-lg">{part.price}</span>
+                    <span className="rounded-lg bg-whatsapp/10 px-2.5 py-1.5 text-[11px] font-bold text-whatsapp sm:px-3 sm:text-xs">💬 تواصل</span>
                   </div>
-                  {seller && <p className="mt-3 text-xs text-sand">{seller.name}</p>}
+                  {seller && <p className="mt-3 text-xs text-sand hidden sm:block">{seller.name}</p>}
                 </div>
               </Link>
             );

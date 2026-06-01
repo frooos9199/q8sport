@@ -31,7 +31,7 @@ export default async function WantedPage() {
       <div className="mb-8">
         <div className="flex items-center gap-3">
           <div className="h-2 w-2 rounded-full bg-mint" />
-          <h1 className="text-3xl font-black text-foreground">📋 المطلوب الآن</h1>
+          <h1 className="text-2xl font-black text-foreground sm:text-3xl">📋 المطلوب الآن</h1>
         </div>
         <p className="mt-2 text-sm text-sand">{wantedListings.length} طلب نشط</p>
       </div>
@@ -42,11 +42,11 @@ export default async function WantedPage() {
           <p className="mt-4 text-sand">لا توجد طلبات حالياً</p>
         </div>
       ) : (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 min-[380px]:grid-cols-2 sm:gap-5 lg:grid-cols-3">
           {wantedListings.map((wanted) => {
             const seller = sellerMap.get(wanted.sellerSlug);
             return (
-              <div key={wanted.slug} className="rounded-2xl border border-mint/20 bg-gradient-to-b from-mint/5 to-panel p-5 transition hover:-translate-y-1 hover:border-mint/40">
+              <div key={wanted.slug} className="rounded-2xl border border-mint/20 bg-gradient-to-b from-mint/5 to-panel p-4 transition hover:-translate-y-1 hover:border-mint/40 sm:p-5">
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1.5 rounded-full border border-mint/20 bg-mint/10 px-3 py-1.5 text-xs font-bold text-mint">
                     <span className="h-1.5 w-1.5 rounded-full bg-mint" />
@@ -54,8 +54,8 @@ export default async function WantedPage() {
                   </span>
                   <span className="text-xs font-bold text-sand">{wanted.urgency}</span>
                 </div>
-                <h3 className="mt-4 text-lg font-bold text-foreground">{wanted.title}</h3>
-                <p className="mt-2 text-sm leading-7 text-sand line-clamp-3">{wanted.summary}</p>
+                <h3 className="mt-4 text-base font-bold text-foreground sm:text-lg">{wanted.title}</h3>
+                <p className="mt-2 text-sm leading-7 text-sand line-clamp-2 sm:line-clamp-3">{wanted.summary}</p>
                 <div className="mt-4 flex items-center justify-between border-t border-metal-border pt-4">
                   <span className="text-lg font-black text-mint">{wanted.budget}</span>
                   {seller && (
@@ -63,7 +63,7 @@ export default async function WantedPage() {
                       <div className="flex h-7 w-7 items-center justify-center rounded-full bg-metal text-xs font-bold text-foreground">
                         {seller.name[0]}
                       </div>
-                      <span className="text-xs text-sand">{seller.name}</span>
+                      <span className="text-xs text-sand hidden sm:block">{seller.name}</span>
                     </div>
                   )}
                 </div>

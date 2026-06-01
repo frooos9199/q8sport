@@ -102,31 +102,31 @@ function Stat({ label, value }: { label: string; value: string }) {
 function Section({ title, items }: { title: string; items: Array<{ href: string; title: string; meta: string; price: string; image?: string; featured?: boolean }> }) {
   return (
     <section className="mt-8">
-      <h2 className="mb-5 text-3xl font-black text-foreground">{title}</h2>
-      <div className="grid gap-4 lg:grid-cols-3">
+      <h2 className="mb-5 text-2xl font-black text-foreground sm:text-3xl">{title}</h2>
+      <div className="grid gap-4 min-[380px]:grid-cols-2 lg:grid-cols-3">
         {items.map((item) => (
           <Link
             key={item.href}
             href={item.href}
-            className={`rounded-[1.5rem] bg-panel p-5 transition hover:-translate-y-0.5 hover:border-brand/30 ${item.featured ? "border-2 border-gold" : "border border-white/8"}`}
+            className={`rounded-[1.5rem] bg-panel p-4 transition hover:-translate-y-0.5 hover:border-brand/30 sm:p-5 ${item.featured ? "border-2 border-gold" : "border border-white/8"}`}
           >
             {item.image ? (
               <div className="relative mb-4">
-                <Image src={item.image} alt={item.title} width={960} height={640} className="h-44 w-full rounded-[1.25rem] object-cover" unoptimized />
+                <Image src={item.image} alt={item.title} width={960} height={640} className="h-40 w-full rounded-[1.25rem] object-cover min-[380px]:h-32 sm:h-44" unoptimized />
                 {item.featured ? (
                   <div className="absolute top-3 left-3 rounded-full border-2 border-gold bg-background/60 px-3 py-1 text-[11px] font-black text-gold backdrop-blur-sm">
                     إعلان مميز
                   </div>
                 ) : null}
-                <div className="absolute bottom-3 right-3 rounded-full bg-black/50 px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white backdrop-blur-sm">
+                <div className="absolute bottom-3 right-3 hidden rounded-full bg-black/50 px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white backdrop-blur-sm sm:block">
                   <span className="text-brand">Q8</span>
                   SPORTCAR
                   <span className="text-brand">.COM</span>
                 </div>
               </div>
             ) : null}
-            <h3 className="text-xl font-black text-foreground">{item.title}</h3>
-            <p className="mt-3 text-sm text-zinc-400">{item.meta}</p>
+            <h3 className="text-base font-black text-foreground sm:text-xl">{item.title}</h3>
+            <p className="mt-3 text-xs text-zinc-400 sm:text-sm">{item.meta}</p>
             <p className="mt-5 font-black text-brand">{item.price}</p>
           </Link>
         ))}
