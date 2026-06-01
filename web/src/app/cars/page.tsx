@@ -60,7 +60,11 @@ export default async function CarsPage() {
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {carListings.map((car) => (
-            <Link key={car.slug} href={`/cars/${car.slug}`} className="group rounded-2xl border border-metal-border bg-panel overflow-hidden transition hover:-translate-y-1 hover:border-brand/30 hover:shadow-[0_8px_30px_rgba(227,30,36,0.1)]">
+            <Link
+              key={car.slug}
+              href={`/cars/${car.slug}`}
+              className={`group rounded-2xl bg-panel overflow-hidden transition hover:-translate-y-1 hover:border-brand/30 hover:shadow-[0_8px_30px_rgba(227,30,36,0.1)] ${car.featuredAt ? "border-2 border-gold" : "border border-metal-border"}`}
+            >
               <div className="relative h-48 bg-metal">
                 {car.images[0] ? (
                   <>
@@ -75,6 +79,11 @@ export default async function CarsPage() {
                   <div className="flex h-full items-center justify-center text-4xl">🏎️</div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                {car.featuredAt ? (
+                  <span className="absolute top-3 left-3 rounded-full border-2 border-gold bg-background/60 px-3 py-1 text-[11px] font-black text-gold backdrop-blur-sm">
+                    إعلان مميز
+                  </span>
+                ) : null}
                 <span className="absolute top-3 right-3 rounded-lg bg-brand px-2.5 py-1 text-xs font-bold text-white">{car.year}</span>
                 {car.status === "مباع" && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/60">

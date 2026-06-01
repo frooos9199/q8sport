@@ -34,8 +34,21 @@ function getStatusRank(status?: string): number {
   return status === 'sold' || status === 'closed' ? 1 : 0;
 }
 
-export function sortListingsByFreshnessAndStatus<T extends { status?: string; createdAt?: any; updatedAt?: any }>(items: T[]): T[] {
+export function sortListingsByFreshnessAndStatus<T extends { status?: string; createdAt?: any; updatedAt?: any; featuredAt?: any }>(items: T[]): T[] {
   return [...items].sort((left, right) => {
+    const leftFeatured = toTimestamp((left as any)?.featuredAt);
+    const rightFeatured = toTimestamp((right as any)?.featuredAt);
+    const leftIsFeatured = leftFeatured > 0;
+    const rightIsFeatured = rightFeatured > 0;
+
+    if (leftIsFeatured !== rightIsFeatured) {
+      return leftIsFeatured ? -1 : 1;
+    }
+
+    if (leftIsFeatured && rightIsFeatured && leftFeatured !== rightFeatured) {
+      return rightFeatured - leftFeatured;
+    }
+
     const statusDiff = getStatusRank(left.status) - getStatusRank(right.status);
     if (statusDiff !== 0) {
       return statusDiff;

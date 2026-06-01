@@ -72,13 +72,29 @@ export default function LazyImage({
       {showWatermark ? (
         <View style={s.watermark} pointerEvents="none">
           {watermarkText?.trim().toUpperCase() === DEFAULT_WATERMARK_TEXT ? (
-            <Text style={s.watermarkText}>
+            <Text
+              style={s.watermarkText}
+              numberOfLines={1}
+              ellipsizeMode="clip"
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+              allowFontScaling={false}
+            >
               <Text style={s.watermarkBrand}>Q8</Text>
               SPORTCAR
               <Text style={s.watermarkBrand}>.COM</Text>
             </Text>
           ) : (
-            <Text style={s.watermarkText}>{watermarkText}</Text>
+            <Text
+              style={s.watermarkText}
+              numberOfLines={1}
+              ellipsizeMode="clip"
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+              allowFontScaling={false}
+            >
+              {watermarkText}
+            </Text>
           )}
         </View>
       ) : null}
@@ -98,16 +114,16 @@ const s = StyleSheet.create({
     position: 'absolute',
     left: 10,
     bottom: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 999,
     backgroundColor: 'rgba(0,0,0,0.45)',
   },
   watermarkText: {
     color: colors.white,
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '800',
-    letterSpacing: 0.4,
+    letterSpacing: 0.2,
     opacity: 0.85,
   },
   watermarkBrand: {

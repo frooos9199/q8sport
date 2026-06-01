@@ -99,8 +99,12 @@ export default async function MarketPage() {
       <Section title="السيارات" eyebrow="Cars">
         <div className="grid gap-4 lg:grid-cols-3">
           {carListings.map((car) => (
-            <Link key={car.slug} href={`/cars/${car.slug}`} className="rounded-[1.5rem] border border-white/8 bg-panel p-5 transition hover:-translate-y-0.5 hover:border-brand/30">
-              <ListingMedia title={car.title} image={car.images[0]} tone="brand" />
+            <Link
+              key={car.slug}
+              href={`/cars/${car.slug}`}
+              className={`rounded-[1.5rem] bg-panel p-5 transition hover:-translate-y-0.5 hover:border-brand/30 ${car.featuredAt ? "border-2 border-gold" : "border border-white/8"}`}
+            >
+              <ListingMedia title={car.title} image={car.images[0]} tone="brand" featured={Boolean(car.featuredAt)} />
               <div className="flex items-center justify-between gap-3">
                 <span className="rounded-full border border-brand/25 bg-brand/10 px-3 py-2 text-xs font-bold text-brand">{car.status}</span>
                 <span className="text-xs font-bold text-zinc-500">{car.location}</span>
@@ -120,8 +124,12 @@ export default async function MarketPage() {
       <Section title="قطع الغيار" eyebrow="Parts">
         <div className="grid gap-4 lg:grid-cols-3">
           {partListings.map((part) => (
-            <Link key={part.slug} href={`/parts/${part.slug}`} className="rounded-[1.5rem] border border-white/8 bg-panel p-5 transition hover:-translate-y-0.5 hover:border-brand/30">
-              <ListingMedia title={part.title} image={part.images[0]} tone="sand" />
+            <Link
+              key={part.slug}
+              href={`/parts/${part.slug}`}
+              className={`rounded-[1.5rem] bg-panel p-5 transition hover:-translate-y-0.5 hover:border-brand/30 ${part.featuredAt ? "border-2 border-gold" : "border border-white/8"}`}
+            >
+              <ListingMedia title={part.title} image={part.images[0]} tone="sand" featured={Boolean(part.featuredAt)} />
               <p className="text-xs font-bold uppercase tracking-[0.25em] text-sand">{part.category}</p>
               <h2 className="mt-4 text-2xl font-black text-foreground">{part.title}</h2>
               <p className="mt-3 text-sm leading-7 text-zinc-400">{part.summary}</p>
@@ -164,11 +172,16 @@ function StatCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ListingMedia({ image, title, tone }: { image?: string; title: string; tone: "brand" | "sand" }) {
+function ListingMedia({ image, title, tone, featured }: { image?: string; title: string; tone: "brand" | "sand"; featured?: boolean }) {
   if (image) {
     return (
       <div className="relative mb-5">
         <Image src={image} alt={title} width={960} height={640} className="h-52 w-full rounded-[1.25rem] object-cover" unoptimized />
+        {featured ? (
+          <div className="absolute top-3 left-3 rounded-full border-2 border-gold bg-background/60 px-3 py-1 text-[11px] font-black text-gold backdrop-blur-sm">
+            إعلان مميز
+          </div>
+        ) : null}
         <div className="absolute bottom-3 right-3 rounded-full bg-black/50 px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white backdrop-blur-sm">
           <span className="text-brand">Q8</span>
           SPORTCAR
@@ -181,7 +194,12 @@ function ListingMedia({ image, title, tone }: { image?: string; title: string; t
   const accent = tone === "brand" ? "from-brand/30" : "from-sand/20";
 
   return (
-    <div className={`mb-5 flex h-52 w-full items-end rounded-[1.25rem] border border-white/8 bg-gradient-to-br ${accent} to-black/20 p-4`}>
+    <div className={`relative mb-5 flex h-52 w-full items-end rounded-[1.25rem] border border-white/8 bg-gradient-to-br ${accent} to-black/20 p-4`}>
+      {featured ? (
+        <div className="absolute top-3 left-3 rounded-full border-2 border-gold bg-background/60 px-3 py-1 text-[11px] font-black text-gold backdrop-blur-sm">
+          إعلان مميز
+        </div>
+      ) : null}
       <span className="text-sm font-black text-foreground">{title}</span>
     </div>
   );

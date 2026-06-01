@@ -9,11 +9,12 @@ import { getDbSnapshot } from '../../lib/firebaseDatabase';
 import { formatListingPublishedAt } from '../../lib/listingDate';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { Part } from '../../types';
-import { t } from '../../i18n';
+import { getLocale, t } from '../../i18n';
 import { shareListing } from '../../lib/shareListing';
 import FastAdImage from '../../components/FastAdImage';
 import { getListingMediumUrl } from '../../lib/listingImages';
 import { toWaMeDigits } from '../../lib/gccPhone';
+import { getPublishedListingUrl } from '../../lib/publishedSite';
 
 export default function PartDetailsScreen({ route, navigation }: any) {
   const { width } = useWindowDimensions();
@@ -96,16 +97,26 @@ export default function PartDetailsScreen({ route, navigation }: any) {
   const contactSeller = () => {
     const phone = String(part.userWhatsapp || part.userPhone || '').replace(/[^0-9]/g, '');
     if (!phone) {
-      Alert.alert('تنبيه', 'لا يوجد رقم واتساب لهذا الإعلان');
+      Alert.alert(t('warningTitle'), t('noWhatsappForListingMsg'));
       return;
     }
-    Linking.openURL(`https://wa.me/${toWaMeDigits(phone)}?text=${encodeURIComponent(`مرحبا، عندي اهتمام بخصوص القطعة: ${part.title?.ar}`)}`);
+
+    const locale = getLocale();
+    const title = (locale === 'en' ? part.title?.en : part.title?.ar) || part.title?.ar || part.title?.en || '';
+    const partUrl = getPublishedListingUrl('parts', part.id);
+    const message = `${t('askAboutPartMsg', { title })}\n${partUrl}`.trim();
+
+    Linking.openURL(
+      `https://wa.me/${toWaMeDigits(phone)}?text=${encodeURIComponent(
+        message,
+      )}`,
+    );
   };
 
   const callSeller = () => {
     const phone = String(part.userPhone || part.userWhatsapp || '').replace(/[^0-9]/g, '');
     if (!phone) {
-      Alert.alert('تنبيه', 'لا يوجد رقم اتصال لهذا الإعلان');
+      Alert.alert(t('warningTitle'), t('noCallForListingMsg'));
       return;
     }
     Linking.openURL(`tel:${phone}`);
@@ -114,12 +125,12 @@ export default function PartDetailsScreen({ route, navigation }: any) {
   const callDigits = String(part.userPhone || part.userWhatsapp || '').replace(/[^0-9]/g, '');
 
   const shareMessage = [
-    `إعلان من تطبيق Q8 Sport Car`,
-    part.title?.ar || 'قطعة سبورت',
+    t('shareFromAppLine'),
+    part.title?.ar || t('listingTypePart'),
     part.category || '',
-    `السعر: ${part.price?.toLocaleString()} ${t('kwd')}`,
+    part.price != null ? t('sharePriceLine', { price: part.price?.toLocaleString(), kwd: t('kwd') }) : '',
     part.description?.ar || '',
-    'حمّل التطبيق وتابع المزيد من القطع والسيارات المميزة.',
+    t('shareDownloadAppLineParts'),
   ].filter(Boolean).join('\n');
   const heroHeight = Math.max(250, Math.min(width * 0.88, 340));
   const shareChipWidth = width < 360 ? '100%' : '47%';
@@ -166,7 +177,7 @@ export default function PartDetailsScreen({ route, navigation }: any) {
             <Text style={s.placeholderIcon}>⚙️</Text>
           </View>
         )}
-        <LinearGradient colors={['transparent', 'rgba(5,5,5,0.92)']} style={s.heroGradient} />
+        <LinearGradient colors={['transparent', 'transparent']} style={s.heroGradient} />
         <View style={s.conditionBadge}>
           <Text style={s.conditionText}>{part.condition === 'new' ? t('new') : t('used')}</Text>
         </View>
@@ -194,6 +205,7 @@ export default function PartDetailsScreen({ route, navigation }: any) {
                   style={s.galleryThumb}
                   fallback={<Text style={{ fontSize: 22 }}>⚙️</Text>}
                   placeholderColor={colors.darkCard}
+                  showWatermark={false}
                 />
               </TouchableOpacity>
             );
@@ -203,7 +215,7 @@ export default function PartDetailsScreen({ route, navigation }: any) {
 
       <View style={s.content}>
         <Text style={s.title}>{part.title?.ar}</Text>
-        <Text style={s.subtitle}>{part.category || 'قطعة سبورت'}{part.compatibleBrands?.length ? ` • ${part.compatibleBrands.join(' • ')}` : ''}</Text>
+        <Text style={s.subtitle}>{part.category || t('listingTypePart')}{part.compatibleBrands?.length ? ` • ${part.compatibleBrands.join(' • ')}` : ''}</Text>
 
         <View style={s.priceCard}>
           <Text style={s.priceLabel}>{t('price')}</Text>
@@ -212,7 +224,7 @@ export default function PartDetailsScreen({ route, navigation }: any) {
 
         <View style={s.detailsCard}>
           <View style={s.detailRow}>
-            <Text style={s.detailLabel}>الحالة</Text>
+            <Text style={s.detailLabel}>{t('condition')}</Text>
             <Text style={s.detailValue}>{part.condition === 'new' ? t('new') : t('used')}</Text>
           </View>
           <View style={s.detailRow}>
@@ -220,12 +232,12 @@ export default function PartDetailsScreen({ route, navigation }: any) {
             <Text style={s.detailValue}>{formatListingPublishedAt(part.createdAt) || '—'}</Text>
           </View>
           <View style={s.detailRow}>
-            <Text style={s.detailLabel}>الحالة في السوق</Text>
-            <Text style={s.detailValue}>{part.status === 'active' ? 'معروض الآن' : part.status === 'sold' ? t('sold') : t('pending')}</Text>
+            <Text style={s.detailLabel}>{t('marketStatus')}</Text>
+            <Text style={s.detailValue}>{part.status === 'active' ? t('available') : part.status === 'sold' ? t('sold') : t('pending')}</Text>
           </View>
           <View style={s.detailRow}>
-            <Text style={s.detailLabel}>التوافق</Text>
-            <Text style={s.detailValue}>{part.compatibleBrands?.length ? part.compatibleBrands.join(' • ') : 'غير محدد'}</Text>
+            <Text style={s.detailLabel}>{t('compatibility')}</Text>
+            <Text style={s.detailValue}>{part.compatibleBrands?.length ? part.compatibleBrands.join(' • ') : t('compatibilityUnknown')}</Text>
           </View>
         </View>
 
@@ -249,16 +261,16 @@ export default function PartDetailsScreen({ route, navigation }: any) {
             )}
           </View>
           <View style={s.sellerCopy}>
-            <Text style={s.sellerLabel}>البائع</Text>
+            <Text style={s.sellerLabel}>{t('sellerTitle')}</Text>
             <View style={s.sellerNameRow}>
               <Text style={s.sellerName}>{part.userName}</Text>
               {Number(sellerCampaign?.founderPosition || 0) > 0 ? (
                 <View style={s.tierBadge}>
-                  <Text style={s.tierBadgeText}>{sellerCampaign?.tierLabel || 'مؤسس'}</Text>
+                  <Text style={s.tierBadgeText}>{sellerCampaign?.tierLabel || t('founderLabel')}</Text>
                 </View>
               ) : null}
             </View>
-            <Text style={s.sellerHint}>تواصل مباشر بدون وسيط • اضغط لعرض الملف</Text>
+            <Text style={s.sellerHint}>{t('sellerDirectHint')}</Text>
           </View>
           <View style={s.sellerActions}>
             <TouchableOpacity style={s.sellerWhatsappBtn} activeOpacity={0.88} onPress={contactSeller}>
@@ -273,20 +285,20 @@ export default function PartDetailsScreen({ route, navigation }: any) {
         </TouchableOpacity>
 
         <View style={s.shareCard}>
-          <Text style={s.shareTitle}>شارك الإعلان</Text>
-          <Text style={s.shareSubtitle}>انشر القطعة في واتساب أو انستقرام أو تيكتوك أو سناب</Text>
+          <Text style={s.shareTitle}>{t('shareTitle')}</Text>
+          <Text style={s.shareSubtitle}>{t('shareSubtitlePart')}</Text>
           <View style={s.shareGrid}>
             <TouchableOpacity style={[s.shareChip, { width: shareChipWidth }]} activeOpacity={0.88} onPress={() => shareListing('whatsapp', shareMessage)}>
-              <Text style={s.shareChipText}>واتساب</Text>
+              <Text style={s.shareChipText}>{t('whatsappLabel')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[s.shareChip, { width: shareChipWidth }]} activeOpacity={0.88} onPress={() => shareListing('instagram', shareMessage)}>
-              <Text style={s.shareChipText}>انستقرام</Text>
+              <Text style={s.shareChipText}>{t('instagramLabel')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[s.shareChip, { width: shareChipWidth }]} activeOpacity={0.88} onPress={() => shareListing('tiktok', shareMessage)}>
-              <Text style={s.shareChipText}>تيكتوك</Text>
+              <Text style={s.shareChipText}>{t('tiktokLabel')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[s.shareChip, { width: shareChipWidth }]} activeOpacity={0.88} onPress={() => shareListing('snapchat', shareMessage)}>
-              <Text style={s.shareChipText}>سناب</Text>
+              <Text style={s.shareChipText}>{t('snapchatLabel')}</Text>
             </TouchableOpacity>
           </View>
         </View>

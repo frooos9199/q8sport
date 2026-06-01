@@ -50,6 +50,13 @@ export const en = {
     viewAll: "View All",
     from: "From",
     to: "To",
+    details: "Details",
+    langArShort: "AR",
+    langEnShort: "EN",
+    adminBadge: "ADMIN",
+    whatsappMsgCar: "Hi, I'd like to ask about:",
+    whatsappMsgPart: "Hi, I'd like to ask about:",
+    whatsappMsgRequest: "Hi, regarding your request:",
   },
   home: {
     hero: "Discover the Most Powerful Sport Cars in Kuwait",

@@ -50,6 +50,13 @@ export const ar = {
     viewAll: "عرض الكل",
     from: "من",
     to: "إلى",
+    details: "التفاصيل",
+    langArShort: "عربي",
+    langEnShort: "EN",
+    adminBadge: "أدمن",
+    whatsappMsgCar: "مرحبا، أبي أستفسر عن:",
+    whatsappMsgPart: "مرحبا، أبي أستفسر عن:",
+    whatsappMsgRequest: "مرحبا، بخصوص طلبك:",
   },
   home: {
     hero: "اكتشف أقوى سيارات السبورت في الكويت",

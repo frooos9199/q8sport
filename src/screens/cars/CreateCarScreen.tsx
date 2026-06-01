@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { push, ref as dbRef, serverTimestamp, set as dbSet, update } from '@react-native-firebase/database';
@@ -7,9 +7,10 @@ import PremiumButton from '../../components/PremiumButton';
 import GccPhoneInput from '../../components/GccPhoneInput';
 import { useAuth } from '../../hooks/useAuth';
 import { db } from '../../lib/firebase';
-import { ListingMediaItem, uploadListingMedia } from '../../lib/listingImages';
+import { deleteRemovedListingMedia, ListingMediaItem, uploadListingMedia } from '../../lib/listingImages';
 import { buildE164, parseToGccNumber, type GccCountry } from '../../lib/gccPhone';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
+import { t } from '../../i18n';
 
 const BRANDS = ['Porsche', 'BMW', 'Mercedes-Benz', 'Audi', 'Ford', 'Chevrolet', 'Dodge', 'Nissan', 'Toyota', 'Mitsubishi', 'Subaru', 'Honda', 'Other'];
 
@@ -53,9 +54,21 @@ export default function CreateCarScreen({ navigation, route }: any) {
     })),
   );
   const [submitting, setSubmitting] = useState(false);
+  const [uploadPercent, setUploadPercent] = useState<number | null>(null);
+  const submitLock = useRef(false);
   const compactScreen = width < 390;
   const screenPadding = width < 380 ? spacing.lg : spacing.xl;
   const previewSize = width < 380 ? 76 : 88;
+
+  const missingFields = useMemo(() => {
+    const missing: string[] = [];
+    if (!user) missing.push(t('login'));
+    if (title.trim().length < 3) missing.push(t('listingTitle'));
+    if (model.trim().length < 1) missing.push(t('model'));
+    if (year.trim().length !== 4) missing.push(t('year'));
+    if (price.trim().length < 1) missing.push(t('price'));
+    return missing;
+  }, [model, price, title, user, year]);
 
   const canSubmit = useMemo(() => {
     return !!user && title.trim().length >= 3 && model.trim().length >= 1 && year.trim().length === 4 && price.trim().length >= 1 && !submitting;
@@ -70,8 +83,16 @@ export default function CreateCarScreen({ navigation, route }: any) {
   };
 
   const submit = async () => {
+    if (submitLock.current || submitting) {
+      return;
+    }
+
+    if (missingFields.length) {
+      Alert.alert(t('loginErrorTitle'), t('missingRequiredFieldsMsg', { fields: missingFields.join('، ') }));
+      return;
+    }
     if (!user) {
-      Alert.alert('تسجيل الدخول', 'لازم تسجل دخول قبل النشر');
+      Alert.alert(t('login'), t('loginRequiredToPublishMsg'));
       return;
     }
 
@@ -98,11 +119,11 @@ export default function CreateCarScreen({ navigation, route }: any) {
     if (manualMode) {
       const contactDigits = digits(sellerWhatsappValue || sellerPhoneValue);
       if (sellerNameValue.length < 2) {
-        Alert.alert('خطأ', 'اكتب اسم المعلن');
+        Alert.alert(t('loginErrorTitle'), t('sellerNameRequiredMsg'));
         return;
       }
       if (!contactDigits) {
-        Alert.alert('خطأ', 'لازم تضيف رقم اتصال أو رقم واتساب');
+        Alert.alert(t('loginErrorTitle'), t('contactRequiredMsg'));
         return;
       }
     }
@@ -111,16 +132,18 @@ export default function CreateCarScreen({ navigation, route }: any) {
     const numericPrice = Number(price);
     const numericMileage = mileage.trim() ? Number(mileage) : 0;
     if (Number.isNaN(numericYear) || Number.isNaN(numericPrice) || (mileage.trim() && Number.isNaN(numericMileage))) {
-      Alert.alert('خطأ', 'السنة والسعر والكيلومترات لازم تكون أرقام صحيحة');
+      Alert.alert(t('loginErrorTitle'), t('invalidNumbersMsg'));
       return;
     }
 
+    submitLock.current = true;
+    setUploadPercent(0);
     setSubmitting(true);
     try {
       const newRef = isEditing ? dbRef(db, `cars/${initialListing.id}`) : push(dbRef(db, 'cars'));
       const carId = (isEditing ? initialListing.id : newRef.key) as string;
       const media = imageItems.length
-        ? await uploadListingMedia('cars', carId, imageItems)
+        ? await uploadListingMedia('cars', carId, imageItems, { onProgress: setUploadPercent })
         : { images: [], imageThumbs: [], imageMediums: [], imageUrl: '', mediumUrl: '', thumbnailUrl: '' };
 
       const derivedGuestId = () => {
@@ -166,12 +189,18 @@ export default function CreateCarScreen({ navigation, route }: any) {
         await dbSet(newRef, payload);
       }
 
-      Alert.alert('تم', isEditing ? 'تم تحديث إعلان السيارة' : 'نزل إعلان السيارة مباشرة في السوق');
+      if (isEditing) {
+        void deleteRemovedListingMedia(initialListing, media);
+      }
+
+      Alert.alert(t('successTitle'), isEditing ? t('carUpdatedMsg') : t('carPublishedMsg'));
       navigation.goBack();
     } catch (e: any) {
-      Alert.alert('خطأ', e?.message || 'تعذر نشر السيارة');
+      Alert.alert(t('loginErrorTitle'), e?.message || t('carPublishFailedMsg'));
     } finally {
       setSubmitting(false);
+      setUploadPercent(null);
+      submitLock.current = false;
     }
   };
 
@@ -183,24 +212,24 @@ export default function CreateCarScreen({ navigation, route }: any) {
     <KeyboardAvoidingView style={s.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={[s.content, { padding: screenPadding }]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <View style={s.heroCard}>
-          <Text style={s.heroTitle}>{isEditing ? 'حدث إعلان سيارتك' : 'سيارتك تدخل السوق فورًا'}</Text>
-          <Text style={s.heroSub}>{isEditing ? 'عدل البيانات والصور وحدث الإعلان مباشرة.' : 'اكتب أهم المعلومات، وارفع الصور، وخلك ظاهر مباشرة.'}</Text>
+          <Text style={s.heroTitle}>{isEditing ? t('createCarHeroTitleEdit') : t('createCarHeroTitleNew')}</Text>
+          <Text style={s.heroSub}>{isEditing ? t('createCarHeroSubEdit') : t('createCarHeroSubNew')}</Text>
         </View>
 
         {isAdmin ? (
           <View style={s.adminCard}>
-            <Text style={s.adminTitle}>أدوات الإدارة</Text>
-            <Text style={s.adminSub}>تقدر تنشر الإعلان لحسابك أو نيابة عن شخص ما عنده حساب.</Text>
+            <Text style={s.adminTitle}>{t('adminToolsTitle')}</Text>
+            <Text style={s.adminSub}>{t('adminCreateListingSub')}</Text>
             <View style={s.adminModeRow}>
-              <Chip label="حسابي" active={sellerMode === 'self'} onPress={() => setSellerMode('self')} />
-              <Chip label="بدون حساب" active={sellerMode === 'manual'} onPress={() => setSellerMode('manual')} />
+              <Chip label={t('sellerModeSelf')} active={sellerMode === 'self'} onPress={() => setSellerMode('self')} />
+              <Chip label={t('sellerModeGuest')} active={sellerMode === 'manual'} onPress={() => setSellerMode('manual')} />
             </View>
 
             {sellerMode === 'manual' ? (
               <View style={{ marginTop: 10 }}>
-                <Field label="اسم المعلن" value={manualSellerName} onChangeText={setManualSellerName} placeholder="مثال: أبو فهد" />
+                <Field label={t('sellerNameLabel')} value={manualSellerName} onChangeText={setManualSellerName} placeholder={t('sellerNamePlaceholder')} />
 
-                <Text style={s.label}>رقم الهاتف (اتصال)</Text>
+                <Text style={s.label}>{t('phoneCallFieldLabel')}</Text>
                 <View style={{ marginBottom: 12 }}>
                   <GccPhoneInput
                     icon="📞"
@@ -214,12 +243,12 @@ export default function CreateCarScreen({ navigation, route }: any) {
                       setManualSellerPhoneNational(value);
                       setManualSellerPhone(buildE164(manualSellerPhoneCountry, value));
                     }}
-                    placeholder="اكتب الرقم بدون فتح الخط"
+                    placeholder={t('enterNumberNoCountryCode')}
                     editable={!submitting}
                   />
                 </View>
 
-                <Text style={s.label}>رقم واتساب</Text>
+                <Text style={s.label}>{t('whatsapp')}</Text>
                 <View style={{ marginBottom: 12 }}>
                   <GccPhoneInput
                     icon="💬"
@@ -233,7 +262,7 @@ export default function CreateCarScreen({ navigation, route }: any) {
                       setManualSellerWhatsappNational(value);
                       setManualSellerWhatsapp(buildE164(manualSellerWhatsappCountry, value));
                     }}
-                    placeholder="اكتب الرقم بدون فتح الخط"
+                    placeholder={t('enterNumberNoCountryCode')}
                     editable={!submitting}
                   />
                 </View>
@@ -242,44 +271,44 @@ export default function CreateCarScreen({ navigation, route }: any) {
           </View>
         ) : null}
 
-        <Field label="عنوان الإعلان" value={title} onChangeText={setTitle} placeholder="مثال: موستنغ GT 5.0 فل كامل" />
-        <Field label="الوصف" value={description} onChangeText={setDescription} placeholder="اكتب حالة السيارة والتعديلات وأي ملاحظات" multiline />
+        <Field label={t('listingTitle')} value={title} onChangeText={setTitle} placeholder={t('listingTitlePlaceholderCar')} />
+        <Field label={t('description')} value={description} onChangeText={setDescription} placeholder={t('listingDescriptionPlaceholderCar')} multiline />
 
-        <Text style={s.label}>الماركة</Text>
+        <Text style={s.label}>{t('brand')}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.chipsRow}>
           {BRANDS.map(item => (
             <Chip key={item} label={item} active={brand === item} onPress={() => setBrand(item)} />
           ))}
         </ScrollView>
 
-        <Field label="الموديل" value={model} onChangeText={setModel} placeholder="GT-R / Panamera / M4 ..." />
+        <Field label={t('model')} value={model} onChangeText={setModel} placeholder={t('modelPlaceholder')} />
         <DualRow compact={compactScreen}>
-          <Field label="السنة" value={year} onChangeText={setYear} placeholder="2020" keyboardType="number-pad" compact={!compactScreen} />
-          <Field label="السعر" value={price} onChangeText={setPrice} placeholder="18500" keyboardType="number-pad" compact={!compactScreen} />
+          <Field label={t('year')} value={year} onChangeText={setYear} placeholder={t('yearPlaceholder')} keyboardType="number-pad" compact={!compactScreen} />
+          <Field label={t('price')} value={price} onChangeText={setPrice} placeholder={t('pricePlaceholder')} keyboardType="number-pad" compact={!compactScreen} />
         </DualRow>
         <DualRow compact={compactScreen}>
-          <Field label="الكيلومترات" value={mileage} onChangeText={setMileage} placeholder="64000" keyboardType="number-pad" compact={!compactScreen} />
-          <Field label="اللون" value={color} onChangeText={setColor} placeholder="أسود / رمادي" compact={!compactScreen} />
+          <Field label={t('mileage')} value={mileage} onChangeText={setMileage} placeholder={t('mileagePlaceholder')} keyboardType="number-pad" compact={!compactScreen} />
+          <Field label={t('color')} value={color} onChangeText={setColor} placeholder={t('colorPlaceholder')} compact={!compactScreen} />
         </DualRow>
 
-        <Text style={s.label}>ناقل الحركة</Text>
+        <Text style={s.label}>{t('transmission')}</Text>
         <View style={[s.inlineRow, compactScreen && s.inlineRowWrap] }>
-          <Chip label="أوتوماتيك" active={transmission === 'automatic'} onPress={() => setTransmission('automatic')} />
-          <Chip label="عادي" active={transmission === 'manual'} onPress={() => setTransmission('manual')} />
+          <Chip label={t('automatic')} active={transmission === 'automatic'} onPress={() => setTransmission('automatic')} />
+          <Chip label={t('manual')} active={transmission === 'manual'} onPress={() => setTransmission('manual')} />
         </View>
 
-        <Text style={s.label}>نوع الوقود</Text>
+        <Text style={s.label}>{t('fuelType')}</Text>
         <View style={s.inlineRowWrap}>
-          <Chip label="بنزين" active={fuelType === 'petrol'} onPress={() => setFuelType('petrol')} />
-          <Chip label="ديزل" active={fuelType === 'diesel'} onPress={() => setFuelType('diesel')} />
-          <Chip label="كهرباء" active={fuelType === 'electric'} onPress={() => setFuelType('electric')} />
-          <Chip label="هايبرد" active={fuelType === 'hybrid'} onPress={() => setFuelType('hybrid')} />
+          <Chip label={t('fuelPetrol')} active={fuelType === 'petrol'} onPress={() => setFuelType('petrol')} />
+          <Chip label={t('fuelDiesel')} active={fuelType === 'diesel'} onPress={() => setFuelType('diesel')} />
+          <Chip label={t('fuelElectric')} active={fuelType === 'electric'} onPress={() => setFuelType('electric')} />
+          <Chip label={t('fuelHybrid')} active={fuelType === 'hybrid'} onPress={() => setFuelType('hybrid')} />
         </View>
 
-        <Text style={s.label}>الصور</Text>
+        <Text style={s.label}>{t('images')}</Text>
         <TouchableOpacity style={s.imagePicker} activeOpacity={0.88} onPress={pickImages}>
-          <Text style={s.imagePickerText}>📸 اختر صور الإعلان</Text>
-          <Text style={s.imagePickerHint}>حتى 6 صور</Text>
+          <Text style={s.imagePickerText}>📸 {t('selectAdImages')}</Text>
+          <Text style={s.imagePickerHint}>{t('upTo6Images')}</Text>
         </TouchableOpacity>
         {!!imageItems.length && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.previewRow}>
@@ -294,7 +323,23 @@ export default function CreateCarScreen({ navigation, route }: any) {
           </ScrollView>
         )}
 
-        <PremiumButton title={submitting ? 'جاري الحفظ...' : isEditing ? 'حفظ التعديلات' : 'نشر السيارة'} onPress={submit} icon="🚀" style={{ opacity: canSubmit ? 1 : 0.65, marginTop: 8 }} />
+        <PremiumButton
+          title={
+            submitting
+              ? (uploadPercent != null ? t('uploadingWithPercent', { n: uploadPercent }) : t('savingShort'))
+              : isEditing
+                ? t('saveEdit')
+                : t('publishCarBtn')
+          }
+          onPress={submit}
+          icon="🚀"
+          disabled={!canSubmit || submitting}
+          style={{ opacity: canSubmit ? 1 : 0.65, marginTop: 8 }}
+        />
+
+        {!submitting && !canSubmit && missingFields.length ? (
+          <Text style={s.missingHint}>{t('missingRequiredFieldsMsg', { fields: missingFields.join('، ') })}</Text>
+        ) : null}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -359,4 +404,5 @@ const s = StyleSheet.create({
   previewImage: { borderRadius: radius.lg, marginRight: 10 },
   previewRemove: { position: 'absolute', top: 6, right: 6, width: 22, height: 22, borderRadius: 11, backgroundColor: 'rgba(0,0,0,0.8)', alignItems: 'center', justifyContent: 'center' },
   previewRemoveText: { color: colors.white, fontWeight: '900', fontSize: 11 },
+  missingHint: { marginTop: 10, color: colors.primary, fontWeight: '800', fontSize: 12, lineHeight: 18, opacity: 0.95 },
 });

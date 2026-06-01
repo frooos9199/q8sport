@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions, Linking, Modal, Animated, StatusBar } from 'react-native';
+import { Alert, View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions, Linking, Modal, Animated, StatusBar } from 'react-native';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
@@ -7,13 +7,14 @@ import { db } from '../../lib/firebase';
 import { ref as dbRef } from '@react-native-firebase/database';
 import { getDbSnapshot } from '../../lib/firebaseDatabase';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
-import { t } from '../../i18n';
+import { getLocale, t } from '../../i18n';
 import { Car } from '../../types';
 import { shareListing } from '../../lib/shareListing';
 import FastImage from 'react-native-fast-image';
 import FastAdImage from '../../components/FastAdImage';
 import { getListingMediumUrl, getListingOriginalUrl, getListingThumbnailUrl } from '../../lib/listingImages';
 import { toWaMeDigits } from '../../lib/gccPhone';
+import { getPublishedListingUrl } from '../../lib/publishedSite';
 
 const { width } = Dimensions.get('window');
 
@@ -95,17 +96,29 @@ export default function CarDetailsScreen({ route, navigation }: any) {
   );
 
   const openWhatsApp = () => {
-    const phone = car.userWhatsapp?.replace(/[^0-9]/g, '');
-    Linking.openURL(`https://wa.me/${toWaMeDigits(phone)}?text=${encodeURIComponent(`مرحبا، أبي أستفسر عن: ${car.title.ar} - ${car.brand} ${car.model} ${car.year}`)}`);
+    const phone = String(car.userWhatsapp || '').replace(/[^0-9]/g, '');
+    if (!phone) {
+      Alert.alert(t('warningTitle'), t('noWhatsappForListingMsg'));
+      return;
+    }
+
+    const locale = getLocale();
+    const title = (locale === 'en' ? car.title?.en : car.title?.ar) || car.title?.ar || car.title?.en || '';
+    const carUrl = getPublishedListingUrl('cars', car.id);
+    const message = `${t('askAboutCarMsg', { title, brand: car.brand, model: car.model, year: car.year })}\n${carUrl}`.trim();
+
+    Linking.openURL(
+      `https://wa.me/${toWaMeDigits(phone)}?text=${encodeURIComponent(message)}`,
+    );
   };
 
   const shareMessage = [
-    `إعلان من تطبيق Q8 Sport Car`,
+    t('shareFromAppLine'),
     `${car.title.ar}`,
     `${car.brand} ${car.model} ${car.year}`,
-    `السعر: ${car.price?.toLocaleString()} ${t('kwd')}`,
+    t('sharePriceLine', { price: car.price?.toLocaleString(), kwd: t('kwd') }),
     car.description?.ar || '',
-    'حمّل التطبيق وتابع المزيد من السيارات والقطع المميزة.',
+    t('shareDownloadAppLineCars'),
   ].filter(Boolean).join('\n');
 
   const specs = [
@@ -136,7 +149,7 @@ export default function CarDetailsScreen({ route, navigation }: any) {
               <View style={[s.mainImg, s.placeholder]}><Text style={{ fontSize: 70 }}>🏎️</Text></View>
             )}
           </TouchableOpacity>
-          <LinearGradient colors={['transparent', colors.dark]} style={s.imgGradient} />
+          <LinearGradient colors={['transparent', 'transparent']} style={s.imgGradient} />
 
           {/* Image counter */}
           {car.images && car.images.length > 1 && (
@@ -162,6 +175,7 @@ export default function CarDetailsScreen({ route, navigation }: any) {
                   uri={car.imageThumbs?.[i] || (i === 0 ? getListingThumbnailUrl(car) : undefined) || undefined}
                   style={s.thumbImg}
                   placeholderColor={colors.darkLight}
+                  showWatermark={false}
                 />
               </TouchableOpacity>
             ))}
@@ -193,7 +207,7 @@ export default function CarDetailsScreen({ route, navigation }: any) {
           </View>
 
           {/* Specs Grid */}
-          <Text style={s.specsTitle}>المواصفات</Text>
+          <Text style={s.specsTitle}>{t('specsTitle')}</Text>
           <View style={s.specsGrid}>
             {specs.map(sp => (
               <View key={sp.label} style={s.specItem}>
@@ -230,11 +244,11 @@ export default function CarDetailsScreen({ route, navigation }: any) {
                 <Text style={s.sellerName}>{car.userName}</Text>
                 {Number(sellerCampaign?.founderPosition || 0) > 0 ? (
                   <View style={s.tierBadge}>
-                    <Text style={s.tierBadgeText}>{sellerCampaign?.tierLabel || 'مؤسس'}</Text>
+                    <Text style={s.tierBadgeText}>{sellerCampaign?.tierLabel || t('founderLabel')}</Text>
                   </View>
                 ) : null}
               </View>
-              <Text style={s.sellerLabel}>المعلن • اضغط لعرض ملفه</Text>
+              <Text style={s.sellerLabel}>{t('sellerTapProfileHint')}</Text>
             </View>
             <TouchableOpacity style={s.sellerWhatsappBtn} activeOpacity={0.88} onPress={openWhatsApp}>
               <Text style={s.sellerWhatsappIcon}>💬</Text>
@@ -242,20 +256,20 @@ export default function CarDetailsScreen({ route, navigation }: any) {
           </TouchableOpacity>
 
           <View style={s.shareCard}>
-            <Text style={s.shareTitle}>شارك الإعلان</Text>
-            <Text style={s.shareSubtitle}>انشر السيارة في واتساب أو انستقرام أو تيكتوك أو سناب</Text>
+            <Text style={s.shareTitle}>{t('shareTitle')}</Text>
+            <Text style={s.shareSubtitle}>{t('shareSubtitleCar')}</Text>
             <View style={s.shareGrid}>
               <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => shareListing('whatsapp', shareMessage)}>
-                <Text style={s.shareChipText}>واتساب</Text>
+                <Text style={s.shareChipText}>{t('whatsappLabel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => shareListing('instagram', shareMessage)}>
-                <Text style={s.shareChipText}>انستقرام</Text>
+                <Text style={s.shareChipText}>{t('instagramLabel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => shareListing('tiktok', shareMessage)}>
-                <Text style={s.shareChipText}>تيكتوك</Text>
+                <Text style={s.shareChipText}>{t('tiktokLabel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => shareListing('snapchat', shareMessage)}>
-                <Text style={s.shareChipText}>سناب</Text>
+                <Text style={s.shareChipText}>{t('snapchatLabel')}</Text>
               </TouchableOpacity>
             </View>
           </View>

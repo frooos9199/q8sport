@@ -5,6 +5,7 @@ import WhatsAppButton from "@/components/ui/WhatsAppButton";
 
 export default function RequestCard({ request }: { request: Request }) {
   const { locale, t } = useLocale();
+  const requestTitle = request.title?.[locale] || request.title?.ar;
 
   return (
     <div className="card p-5">
@@ -30,7 +31,7 @@ export default function RequestCard({ request }: { request: Request }) {
 
       <div className="flex items-center justify-between">
         <span className="text-silver/50 text-sm">{request.userName}</span>
-        <WhatsAppButton phone={request.userWhatsapp} message={`مرحبا، بخصوص طلبك: ${request.title.ar}`} />
+        <WhatsAppButton phone={request.userWhatsapp} message={`${t.common.whatsappMsgRequest} ${requestTitle || ""}`} />
       </div>
     </div>
   );

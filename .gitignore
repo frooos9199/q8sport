@@ -60,6 +60,8 @@ yarn-error.log
 # Bundle artifact
 *.jsbundle
 ios/*.log
+/*.log
+android/build-bundleRelease.log
 
 # Ruby / CocoaPods
 **/Pods/

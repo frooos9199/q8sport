@@ -4,11 +4,11 @@ import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import { db } from '../lib/firebase';
-import { limitToLast, orderByChild, query, ref as dbRef } from '@react-native-firebase/database';
+import { orderByChild, query, ref as dbRef, remove } from '@react-native-firebase/database';
 import { getDbSnapshot } from '../lib/firebaseDatabase';
 import { sortListingsByFreshnessAndStatus } from '../lib/listingSort';
 import { colors, radius, shadows, spacing } from '../lib/theme';
-import { t } from '../i18n';
+import { getLocale, t } from '../i18n';
 import { BannerAd, Car, Part, Request } from '../types';
 import CarCard from '../components/CarCard';
 import { CarCardSkeleton } from '../components/Shimmer';
@@ -16,9 +16,11 @@ import LazyImage from '../components/LazyImage';
 import { fetchActiveBanners } from '../lib/bannerAds';
 import { formatListingPublishedAt } from '../lib/listingDate';
 import FastAdImage from '../components/FastAdImage';
-import { getListingThumbnailUrl } from '../lib/listingImages';
+import { collectListingMediaUrls, deleteListingMediaByUrls, getListingThumbnailUrl } from '../lib/listingImages';
 import { prefetchAdImages } from '../lib/prefetchAdImages';
 import { toWaMeDigits } from '../lib/gccPhone';
+import { useAuth } from '../hooks/useAuth';
+import { getPublishedListingUrl } from '../lib/publishedSite';
 
 const { width } = Dimensions.get('window');
 const HOME_BANNER_CARD_SPACING = 14;
@@ -27,6 +29,7 @@ const HOME_BANNER_AUTO_SLIDE_MS = 4000;
 export default function HomeScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
+  const { user } = useAuth();
   const [cars, setCars] = useState<Car[]>([]);
   const [parts, setParts] = useState<Part[]>([]);
   const [requests, setRequests] = useState<Request[]>([]);
@@ -43,6 +46,26 @@ export default function HomeScreen({ navigation }: any) {
 
   const fetchData = async () => {
     try {
+      const now = Date.now();
+      const listingTtlMs = 30 * 24 * 60 * 60 * 1000;
+      const toTs = (value: any) => {
+        if (typeof value === 'number') return value;
+        if (typeof value === 'string') {
+          const n = Number(value);
+          return Number.isFinite(n) ? n : 0;
+        }
+        return 0;
+      };
+      const isExpiredByAge = (listing: any) => {
+        const updatedAt = toTs(listing?.updatedAt);
+        const createdAt = toTs(listing?.createdAt);
+        const lastTouch = updatedAt || createdAt;
+        return lastTouch ? lastTouch <= now - listingTtlMs : false;
+      };
+      const canManageAllListings = Boolean(user?.isAdmin || user?.isSuperAdmin);
+      const canDelete = (listing: any) => canManageAllListings || String(listing?.userId || '') === String(user?.uid || '');
+      const isExpiredSold = (listing: any) => String(listing?.status || '') === 'sold' && Number(listing?.deleteAt || 0) > 0 && Number(listing.deleteAt) <= now;
+
       const carsQuery = query(dbRef(db, 'cars'), orderByChild('createdAt'));
       const partsQuery = query(dbRef(db, 'parts'), orderByChild('createdAt'));
       const requestsQuery = query(dbRef(db, 'requests'), orderByChild('createdAt'));
@@ -58,11 +81,29 @@ export default function HomeScreen({ navigation }: any) {
       partsSnap.forEach((child: any) => { partsData.push({ id: child.key, ...child.val() }); return undefined; });
       const requestsData: Request[] = [];
       requestsSnap.forEach((child: any) => { requestsData.push({ id: child.key, ...child.val() }); return undefined; });
-      const nextCars = sortListingsByFreshnessAndStatus(carsData).slice(0, 8);
-      const nextParts = sortListingsByFreshnessAndStatus(partsData).slice(0, 6);
+
+      const expiredCars = carsData.filter(c => isExpiredSold(c) && canDelete(c));
+      const expiredParts = partsData.filter(p => isExpiredSold(p) && canDelete(p));
+      if (expiredCars.length || expiredParts.length) {
+        await Promise.allSettled([
+          ...expiredCars.map(async (c: any) => {
+            try { await remove(dbRef(db, `cars/${c.id}`)); } catch { return; }
+            await deleteListingMediaByUrls(collectListingMediaUrls(c));
+          }),
+          ...expiredParts.map(async (p: any) => {
+            try { await remove(dbRef(db, `parts/${p.id}`)); } catch { return; }
+            await deleteListingMediaByUrls(collectListingMediaUrls(p));
+          }),
+        ]);
+      }
+
+      const carsVisible = carsData.filter(c => !isExpiredSold(c) && !isExpiredByAge(c));
+      const partsVisible = partsData.filter(p => !isExpiredSold(p) && !isExpiredByAge(p));
+      const nextCars = sortListingsByFreshnessAndStatus(carsVisible).slice(0, 8);
+      const nextParts = sortListingsByFreshnessAndStatus(partsVisible).slice(0, 6);
       setCars(nextCars);
       setParts(nextParts);
-      setRequests(sortListingsByFreshnessAndStatus(requestsData).slice(0, 4));
+      setRequests(sortListingsByFreshnessAndStatus(requestsData.filter(r => !isExpiredByAge(r))).slice(0, 4));
       setBanners(activeBanners);
 
       prefetchAdImages([
@@ -134,14 +175,25 @@ export default function HomeScreen({ navigation }: any) {
     return () => clearInterval(intervalId);
   }, [banners.length]);
 
-  const renderPartCard = ({ item }: { item: Part }) => (
-    <TouchableOpacity style={s.partCard} activeOpacity={0.85} onPress={() => navigation.navigate('PartDetails', { id: item.id })}>
+  const renderPartCard = ({ item }: { item: Part }) => {
+    const isFeatured = Number(item?.featuredAt || 0) > 0;
+    return (
+      <TouchableOpacity
+        style={[s.partCard, isFeatured ? s.featuredCard : null]}
+        activeOpacity={0.85}
+        onPress={() => navigation.navigate('PartDetails', { id: item.id })}
+      >
       {getListingThumbnailUrl(item) ? (
         <FastAdImage uri={getListingThumbnailUrl(item)} style={s.partImg} fallback={<Text style={{ fontSize: 30 }}>⚙️</Text>} />
       ) : (
         <View style={[s.partImg, s.placeholder]}><Text style={{ fontSize: 30 }}>⚙️</Text></View>
       )}
-      <LinearGradient colors={['transparent', 'rgba(0,0,0,0.9)']} style={s.partGradient} />
+      <LinearGradient colors={['transparent', 'transparent']} style={s.partGradient} />
+      {isFeatured ? (
+        <View pointerEvents="none" style={s.featureBadge}>
+          <Text style={s.featureBadgeText} numberOfLines={1}>{t('featuredAdLabel')}</Text>
+        </View>
+      ) : null}
       <View style={s.partOverlay}>
         <Text style={s.partTitle} numberOfLines={1}>{item.title.ar}</Text>
         <Text style={s.partPrice}>{item.price?.toLocaleString()} {t('kwd')}</Text>
@@ -152,21 +204,32 @@ export default function HomeScreen({ navigation }: any) {
       {item.condition === 'new' && (
         <View style={s.newBadge}><Text style={s.newBadgeText}>{t('new')}</Text></View>
       )}
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   const renderRequestCard = ({ item }: { item: Request }) => {
-    const catLabel = item.category === 'car' ? 'سيارة' : item.category === 'part' ? 'قطعة' : 'طلب خاص';
+    const catLabel = item.category === 'car'
+      ? t('requestCategoryCar')
+      : item.category === 'part'
+        ? t('requestCategoryPart')
+        : t('requestCategorySpecial');
     const publishedAt = formatListingPublishedAt(item.createdAt);
     return (
       <TouchableOpacity
         style={s.requestCard}
         activeOpacity={0.88}
-        onPress={() => openWhatsApp(item.userWhatsapp, `مرحبا، عندي عرض بخصوص طلبك: ${item.title?.ar}`)}
+        onPress={() => {
+          const locale = getLocale();
+          const title = (locale === 'en' ? item.title?.en : item.title?.ar) || item.title?.ar || item.title?.en || '';
+          const requestUrl = getPublishedListingUrl('wanted', item.id);
+          const message = `${t('askAboutRequestMsg', { title })}\n${requestUrl}`.trim();
+          openWhatsApp(item.userWhatsapp, message);
+        }}
       >
         <View style={s.requestTopRow}>
           <View style={s.requestStatusBadge}>
-            <Text style={s.requestStatusText}>{item.status === 'open' ? 'مطلوب الآن' : 'مغلق'}</Text>
+            <Text style={s.requestStatusText}>{item.status === 'open' ? t('requestOpenBadge') : t('closed')}</Text>
           </View>
           <Text style={s.requestCategory}>{catLabel}</Text>
         </View>
@@ -175,7 +238,7 @@ export default function HomeScreen({ navigation }: any) {
         {publishedAt ? <Text style={s.requestMeta}>{t('publishedOn')}: {publishedAt}</Text> : null}
         <View style={s.requestFooter}>
           <Text style={s.requestUser}>{item.userName}</Text>
-          <Text style={s.requestBudget}>{item.budget ? `${item.budget.toLocaleString()} ${t('kwd')}` : 'بدون ميزانية محددة'}</Text>
+          <Text style={s.requestBudget}>{item.budget ? `${item.budget.toLocaleString()} ${t('kwd')}` : t('noBudget')}</Text>
         </View>
       </TouchableOpacity>
     );
@@ -191,7 +254,7 @@ export default function HomeScreen({ navigation }: any) {
         <View style={s.heroBtns}>
           <TouchableOpacity style={s.btnSecondary} activeOpacity={0.85} onPress={() => navigation.navigate('HomeTab', { screen: 'CreateListingHub' })}>
             <View style={s.btnSecondaryInner}>
-              <Text style={s.btnSecText} numberOfLines={1} ellipsizeMode="tail">➕ نزل إعلانك</Text>
+              <Text style={s.btnSecText} numberOfLines={1} ellipsizeMode="tail">➕ {t('postYourAdBtn')}</Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -202,7 +265,7 @@ export default function HomeScreen({ navigation }: any) {
           <View style={s.sectionHeader}>
             <View style={s.sectionTitleWrap}>
               <View style={[s.sectionDot, { backgroundColor: colors.primary }]} />
-              <Text style={s.sectionTitle}>إعلانات</Text>
+              <Text style={s.sectionTitle}>{t('adsSectionTitle')}</Text>
             </View>
           </View>
 
@@ -237,7 +300,7 @@ export default function HomeScreen({ navigation }: any) {
                 onPress={() => openBannerTarget(item.targetUrl)}
                 disabled={!item.targetUrl}
               >
-                <LazyImage uri={item.imageUrl} style={s.bannerCardImage} resizeMode="cover" />
+                <LazyImage uri={item.imageUrl} style={s.bannerCardImage} resizeMode="cover" showWatermark={false} />
               </TouchableOpacity>
             )}
           />
@@ -248,7 +311,7 @@ export default function HomeScreen({ navigation }: any) {
         <View style={s.sectionHeader}>
           <View style={s.sectionTitleWrap}>
             <View style={[s.sectionDot, { backgroundColor: colors.green }]} />
-            <Text style={s.sectionTitle}>المطلوب الآن</Text>
+            <Text style={s.sectionTitle}>{t('wantedNowTitle')}</Text>
           </View>
           <TouchableOpacity style={s.viewAllBtn} onPress={() => navigation.navigate('RequestsTab')}>
             <Text style={s.viewAll}>{t('all')} ←</Text>
@@ -262,7 +325,7 @@ export default function HomeScreen({ navigation }: any) {
         ) : requests.length === 0 ? (
           <View style={s.emptyWrap}>
             <Text style={s.emptyIcon}>🔥</Text>
-            <Text style={s.emptyText}>ابدأ أول مطلوب وخلك أول من يشغل السوق</Text>
+            <Text style={s.emptyText}>{t('startFirstWantedMsg')}</Text>
           </View>
         ) : (
           <FlatList
@@ -305,7 +368,13 @@ export default function HomeScreen({ navigation }: any) {
               <CarCard
                 car={item}
                 onPress={() => navigation.navigate('CarDetails', { id: item.id })}
-                onWhatsApp={() => openWhatsApp(item.userWhatsapp, `مرحبا، أبي أستفسر عن: ${item.title.ar}`)}
+                onWhatsApp={() => {
+                  const locale = getLocale();
+                  const title = (locale === 'en' ? item.title?.en : item.title?.ar) || item.title?.ar || item.title?.en || '';
+                  const carUrl = getPublishedListingUrl('cars', item.id);
+                  const message = `${t('askAboutListingMsg', { title })}\n${carUrl}`.trim();
+                  openWhatsApp(item.userWhatsapp, message);
+                }}
               />
             )}
             keyExtractor={i => i.id}
@@ -354,12 +423,12 @@ export default function HomeScreen({ navigation }: any) {
       {/* CTA */}
       <View style={s.ctaSection}>
         <LinearGradient colors={['rgba(227,30,36,0.05)', 'transparent']} style={s.ctaGlow} />
-        <Text style={s.ctaTitle}>خلك شرارة الانتشار</Text>
-        <Text style={s.ctaSub}>انشر سيارة أو قطعة أو مطلوب، وخلك جزء من السوق اللي الناس ترجع له يوميًا</Text>
+        <Text style={s.ctaTitle}>{t('ctaTitle')}</Text>
+        <Text style={s.ctaSub}>{t('ctaSub')}</Text>
         <TouchableOpacity style={s.ctaBtn} activeOpacity={0.85} onPress={() => navigation.navigate('HomeTab', { screen: 'CreateListingHub' })}>
           <View style={s.ctaBtnGradient}>
             <LinearGradient colors={colors.gradient.primary as string[]} style={s.ctaBtnGradientFill} />
-            <Text style={s.ctaBtnText}>🚀 افتح النشر الآن</Text>
+            <Text style={s.ctaBtnText}>🚀 {t('ctaPublishNowBtn')}</Text>
           </View>
         </TouchableOpacity>
       </View>
@@ -398,6 +467,7 @@ const s = StyleSheet.create({
 
   // Parts
   partCard: { width: 155, height: 190, marginRight: 12, borderRadius: radius.lg, overflow: 'hidden', borderWidth: 1, borderColor: colors.metalBorder },
+  featuredCard: { borderColor: colors.gold, borderWidth: 2 },
   partImg: { width: '100%', height: '100%' },
   placeholder: { backgroundColor: colors.metal, justifyContent: 'center', alignItems: 'center' },
   partGradient: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 100 },
@@ -407,6 +477,20 @@ const s = StyleSheet.create({
   partMeta: { color: colors.silverLight, fontSize: 10, marginTop: 6, textAlign: 'right' },
   newBadge: { position: 'absolute', top: 8, left: 8, backgroundColor: colors.green, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.sm },
   newBadgeText: { color: colors.white, fontSize: 10, fontWeight: '700' },
+  featureBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radius.full,
+    borderWidth: 2,
+    borderColor: colors.gold,
+    backgroundColor: colors.dark,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  featureBadgeText: { fontSize: 11, fontWeight: '900', color: colors.gold },
 
   requestSkeleton: { width: width * 0.78, height: 170, borderRadius: radius.xl, backgroundColor: colors.darkCard, borderWidth: 1, borderColor: colors.metalBorder, marginRight: 12 },
   requestCard: { width: width * 0.78, backgroundColor: colors.darkCard, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.metalBorder, padding: 18, marginRight: 12, ...shadows.card },

@@ -2,6 +2,7 @@ import { Alert } from 'react-native';
 import { get } from '@react-native-firebase/database';
 
 import { firebaseDebugInfo } from './firebase';
+import { t } from '../i18n';
 
 let hasShownRealtimeDatabaseAlert = false;
 
@@ -17,14 +18,14 @@ function classifyRealtimeDatabaseError(error: unknown) {
   const technicalMessage = describeError(error).toLowerCase();
 
   if (technicalMessage.includes('permission_denied') || technicalMessage.includes('permission denied') || technicalMessage.includes('denied permission')) {
-    return 'صلاحيات قاعدة البيانات تمنع الوصول حالياً.';
+    return t('realtimeDbPermissionDeniedMsg');
   }
 
   if (technicalMessage.includes('network') || technicalMessage.includes('timeout') || technicalMessage.includes('unavailable')) {
-    return 'تعذر الاتصال بقاعدة البيانات حالياً. تأكد من الإنترنت وحاول مرة ثانية.';
+    return t('realtimeDbNetworkMsg');
   }
 
-  return 'تعذر جلب البيانات حالياً من Firebase.';
+  return t('realtimeDbGenericMsg');
 }
 
 export function buildRealtimeDatabaseErrorMessage(path: string, error: unknown) {
@@ -44,7 +45,7 @@ export function reportRealtimeDatabaseError(path: string, error: unknown, showAl
 
   if (showAlert && !hasShownRealtimeDatabaseAlert) {
     hasShownRealtimeDatabaseAlert = true;
-    Alert.alert('خطأ في البيانات', userMessage);
+    Alert.alert(t('realtimeDbErrorTitle'), userMessage);
   }
 
   return message;

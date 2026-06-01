@@ -1,18 +1,19 @@
 export type GccCountry = {
   code: 'KW' | 'SA' | 'AE' | 'QA' | 'BH' | 'OM';
   nameAr: string;
+  nameEn: string;
   flag: string;
   dialCode: string; // digits only
   nationalNumberLength: number;
 };
 
 export const GCC_COUNTRIES: readonly GccCountry[] = [
-  { code: 'KW', nameAr: 'الكويت', flag: '🇰🇼', dialCode: '965', nationalNumberLength: 8 },
-  { code: 'SA', nameAr: 'السعودية', flag: '🇸🇦', dialCode: '966', nationalNumberLength: 9 },
-  { code: 'AE', nameAr: 'الإمارات', flag: '🇦🇪', dialCode: '971', nationalNumberLength: 9 },
-  { code: 'QA', nameAr: 'قطر', flag: '🇶🇦', dialCode: '974', nationalNumberLength: 8 },
-  { code: 'BH', nameAr: 'البحرين', flag: '🇧🇭', dialCode: '973', nationalNumberLength: 8 },
-  { code: 'OM', nameAr: 'عُمان', flag: '🇴🇲', dialCode: '968', nationalNumberLength: 8 },
+  { code: 'KW', nameAr: 'الكويت', nameEn: 'Kuwait', flag: '🇰🇼', dialCode: '965', nationalNumberLength: 8 },
+  { code: 'SA', nameAr: 'السعودية', nameEn: 'Saudi Arabia', flag: '🇸🇦', dialCode: '966', nationalNumberLength: 9 },
+  { code: 'AE', nameAr: 'الإمارات', nameEn: 'United Arab Emirates', flag: '🇦🇪', dialCode: '971', nationalNumberLength: 9 },
+  { code: 'QA', nameAr: 'قطر', nameEn: 'Qatar', flag: '🇶🇦', dialCode: '974', nationalNumberLength: 8 },
+  { code: 'BH', nameAr: 'البحرين', nameEn: 'Bahrain', flag: '🇧🇭', dialCode: '973', nationalNumberLength: 8 },
+  { code: 'OM', nameAr: 'عُمان', nameEn: 'Oman', flag: '🇴🇲', dialCode: '968', nationalNumberLength: 8 },
 ] as const;
 
 export function getGccCountry(code: GccCountry['code']) {

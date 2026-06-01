@@ -2,19 +2,21 @@ import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Linking, Animated, RefreshControl } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { db } from '../../lib/firebase';
-import { orderByChild, query, ref as dbRef } from '@react-native-firebase/database';
+import { orderByChild, query, ref as dbRef, remove } from '@react-native-firebase/database';
 import { getDbSnapshot } from '../../lib/firebaseDatabase';
 import { sortListingsByFreshnessAndStatus } from '../../lib/listingSort';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
-import { t } from '../../i18n';
+import { getLocale, t } from '../../i18n';
 import { BannerAd, Part } from '../../types';
 import { fetchActiveBanners } from '../../lib/bannerAds';
 import SponsoredBannerCard from '../../components/SponsoredBannerCard';
 import { formatListingPublishedAt } from '../../lib/listingDate';
 import FastAdImage from '../../components/FastAdImage';
-import { getListingThumbnailUrl } from '../../lib/listingImages';
+import { collectListingMediaUrls, deleteListingMediaByUrls, getListingThumbnailUrl } from '../../lib/listingImages';
 import { prefetchAdImages } from '../../lib/prefetchAdImages';
 import { toWaMeDigits } from '../../lib/gccPhone';
+import { useAuth } from '../../hooks/useAuth';
+import { getPublishedListingUrl } from '../../lib/publishedSite';
 
 type PartsFeedItem =
   | { kind: 'row'; id: string; parts: Part[]; startIndex: number }
@@ -36,6 +38,7 @@ function AutoRotatingBanner({ banner }: { banner: BannerAd }) {
 }
 
 export default function PartsScreen({ navigation }: any) {
+  const { user } = useAuth();
   const [parts, setParts] = useState<Part[]>([]);
   const [banners, setBanners] = useState<BannerAd[]>([]);
   const [bannerRotationIndex, setBannerRotationIndex] = useState(0);
@@ -48,6 +51,26 @@ export default function PartsScreen({ navigation }: any) {
 
   const fetchParts = async () => {
     try {
+      const now = Date.now();
+      const listingTtlMs = 30 * 24 * 60 * 60 * 1000;
+      const toTs = (value: any) => {
+        if (typeof value === 'number') return value;
+        if (typeof value === 'string') {
+          const n = Number(value);
+          return Number.isFinite(n) ? n : 0;
+        }
+        return 0;
+      };
+      const isExpiredByAge = (listing: any) => {
+        const updatedAt = toTs(listing?.updatedAt);
+        const createdAt = toTs(listing?.createdAt);
+        const lastTouch = updatedAt || createdAt;
+        return lastTouch ? lastTouch <= now - listingTtlMs : false;
+      };
+      const canManageAllListings = Boolean(user?.isAdmin || user?.isSuperAdmin);
+      const canDelete = (listing: any) => canManageAllListings || String(listing?.userId || '') === String(user?.uid || '');
+      const isExpiredSold = (listing: any) => String(listing?.status || '') === 'sold' && Number(listing?.deleteAt || 0) > 0 && Number(listing.deleteAt) <= now;
+
       const partsQuery = query(dbRef(db, 'parts'), orderByChild('createdAt'));
       const [snap, activeBanners] = await Promise.all([
         getDbSnapshot(partsQuery, 'parts'),
@@ -55,7 +78,19 @@ export default function PartsScreen({ navigation }: any) {
       ]);
       const data: Part[] = [];
       snap.forEach((child: any) => { data.push({ id: child.key, ...child.val() }); return undefined; });
-      const sortedParts = sortListingsByFreshnessAndStatus(data);
+
+      const expired = data.filter(p => isExpiredSold(p) && canDelete(p));
+      if (expired.length) {
+        await Promise.allSettled(
+          expired.map(async (p: any) => {
+            try { await remove(dbRef(db, `parts/${p.id}`)); } catch { return; }
+            await deleteListingMediaByUrls(collectListingMediaUrls(p));
+          }),
+        );
+      }
+
+      const visible = data.filter(p => !isExpiredSold(p) && !isExpiredByAge(p));
+      const sortedParts = sortListingsByFreshnessAndStatus(visible);
       setParts(sortedParts);
       setBanners(activeBanners);
 
@@ -145,10 +180,10 @@ export default function PartsScreen({ navigation }: any) {
       {smartFilterOpen && !loading && (
         <View style={s.smartFilterCard}>
           <View style={s.smartFilterHeader}>
-            <Text style={s.smartFilterTitle}>فلتر ذكي</Text>
+            <Text style={s.smartFilterTitle}>{t('smartFilterTitle')}</Text>
             <View style={s.smartFilterHeaderActions}>
               <TouchableOpacity onPress={clearSmartFilters} activeOpacity={0.85} style={s.smartFilterActionBtn}>
-                <Text style={s.smartFilterActionText}>مسح</Text>
+                <Text style={s.smartFilterActionText}>{t('clear')}</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setSmartFilterOpen(false)} activeOpacity={0.85} style={s.smartFilterCloseBtn}>
                 <Text style={s.smartFilterCloseText}>✕</Text>
@@ -156,17 +191,17 @@ export default function PartsScreen({ navigation }: any) {
             </View>
           </View>
 
-          <Text style={s.smartFilterLabel}>الحالة</Text>
+          <Text style={s.smartFilterLabel}>{t('condition')}</Text>
           <View style={s.chipsRow}>
-            <Chip label="الكل" active={conditionFilter === 'all'} onPress={() => setConditionFilter('all')} />
+            <Chip label={t('all')} active={conditionFilter === 'all'} onPress={() => setConditionFilter('all')} />
             <Chip label={t('new')} active={conditionFilter === 'new'} onPress={() => setConditionFilter('new')} />
             <Chip label={t('used')} active={conditionFilter === 'used'} onPress={() => setConditionFilter('used')} />
           </View>
 
-          <Text style={s.smartFilterLabel}>صور</Text>
+          <Text style={s.smartFilterLabel}>{t('photos')}</Text>
           <View style={s.chipsRow}>
             <Chip
-              label={withImagesOnly ? 'مع صور ✓' : 'مع صور'}
+              label={`${t('withPhotos')}${withImagesOnly ? ' ✓' : ''}`}
               active={withImagesOnly}
               onPress={() => setWithImagesOnly(v => !v)}
             />
@@ -243,6 +278,7 @@ function AnimatedPartCard({ item, index, navigation }: any) {
   const anim = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(1)).current;
   const thumbnailUrl = getListingThumbnailUrl(item);
+  const isFeatured = Number(item?.featuredAt || 0) > 0;
 
   useEffect(() => {
     Animated.timing(anim, { toValue: 1, duration: 400, delay: index * 60, useNativeDriver: true }).start();
@@ -251,7 +287,7 @@ function AnimatedPartCard({ item, index, navigation }: any) {
   return (
     <Animated.View style={[s.cardWrap, { opacity: anim, transform: [{ scale: anim.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }) }] }]}>
       <TouchableOpacity
-        style={s.card}
+        style={[s.card, isFeatured ? s.cardFeatured : null]}
         activeOpacity={0.9}
         onPress={() => navigation.navigate('PartDetails', { id: item.id })}
       >
@@ -261,7 +297,12 @@ function AnimatedPartCard({ item, index, navigation }: any) {
           ) : (
             <View style={[s.img, s.placeholder]}><Text style={{ fontSize: 30 }}>⚙️</Text></View>
           )}
-          <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={s.imgGradient} />
+          <LinearGradient colors={['transparent', 'transparent']} style={s.imgGradient} />
+          {isFeatured ? (
+            <View pointerEvents="none" style={s.featureBadge}>
+              <Text style={s.featureBadgeText} numberOfLines={1}>{t('featuredAdLabel')}</Text>
+            </View>
+          ) : null}
           <View style={[s.condBadge, { backgroundColor: item.condition === 'new' ? colors.green : colors.yellow }]}>
             <Text style={s.condText}>{item.condition === 'new' ? t('new') : t('used')}</Text>
           </View>
@@ -274,12 +315,18 @@ function AnimatedPartCard({ item, index, navigation }: any) {
           ) : null}
           <TouchableOpacity
             style={s.waBtn}
-            onPress={() => Linking.openURL(`https://wa.me/${toWaMeDigits(String(item.userWhatsapp || ''))}?text=${encodeURIComponent(`مرحبا، أبي أستفسر عن: ${item.title?.ar}`)}`)}
+            onPress={() => {
+              const locale = getLocale();
+              const title = (locale === 'en' ? item.title?.en : item.title?.ar) || item.title?.ar || item.title?.en || '';
+              const partUrl = getPublishedListingUrl('parts', item.id);
+              const message = `${t('askAboutPartMsg', { title })}\n${partUrl}`.trim();
+              Linking.openURL(`https://wa.me/${toWaMeDigits(String(item.userWhatsapp || ''))}?text=${encodeURIComponent(message)}`);
+            }}
           >
             <View style={s.waIconWrap}>
               <Text style={s.waBtnIcon}>💬</Text>
             </View>
-            <Text style={s.waBtnText}>واتساب</Text>
+            <Text style={s.waBtnText}>{t('contactWhatsapp')}</Text>
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
@@ -341,10 +388,25 @@ const s = StyleSheet.create({
 
   cardWrap: { flex: 1 },
   card: { backgroundColor: colors.darkCard, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.metalBorder, overflow: 'hidden', marginBottom: 12, ...shadows.card },
+  cardFeatured: { borderColor: colors.gold, borderWidth: 2 },
   imgWrap: { position: 'relative' },
   img: { width: '100%', height: 130 },
   placeholder: { backgroundColor: colors.metal, justifyContent: 'center', alignItems: 'center' },
   imgGradient: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 50 },
+  featureBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radius.full,
+    borderWidth: 2,
+    borderColor: colors.gold,
+    backgroundColor: colors.dark,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  featureBadgeText: { fontSize: 11, fontWeight: '900', color: colors.gold },
   condBadge: { position: 'absolute', top: 8, left: 8, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.sm },
   condText: { color: colors.white, fontSize: 10, fontWeight: '700' },
   info: { padding: 12 },

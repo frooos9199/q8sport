@@ -3,29 +3,30 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import LinearGradient from 'react-native-linear-gradient';
 
 import { colors, radius, shadows, spacing } from '../../lib/theme';
+import { t } from '../../i18n';
 
 export default function CreateListingHubScreen({ navigation }: any) {
   const cards = [
     {
       key: 'car',
-      title: 'سيارة سبورت',
-      subtitle: 'نزّل سيارتك مع المواصفات والسعر والصور',
+      title: t('hubCarTitle'),
+      subtitle: t('hubCarSub'),
       icon: '🏎️',
       colors: colors.gradient.primary as string[],
       onPress: () => navigation.navigate('CreateCar'),
     },
     {
       key: 'part',
-      title: 'قطعة غيار',
-      subtitle: 'اعرض القطعة وحدد التوافق والحالة',
+      title: t('hubPartTitle'),
+      subtitle: t('hubPartSub'),
       icon: '⚙️',
       colors: [colors.metalLight, colors.metal],
       onPress: () => navigation.navigate('CreatePart'),
     },
     {
       key: 'request',
-      title: 'مطلوب الآن',
-      subtitle: 'اكتب المطلوب وخلك ظاهر مباشرة في السوق',
+      title: t('hubRequestTitle'),
+      subtitle: t('hubRequestSub'),
       icon: '🔥',
       colors: [colors.green, colors.whatsappDark],
       onPress: () => navigation.navigate('CreateRequest'),
@@ -35,8 +36,8 @@ export default function CreateListingHubScreen({ navigation }: any) {
   return (
     <ScrollView style={s.container} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
       <View style={s.heroCard}>
-        <Text style={s.heroTitle}>ابدأ النشر</Text>
-        <Text style={s.heroSub}>اختر نوع الإعلان وأضفه مباشرة للسوق، مع إمكانية إدارته لاحقاً من حسابك أو من لوحة الأدمن.</Text>
+        <Text style={s.heroTitle}>{t('hubHeroTitle')}</Text>
+        <Text style={s.heroSub}>{t('hubHeroSub')}</Text>
       </View>
 
       {cards.map(card => (

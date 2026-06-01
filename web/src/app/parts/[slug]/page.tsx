@@ -69,6 +69,11 @@ export default async function PartDetailPage({ params }: { params: Promise<{ slu
           <div className="rounded-2xl border border-metal-border bg-panel p-6">
             <div className="flex flex-wrap items-center gap-3 mb-4">
               <span className="rounded-lg bg-sand/10 border border-sand/20 px-3 py-1.5 text-xs font-bold text-sand">{part.category}</span>
+              {part.featuredAt ? (
+                <span className="rounded-full border-2 border-gold bg-background/60 px-3 py-1.5 text-xs font-black text-gold backdrop-blur-sm">
+                  إعلان مميز
+                </span>
+              ) : null}
               <span className={`rounded-lg px-3 py-1.5 text-xs font-bold ${part.condition === "جديد" ? "bg-mint/10 text-mint border border-mint/20" : "bg-yellow-500/10 text-yellow-500 border border-yellow-500/20"}`}>
                 {part.condition}
               </span>

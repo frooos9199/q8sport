@@ -2,20 +2,22 @@ import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Linking, Animated, RefreshControl, Platform } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { db } from '../../lib/firebase';
-import { orderByChild, query, ref as dbRef } from '@react-native-firebase/database';
+import { orderByChild, query, ref as dbRef, remove } from '@react-native-firebase/database';
 import { getDbSnapshot } from '../../lib/firebaseDatabase';
 import { sortListingsByFreshnessAndStatus } from '../../lib/listingSort';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
-import { t } from '../../i18n';
+import { getLocale, t } from '../../i18n';
 import { BannerAd, Car } from '../../types';
 import { ListCardSkeleton } from '../../components/Shimmer';
 import { fetchActiveBanners } from '../../lib/bannerAds';
 import SponsoredBannerCard from '../../components/SponsoredBannerCard';
 import { formatListingPublishedAt } from '../../lib/listingDate';
 import FastAdImage from '../../components/FastAdImage';
-import { getListingThumbnailUrl } from '../../lib/listingImages';
+import { collectListingMediaUrls, deleteListingMediaByUrls, getListingThumbnailUrl } from '../../lib/listingImages';
 import { prefetchAdImages } from '../../lib/prefetchAdImages';
 import { toWaMeDigits } from '../../lib/gccPhone';
+import { useAuth } from '../../hooks/useAuth';
+import { getPublishedListingUrl } from '../../lib/publishedSite';
 
 type CarsFeedItem =
   | { kind: 'car'; id: string; car: Car; carIndex: number }
@@ -37,6 +39,7 @@ function AutoRotatingBanner({ banner }: { banner: BannerAd }) {
 }
 
 export default function CarsScreen({ navigation }: any) {
+  const { user } = useAuth();
   const [cars, setCars] = useState<Car[]>([]);
   const [banners, setBanners] = useState<BannerAd[]>([]);
   const [bannerRotationIndex, setBannerRotationIndex] = useState(0);
@@ -51,6 +54,26 @@ export default function CarsScreen({ navigation }: any) {
 
   const fetchCars = async () => {
     try {
+      const now = Date.now();
+      const listingTtlMs = 30 * 24 * 60 * 60 * 1000;
+      const toTs = (value: any) => {
+        if (typeof value === 'number') return value;
+        if (typeof value === 'string') {
+          const n = Number(value);
+          return Number.isFinite(n) ? n : 0;
+        }
+        return 0;
+      };
+      const isExpiredByAge = (listing: any) => {
+        const updatedAt = toTs(listing?.updatedAt);
+        const createdAt = toTs(listing?.createdAt);
+        const lastTouch = updatedAt || createdAt;
+        return lastTouch ? lastTouch <= now - listingTtlMs : false;
+      };
+      const canManageAllListings = Boolean(user?.isAdmin || user?.isSuperAdmin);
+      const canDelete = (listing: any) => canManageAllListings || String(listing?.userId || '') === String(user?.uid || '');
+      const isExpiredSold = (listing: any) => String(listing?.status || '') === 'sold' && Number(listing?.deleteAt || 0) > 0 && Number(listing.deleteAt) <= now;
+
       const carsQuery = query(dbRef(db, 'cars'), orderByChild('createdAt'));
       const [snap, activeBanners] = await Promise.all([
         getDbSnapshot(carsQuery, 'cars'),
@@ -58,7 +81,19 @@ export default function CarsScreen({ navigation }: any) {
       ]);
       const data: Car[] = [];
       snap.forEach((child: any) => { data.push({ id: child.key, ...child.val() }); return undefined; });
-      const sortedCars = sortListingsByFreshnessAndStatus(data);
+
+      const expired = data.filter(c => isExpiredSold(c) && canDelete(c));
+      if (expired.length) {
+        await Promise.allSettled(
+          expired.map(async (c: any) => {
+            try { await remove(dbRef(db, `cars/${c.id}`)); } catch { return; }
+            await deleteListingMediaByUrls(collectListingMediaUrls(c));
+          }),
+        );
+      }
+
+      const visible = data.filter(c => !isExpiredSold(c) && !isExpiredByAge(c));
+      const sortedCars = sortListingsByFreshnessAndStatus(visible);
       setCars(sortedCars);
       setBanners(activeBanners);
 
@@ -179,10 +214,10 @@ export default function CarsScreen({ navigation }: any) {
       {smartFilterOpen && !loading && (
         <View style={s.smartFilterCard}>
           <View style={s.smartFilterHeader}>
-            <Text style={s.smartFilterTitle}>فلتر ذكي</Text>
+            <Text style={s.smartFilterTitle}>{t('smartFilterTitle')}</Text>
             <View style={s.smartFilterHeaderActions}>
               <TouchableOpacity onPress={clearSmartFilters} activeOpacity={0.85} style={s.smartFilterActionBtn}>
-                <Text style={s.smartFilterActionText}>مسح</Text>
+                <Text style={s.smartFilterActionText}>{t('clear')}</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setSmartFilterOpen(false)} activeOpacity={0.85} style={s.smartFilterCloseBtn}>
                 <Text style={s.smartFilterCloseText}>✕</Text>
@@ -190,16 +225,16 @@ export default function CarsScreen({ navigation }: any) {
             </View>
           </View>
 
-          <Text style={s.smartFilterLabel}>الحالة</Text>
+          <Text style={s.smartFilterLabel}>{t('condition')}</Text>
           <View style={s.chipsRow}>
-            <Chip label="الكل" active={statusFilter === 'all'} onPress={() => setStatusFilter('all')} />
-            <Chip label="المتوفر" active={statusFilter === 'available'} onPress={() => setStatusFilter('available')} />
-            <Chip label="المباع" active={statusFilter === 'sold'} onPress={() => setStatusFilter('sold')} />
+            <Chip label={t('all')} active={statusFilter === 'all'} onPress={() => setStatusFilter('all')} />
+            <Chip label={t('available')} active={statusFilter === 'available'} onPress={() => setStatusFilter('available')} />
+            <Chip label={t('sold')} active={statusFilter === 'sold'} onPress={() => setStatusFilter('sold')} />
           </View>
 
           {brandOptions.length > 0 && (
             <>
-              <Text style={s.smartFilterLabel}>الماركة</Text>
+              <Text style={s.smartFilterLabel}>{t('brand')}</Text>
               <View style={s.chipsRow}>
                 {brandOptions.map(brand => (
                   <Chip
@@ -218,7 +253,7 @@ export default function CarsScreen({ navigation }: any) {
 
           {modelOptions.length > 0 && (
             <>
-              <Text style={s.smartFilterLabel}>الموديل</Text>
+              <Text style={s.smartFilterLabel}>{t('model')}</Text>
               <View style={s.chipsRow}>
                 {modelOptions.map(model => (
                   <Chip
@@ -234,7 +269,7 @@ export default function CarsScreen({ navigation }: any) {
 
           {yearOptions.length > 0 && (
             <>
-              <Text style={s.smartFilterLabel}>السنة</Text>
+              <Text style={s.smartFilterLabel}>{t('year')}</Text>
               <View style={s.chipsRow}>
                 {yearOptions.map(year => (
                   <Chip
@@ -326,6 +361,7 @@ function AnimatedCard({ item, index, navigation, openWhatsApp }: any) {
     const thumbnailUrl = getListingThumbnailUrl(item);
   const anim = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(1)).current;
+  const isFeatured = Number(item?.featuredAt || 0) > 0;
 
   useEffect(() => {
     Animated.timing(anim, { toValue: 1, duration: 400, delay: index * 80, useNativeDriver: true }).start();
@@ -337,7 +373,7 @@ function AnimatedCard({ item, index, navigation, openWhatsApp }: any) {
   return (
     <Animated.View style={{ opacity: anim, transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }, { scale }] }}>
       <TouchableOpacity
-        style={s.card}
+        style={[s.card, isFeatured ? s.cardFeatured : null]}
         activeOpacity={0.9}
         onPress={() => navigation.navigate('CarDetails', { id: item.id })}
         onPressIn={onPressIn}
@@ -357,11 +393,21 @@ function AnimatedCard({ item, index, navigation, openWhatsApp }: any) {
               <Text style={s.cardPrice}>{item.price?.toLocaleString()}</Text>
               <Text style={s.cardKwd}>{t('kwd')}</Text>
             </View>
-            <TouchableOpacity style={s.waActionBtn} activeOpacity={0.88} onPress={() => openWhatsApp(item.userWhatsapp, `مرحبا، أبي أستفسر عن: ${item.title?.ar}`)}>
+            <TouchableOpacity
+              style={s.waActionBtn}
+              activeOpacity={0.88}
+              onPress={() => {
+                const locale = getLocale();
+                const title = (locale === 'en' ? item.title?.en : item.title?.ar) || item.title?.ar || item.title?.en || '';
+                const carUrl = getPublishedListingUrl('cars', item.id);
+                const message = `${t('askAboutListingMsg', { title })}\n${carUrl}`.trim();
+                openWhatsApp(item.userWhatsapp, message);
+              }}
+            >
               <View style={s.waIconWrap}>
                 <Text style={s.waOverlayIcon}>💬</Text>
               </View>
-              <Text style={s.waOverlayText}>واتساب</Text>
+              <Text style={s.waOverlayText}>{t('contactWhatsapp')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -371,7 +417,12 @@ function AnimatedCard({ item, index, navigation, openWhatsApp }: any) {
           ) : (
             <View style={[s.cardImg, s.placeholder]}><Text style={{ fontSize: 32 }}>🏎️</Text></View>
           )}
-          <LinearGradient colors={['transparent', 'rgba(0,0,0,0.6)']} style={s.cardImgGradient} />
+          <LinearGradient colors={['transparent', 'transparent']} style={s.cardImgGradient} />
+          {isFeatured ? (
+            <View pointerEvents="none" style={s.featureBadge}>
+              <Text style={s.featureBadgeText} numberOfLines={1}>{t('featuredAdLabel')}</Text>
+            </View>
+          ) : null}
           <View style={s.cardYearBadge}><Text style={s.cardYearText}>{item.year}</Text></View>
           {item.status === 'sold' && (
             <View style={s.soldBadge}><Text style={s.soldText}>{t('sold')}</Text></View>
@@ -435,10 +486,25 @@ const s = StyleSheet.create({
     minHeight: 124,
     ...shadows.card,
   },
+  cardFeatured: { borderColor: colors.gold, borderWidth: 2 },
   cardImgWrap: { position: 'relative', width: '39%', alignSelf: 'stretch' },
   cardImg: { width: '100%', flex: 1 },
   placeholder: { backgroundColor: colors.metal, justifyContent: 'center', alignItems: 'center' },
   cardImgGradient: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 60 },
+  featureBadge: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radius.full,
+    borderWidth: 2,
+    borderColor: colors.gold,
+    backgroundColor: colors.dark,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  featureBadgeText: { fontSize: 11, fontWeight: '900', color: colors.gold },
   cardYearBadge: { position: 'absolute', top: 12, right: 12, backgroundColor: colors.primary, paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.sm },
   cardYearText: { color: colors.white, fontSize: 11, fontWeight: '800' },
   waActionBtn: {

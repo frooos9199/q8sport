@@ -3,12 +3,13 @@ import { Alert, View, Text, FlatList, TouchableOpacity, StyleSheet, Linking, Ani
 import { formatListingPublishedAt } from '../../lib/listingDate';
 import { getListingThumbnailUrl } from '../../lib/listingImages';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
-import { t } from '../../i18n';
+import { getLocale, t } from '../../i18n';
 import { Request } from '../../types';
 import { fetchSortedListings, prefetchListingImages } from '../../lib/listingFeed';
 import FastAdImage from '../../components/FastAdImage';
 import LazyImage from '../../components/LazyImage';
 import { toWaMeDigits } from '../../lib/gccPhone';
+import { getPublishedListingUrl } from '../../lib/publishedSite';
 
 const INITIAL_VISIBLE_REQUESTS = 10;
 const INITIAL_REQUEST_IMAGE_PREFETCH = 4;
@@ -126,17 +127,21 @@ function AnimatedRequestCard({ item, index, navigation }: { item: Request; index
           activeOpacity={0.85}
           onPress={() => {
             if (whatsappDigits) {
-              Linking.openURL(`https://wa.me/${whatsappDigits}?text=${encodeURIComponent(`مرحبا، بخصوص طلبك: ${item.title?.ar}`)}`);
+              const locale = getLocale();
+              const title = (locale === 'en' ? item.title?.en : item.title?.ar) || item.title?.ar || item.title?.en || '';
+                    const requestUrl = getPublishedListingUrl('wanted', item.id);
+              const message = `${t('askAboutRequestShortMsg', { title })}\n${requestUrl}`.trim();
+              Linking.openURL(`https://wa.me/${whatsappDigits}?text=${encodeURIComponent(message)}`);
               return;
             }
             if (phoneDigits) {
               Linking.openURL(`tel:${phoneDigits}`);
               return;
             }
-            Alert.alert('تنبيه', 'لا يوجد رقم واتساب لهذا الإعلان');
+            Alert.alert(t('warningTitle'), t('noWhatsappForListingMsg'));
           }}
         >
-          <Text style={s.waBtnText}>{whatsappDigits ? '💬 واتساب' : '📞 اتصال'}</Text>
+          <Text style={s.waBtnText}>{whatsappDigits ? `💬 ${t('contactWhatsapp')}` : `📞 ${t('callLabel')}`}</Text>
         </TouchableOpacity>
       </View>
     </Animated.View>

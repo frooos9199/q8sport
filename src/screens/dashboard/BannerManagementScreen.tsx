@@ -11,6 +11,7 @@ import { db } from '../../lib/firebase';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { BannerAd, BannerPlacement } from '../../types';
 import { uploadListingMedia } from '../../lib/listingImages';
+import { t } from '../../i18n';
 
 export default function BannerManagementScreen() {
   const { width } = useWindowDimensions();
@@ -99,17 +100,17 @@ export default function BannerManagementScreen() {
 
   const saveBanner = async () => {
     if (!user?.isSuperAdmin || !user.uid) {
-      Alert.alert('غير مصرح', 'هذه الصفحة مخصصة للإدارة فقط');
+      Alert.alert(t('warningTitle'), t('bannerAdminOnlyMsg'));
       return;
     }
 
     if (!selectedImageUri) {
-      Alert.alert('تنبيه', 'اختر صورة للبانر أولاً');
+      Alert.alert(t('warningTitle'), t('bannerPickImageFirstMsg'));
       return;
     }
 
     if (!placements.length) {
-      Alert.alert('تنبيه', 'حدد مكان ظهور واحد على الأقل لهذا الإعلان');
+      Alert.alert(t('warningTitle'), t('bannerSelectPlacementMsg'));
       return;
     }
 
@@ -121,7 +122,7 @@ export default function BannerManagementScreen() {
       const bannerId = bannerRef.key;
 
       if (!bannerId) {
-        throw new Error('تعذر إنشاء معرف البانر');
+        throw new Error(t('bannerIdCreateFailedMsg'));
       }
 
       const media = await uploadListingMedia('banners', bannerId, [{ image: selectedImageUri }]);
@@ -141,9 +142,9 @@ export default function BannerManagementScreen() {
 
       resetForm();
       await loadBanners();
-      Alert.alert('تم', 'تم رفع البانر وإضافته');
+      Alert.alert(t('successTitle'), t('bannerUploadedMsg'));
     } catch (error: any) {
-      Alert.alert('خطأ', error?.message || 'تعذر حفظ البانر');
+      Alert.alert(t('loginErrorTitle'), error?.message || t('bannerSaveFailedMsg'));
     } finally {
       setSaving(false);
     }
@@ -158,17 +159,17 @@ export default function BannerManagementScreen() {
       });
       await loadBanners();
     } catch (error: any) {
-      Alert.alert('خطأ', error?.message || 'تعذر تحديث حالة البانر');
+      Alert.alert(t('loginErrorTitle'), error?.message || t('bannerToggleFailedMsg'));
     } finally {
       setBusyBannerId(null);
     }
   };
 
   const deleteBanner = async (item: BannerAd) => {
-    Alert.alert('تأكيد', `حذف البانر: ${item.title?.trim() || 'بدون عنوان'}؟`, [
-      { text: 'إلغاء', style: 'cancel' },
+    Alert.alert(t('confirmTitle'), t('bannerDeleteConfirmMsg', { title: item.title?.trim() || t('untitled') }), [
+      { text: t('cancel'), style: 'cancel' },
       {
-        text: 'حذف',
+        text: t('delete'),
         style: 'destructive',
         onPress: async () => {
           setBusyBannerId(item.id);
@@ -176,7 +177,7 @@ export default function BannerManagementScreen() {
             await remove(dbRef(db, `banners/${item.id}`));
             await loadBanners();
           } catch (error: any) {
-            Alert.alert('خطأ', error?.message || 'تعذر حذف البانر');
+            Alert.alert(t('loginErrorTitle'), error?.message || t('bannerDeleteFailedMsg'));
           } finally {
             setBusyBannerId(null);
           }
@@ -188,8 +189,8 @@ export default function BannerManagementScreen() {
   if (!user?.isSuperAdmin) {
     return (
       <View style={s.centeredState}>
-        <Text style={s.centeredTitle}>هذه الصفحة للسوبر أدمن فقط</Text>
-        <Text style={s.centeredSub}>صلاحية إدارة البانرات متاحة فقط للسوبر أدمن.</Text>
+        <Text style={s.centeredTitle}>{t('bannerAdminOnlyTitle')}</Text>
+        <Text style={s.centeredSub}>{t('bannerAdminOnlySub')}</Text>
       </View>
     );
   }
@@ -203,17 +204,17 @@ export default function BannerManagementScreen() {
     >
       <View style={s.heroCard}>
         <LinearGradient colors={['rgba(227,30,36,0.12)', 'transparent']} style={s.heroGlow} />
-        <Text style={s.heroTitle}>إدارة البانرات الإعلانية</Text>
-        <Text style={s.heroSub}>ارفع إعلان واحد ووزعه على الرئيسية أو السيارات أو القطع، مع تحكم بالأولوية ومكان الظهور.</Text>
+        <Text style={s.heroTitle}>{t('bannerHeroTitle')}</Text>
+        <Text style={s.heroSub}>{t('bannerHeroSub')}</Text>
       </View>
 
       <View style={s.formCard}>
-        <Text style={s.sectionTitle}>إضافة بانر جديد</Text>
-        <TextInput value={title} onChangeText={setTitle} placeholder="عنوان البانر - اختياري" placeholderTextColor={colors.silver + '88'} style={s.input} />
-        <TextInput value={targetUrl} onChangeText={setTargetUrl} placeholder="رابط عند الضغط - اختياري" placeholderTextColor={colors.silver + '88'} style={s.input} autoCapitalize="none" />
-        <TextInput value={sortOrder} onChangeText={setSortOrder} placeholder="ترتيب الظهور" placeholderTextColor={colors.silver + '88'} style={s.input} keyboardType="numeric" />
+        <Text style={s.sectionTitle}>{t('bannerAddNewTitle')}</Text>
+        <TextInput value={title} onChangeText={setTitle} placeholder={t('bannerTitleOptionalPlaceholder')} placeholderTextColor={colors.silver + '88'} style={s.input} />
+        <TextInput value={targetUrl} onChangeText={setTargetUrl} placeholder={t('bannerTargetUrlOptionalPlaceholder')} placeholderTextColor={colors.silver + '88'} style={s.input} autoCapitalize="none" />
+        <TextInput value={sortOrder} onChangeText={setSortOrder} placeholder={t('bannerSortOrderPlaceholder')} placeholderTextColor={colors.silver + '88'} style={s.input} keyboardType="numeric" />
 
-        <Text style={s.fieldLabel}>أماكن الظهور</Text>
+        <Text style={s.fieldLabel}>{t('bannerPlacementsLabel')}</Text>
         <View style={s.placementGrid}>
           {bannerPlacementOptions.map(option => {
             const isSelected = placements.includes(option.value);
@@ -225,41 +226,41 @@ export default function BannerManagementScreen() {
                 activeOpacity={0.88}
                 onPress={() => togglePlacement(option.value)}
               >
-                <Text style={[s.placementTitle, isSelected && s.placementTitleActive]}>{option.label}</Text>
-                <Text style={[s.placementDescription, isSelected && s.placementDescriptionActive]}>{option.description}</Text>
+                <Text style={[s.placementTitle, isSelected && s.placementTitleActive]}>{t(option.labelKey)}</Text>
+                <Text style={[s.placementDescription, isSelected && s.placementDescriptionActive]}>{t(option.descriptionKey)}</Text>
               </TouchableOpacity>
             );
           })}
         </View>
 
         <TouchableOpacity style={s.imagePicker} activeOpacity={0.88} onPress={pickBannerImage}>
-          <Text style={s.imagePickerText}>{selectedPreviewUri ? 'تغيير صورة البانر' : '📸 اختر صورة البانر'}</Text>
-          <Text style={s.imagePickerHint}>يفضل مقاس أفقي واضح</Text>
+          <Text style={s.imagePickerText}>{selectedPreviewUri ? t('bannerChangeImage') : `📸 ${t('bannerPickImage')}`}</Text>
+          <Text style={s.imagePickerHint}>{t('bannerImageHint')}</Text>
         </TouchableOpacity>
 
         {selectedPreviewUri ? (
           <View style={s.previewCard}>
-            <FastAdImage uri={selectedPreviewUri} style={s.previewImage} placeholderColor={colors.darkLight} />
+            <FastAdImage uri={selectedPreviewUri} style={s.previewImage} placeholderColor={colors.darkLight} showWatermark={false} />
           </View>
         ) : null}
 
         <TouchableOpacity style={[s.primaryBtn, saving && s.primaryBtnDisabled]} activeOpacity={0.88} onPress={saveBanner} disabled={saving}>
-          <Text style={s.primaryBtnText}>{saving ? 'جاري الرفع...' : 'رفع البانر'}</Text>
+          <Text style={s.primaryBtnText}>{saving ? t('uploadingShort') : t('bannerUploadBtn')}</Text>
         </TouchableOpacity>
       </View>
 
       <View style={s.listCard}>
         <View style={[s.listHeader, compactScreen && s.listHeaderCompact]}>
-          <Text style={s.sectionTitle}>البانرات الحالية</Text>
-          <View style={s.statPill}><Text style={s.statPillText}>{banners.length} بانر</Text></View>
+          <Text style={s.sectionTitle}>{t('bannerCurrentListTitle')}</Text>
+          <View style={s.statPill}><Text style={s.statPillText}>{t('bannerCount', { n: banners.length })}</Text></View>
         </View>
 
         {loading ? (
           <ActivityIndicator size="large" color={colors.primary} style={s.loading} />
         ) : banners.length === 0 ? (
           <View style={s.emptyState}>
-            <Text style={s.emptyTitle}>ما فيه بانرات حالياً</Text>
-            <Text style={s.emptySub}>أضف أول بانر من النموذج أعلاه وسيظهر هنا مباشرة.</Text>
+            <Text style={s.emptyTitle}>{t('bannerEmptyTitle')}</Text>
+            <Text style={s.emptySub}>{t('bannerEmptySub')}</Text>
           </View>
         ) : (
           banners.map(item => {
@@ -267,29 +268,29 @@ export default function BannerManagementScreen() {
 
             return (
               <View key={item.id} style={s.bannerItem}>
-                <FastAdImage uri={item.thumbnailUrl || item.imageUrl} style={s.bannerImage} placeholderColor={colors.darkLight} />
+                <FastAdImage uri={item.thumbnailUrl || item.imageUrl} style={s.bannerImage} placeholderColor={colors.darkLight} showWatermark={false} />
                 <View style={s.bannerBody}>
                   <View style={[s.bannerTitleRow, compactScreen && s.bannerTitleRowCompact]}>
-                    <Text style={s.bannerTitle} numberOfLines={1}>{item.title?.trim() || 'بدون عنوان'}</Text>
+                    <Text style={s.bannerTitle} numberOfLines={1}>{item.title?.trim() || t('untitled')}</Text>
                     <View style={[s.statusBadge, item.isActive ? s.statusActive : s.statusInactive]}>
-                      <Text style={[s.statusText, item.isActive ? s.statusTextActive : s.statusTextInactive]}>{item.isActive ? 'نشط' : 'مخفي'}</Text>
+                      <Text style={[s.statusText, item.isActive ? s.statusTextActive : s.statusTextInactive]}>{item.isActive ? t('active') : t('hidden')}</Text>
                     </View>
                   </View>
-                  {item.targetUrl ? <Text style={s.bannerLink} numberOfLines={1}>{item.targetUrl}</Text> : <Text style={s.bannerMeta}>بدون رابط</Text>}
-                  <Text style={s.bannerMeta}>ترتيب: {item.sortOrder || 0}</Text>
+                  {item.targetUrl ? <Text style={s.bannerLink} numberOfLines={1}>{item.targetUrl}</Text> : <Text style={s.bannerMeta}>{t('noLink')}</Text>}
+                  <Text style={s.bannerMeta}>{t('orderWithN', { n: item.sortOrder || 0 })}</Text>
                   <View style={s.placementsWrap}>
                     {bannerPlacementOptions.filter(option => bannerHasPlacement(item, option.value)).map(option => (
                       <View key={`${item.id}-${option.value}`} style={s.placementTag}>
-                        <Text style={s.placementTagText}>{option.label}</Text>
+                        <Text style={s.placementTagText}>{t(option.labelKey)}</Text>
                       </View>
                     ))}
                   </View>
                   <View style={[s.bannerActions, compactScreen && s.bannerActionsCompact]}>
                     <TouchableOpacity style={[s.actionBtn, s.toggleBtn, compactScreen && s.bannerActionBtnCompact, isBusy && s.actionDisabled]} activeOpacity={0.88} onPress={() => toggleBanner(item)} disabled={isBusy}>
-                      <Text style={s.toggleBtnText}>{isBusy ? 'جاري...' : item.isActive ? 'إخفاء' : 'تفعيل'}</Text>
+                      <Text style={s.toggleBtnText}>{isBusy ? t('workingShort') : item.isActive ? t('hide') : t('activate')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={[s.actionBtn, s.deleteBtn, compactScreen && s.bannerActionBtnCompact, isBusy && s.actionDisabled]} activeOpacity={0.88} onPress={() => deleteBanner(item)} disabled={isBusy}>
-                      <Text style={s.deleteBtnText}>حذف</Text>
+                      <Text style={s.deleteBtnText}>{t('delete')}</Text>
                     </TouchableOpacity>
                   </View>
                 </View>

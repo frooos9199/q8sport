@@ -8,11 +8,13 @@ import { AppleButton } from '@invertase/react-native-apple-authentication';
 import { useAuth } from '../../hooks/useAuth';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { t } from '../../i18n';
+import { useLocale } from '../../i18n/LocaleProvider';
 
 export default function LoginScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
   const { login, signInWithApple } = useAuth();
+  const { locale, setAppLocale } = useLocale();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -26,9 +28,9 @@ export default function LoginScreen({ navigation }: any) {
       await login(email, password);
     } catch (e: any) {
       if (e?.message === 'user-disabled-by-admin') {
-        Alert.alert('تم تعطيل الحساب', 'هذا الحساب موقوف من الإدارة حاليًا');
+        Alert.alert(t('accountDisabledTitle'), t('accountDisabledMsg'));
       } else {
-        Alert.alert('خطأ', 'البريد أو كلمة المرور غير صحيحة');
+        Alert.alert(t('loginErrorTitle'), t('loginErrorMsg'));
       }
     }
     setLoading(false);
@@ -37,7 +39,7 @@ export default function LoginScreen({ navigation }: any) {
   const handleForgotPassword = async () => {
     const normalizedEmail = (email || '').trim().toLowerCase();
     if (!normalizedEmail) {
-      Alert.alert('نسيت كلمة المرور؟', 'اكتب بريدك الإلكتروني أولاً في الحقل ثم اضغط نسيت كلمة المرور');
+      Alert.alert(t('forgotPassword'), t('resetNeedEmailMsg'));
       return;
     }
 
@@ -45,22 +47,25 @@ export default function LoginScreen({ navigation }: any) {
     try {
       const authInstance = getAuth();
       await sendPasswordResetEmail(authInstance, normalizedEmail);
-      Alert.alert('تم الإرسال', 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك');
+      Alert.alert(t('resetSentTitle'), t('resetSentMsg'));
     } catch (e: any) {
       const code = typeof e?.code === 'string' ? e.code : '';
       const message = typeof e?.message === 'string' ? e.message : '';
       console.log('Password reset error:', { code, message });
 
       if (code === 'auth/user-not-found') {
-        Alert.alert('خطأ', 'هذا البريد غير مسجل');
+        Alert.alert(t('loginErrorTitle'), t('userNotFoundMsg'));
       } else if (code === 'auth/invalid-email') {
-        Alert.alert('خطأ', 'البريد الإلكتروني غير صحيح');
+        Alert.alert(t('loginErrorTitle'), t('invalidEmailMsg'));
       } else if (code === 'auth/network-request-failed') {
-        Alert.alert('خطأ', 'تأكد من اتصال الإنترنت وحاول مرة ثانية');
+        Alert.alert(t('loginErrorTitle'), t('networkErrorMsg'));
       } else if (code === 'auth/internal-error') {
-        Alert.alert('خطأ', 'خطأ داخلي من Firebase. غالباً مشكلة إعدادات iOS (GoogleService-Info.plist) أو إعدادات مشروع Firebase.');
+        Alert.alert(t('loginErrorTitle'), t('internalFirebaseErrorMsg'));
       } else {
-        Alert.alert('خطأ', code ? `تعذر إرسال الرابط (${code})` : 'تعذر إرسال الرابط. تأكد من البريد وحاول مرة ثانية');
+        Alert.alert(
+          t('loginErrorTitle'),
+          code ? t('resetLinkFailedWithCodeMsg', { code }) : t('resetLinkFailedMsg'),
+        );
       }
     }
     setResetting(false);
@@ -77,9 +82,9 @@ export default function LoginScreen({ navigation }: any) {
         return;
       }
       if (e?.message === 'user-disabled-by-admin') {
-        Alert.alert('تم تعطيل الحساب', 'هذا الحساب موقوف من الإدارة حاليًا');
+        Alert.alert(t('accountDisabledTitle'), t('accountDisabledMsg'));
       } else {
-        Alert.alert('خطأ', 'تعذر تسجيل الدخول بحساب Apple');
+        Alert.alert(t('loginErrorTitle'), t('appleLoginFailedMsg'));
       }
     }
     setLoading(false);
@@ -105,6 +110,24 @@ export default function LoginScreen({ navigation }: any) {
         showsVerticalScrollIndicator={false}
       >
         <View style={s.logoSection}>
+          <View style={s.langRow}>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => setAppLocale('ar')}
+              style={[s.langBtn, locale === 'ar' && s.langBtnActive]}
+            >
+              <Text style={s.langFlag}>🇰🇼</Text>
+              <Text style={[s.langText, locale === 'ar' && s.langTextActive]}>{t('languageArabic')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => setAppLocale('en')}
+              style={[s.langBtn, locale === 'en' && s.langBtnActive]}
+            >
+              <Text style={s.langFlag}>🇺🇸</Text>
+              <Text style={[s.langText, locale === 'en' && s.langTextActive]}>{t('languageEnglish')}</Text>
+            </TouchableOpacity>
+          </View>
           <Text style={s.logoQ8}>Q8</Text>
           <Text style={s.logoSport}>SPORT CAR</Text>
           <View style={s.logoLine} />
@@ -172,7 +195,7 @@ export default function LoginScreen({ navigation }: any) {
             disabled={resetting}
             style={s.forgotLink}
           >
-            <Text style={s.forgotText}>{resetting ? t('loading') : 'نسيت كلمة المرور؟'}</Text>
+            <Text style={s.forgotText}>{resetting ? t('loading') : t('forgotPassword')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => navigation.navigate('Register')} style={s.link}>
@@ -190,6 +213,22 @@ const s = StyleSheet.create({
   bgGlow: { position: 'absolute', top: 0, left: 0, right: 0, height: 300 },
 
   logoSection: { alignItems: 'center', marginBottom: 32 },
+  langRow: { flexDirection: 'row', gap: 10, marginBottom: 18 },
+  langBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.metalBorder,
+    backgroundColor: colors.metal,
+  },
+  langBtnActive: { borderColor: colors.primaryBorder, backgroundColor: colors.darkCard },
+  langFlag: { fontSize: 16 },
+  langText: { color: colors.silver, fontSize: 12, fontWeight: '800' },
+  langTextActive: { color: colors.white },
   logoQ8: { fontSize: 50, fontWeight: '900', color: colors.primary },
   logoSport: { fontSize: 18, fontWeight: '800', color: colors.white, letterSpacing: 3 },
   logoLine: { width: 40, height: 3, backgroundColor: colors.primary, borderRadius: 2, marginTop: 12 },

@@ -7,11 +7,13 @@ import GccPhoneInput from '../../components/GccPhoneInput';
 import { useAuth } from '../../hooks/useAuth';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { t } from '../../i18n';
+import { useLocale } from '../../i18n/LocaleProvider';
 import { buildE164, parseToGccNumber, getGccCountry, type GccCountry } from '../../lib/gccPhone';
 
 export default function AccountScreen({ navigation }: any) {
   const { width } = useWindowDimensions();
   const { user, logout, updateContactInfo, updateProfileAvatar } = useAuth();
+  const { locale, setAppLocale } = useLocale();
   const [phoneCountry, setPhoneCountry] = React.useState<GccCountry['code']>('KW');
   const [phoneNational, setPhoneNational] = React.useState('');
   const [whatsappCountry, setWhatsappCountry] = React.useState<GccCountry['code']>('KW');
@@ -47,29 +49,29 @@ export default function AccountScreen({ navigation }: any) {
         {
           key: 'adminListings',
           icon: '🛡️',
-          label: 'إدارة السوق',
-          desc: 'إدارة كل السيارات والقطع والطلبات مع تعديل وحذف وتغيير الحالة',
+          label: t('menuAdminMarketLabel'),
+          desc: t('menuAdminMarketDesc'),
           onPress: () => navigation.navigate('MyListings', { adminView: true }),
         },
         {
           key: 'publish',
           icon: '➕',
-          label: 'مركز النشر',
-          desc: 'إضافة سيارة أو قطعة أو مطلوب جديد من مكان واحد',
+          label: t('menuPublishHubLabel'),
+          desc: t('menuPublishHubDesc'),
           onPress: () => navigateToTab('AccountTab', { screen: 'CreateListingHub' }),
         },
         {
           key: 'userManagement',
           icon: '👥',
-          label: 'إدارة المستخدمين',
-          desc: 'عرض كل الحسابات والبحث فيها ومنح أو سحب صلاحية الإدارة',
+          label: t('menuUserManagementLabel'),
+          desc: t('menuUserManagementDesc'),
           onPress: () => navigation.navigate('UserManagement'),
         },
         {
           key: 'banners',
           icon: '🖼️',
-          label: 'إدارة البانرات',
-          desc: 'رفع بانرات إعلانية وتفعيلها أو إخفاؤها من التطبيق',
+          label: t('menuBannersLabel'),
+          desc: t('menuBannersDesc'),
           onPress: () => navigation.navigate('BannerManagement'),
         },
       ]
@@ -78,15 +80,15 @@ export default function AccountScreen({ navigation }: any) {
           {
             key: 'adminListings',
             icon: '🛡️',
-            label: 'إدارة السوق',
-            desc: 'إدارة كل السيارات والقطع والطلبات مع تعديل وحذف وتغيير الحالة',
+            label: t('menuAdminMarketLabel'),
+            desc: t('menuAdminMarketDesc'),
             onPress: () => navigation.navigate('MyListings', { adminView: true }),
           },
           {
             key: 'publish',
             icon: '➕',
-            label: 'مركز النشر',
-            desc: 'إضافة سيارة أو قطعة أو مطلوب جديد من مكان واحد',
+            label: t('menuPublishHubLabel'),
+            desc: t('menuPublishHubDesc'),
             onPress: () => navigateToTab('AccountTab', { screen: 'CreateListingHub' }),
           },
         ]
@@ -94,22 +96,22 @@ export default function AccountScreen({ navigation }: any) {
         {
           key: 'publish',
           icon: '➕',
-          label: 'أضف إعلان',
-          desc: 'نشر سيارة أو قطعة جديدة مباشرة في السوق',
+          label: t('menuAddAdLabel'),
+          desc: t('menuAddAdDesc'),
           onPress: () => navigateToTab('AccountTab', { screen: 'CreateListingHub' }),
         },
         {
           key: 'wanted',
           icon: '🔥',
-          label: 'انشر مطلوب',
-          desc: 'أضف طلبك وخله ظاهر لكل السوق',
+          label: t('menuPostWantedLabel'),
+          desc: t('menuPostWantedDesc'),
           onPress: () => navigateToTab('RequestsTab', { screen: 'CreateRequest' }),
         },
         {
           key: 'myListings',
           icon: '🗂️',
-          label: 'إعلاناتي',
-          desc: 'إدارة كل سياراتك وقطعك ومطلوباتك',
+          label: t('menuMyListingsLabel'),
+          desc: t('menuMyListingsDesc'),
           onPress: () => navigation.navigate('MyListings'),
         },
       ];
@@ -123,11 +125,11 @@ export default function AccountScreen({ navigation }: any) {
     const whatsappExpectedLen = getGccCountry(whatsappCountry).nationalNumberLength;
 
     if (phoneNational && phoneNational.length !== phoneExpectedLen) {
-      Alert.alert('تنبيه', `رقم الموبايل لازم يكون ${phoneExpectedLen} أرقام`);
+      Alert.alert(t('warningTitle'), t('phoneDigitsMsg', { n: phoneExpectedLen }));
       return;
     }
     if (whatsappNational && whatsappNational.length !== whatsappExpectedLen) {
-      Alert.alert('تنبيه', `رقم الواتساب لازم يكون ${whatsappExpectedLen} أرقام`);
+      Alert.alert(t('warningTitle'), t('whatsappDigitsMsg', { n: whatsappExpectedLen }));
       return;
     }
 
@@ -135,16 +137,16 @@ export default function AccountScreen({ navigation }: any) {
     const whatsappValue = buildE164(whatsappCountry, whatsappNational).trim();
 
     if (!phoneValue && !whatsappValue) {
-      Alert.alert('تنبيه', 'أدخل رقم الموبايل أو الواتساب على الأقل');
+      Alert.alert(t('warningTitle'), t('needAtLeastOneContactMsg'));
       return;
     }
 
     setSaving(true);
     try {
       await updateContactInfo({ phone: phoneValue, whatsapp: whatsappValue });
-      Alert.alert('تم', 'تم تحديث بيانات التواصل');
+      Alert.alert(t('successTitle'), t('contactUpdatedMsg'));
     } catch {
-      Alert.alert('خطأ', 'تعذر تحديث بيانات التواصل');
+      Alert.alert(t('loginErrorTitle'), t('contactUpdateFailedMsg'));
     } finally {
       setSaving(false);
     }
@@ -160,9 +162,9 @@ export default function AccountScreen({ navigation }: any) {
     setAvatarUploading(true);
     try {
       await updateProfileAvatar(avatarUri);
-      Alert.alert('تم', 'تم تحديث صورة الحساب وستظهر في إعلاناتك');
+      Alert.alert(t('successTitle'), t('avatarUpdatedMsg'));
     } catch (error: any) {
-      Alert.alert('خطأ', error?.message || 'تعذر رفع صورة الحساب');
+      Alert.alert(t('loginErrorTitle'), error?.message || t('avatarUploadFailedMsg'));
     } finally {
       setAvatarUploading(false);
     }
@@ -201,13 +203,32 @@ export default function AccountScreen({ navigation }: any) {
           <Text style={s.name}>{user.name}</Text>
           {user.campaign?.founderPosition ? (
             <View style={s.tierBadge}>
-              <Text style={s.tierBadgeText}>{user.campaign?.tierLabel || 'مؤسس'}</Text>
+              <Text style={s.tierBadgeText}>{user.campaign?.tierLabel || t('founderLabel')}</Text>
             </View>
           ) : null}
         </View>
         <Text style={s.email}>{user.email}</Text>
         <View style={s.marketBadge}>
-          <Text style={s.marketText}>{isSuperAdmin ? 'سوبر أدمن' : isAdmin ? 'أدمن' : 'KUWAIT SPORT MARKET'}</Text>
+          <Text style={s.marketText}>{isSuperAdmin ? t('superAdminBadge') : isAdmin ? t('adminBadge') : t('marketName')}</Text>
+        </View>
+
+        <View style={s.langRow}>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => setAppLocale('ar')}
+            style={[s.langBtn, locale === 'ar' && s.langBtnActive]}
+          >
+            <Text style={s.langFlag}>🇰🇼</Text>
+            <Text style={[s.langText, locale === 'ar' && s.langTextActive]}>{t('languageArabic')}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => setAppLocale('en')}
+            style={[s.langBtn, locale === 'en' && s.langBtnActive]}
+          >
+            <Text style={s.langFlag}>🇺🇸</Text>
+            <Text style={[s.langText, locale === 'en' && s.langTextActive]}>{t('languageEnglish')}</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -221,7 +242,7 @@ export default function AccountScreen({ navigation }: any) {
             onCountryChange={setPhoneCountry}
             nationalNumber={phoneNational}
             onNationalNumberChange={setPhoneNational}
-            placeholder="اكتب رقم الموبايل"
+            placeholder={t('enterPhonePlaceholder')}
             editable={!saving}
           />
         </View>
@@ -234,7 +255,7 @@ export default function AccountScreen({ navigation }: any) {
             onCountryChange={setWhatsappCountry}
             nationalNumber={whatsappNational}
             onNationalNumberChange={setWhatsappNational}
-            placeholder="اكتب رقم الواتساب"
+            placeholder={t('enterWhatsappPlaceholder')}
             editable={!saving}
           />
         </View>
@@ -244,7 +265,7 @@ export default function AccountScreen({ navigation }: any) {
           onPress={saveContactInfo}
           disabled={!hasChanges || saving}
         >
-          <Text style={s.saveBtnText}>{saving ? 'جاري الحفظ...' : 'حفظ بيانات التواصل'}</Text>
+          <Text style={s.saveBtnText}>{saving ? t('savingShort') : t('saveContactInfo')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -293,6 +314,23 @@ const s = StyleSheet.create({
   email: { color: colors.silver, fontSize: 13, marginTop: 4 },
   marketBadge: { backgroundColor: colors.primaryGlow, borderWidth: 1, borderColor: colors.primaryBorder, paddingHorizontal: 14, paddingVertical: 5, borderRadius: radius.full, marginTop: 12 },
   marketText: { color: colors.primary, fontWeight: '800', fontSize: 12 },
+
+  langRow: { flexDirection: 'row', gap: 10, marginTop: 14 },
+  langBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.metalBorder,
+    backgroundColor: colors.metal,
+  },
+  langBtnActive: { borderColor: colors.primaryBorder, backgroundColor: colors.darkCard },
+  langFlag: { fontSize: 16 },
+  langText: { color: colors.silver, fontSize: 12, fontWeight: '800' },
+  langTextActive: { color: colors.white },
 
   // Info
   infoCard: { backgroundColor: colors.darkCard, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.metalBorder, padding: 18, marginBottom: 16 },

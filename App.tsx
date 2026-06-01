@@ -5,6 +5,7 @@ import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-c
 import { AuthProvider } from './src/hooks/useAuth';
 import AppNavigator from './src/navigation/AppNavigator';
 import { colors } from './src/lib/theme';
+import { LocaleProvider } from './src/i18n/LocaleProvider';
 
 const navTheme = {
   dark: true,
@@ -27,12 +28,14 @@ const navTheme = {
 export default function App() {
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-      <AuthProvider>
-        <NavigationContainer theme={navTheme}>
-          <StatusBar barStyle="light-content" backgroundColor={colors.dark} translucent />
-          <AppNavigator />
-        </NavigationContainer>
-      </AuthProvider>
+      <LocaleProvider>
+        <AuthProvider>
+          <NavigationContainer theme={navTheme}>
+            <StatusBar barStyle="light-content" backgroundColor={colors.dark} translucent />
+            <AppNavigator />
+          </NavigationContainer>
+        </AuthProvider>
+      </LocaleProvider>
     </SafeAreaProvider>
   );
 }

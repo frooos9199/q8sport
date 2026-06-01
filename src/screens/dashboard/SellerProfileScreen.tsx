@@ -5,12 +5,13 @@ import { ref as dbRef, update } from '@react-native-firebase/database';
 import LazyImage from '../../components/LazyImage';
 import GccPhoneInput from '../../components/GccPhoneInput';
 import { useAuth } from '../../hooks/useAuth';
-import { deleteUserAccountFromMarketplace } from '../../lib/adminUserManagement';
+import { DELETED_ACCOUNT_NAME_SENTINEL, deleteUserAccountFromMarketplace } from '../../lib/adminUserManagement';
 import { db } from '../../lib/firebase';
 import { getDbSnapshot } from '../../lib/firebaseDatabase';
 import { prefetchListingImages } from '../../lib/listingFeed';
 import { sortListingsByFreshnessAndStatus } from '../../lib/listingSort';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
+import { t } from '../../i18n';
 import { Car, Part, Request, User } from '../../types';
 import { buildE164, parseToGccNumber, toWaMeDigits, type GccCountry } from '../../lib/gccPhone';
 
@@ -139,20 +140,32 @@ export default function SellerProfileScreen({ route, navigation }: any) {
 
   const visibleFeed = useMemo(() => feed.slice(0, INITIAL_SELLER_FEED_ITEMS), [feed]);
 
+  const displaySellerName = useMemo(() => {
+    const nameFromDb = sellerUser?.name;
+    if (sellerUser?.deletedAt && (!nameFromDb || nameFromDb === DELETED_ACCOUNT_NAME_SENTINEL || nameFromDb === 'حساب محذوف')) {
+      return t('deletedAccountName');
+    }
+    return nameFromDb || sellerName || t('thisUser');
+  }, [sellerName, sellerUser?.deletedAt, sellerUser?.name]);
+
 
   const openWhatsApp = () => {
     const phone = String(sellerUser?.whatsapp || sellerUser?.phone || sellerWhatsapp || sellerPhone || '').replace(/[^0-9]/g, '');
     if (!phone) {
-      Alert.alert('تنبيه', 'لا يوجد رقم واتساب لهذا المستخدم');
+      Alert.alert(t('warningTitle'), t('noWhatsappNumberMsg'));
       return;
     }
-    Linking.openURL(`https://wa.me/${toWaMeDigits(phone)}?text=${encodeURIComponent(`مرحبا ${sellerName}، عندي اهتمام بمعروضاتك في Q8 Sport Market`)}`);
+    Linking.openURL(
+      `https://wa.me/${toWaMeDigits(phone)}?text=${encodeURIComponent(
+        t('whatsappInterestMsg', { name: displaySellerName }),
+      )}`,
+    );
   };
 
   const openCall = () => {
     const phone = String(sellerUser?.phone || sellerPhone || sellerUser?.whatsapp || sellerWhatsapp || '').replace(/[^0-9]/g, '');
     if (!phone) {
-      Alert.alert('تنبيه', 'لا يوجد رقم اتصال لهذا المستخدم');
+      Alert.alert(t('warningTitle'), t('noCallNumberMsg'));
       return;
     }
     Linking.openURL(`tel:${phone}`);
@@ -166,7 +179,7 @@ export default function SellerProfileScreen({ route, navigation }: any) {
   const saveSellerContacts = async () => {
     if (!sellerUser) return;
     if (!canEditThisSellerContacts) {
-      Alert.alert('تنبيه', 'لا تملك صلاحية تعديل بيانات هذا المستخدم');
+      Alert.alert(t('warningTitle'), t('permissionDeniedMsg'));
       return;
     }
 
@@ -177,9 +190,9 @@ export default function SellerProfileScreen({ route, navigation }: any) {
     try {
       await adminUpdateUserContactInfo(sellerId, { phone: nextPhone, whatsapp: nextWhatsapp });
       await loadSellerData();
-      Alert.alert('تم', 'تم تحديث بيانات الهاتف والواتساب');
+      Alert.alert(t('successTitle'), t('sellerContactsUpdatedMsg'));
     } catch (error: any) {
-      Alert.alert('خطأ', error?.message || 'تعذر تحديث بيانات التواصل');
+      Alert.alert(t('loginErrorTitle'), error?.message || t('contactUpdateFailedMsg'));
     } finally {
       setUpdatingUser(false);
     }
@@ -188,15 +201,15 @@ export default function SellerProfileScreen({ route, navigation }: any) {
   const toggleSellerAdmin = async () => {
     if (!sellerUser) return;
     if (sellerUser.deletedAt) {
-      Alert.alert('تنبيه', 'هذا الحساب محذوف بالفعل');
+      Alert.alert(t('warningTitle'), t('accountAlreadyDeletedMsg'));
       return;
     }
     if (sellerUser.isSuperAdmin) {
-      Alert.alert('تنبيه', 'لا يمكن سحب صلاحية السوبر أدمن');
+      Alert.alert(t('warningTitle'), t('cannotRevokeSuperAdminMsg'));
       return;
     }
     if (isSelfProfile) {
-      Alert.alert('تنبيه', 'ما تقدر تغير صلاحية إدارتك من هذه الصفحة');
+      Alert.alert(t('warningTitle'), t('cannotChangeOwnAdminMsg'));
       return;
     }
 
@@ -208,7 +221,7 @@ export default function SellerProfileScreen({ route, navigation }: any) {
       });
       await loadSellerData();
     } catch (error: any) {
-      Alert.alert('خطأ', error?.message || 'تعذر تحديث صلاحية الإدارة');
+      Alert.alert(t('loginErrorTitle'), error?.message || t('adminPermissionUpdateFailedMsg'));
     } finally {
       setUpdatingUser(false);
     }
@@ -217,15 +230,15 @@ export default function SellerProfileScreen({ route, navigation }: any) {
   const toggleSellerDisabled = async () => {
     if (!sellerUser) return;
     if (sellerUser.deletedAt) {
-      Alert.alert('تنبيه', 'هذا الحساب محذوف بالفعل');
+      Alert.alert(t('warningTitle'), t('accountAlreadyDeletedMsg'));
       return;
     }
     if (sellerUser.isSuperAdmin) {
-      Alert.alert('تنبيه', 'لا يمكن تعطيل حساب السوبر أدمن');
+      Alert.alert(t('warningTitle'), t('cannotDeleteSuperAdminMsg'));
       return;
     }
     if (isSelfProfile) {
-      Alert.alert('تنبيه', 'ما تقدر تعطل حسابك من هذه الصفحة');
+      Alert.alert(t('warningTitle'), t('cannotDeleteOwnAccountMsg'));
       return;
     }
 
@@ -237,7 +250,7 @@ export default function SellerProfileScreen({ route, navigation }: any) {
       });
       await loadSellerData();
     } catch (error: any) {
-      Alert.alert('خطأ', error?.message || 'تعذر تحديث حالة الحساب');
+      Alert.alert(t('loginErrorTitle'), error?.message || t('accountStatusUpdateFailedMsg'));
     } finally {
       setUpdatingUser(false);
     }
@@ -246,25 +259,25 @@ export default function SellerProfileScreen({ route, navigation }: any) {
   const deleteSellerAccount = () => {
     if (!sellerUser) return;
     if (sellerUser.deletedAt) {
-      Alert.alert('تنبيه', 'هذا الحساب محذوف بالفعل');
+      Alert.alert(t('warningTitle'), t('accountAlreadyDeletedMsg'));
       return;
     }
     if (sellerUser.isSuperAdmin) {
-      Alert.alert('تنبيه', 'لا يمكن حذف حساب السوبر أدمن');
+      Alert.alert(t('warningTitle'), t('cannotDisableSuperAdminMsg'));
       return;
     }
     if (isSelfProfile) {
-      Alert.alert('تنبيه', 'ما تقدر حذف حسابك من هذه الصفحة');
+      Alert.alert(t('warningTitle'), t('cannotDisableOwnAccountMsg'));
       return;
     }
 
     Alert.alert(
-      'حذف الحساب',
-      `سيتم حذف حساب ${sellerName} من السوق مع كل معروضاته وطلباته. هذا الإجراء نهائي.`,
+      t('deleteAccountTitle'),
+      t('deleteAccountConfirmMsg', { name: displaySellerName }),
       [
-        { text: 'إلغاء', style: 'cancel' },
+        { text: t('cancel'), style: 'cancel' },
         {
-          text: 'حذف الحساب',
+          text: t('deleteAccountBtn'),
           style: 'destructive',
           onPress: async () => {
             setUpdatingUser(true);
@@ -272,7 +285,7 @@ export default function SellerProfileScreen({ route, navigation }: any) {
               await deleteUserAccountFromMarketplace({ uid: sellerId, email: sellerUser.email });
               await loadSellerData();
             } catch (error: any) {
-              Alert.alert('خطأ', error?.message || 'تعذر حذف الحساب');
+              Alert.alert(t('loginErrorTitle'), error?.message || t('deleteAccountFailedMsg'));
             } finally {
               setUpdatingUser(false);
             }
@@ -312,60 +325,60 @@ export default function SellerProfileScreen({ route, navigation }: any) {
                 <LazyImage
                   uri={sellerUser.avatar}
                   style={s.avatarImage}
-                  fallback={<Text style={s.avatarText}>{sellerName?.[0] || '?'}</Text>}
+                  fallback={<Text style={s.avatarText}>{displaySellerName?.[0] || '?'}</Text>}
                 />
               ) : (
-                <Text style={s.avatarText}>{sellerName?.[0] || '?'}</Text>
+                <Text style={s.avatarText}>{displaySellerName?.[0] || '?'}</Text>
               )}
             </View>
             <View style={s.nameRow}>
-              <Text style={s.name}>{sellerName}</Text>
+              <Text style={s.name}>{displaySellerName}</Text>
               {sellerUser?.campaign?.founderPosition ? (
                 <View style={s.tierBadge}>
-                  <Text style={s.tierBadgeText}>{sellerUser?.campaign?.tierLabel || 'مؤسس'}</Text>
+                  <Text style={s.tierBadgeText}>{sellerUser?.campaign?.tierLabel || t('founderLabel')}</Text>
                 </View>
               ) : null}
             </View>
-            <Text style={s.handle}>معلن مباشر في السوق</Text>
+            <Text style={s.handle}>{t('directSellerLabel')}</Text>
 
             {sellerUser ? (
               <View style={s.badgesRow}>
                 {sellerUser.isSuperAdmin ? (
-                  <View style={s.adminBadge}><Text style={s.adminBadgeText}>سوبر أدمن</Text></View>
+                  <View style={s.adminBadge}><Text style={s.adminBadgeText}>{t('superAdminBadge')}</Text></View>
                 ) : sellerUser.isAdmin ? (
-                  <View style={s.adminBadge}><Text style={s.adminBadgeText}>أدمن</Text></View>
+                  <View style={s.adminBadge}><Text style={s.adminBadgeText}>{t('adminBadge')}</Text></View>
                 ) : null}
-                {sellerUser.disabled ? <View style={s.disabledBadge}><Text style={s.disabledBadgeText}>الحساب معطل</Text></View> : null}
-                {sellerUser.deletedAt ? <View style={s.deletedBadge}><Text style={s.deletedBadgeText}>الحساب محذوف</Text></View> : null}
+                {sellerUser.disabled ? <View style={s.disabledBadge}><Text style={s.disabledBadgeText}>{t('accountDisabledLabel')}</Text></View> : null}
+                {sellerUser.deletedAt ? <View style={s.deletedBadge}><Text style={s.deletedBadgeText}>{t('accountDeletedLabel')}</Text></View> : null}
               </View>
             ) : null}
 
             <View style={s.statsRow}>
-              <Stat label="سيارات" value={cars.length} />
-              <Stat label="قطع" value={parts.length} />
-              <Stat label="مطلوبات" value={requests.length} />
+              <Stat label={t('cars')} value={cars.length} />
+              <Stat label={t('parts')} value={parts.length} />
+              <Stat label={t('requests')} value={requests.length} />
             </View>
 
             <View style={s.trustCard}>
-              <Text style={s.trustTitle}>مؤشرات الثقة</Text>
-              <Text style={s.trustLine}>عضو نشط مع {cars.length + parts.length + requests.length} إعلان ظاهر في السوق</Text>
-              <Text style={s.trustLine}>تواصل مباشر على الواتساب بدون وسيط</Text>
+              <Text style={s.trustTitle}>{t('trustIndicatorsTitle')}</Text>
+              <Text style={s.trustLine}>{t('trustActiveMemberLine', { n: cars.length + parts.length + requests.length })}</Text>
+              <Text style={s.trustLine}>{t('trustWhatsAppLine')}</Text>
             </View>
 
             <TouchableOpacity style={s.cta} activeOpacity={0.88} onPress={openWhatsApp}>
-              <Text style={s.ctaText}>💬 واتساب</Text>
+              <Text style={s.ctaText}>💬 {t('contactWhatsapp')}</Text>
             </TouchableOpacity>
 
             {hasCallNumber ? (
               <TouchableOpacity style={[s.cta, s.callCta]} activeOpacity={0.88} onPress={openCall}>
-                <Text style={s.callCtaText}>📞 اتصال</Text>
+                <Text style={s.callCtaText}>📞 {t('callLabel')}</Text>
               </TouchableOpacity>
             ) : null}
 
             {isAdminViewer ? (
               <View style={s.adminToolsCard}>
-                <Text style={s.adminToolsTitle}>أدوات الإدارة</Text>
-                <Text style={s.adminToolsSub}>تحكم بالحساب مباشرة من صفحة التفاصيل.</Text>
+                <Text style={s.adminToolsTitle}>{t('adminToolsTitle')}</Text>
+                <Text style={s.adminToolsSub}>{t('adminToolsSub')}</Text>
                 <View style={s.adminActionsRow}>
                   <TouchableOpacity
                     style={[s.deleteActionBtn, (updatingUser || isSelfProfile || Boolean(sellerUser?.deletedAt)) && s.adminActionDisabled]}
@@ -373,7 +386,7 @@ export default function SellerProfileScreen({ route, navigation }: any) {
                     disabled={updatingUser || isSelfProfile || !sellerUser || Boolean(sellerUser?.deletedAt)}
                     onPress={deleteSellerAccount}
                   >
-                    <Text style={s.deleteActionText}>{updatingUser ? 'جاري التحديث...' : 'حذف الحساب'}</Text>
+                    <Text style={s.deleteActionText}>{updatingUser ? t('updatingShort') : t('deleteAccountBtn')}</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -383,7 +396,7 @@ export default function SellerProfileScreen({ route, navigation }: any) {
                     onPress={toggleSellerDisabled}
                   >
                     <Text style={[s.adminActionText, sellerUser?.disabled ? s.adminActionTextPrimary : s.adminActionTextMuted]}>
-                      {updatingUser ? 'جاري التحديث...' : sellerUser?.disabled ? 'تفعيل الحساب' : 'تعطيل الحساب'}
+                      {updatingUser ? t('updatingShort') : sellerUser?.disabled ? t('enableAccount') : t('disableAccount')}
                     </Text>
                   </TouchableOpacity>
 
@@ -394,7 +407,7 @@ export default function SellerProfileScreen({ route, navigation }: any) {
                     onPress={toggleSellerAdmin}
                   >
                     <Text style={[s.adminActionText, sellerUser?.isAdmin ? s.adminActionTextMuted : s.adminActionTextPrimary]}>
-                      {updatingUser ? 'جاري التحديث...' : sellerUser?.isAdmin ? 'سحب الإدارة' : 'منح الإدارة'}
+                      {updatingUser ? t('updatingShort') : sellerUser?.isAdmin ? t('revokeAdmin') : t('grantAdmin')}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -403,28 +416,28 @@ export default function SellerProfileScreen({ route, navigation }: any) {
 
             {canEditThisSellerContacts ? (
               <View style={s.adminToolsCard}>
-                <Text style={s.adminToolsTitle}>تعديل بروفايل المستخدم</Text>
-                <Text style={s.adminToolsSub}>يتم تعديل بيانات الحساب (وليس بيانات الإعلان).</Text>
+                <Text style={s.adminToolsTitle}>{t('editUserProfileTitle')}</Text>
+                <Text style={s.adminToolsSub}>{t('editUserProfileSub')}</Text>
 
-                <Text style={s.contactLabel}>رقم الهاتف (البروفايل)</Text>
+                <Text style={s.contactLabel}>{t('phoneProfileLabel')}</Text>
                 <GccPhoneInput
                   icon="📞"
                   country={sellerPhoneCountry}
                   onCountryChange={setSellerPhoneCountry}
                   nationalNumber={sellerPhoneNational}
                   onNationalNumberChange={setSellerPhoneNational}
-                  placeholder="اكتب الرقم بدون فتح الخط"
+                  placeholder={t('enterNumberNoPrefixPlaceholder')}
                   editable={!updatingUser}
                 />
 
-                <Text style={[s.contactLabel, { marginTop: 12 }]}>رقم واتساب (البروفايل)</Text>
+                <Text style={[s.contactLabel, { marginTop: 12 }]}>{t('whatsappProfileLabel')}</Text>
                 <GccPhoneInput
                   icon="💬"
                   country={sellerWhatsappCountry}
                   onCountryChange={setSellerWhatsappCountry}
                   nationalNumber={sellerWhatsappNational}
                   onNationalNumberChange={setSellerWhatsappNational}
-                  placeholder="اكتب الرقم بدون فتح الخط"
+                  placeholder={t('enterNumberNoPrefixPlaceholder')}
                   editable={!updatingUser}
                 />
 
@@ -434,23 +447,23 @@ export default function SellerProfileScreen({ route, navigation }: any) {
                   disabled={updatingUser}
                   onPress={saveSellerContacts}
                 >
-                  <Text style={s.saveContactsText}>{updatingUser ? 'جاري الحفظ...' : 'حفظ التعديل'}</Text>
+                  <Text style={s.saveContactsText}>{updatingUser ? t('savingShort') : t('saveEdit')}</Text>
                 </TouchableOpacity>
               </View>
             ) : null}
           </View>
 
           <View style={s.sectionHeader}>
-            <Text style={s.sectionTitle}>كل معروضاته</Text>
-            <Text style={s.sectionSub}>{loading ? 'جاري التحميل...' : `${feed.length} عنصر`}</Text>
+            <Text style={s.sectionTitle}>{t('allListingsTitle')}</Text>
+            <Text style={s.sectionSub}>{loading ? t('loading') : t('itemsCount', { n: feed.length })}</Text>
           </View>
         </>
       }
       ListEmptyComponent={
         !loading ? (
           <View style={s.emptyCard}>
-            <Text style={s.emptyTitle}>لا توجد معروضات حالياً</Text>
-            <Text style={s.emptySub}>يمكن التواصل مع المعلن مباشرة إذا كان عنده شيء متوفر قريبًا.</Text>
+            <Text style={s.emptyTitle}>{t('noListingsNowTitle')}</Text>
+            <Text style={s.emptySub}>{t('noListingsNowSub')}</Text>
           </View>
         ) : null
       }
@@ -462,21 +475,21 @@ export default function SellerProfileScreen({ route, navigation }: any) {
           disabled={entry.type === 'request'}
         >
           <View style={s.itemTopRow}>
-            <View style={s.badge}><Text style={s.badgeText}>{entry.type === 'car' ? 'سيارة' : entry.type === 'part' ? 'قطعة' : 'مطلوب'}</Text></View>
-            <Text style={s.itemStatus}>{entry.item.status}</Text>
+            <View style={s.badge}><Text style={s.badgeText}>{entry.type === 'car' ? t('listingTypeCar') : entry.type === 'part' ? t('listingTypePart') : t('listingTypeRequest')}</Text></View>
+            <Text style={s.itemStatus}>{t(String(entry.item.status || ''))}</Text>
           </View>
           <Text style={s.itemTitle}>{entry.item.title?.ar}</Text>
           <Text style={s.itemMeta}>
             {entry.type === 'car'
               ? `${entry.item.brand} • ${entry.item.model} • ${entry.item.year}`
               : entry.type === 'part'
-                ? `${entry.item.category} • ${(entry.item.compatibleBrands || []).slice(0, 2).join(' • ') || 'توافق غير محدد'}`
+                ? `${entry.item.category} • ${(entry.item.compatibleBrands || []).slice(0, 2).join(' • ') || t('compatibilityUnknown')}`
                 : entry.item.description?.ar}
           </Text>
           <Text style={s.itemPrice}>
             {entry.type === 'request'
-              ? entry.item.budget ? `${entry.item.budget.toLocaleString()} د.ك` : 'بدون ميزانية محددة'
-              : `${entry.item.price?.toLocaleString()} د.ك`}
+              ? entry.item.budget ? `${entry.item.budget.toLocaleString()} ${t('kwd')}` : t('noBudget')
+                : `${entry.item.price?.toLocaleString()} ${t('kwd')}`}
           </Text>
         </TouchableOpacity>
       )}

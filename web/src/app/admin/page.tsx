@@ -141,8 +141,22 @@ export default function AdminPage() {
     const nextStatus = item.type === "request"
       ? (item.status === "open" ? "closed" : "open")
       : (item.status === "sold" ? "active" : "sold");
+
+    const now = Date.now();
+    const patch: any = { status: nextStatus, updatedAt: now };
+
+    if (item.type !== "request") {
+      if (nextStatus === "sold") {
+        patch.soldAt = now;
+        patch.deleteAt = now + 3 * 60 * 60 * 1000;
+      } else {
+        patch.soldAt = null;
+        patch.deleteAt = null;
+      }
+    }
+
     // eslint-disable-next-line react-hooks/purity
-    await update(ref(db, `${path}/${item.id}`), { status: nextStatus, updatedAt: Date.now() });
+    await update(ref(db, `${path}/${item.id}`), patch);
   };
 
   const handleToggleAdmin = async (u: AppUser) => {

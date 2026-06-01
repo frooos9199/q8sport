@@ -1,15 +1,16 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { push, ref as dbRef, serverTimestamp, set as dbSet, update } from '@react-native-firebase/database';
 
 import { useAuth } from '../../hooks/useAuth';
 import { db } from '../../lib/firebase';
-import { ListingMediaItem, uploadListingMedia } from '../../lib/listingImages';
+import { deleteRemovedListingMedia, ListingMediaItem, uploadListingMedia } from '../../lib/listingImages';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import PremiumButton from '../../components/PremiumButton';
 import GccPhoneInput from '../../components/GccPhoneInput';
 import { buildE164, parseToGccNumber, type GccCountry } from '../../lib/gccPhone';
+import { t } from '../../i18n';
 
 type Category = 'car' | 'part' | 'other';
 
@@ -47,9 +48,18 @@ export default function CreateRequestScreen({ navigation, route }: any) {
     })),
   );
   const [submitting, setSubmitting] = useState(false);
+  const [uploadPercent, setUploadPercent] = useState<number | null>(null);
+  const submitLock = useRef(false);
   const compactScreen = width < 390;
   const screenPadding = width < 380 ? spacing.lg : spacing.xl;
   const previewSize = width < 380 ? 76 : 88;
+
+  const missingFields = useMemo(() => {
+    const missing: string[] = [];
+    if (title.trim().length < 3) missing.push(t('listingTitle'));
+    if (description.trim().length < 5) missing.push(t('description'));
+    return missing;
+  }, [description, title]);
 
   const canSubmit = useMemo(() => {
     return title.trim().length >= 3 && description.trim().length >= 5 && !submitting;
@@ -64,8 +74,16 @@ export default function CreateRequestScreen({ navigation, route }: any) {
   };
 
   const submit = async () => {
+    if (submitLock.current || submitting) {
+      return;
+    }
+
+    if (missingFields.length) {
+      Alert.alert(t('loginErrorTitle'), t('missingRequiredFieldsMsg', { fields: missingFields.join('، ') }));
+      return;
+    }
     if (!user) {
-      Alert.alert('تسجيل الدخول', 'لازم تسجل دخول عشان تنشئ طلب');
+      Alert.alert(t('login'), t('loginRequiredToCreateRequestMsg'));
       navigation.navigate('Login');
       return;
     }
@@ -93,11 +111,11 @@ export default function CreateRequestScreen({ navigation, route }: any) {
     if (manualMode) {
       const contactDigits = digits(sellerWhatsappValue || sellerPhoneValue);
       if (sellerNameValue.length < 2) {
-        Alert.alert('خطأ', 'اكتب اسم المعلن');
+        Alert.alert(t('loginErrorTitle'), t('sellerNameRequiredMsg'));
         return;
       }
       if (!contactDigits) {
-        Alert.alert('خطأ', 'لازم تضيف رقم اتصال أو رقم واتساب');
+        Alert.alert(t('loginErrorTitle'), t('contactRequiredMsg'));
         return;
       }
     }
@@ -106,26 +124,28 @@ export default function CreateRequestScreen({ navigation, route }: any) {
     const descriptionValue = description.trim();
 
     if (titleValue.length < 3) {
-      Alert.alert('خطأ', 'اكتب عنوان مناسب');
+      Alert.alert(t('loginErrorTitle'), t('requestTitleRequiredMsg'));
       return;
     }
     if (descriptionValue.length < 5) {
-      Alert.alert('خطأ', 'اكتب وصف مناسب');
+      Alert.alert(t('loginErrorTitle'), t('requestDescRequiredMsg'));
       return;
     }
 
     const budgetNumber = budget.trim().length ? Number(budget.trim()) : undefined;
     if (budgetNumber != null && Number.isNaN(budgetNumber)) {
-      Alert.alert('خطأ', 'الميزانية لازم تكون رقم');
+      Alert.alert(t('loginErrorTitle'), t('budgetMustBeNumberMsg'));
       return;
     }
 
+    submitLock.current = true;
+    setUploadPercent(0);
     setSubmitting(true);
     try {
       const newRef = isEditing ? dbRef(db, `requests/${listing.id}`) : push(dbRef(db, 'requests'));
       const requestId = (isEditing ? listing.id : newRef.key) as string;
       const media = imageItems.length
-        ? await uploadListingMedia('requests', requestId, imageItems)
+        ? await uploadListingMedia('requests', requestId, imageItems, { onProgress: setUploadPercent })
         : { images: [], imageThumbs: [], imageMediums: [], imageUrl: '', mediumUrl: '', thumbnailUrl: '' };
 
       const derivedGuestId = () => {
@@ -165,12 +185,18 @@ export default function CreateRequestScreen({ navigation, route }: any) {
         await dbSet(newRef, payload);
       }
 
-      Alert.alert('تم', isEditing ? 'تم تحديث الطلب بنجاح' : 'تم إنشاء الطلب بنجاح');
+      if (isEditing) {
+        void deleteRemovedListingMedia(listing, media);
+      }
+
+      Alert.alert(t('successTitle'), isEditing ? t('requestUpdatedMsg') : t('requestCreatedMsg'));
       navigation.goBack();
     } catch (e: any) {
-      Alert.alert('خطأ', e?.message || 'تعذر إنشاء الطلب');
+      Alert.alert(t('loginErrorTitle'), e?.message || t('requestCreateFailedMsg'));
     } finally {
       setSubmitting(false);
+      setUploadPercent(null);
+      submitLock.current = false;
     }
   };
 
@@ -182,30 +208,30 @@ export default function CreateRequestScreen({ navigation, route }: any) {
     <KeyboardAvoidingView style={s.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={[s.content, { padding: screenPadding }]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <View style={s.card}>
-          <Text style={s.title}>{isEditing ? 'تعديل الطلب' : 'إنشاء طلب'}</Text>
-          <Text style={s.sub}>{isEditing ? 'حدث المطلوب وعدل التفاصيل مباشرة' : 'اختر نوع الطلب واكتب التفاصيل'}</Text>
+          <Text style={s.title}>{isEditing ? t('editRequestTitle') : t('createRequestSimpleTitle')}</Text>
+          <Text style={s.sub}>{isEditing ? t('createRequestHeroSubEdit') : t('createRequestHeroSubNew')}</Text>
 
           {isAdmin ? (
             <View style={s.adminCard}>
-              <Text style={s.adminTitle}>أدوات الإدارة</Text>
-              <Text style={s.adminSub}>تقدر تنشر الطلب لحسابك أو نيابة عن شخص ما عنده حساب.</Text>
+              <Text style={s.adminTitle}>{t('adminToolsTitle')}</Text>
+              <Text style={s.adminSub}>{t('adminCreateListingSub')}</Text>
               <View style={[s.row, { marginTop: 12, flexWrap: 'wrap' }] }>
-                <Chip label="حسابي" active={sellerMode === 'self'} onPress={() => setSellerMode('self')} compact={compactScreen} />
-                <Chip label="بدون حساب" active={sellerMode === 'manual'} onPress={() => setSellerMode('manual')} compact={compactScreen} />
+                <Chip label={t('sellerModeSelf')} active={sellerMode === 'self'} onPress={() => setSellerMode('self')} compact={compactScreen} />
+                <Chip label={t('sellerModeGuest')} active={sellerMode === 'manual'} onPress={() => setSellerMode('manual')} compact={compactScreen} />
               </View>
 
               {sellerMode === 'manual' ? (
                 <View style={{ marginTop: 12 }}>
-                  <Text style={s.label}>اسم المعلن</Text>
+                  <Text style={s.label}>{t('sellerNameLabel')}</Text>
                   <TextInput
                     value={manualSellerName}
                     onChangeText={setManualSellerName}
-                    placeholder="مثال: أبو فهد"
+                    placeholder={t('sellerNamePlaceholder')}
                     placeholderTextColor={colors.silver + '66'}
                     style={s.input}
                   />
 
-                  <Text style={[s.label, { marginTop: 12 }]}>رقم الهاتف (اتصال)</Text>
+                  <Text style={[s.label, { marginTop: 12 }]}>{t('phoneCallFieldLabel')}</Text>
                   <GccPhoneInput
                     icon="📞"
                     country={manualSellerPhoneCountry}
@@ -218,11 +244,11 @@ export default function CreateRequestScreen({ navigation, route }: any) {
                       setManualSellerPhoneNational(value);
                       setManualSellerPhone(buildE164(manualSellerPhoneCountry, value));
                     }}
-                    placeholder="اكتب الرقم بدون فتح الخط"
+                    placeholder={t('enterNumberNoCountryCode')}
                     editable={!submitting}
                   />
 
-                  <Text style={[s.label, { marginTop: 12 }]}>رقم واتساب</Text>
+                  <Text style={[s.label, { marginTop: 12 }]}>{t('whatsapp')}</Text>
                   <GccPhoneInput
                     icon="💬"
                     country={manualSellerWhatsappCountry}
@@ -235,7 +261,7 @@ export default function CreateRequestScreen({ navigation, route }: any) {
                       setManualSellerWhatsappNational(value);
                       setManualSellerWhatsapp(buildE164(manualSellerWhatsappCountry, value));
                     }}
-                    placeholder="اكتب الرقم بدون فتح الخط"
+                    placeholder={t('enterNumberNoCountryCode')}
                     editable={!submitting}
                   />
                 </View>
@@ -244,31 +270,31 @@ export default function CreateRequestScreen({ navigation, route }: any) {
           ) : null}
 
           <View style={s.section}>
-            <Text style={s.label}>النوع</Text>
+            <Text style={s.label}>{t('requestTypeLabel')}</Text>
             <View style={[s.row, compactScreen && s.rowCompact]}>
-              <Chip label="سيارة" active={category === 'car'} onPress={() => setCategory('car')} compact={compactScreen} />
-              <Chip label="قطعة" active={category === 'part'} onPress={() => setCategory('part')} compact={compactScreen} />
-              <Chip label="أخرى" active={category === 'other'} onPress={() => setCategory('other')} compact={compactScreen} />
+              <Chip label={t('requestTypeCar')} active={category === 'car'} onPress={() => setCategory('car')} compact={compactScreen} />
+              <Chip label={t('requestTypePart')} active={category === 'part'} onPress={() => setCategory('part')} compact={compactScreen} />
+              <Chip label={t('requestTypeOther')} active={category === 'other'} onPress={() => setCategory('other')} compact={compactScreen} />
             </View>
           </View>
 
           <View style={s.section}>
-            <Text style={s.label}>العنوان</Text>
+            <Text style={s.label}>{t('requestTitleLabel')}</Text>
             <TextInput
               value={title}
               onChangeText={setTitle}
-              placeholder="مثال: أبي بورش باناميرا 2020"
+              placeholder={t('requestTitlePlaceholder')}
               placeholderTextColor={colors.silver + '66'}
               style={s.input}
             />
           </View>
 
           <View style={s.section}>
-            <Text style={s.label}>الوصف</Text>
+            <Text style={s.label}>{t('requestDescLabel')}</Text>
             <TextInput
               value={description}
               onChangeText={setDescription}
-              placeholder="اكتب التفاصيل المطلوبة"
+              placeholder={t('requestDescPlaceholder')}
               placeholderTextColor={colors.silver + '66'}
               style={[s.input, s.textarea]}
               multiline
@@ -277,11 +303,11 @@ export default function CreateRequestScreen({ navigation, route }: any) {
           </View>
 
           <View style={s.section}>
-            <Text style={s.label}>الميزانية (اختياري)</Text>
+            <Text style={s.label}>{t('requestBudgetOptionalLabel')}</Text>
             <TextInput
               value={budget}
               onChangeText={setBudget}
-              placeholder="مثال: 5000"
+              placeholder={t('requestBudgetPlaceholder')}
               placeholderTextColor={colors.silver + '66'}
               keyboardType="number-pad"
               style={s.input}
@@ -289,10 +315,10 @@ export default function CreateRequestScreen({ navigation, route }: any) {
           </View>
 
           <View style={s.section}>
-            <Text style={s.label}>الصورة</Text>
+            <Text style={s.label}>{t('requestImagesLabel')}</Text>
             <TouchableOpacity style={s.imagePicker} activeOpacity={0.88} onPress={pickImages}>
-              <Text style={s.imagePickerText}>📸 اختر صورة من التلفون</Text>
-              <Text style={s.imagePickerHint}>حتى 4 صور</Text>
+              <Text style={s.imagePickerText}>📸 {t('selectImagesFromPhone')}</Text>
+              <Text style={s.imagePickerHint}>{t('upTo4Images')}</Text>
             </TouchableOpacity>
             {!!imageItems.length && (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.previewRow}>
@@ -308,9 +334,25 @@ export default function CreateRequestScreen({ navigation, route }: any) {
             )}
           </View>
 
-          <PremiumButton title={submitting ? 'جاري الحفظ…' : isEditing ? 'حفظ التعديلات' : 'إنشاء الطلب'} onPress={submit} variant="primary" icon="➕" style={{ opacity: canSubmit ? 1 : 0.6 }} />
+          <PremiumButton
+            title={
+              submitting
+                ? (uploadPercent != null ? t('uploadingWithPercent', { n: uploadPercent }) : t('savingShort'))
+                : isEditing
+                  ? t('saveEdit')
+                  : t('createRequestBtn')
+            }
+            onPress={submit}
+            variant="primary"
+            icon="➕"
+            disabled={!canSubmit || submitting}
+            style={{ opacity: canSubmit ? 1 : 0.6 }}
+          />
+          {!submitting && !canSubmit && missingFields.length ? (
+            <Text style={s.missingHint}>{t('missingRequiredFieldsMsg', { fields: missingFields.join('، ') })}</Text>
+          ) : null}
           <TouchableOpacity style={s.cancel} activeOpacity={0.85} onPress={() => navigation.goBack()}>
-            <Text style={s.cancelText}>إلغاء</Text>
+            <Text style={s.cancelText}>{t('cancel')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -355,6 +397,7 @@ const s = StyleSheet.create({
   },
   adminTitle: { color: colors.white, fontSize: 14, fontWeight: '900' },
   adminSub: { color: colors.silver, fontSize: 12, marginTop: 6, lineHeight: 18 },
+  missingHint: { marginTop: 10, color: colors.primary, fontWeight: '800', fontSize: 12, lineHeight: 18, opacity: 0.95 },
 
   section: { marginTop: 16 },
   label: { color: colors.silver, fontSize: 12, fontWeight: '700', marginBottom: 8 },

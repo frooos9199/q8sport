@@ -6,6 +6,7 @@ import WhatsAppButton from "@/components/ui/WhatsAppButton";
 
 export default function CarCard({ car }: { car: Car }) {
   const { locale, t } = useLocale();
+  const carTitle = car.title?.[locale] || car.title?.ar;
 
   return (
     <div className="card group">
@@ -43,7 +44,7 @@ export default function CarCard({ car }: { car: Car }) {
             {t.cars.details}
           </Link>
           <div className="relative -top-1">
-            <WhatsAppButton phone={car.userWhatsapp} message={`مرحبا، أبي أستفسر عن: ${car.title.ar}`} />
+            <WhatsAppButton phone={car.userWhatsapp} message={`${t.common.whatsappMsgCar} ${carTitle || ""}`} />
           </div>
         </div>
       </div>

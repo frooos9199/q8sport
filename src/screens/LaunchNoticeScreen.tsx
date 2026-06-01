@@ -1,7 +1,8 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { colors, radius, spacing } from '../lib/theme';
+import { t } from '../i18n';
 
 type LaunchNoticeScreenProps = {
   onAgree: () => void;
@@ -9,22 +10,34 @@ type LaunchNoticeScreenProps = {
 
 export default function LaunchNoticeScreen({ onAgree }: LaunchNoticeScreenProps) {
   return (
-    <View style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.badge}>تنبيه مهم</Text>
-        <Text style={styles.title}>سياسة النشر داخل التطبيق</Text>
-        <Text style={styles.body}>
-          يمنع منعا باتا عرض أو بيع أو طلب أي منتج يخص أقزوز السيارات أو إصدار الأصوات المزعجة.
-        </Text>
-        <Text style={styles.body}>
-          باستخدامك التطبيق ونشرك لأي إعلان، فأنت تتحمل المسؤولية الكاملة عن محتوى الإعلان وأي مخالفة تنتج عنه.
-        </Text>
+    <SafeAreaView style={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.card}>
+          <Text style={styles.badge} maxFontSizeMultiplier={1.2}>
+            {t('launchNoticeBadge')}
+          </Text>
+          <Text style={styles.title} maxFontSizeMultiplier={1.2}>
+            {t('launchNoticeTitle')}
+          </Text>
+          <Text style={styles.body} maxFontSizeMultiplier={1.35}>
+            {t('launchNoticeBody1')}
+          </Text>
+          <Text style={styles.body} maxFontSizeMultiplier={1.35}>
+            {t('launchNoticeBody2')}
+          </Text>
 
-        <TouchableOpacity activeOpacity={0.88} onPress={onAgree} style={styles.button}>
-          <Text style={styles.buttonText}>موافق</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+          <TouchableOpacity activeOpacity={0.88} onPress={onAgree} style={styles.button}>
+            <Text style={styles.buttonText} maxFontSizeMultiplier={1.2}>
+              {t('agree')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -32,6 +45,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.dark,
+  },
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
     padding: spacing.xl,
   },
@@ -41,6 +57,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.primaryBorder,
     padding: 24,
+    width: '100%',
   },
   badge: {
     alignSelf: 'flex-start',

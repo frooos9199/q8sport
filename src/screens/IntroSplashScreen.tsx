@@ -3,6 +3,7 @@ import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View, useWindowD
 import Video from 'react-native-video';
 
 import { colors } from '../lib/theme';
+import { t } from '../i18n';
 
 type IntroSplashScreenProps = {
   onDone: () => void;
@@ -63,12 +64,12 @@ export default function IntroSplashScreen({ onDone }: IntroSplashScreenProps) {
         {!isReady ? (
           <View style={styles.loadingWrap}>
             <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={styles.loadingText}>جاري تشغيل الافتتاحية</Text>
+            <Text style={styles.loadingText}>{t('introLoadingText')}</Text>
           </View>
         ) : null}
 
         <TouchableOpacity activeOpacity={0.88} onPress={onDone} style={styles.skipButton}>
-          <Text style={styles.skipText}>تخطي</Text>
+          <Text style={styles.skipText}>{t('skip')}</Text>
         </TouchableOpacity>
       </View>
     </View>

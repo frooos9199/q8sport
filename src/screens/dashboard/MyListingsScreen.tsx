@@ -5,7 +5,9 @@ import { ref as dbRef, remove, update } from '@react-native-firebase/database';
 import { useAuth } from '../../hooks/useAuth';
 import { getDbSnapshot } from '../../lib/firebaseDatabase';
 import { db } from '../../lib/firebase';
+import { collectListingMediaUrls, deleteListingMediaByUrls } from '../../lib/listingImages';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
+import { t } from '../../i18n';
 
 type ListingType = 'car' | 'part' | 'request';
 type FilterType = 'all' | ListingType;
@@ -17,6 +19,7 @@ type ListingRow = {
   subtitle: string;
   priceLine: string;
   status: string;
+  featuredAt?: number | null;
   raw: any;
 };
 
@@ -30,9 +33,13 @@ export default function MyListingsScreen({ navigation }: any) {
   const compactScreen = width < 390;
   const screenPadding = width < 380 ? spacing.lg : spacing.xl;
   const canManageAllListings = Boolean(user?.isAdmin || user?.isSuperAdmin);
+  const soldDeleteDelayMs = 3 * 60 * 60 * 1000;
 
   const loadListings = useCallback(async () => {
     if (!user) return;
+
+    const now = Date.now();
+    const expiredToDelete: Array<{ path: string; mediaUrls: string[]; key: string; type: ListingType }> = [];
 
     const [carsSnap, partsSnap, requestsSnap] = await Promise.all([
       getDbSnapshot(dbRef(db, 'cars'), 'cars'),
@@ -49,22 +56,34 @@ export default function MyListingsScreen({ navigation }: any) {
         return null;
       }
 
-      const sellerName = value?.userName?.trim() || 'معلن غير معروف';
+      const sellerName = value?.userName?.trim() || t('unknownSeller');
       const sellerWhatsapp = value?.userWhatsapp?.trim();
       return sellerWhatsapp ? `${sellerName} • ${sellerWhatsapp}` : sellerName;
     };
 
     carsSnap.forEach((child: any) => {
       const value = child.val();
+      const status = String(value?.status || 'active');
+      const deleteAt = Number(value?.deleteAt || 0);
+      if (status === 'sold' && deleteAt > 0 && deleteAt <= now && shouldIncludeListing(value?.userId)) {
+        expiredToDelete.push({
+          path: `cars/${child.key}`,
+          mediaUrls: collectListingMediaUrls(value),
+          key: String(child.key),
+          type: 'car',
+        });
+        return undefined;
+      }
       if (shouldIncludeListing(value?.userId)) {
         const seller = sellerLine(value);
         nextItems.push({
           id: child.key,
           type: 'car',
-          title: value?.title?.ar || 'سيارة',
+          title: value?.title?.ar || t('carSingular'),
           subtitle: [value?.brand, value?.model, value?.year, seller].filter(Boolean).join(' • '),
-          priceLine: value?.price ? `${Number(value.price).toLocaleString()} د.ك` : 'بدون سعر',
+          priceLine: value?.price ? `${Number(value.price).toLocaleString()} ${t('kwd')}` : t('noPrice'),
           status: value?.status || 'active',
+          featuredAt: value?.featuredAt ? Number(value.featuredAt) : null,
           raw: value,
         });
       }
@@ -73,15 +92,27 @@ export default function MyListingsScreen({ navigation }: any) {
 
     partsSnap.forEach((child: any) => {
       const value = child.val();
+      const status = String(value?.status || 'active');
+      const deleteAt = Number(value?.deleteAt || 0);
+      if (status === 'sold' && deleteAt > 0 && deleteAt <= now && shouldIncludeListing(value?.userId)) {
+        expiredToDelete.push({
+          path: `parts/${child.key}`,
+          mediaUrls: collectListingMediaUrls(value),
+          key: String(child.key),
+          type: 'part',
+        });
+        return undefined;
+      }
       if (shouldIncludeListing(value?.userId) && value?.category?.trim() !== 'عادم') {
         const seller = sellerLine(value);
         nextItems.push({
           id: child.key,
           type: 'part',
-          title: value?.title?.ar || 'قطعة',
+          title: value?.title?.ar || t('partSingular'),
           subtitle: [value?.category, ...(value?.compatibleBrands || []).slice(0, 2), seller].filter(Boolean).join(' • '),
-          priceLine: value?.price ? `${Number(value.price).toLocaleString()} د.ك` : 'بدون سعر',
+          priceLine: value?.price ? `${Number(value.price).toLocaleString()} ${t('kwd')}` : t('noPrice'),
           status: value?.status || 'active',
+          featuredAt: value?.featuredAt ? Number(value.featuredAt) : null,
           raw: value,
         });
       }
@@ -95,11 +126,18 @@ export default function MyListingsScreen({ navigation }: any) {
         nextItems.push({
           id: child.key,
           type: 'request',
-          title: value?.title?.ar || 'مطلوب',
-          subtitle: [value?.category === 'car' ? 'طلب سيارة' : value?.category === 'part' ? 'طلب قطعة' : 'طلب خاص', seller]
+          title: value?.title?.ar || t('requestSingular'),
+          subtitle: [
+            value?.category === 'car'
+              ? t('requestCategoryCar')
+              : value?.category === 'part'
+                ? t('requestCategoryPart')
+                : t('requestCategoryOther'),
+            seller,
+          ]
             .filter(Boolean)
             .join(' • '),
-          priceLine: value?.budget ? `${Number(value.budget).toLocaleString()} د.ك` : 'بدون ميزانية محددة',
+          priceLine: value?.budget ? `${Number(value.budget).toLocaleString()} ${t('kwd')}` : t('noBudget'),
           status: value?.status || 'open',
           raw: value,
         });
@@ -108,10 +146,33 @@ export default function MyListingsScreen({ navigation }: any) {
     });
 
     nextItems.sort((a, b) => {
+      const aFeatured = Number(a.featuredAt || 0);
+      const bFeatured = Number(b.featuredAt || 0);
+      const aIsFeatured = aFeatured > 0;
+      const bIsFeatured = bFeatured > 0;
+      if (aIsFeatured !== bIsFeatured) {
+        return aIsFeatured ? -1 : 1;
+      }
+      if (aIsFeatured && bIsFeatured && aFeatured !== bFeatured) {
+        return bFeatured - aFeatured;
+      }
       const aTime = a.raw?.updatedAt || a.raw?.createdAt || 0;
       const bTime = b.raw?.updatedAt || b.raw?.createdAt || 0;
       return String(bTime).localeCompare(String(aTime));
     });
+
+    if (expiredToDelete.length) {
+      await Promise.allSettled(
+        expiredToDelete.map(async (item) => {
+          try {
+            await remove(dbRef(db, item.path));
+          } catch {
+            return;
+          }
+          await deleteListingMediaByUrls(item.mediaUrls);
+        }),
+      );
+    }
 
     setItems(nextItems);
   }, [user, canManageAllListings]);
@@ -123,7 +184,7 @@ export default function MyListingsScreen({ navigation }: any) {
         await loadListings();
       } catch (e: any) {
         if (mounted) {
-          Alert.alert('خطأ', e?.message || 'تعذر جلب إعلاناتك');
+          Alert.alert(t('loginErrorTitle'), e?.message || t('myListingsFetchFailedMsg'));
         }
       } finally {
         if (mounted) setLoading(false);
@@ -159,17 +220,19 @@ export default function MyListingsScreen({ navigation }: any) {
 
   const deleteListing = (item: ListingRow) => {
     const path = item.type === 'car' ? `cars/${item.id}` : item.type === 'part' ? `parts/${item.id}` : `requests/${item.id}`;
-    Alert.alert('تأكيد', `حذف الإعلان: ${item.title}؟`, [
-      { text: 'إلغاء', style: 'cancel' },
+    Alert.alert(t('confirmTitle'), t('myListingsDeleteConfirmMsg', { title: item.title }), [
+      { text: t('cancel'), style: 'cancel' },
       {
-        text: 'حذف',
+        text: t('delete'),
         style: 'destructive',
         onPress: async () => {
           try {
+            const mediaUrls = collectListingMediaUrls(item.raw);
             await remove(dbRef(db, path));
+            await deleteListingMediaByUrls(mediaUrls);
             setItems(prev => prev.filter(entry => !(entry.type === item.type && entry.id === item.id)));
           } catch (e: any) {
-            Alert.alert('خطأ', e?.message || 'تعذر حذف الإعلان');
+            Alert.alert(t('loginErrorTitle'), e?.message || t('myListingsDeleteFailedMsg'));
           }
         },
       },
@@ -182,39 +245,82 @@ export default function MyListingsScreen({ navigation }: any) {
       ? item.status === 'open' ? 'closed' : 'open'
       : item.status === 'sold' ? 'active' : 'sold';
 
+    const now = Date.now();
+    const patch: Record<string, any> = { status: nextStatus, updatedAt: now };
+    if (item.type !== 'request') {
+      if (nextStatus === 'sold') {
+        patch.soldAt = now;
+        patch.deleteAt = now + soldDeleteDelayMs;
+      } else {
+        patch.soldAt = null;
+        patch.deleteAt = null;
+      }
+    }
+
     try {
-      await update(dbRef(db, path), { status: nextStatus, updatedAt: Date.now() });
+      await update(dbRef(db, path), patch);
       setItems(prev => prev.map(entry => (
         entry.id === item.id && entry.type === item.type
-          ? { ...entry, status: nextStatus, raw: { ...entry.raw, status: nextStatus, updatedAt: Date.now() } }
+          ? { ...entry, status: nextStatus, raw: { ...entry.raw, ...patch } }
           : entry
       )));
     } catch (e: any) {
-      Alert.alert('خطأ', e?.message || 'تعذر تحديث حالة الإعلان');
+      Alert.alert(t('loginErrorTitle'), e?.message || t('myListingsStatusUpdateFailedMsg'));
+    }
+  };
+
+  const toggleFeatured = async (item: ListingRow) => {
+    if (!canManageAllListings) return;
+    if (item.type !== 'car' && item.type !== 'part') return;
+
+    const path = item.type === 'car' ? `cars/${item.id}` : `parts/${item.id}`;
+    const nextFeaturedAt = item.featuredAt ? null : Date.now();
+    const patch: Record<string, any> = { featuredAt: nextFeaturedAt };
+
+    try {
+      await update(dbRef(db, path), patch);
+      setItems(prev => prev.map(entry => (
+        entry.id === item.id && entry.type === item.type
+          ? { ...entry, featuredAt: nextFeaturedAt, raw: { ...entry.raw, ...patch } }
+          : entry
+      )));
+    } catch (e: any) {
+      Alert.alert(t('loginErrorTitle'), e?.message || t('registerErrorGenericMsg'));
     }
   };
 
   const filteredItems = items.filter(item => filter === 'all' || item.type === filter);
 
   const filterLabel = (value: FilterType) => {
-    if (value === 'car') return 'سيارات';
-    if (value === 'part') return 'قطع';
-    if (value === 'request') return 'طلبات';
-    return 'الكل';
+    if (value === 'car') return t('cars');
+    if (value === 'part') return t('parts');
+    if (value === 'request') return t('requests');
+    return t('all');
   };
 
   const statusActionLabel = (item: ListingRow) => {
     if (item.type === 'request') {
-      return item.status === 'open' ? 'إغلاق' : 'إعادة فتح';
+      return item.status === 'open' ? t('close') : t('reopen');
     }
 
-    return item.status === 'sold' ? 'تنشيط' : 'تعليم كمباع';
+    return item.status === 'sold' ? t('markActive') : t('markSold');
+  };
+
+  const statusLabel = (value: string) => {
+    const mapped: Record<string, string> = {
+      active: t('active'),
+      sold: t('sold'),
+      open: t('open'),
+      closed: t('closed'),
+      pending: t('pending'),
+    };
+    return mapped[value] || value;
   };
 
   if (loading) {
     return (
       <View style={s.center}>
-        <Text style={s.loading}>جاري تحميل إعلاناتك...</Text>
+        <Text style={s.loading}>{t('myListingsLoading')}</Text>
       </View>
     );
   }
@@ -229,11 +335,11 @@ export default function MyListingsScreen({ navigation }: any) {
       ListHeaderComponent={
         <>
           <View style={s.heroCard}>
-            <Text style={s.heroTitle}>{canManageAllListings ? 'إدارة كل الإعلانات' : 'إعلاناتك في السوق'}</Text>
+            <Text style={s.heroTitle}>{canManageAllListings ? t('myListingsHeroTitleAdmin') : t('myListingsHeroTitle')}</Text>
             <Text style={s.heroSub}>
               {canManageAllListings
-                ? 'بصفتك أدمن، تراجع وتعدل وتحذف وتغيّر حالة أي سيارة أو قطعة أو مطلوب في السوق.'
-                : 'من هنا تعدل أو تحذف أو تغيّر حالة أي سيارة أو قطعة أو مطلوب نزلته.'}
+                ? t('myListingsHeroSubAdmin')
+                : t('myListingsHeroSub')}
             </Text>
           </View>
 
@@ -253,32 +359,41 @@ export default function MyListingsScreen({ navigation }: any) {
       }
       ListEmptyComponent={
         <View style={s.centerCard}>
-          <Text style={s.emptyTitle}>{canManageAllListings ? 'ما فيه عناصر على هذا الفلتر' : 'ما عندك عناصر على هذا الفلتر'}</Text>
+          <Text style={s.emptyTitle}>{canManageAllListings ? t('myListingsEmptyTitleAdmin') : t('myListingsEmptyTitle')}</Text>
           <Text style={s.emptySub}>
             {canManageAllListings
-              ? 'جرّب تغيير الفلتر أو انتظر حتى يضاف إعلان جديد ليظهر هنا مباشرة.'
-              : 'ابدأ بنشر أول سيارة أو قطعة أو مطلوب، وبعدها راح تظهر هنا كلها.'}
+              ? t('myListingsEmptySubAdmin')
+              : t('myListingsEmptySub')}
           </Text>
         </View>
       }
       renderItem={({ item }) => (
-        <View style={s.card}>
+        <View style={[s.card, item.featuredAt ? s.cardFeatured : null]}>
           <View style={[s.topRow, compactScreen && s.topRowCompact]}>
-            <View style={s.typeBadge}><Text style={s.typeText}>{item.type === 'car' ? 'سيارة' : item.type === 'part' ? 'قطعة' : 'مطلوب'}</Text></View>
-            <Text style={s.status}>{item.status}</Text>
+            <View style={s.typeBadge}><Text style={s.typeText}>{item.type === 'car' ? t('carSingular') : item.type === 'part' ? t('partSingular') : t('requestSingular')}</Text></View>
+            <Text style={s.status}>{statusLabel(item.status)}</Text>
           </View>
           <Text style={s.title}>{item.title}</Text>
-          <Text style={s.subtitle}>{item.subtitle || 'بدون تفاصيل إضافية'}</Text>
+          <Text style={s.subtitle}>{item.subtitle || t('noExtraDetails')}</Text>
           <Text style={s.price}>{item.priceLine}</Text>
           <View style={[s.actionsRow, compactScreen && s.actionsRowCompact]}>
             <TouchableOpacity style={[s.editBtn, compactScreen && s.actionBtnCompact]} activeOpacity={0.85} onPress={() => editListing(item)}>
-              <Text style={s.editText}>تعديل</Text>
+              <Text style={s.editText}>{t('edit')}</Text>
             </TouchableOpacity>
+            {canManageAllListings && (item.type === 'car' || item.type === 'part') ? (
+              <TouchableOpacity
+                style={[s.featureBtn, item.featuredAt ? s.featureBtnActive : null, compactScreen && s.actionBtnCompact]}
+                activeOpacity={0.85}
+                onPress={() => toggleFeatured(item)}
+              >
+                <Text style={[s.featureText, item.featuredAt ? s.featureTextActive : null]}>{t('featuredAdLabel')}</Text>
+              </TouchableOpacity>
+            ) : null}
             <TouchableOpacity style={[s.statusBtn, compactScreen && s.actionBtnCompact]} activeOpacity={0.85} onPress={() => toggleListingStatus(item)}>
               <Text style={s.statusBtnText}>{statusActionLabel(item)}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[s.deleteBtn, compactScreen && s.actionBtnCompact]} activeOpacity={0.85} onPress={() => deleteListing(item)}>
-              <Text style={s.deleteText}>حذف</Text>
+              <Text style={s.deleteText}>{t('delete')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -304,6 +419,7 @@ const s = StyleSheet.create({
   emptyTitle: { color: colors.white, fontWeight: '900', fontSize: 18, marginBottom: 8 },
   emptySub: { color: colors.silver, fontSize: 13, textAlign: 'center', lineHeight: 21 },
   card: { backgroundColor: colors.darkCard, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.metalBorder, padding: 18, marginBottom: 12, ...shadows.card },
+  cardFeatured: { borderColor: colors.gold, borderWidth: 2 },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   topRowCompact: { alignItems: 'flex-start', gap: 8 },
   typeBadge: { backgroundColor: colors.primaryGlow, borderRadius: radius.full, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: colors.primaryBorder },
@@ -321,4 +437,8 @@ const s = StyleSheet.create({
   statusBtnText: { color: colors.primary, fontWeight: '900', fontSize: 12 },
   deleteBtn: { flex: 1, backgroundColor: colors.primaryGlow, borderRadius: radius.lg, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: colors.primaryBorder },
   deleteText: { color: colors.primary, fontWeight: '900' },
+  featureBtn: { flex: 1, backgroundColor: colors.dark, borderRadius: radius.lg, paddingVertical: 12, alignItems: 'center', borderWidth: 1, borderColor: colors.metalBorder },
+  featureBtnActive: { backgroundColor: colors.metal, borderColor: colors.gold },
+  featureText: { color: colors.silverLight, fontWeight: '900', fontSize: 12 },
+  featureTextActive: { color: colors.gold },
 });

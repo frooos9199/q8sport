@@ -8,12 +8,14 @@ import { useAuth } from '../../hooks/useAuth';
 import GccPhoneInput from '../../components/GccPhoneInput';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { t } from '../../i18n';
+import { useLocale } from '../../i18n/LocaleProvider';
 import { buildE164, getGccCountry, type GccCountry } from '../../lib/gccPhone';
 
 export default function RegisterScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
   const { register, signInWithApple } = useAuth();
+  const { locale, setAppLocale } = useLocale();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phoneCountry, setPhoneCountry] = useState<GccCountry['code']>('KW');
@@ -31,7 +33,7 @@ export default function RegisterScreen({ navigation }: any) {
     if (!samePhone) {
       const waExpectedLen = getGccCountry(whatsappCountry).nationalNumberLength;
       if (whatsappNational.length !== waExpectedLen) {
-        Alert.alert('تنبيه', `رقم الواتساب لازم يكون ${waExpectedLen} أرقام`);
+        Alert.alert(t('loginErrorTitle'), t('whatsappDigitsMsg', { n: waExpectedLen }));
         return;
       }
     }
@@ -42,16 +44,19 @@ export default function RegisterScreen({ navigation }: any) {
       : buildE164(whatsappCountry, whatsappNational);
 
     if (!phoneE164) {
-      Alert.alert('تنبيه', 'اكتب رقم الجوال');
+      Alert.alert(t('loginErrorTitle'), t('enterPhoneMsg'));
       return;
     }
 
     if (!samePhone && !whatsappE164) {
-      Alert.alert('تنبيه', 'اكتب رقم الواتساب');
+      Alert.alert(t('loginErrorTitle'), t('enterWhatsappMsg'));
       return;
     }
 
-    if (password.length < 6) { Alert.alert('خطأ', 'كلمة المرور لازم 6 أحرف على الأقل'); return; }
+    if (password.length < 6) {
+      Alert.alert(t('loginErrorTitle'), t('passwordMinMsg'));
+      return;
+    }
     setLoading(true);
     try {
       await register({ name, email, phone: phoneE164, whatsapp: whatsappE164, password });
@@ -61,19 +66,22 @@ export default function RegisterScreen({ navigation }: any) {
       console.log('Register error:', { code, message });
 
       if (code === 'auth/email-already-in-use') {
-        Alert.alert('خطأ', 'هذا البريد مستخدم من قبل');
+        Alert.alert(t('loginErrorTitle'), t('emailAlreadyUsedMsg'));
       } else if (code === 'app/phone-already-in-use') {
-        Alert.alert('خطأ', 'هذا رقم الجوال مستخدم من قبل');
+        Alert.alert(t('loginErrorTitle'), t('phoneAlreadyUsedMsg'));
       } else if (code === 'auth/invalid-email') {
-        Alert.alert('خطأ', 'البريد الإلكتروني غير صحيح');
+        Alert.alert(t('loginErrorTitle'), t('invalidEmailMsg'));
       } else if (code === 'auth/weak-password') {
-        Alert.alert('خطأ', 'كلمة المرور ضعيفة');
+        Alert.alert(t('loginErrorTitle'), t('weakPasswordMsg'));
       } else if (code === 'auth/network-request-failed') {
-        Alert.alert('خطأ', 'تأكد من اتصال الإنترنت وحاول مرة ثانية');
+        Alert.alert(t('loginErrorTitle'), t('networkErrorMsg'));
       } else if (code === 'auth/internal-error') {
-        Alert.alert('خطأ', 'خطأ داخلي من Firebase. غالباً مشكلة إعدادات iOS (GoogleService-Info.plist) أو إعدادات مشروع Firebase.');
+        Alert.alert(t('loginErrorTitle'), t('internalFirebaseErrorMsg'));
       } else {
-        Alert.alert('خطأ', code ? `حدث خطأ (${code})` : 'حدث خطأ، حاول مرة ثانية');
+        Alert.alert(
+          t('loginErrorTitle'),
+          code ? t('registerErrorWithCodeMsg', { code }) : t('registerErrorGenericMsg'),
+        );
       }
     }
     setLoading(false);
@@ -89,7 +97,7 @@ export default function RegisterScreen({ navigation }: any) {
         setLoading(false);
         return;
       }
-      Alert.alert('خطأ', 'تعذر التسجيل بحساب Apple');
+      Alert.alert(t('loginErrorTitle'), t('appleRegisterFailedMsg'));
     }
     setLoading(false);
   };
@@ -114,6 +122,24 @@ export default function RegisterScreen({ navigation }: any) {
         <LinearGradient colors={['rgba(227,30,36,0.06)', 'transparent']} style={s.bgGlow} />
 
         <View style={s.logoSection}>
+          <View style={s.langRow}>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => setAppLocale('ar')}
+              style={[s.langBtn, locale === 'ar' && s.langBtnActive]}
+            >
+              <Text style={s.langFlag}>🇰🇼</Text>
+              <Text style={[s.langText, locale === 'ar' && s.langTextActive]}>{t('languageArabic')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => setAppLocale('en')}
+              style={[s.langBtn, locale === 'en' && s.langBtnActive]}
+            >
+              <Text style={s.langFlag}>🇺🇸</Text>
+              <Text style={[s.langText, locale === 'en' && s.langTextActive]}>{t('languageEnglish')}</Text>
+            </TouchableOpacity>
+          </View>
           <Text style={s.logoQ8}>Q8</Text>
           <Text style={s.logoSport}>SPORT CAR</Text>
         </View>
@@ -156,7 +182,7 @@ export default function RegisterScreen({ navigation }: any) {
             <View style={[s.checkbox, samePhone && s.checked]}>
               {samePhone && <Text style={s.checkMark}>✓</Text>}
             </View>
-            <Text style={s.checkText}>رقم الواتساب نفس رقم الجوال</Text>
+            <Text style={s.checkText}>{t('whatsappSameAsPhone')}</Text>
           </TouchableOpacity>
 
           {!samePhone ? (
@@ -236,6 +262,22 @@ const s = StyleSheet.create({
   bgGlow: { position: 'absolute', top: 0, left: 0, right: 0, height: 200 },
 
   logoSection: { alignItems: 'center', marginBottom: 24 },
+  langRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
+  langBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.metalBorder,
+    backgroundColor: colors.metal,
+  },
+  langBtnActive: { borderColor: colors.primaryBorder, backgroundColor: colors.darkCard },
+  langFlag: { fontSize: 16 },
+  langText: { color: colors.silver, fontSize: 12, fontWeight: '800' },
+  langTextActive: { color: colors.white },
   logoQ8: { fontSize: 40, fontWeight: '900', color: colors.primary },
   logoSport: { fontSize: 16, fontWeight: '800', color: colors.white, letterSpacing: 3 },
 

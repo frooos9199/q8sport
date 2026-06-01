@@ -51,12 +51,12 @@ export default function Navbar() {
               href={`/${otherLocale}`}
               className="text-silver hover:text-white text-sm border border-metal px-3 py-1.5 rounded-lg hover:border-primary/50 transition-all"
             >
-              {locale === "ar" ? "EN" : "عربي"}
+              {locale === "ar" ? t.common.langEnShort : t.common.langArShort}
             </Link>
 
             {user ? (
               <div className="flex items-center gap-2">
-                {isAdmin && <span className="text-primary text-xs font-bold border border-primary/30 bg-primary/10 px-2 py-0.5 rounded">ADMIN</span>}
+                {isAdmin && <span className="text-primary text-xs font-bold border border-primary/30 bg-primary/10 px-2 py-0.5 rounded">{t.common.adminBadge}</span>}
                 <Link href={`/${locale}/dashboard`} className="btn-primary text-sm !py-2 !px-4">
                   {t.common.myAccount}
                 </Link>
@@ -101,7 +101,7 @@ export default function Navbar() {
             ))}
             <div className="flex items-center gap-3 mt-4 pt-4 border-t border-metal">
               <Link href={`/${otherLocale}`} className="text-silver hover:text-white text-sm border border-metal px-3 py-1.5 rounded-lg">
-                {locale === "ar" ? "EN" : "عربي"}
+                {locale === "ar" ? t.common.langEnShort : t.common.langArShort}
               </Link>
               {user ? (
                 <>

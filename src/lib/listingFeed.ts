@@ -18,6 +18,25 @@ type ListingWithImages = {
   updatedAt?: any;
 };
 
+const LISTING_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+function toTimestampMs(value: any): number {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : 0;
+  }
+  return 0;
+}
+
+function isExpiredByAge(listing: ListingWithImages, now = Date.now()) {
+  const updatedAt = toTimestampMs(listing.updatedAt);
+  const createdAt = toTimestampMs(listing.createdAt);
+  const lastTouch = updatedAt || createdAt;
+  if (!lastTouch) return false;
+  return lastTouch <= now - LISTING_TTL_MS;
+}
+
 const IMAGE_PREFETCH_TIMEOUT_MS = 1500;
 
 function isBlockedPartCategory(category: unknown) {
@@ -42,7 +61,10 @@ export async function fetchSortedListings<T extends ListingWithImages>(path: str
     ? data.filter(item => !isBlockedPartCategory((item as { category?: unknown }).category))
     : data;
 
-  return sortListingsByFreshnessAndStatus(visibleData) as T[];
+  const now = Date.now();
+  const withoutExpired = visibleData.filter(item => !isExpiredByAge(item, now));
+
+  return sortListingsByFreshnessAndStatus(withoutExpired) as T[];
 }
 
 export async function prefetchListingImages<T extends ListingWithImages>(items: T[], count = 10) {

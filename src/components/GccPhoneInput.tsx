@@ -3,6 +3,7 @@ import { FlatList, Modal, Pressable, StyleSheet, Text, TextInput, TouchableOpaci
 
 import { GCC_COUNTRIES, getGccCountry, sanitizeNationalNumber, type GccCountry } from '../lib/gccPhone';
 import { colors, radius, spacing } from '../lib/theme';
+import { getLocale, t } from '../i18n';
 
 type Props = {
   icon?: string;
@@ -26,6 +27,7 @@ export default function GccPhoneInput({
   const selected = getGccCountry(country);
   const maxLen = selected.nationalNumberLength;
   const [pickerOpen, setPickerOpen] = useState(false);
+  const locale = getLocale();
 
   const pickCountry = (code: GccCountry['code']) => {
     onCountryChange(code);
@@ -43,7 +45,7 @@ export default function GccPhoneInput({
           onPress={() => setPickerOpen(true)}
           disabled={!editable}
           accessibilityRole="button"
-          accessibilityLabel="اختيار دولة فتح الخط"
+          accessibilityLabel={t('gccPickCountryAccessibility')}
         >
           <Text style={s.prefixText}>{selected.flag} +{selected.dialCode}</Text>
           <Text style={s.chevron}>▾</Text>
@@ -52,7 +54,7 @@ export default function GccPhoneInput({
           value={nationalNumber}
           onChangeText={(value) => onNationalNumberChange(sanitizeNationalNumber(country, value))}
           style={s.input}
-          placeholder={placeholder || `رقمك بدون فتح الخط (${maxLen} أرقام)`}
+          placeholder={placeholder || t('gccPhonePlaceholder', { maxLen })}
           placeholderTextColor={colors.silver + '50'}
           keyboardType="phone-pad"
           editable={editable}
@@ -69,24 +71,25 @@ export default function GccPhoneInput({
         <View style={s.modalOverlay}>
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setPickerOpen(false)} />
           <View style={s.modalCard}>
-            <Text style={s.modalTitle}>اختر الدولة</Text>
+            <Text style={s.modalTitle}>{t('gccChooseCountryTitle')}</Text>
             <FlatList
               data={GCC_COUNTRIES}
               keyExtractor={(item) => item.code}
               keyboardShouldPersistTaps="handled"
               renderItem={({ item }) => {
                 const active = item.code === country;
+                const countryName = locale === 'ar' ? item.nameAr : item.nameEn;
                 return (
                   <TouchableOpacity
                     activeOpacity={0.85}
                     onPress={() => pickCountry(item.code)}
                     style={[s.countryRow, active && s.countryRowActive]}
                     accessibilityRole="button"
-                    accessibilityLabel={`اختيار دولة ${item.nameAr}`}
+                    accessibilityLabel={t('gccPickCountryItemAccessibility', { name: countryName })}
                   >
                     <Text style={s.countryFlag}>{item.flag}</Text>
                     <View style={s.countryMeta}>
-                      <Text style={s.countryName}>{item.nameAr}</Text>
+                      <Text style={s.countryName}>{countryName}</Text>
                       <Text style={s.countryDial}>+{item.dialCode}</Text>
                     </View>
                     {active ? <Text style={s.countryCheck}>✓</Text> : <Text style={s.countryCheckPlaceholder} />}

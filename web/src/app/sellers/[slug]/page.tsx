@@ -83,8 +83,8 @@ export default async function SellerPage({ params }: { params: Promise<{ slug: s
         </div>
       </section>
 
-      <Section title="سياراته" items={feed.cars.map((item) => ({ href: `/cars/${item.slug}`, title: item.title, meta: `${item.year} • ${item.mileage}`, price: item.price, image: item.images[0] }))} />
-      <Section title="قطعه" items={feed.parts.map((item) => ({ href: `/parts/${item.slug}`, title: item.title, meta: `${item.category} • ${item.fitment}`, price: item.price, image: item.images[0] }))} />
+      <Section title="سياراته" items={feed.cars.map((item) => ({ href: `/cars/${item.slug}`, title: item.title, meta: `${item.year} • ${item.mileage}`, price: item.price, image: item.images[0], featured: Boolean(item.featuredAt) }))} />
+      <Section title="قطعه" items={feed.parts.map((item) => ({ href: `/parts/${item.slug}`, title: item.title, meta: `${item.category} • ${item.fitment}`, price: item.price, image: item.images[0], featured: Boolean(item.featuredAt) }))} />
       <Section title="مطلوباته" items={feed.wanted.map((item) => ({ href: `/wanted/${item.slug}`, title: item.title, meta: item.urgency, price: item.budget }))} />
     </main>
   );
@@ -99,16 +99,25 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Section({ title, items }: { title: string; items: Array<{ href: string; title: string; meta: string; price: string; image?: string }> }) {
+function Section({ title, items }: { title: string; items: Array<{ href: string; title: string; meta: string; price: string; image?: string; featured?: boolean }> }) {
   return (
     <section className="mt-8">
       <h2 className="mb-5 text-3xl font-black text-foreground">{title}</h2>
       <div className="grid gap-4 lg:grid-cols-3">
         {items.map((item) => (
-          <Link key={item.href} href={item.href} className="rounded-[1.5rem] border border-white/8 bg-panel p-5 transition hover:-translate-y-0.5 hover:border-brand/30">
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`rounded-[1.5rem] bg-panel p-5 transition hover:-translate-y-0.5 hover:border-brand/30 ${item.featured ? "border-2 border-gold" : "border border-white/8"}`}
+          >
             {item.image ? (
               <div className="relative mb-4">
                 <Image src={item.image} alt={item.title} width={960} height={640} className="h-44 w-full rounded-[1.25rem] object-cover" unoptimized />
+                {item.featured ? (
+                  <div className="absolute top-3 left-3 rounded-full border-2 border-gold bg-background/60 px-3 py-1 text-[11px] font-black text-gold backdrop-blur-sm">
+                    إعلان مميز
+                  </div>
+                ) : null}
                 <div className="absolute bottom-3 right-3 rounded-full bg-black/50 px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white backdrop-blur-sm">
                   <span className="text-brand">Q8</span>
                   SPORTCAR

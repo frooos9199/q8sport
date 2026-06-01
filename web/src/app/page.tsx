@@ -107,7 +107,11 @@ export default async function Home() {
         <SectionHeader title="السيارات" icon="🏎️" href="/cars" />
         <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {carListings.slice(0, 6).map((car) => (
-            <Link key={car.slug} href={`/cars/${car.slug}`} className="group rounded-2xl border border-metal-border bg-panel overflow-hidden transition hover:-translate-y-1 hover:border-brand/30 hover:shadow-[0_8px_30px_rgba(227,30,36,0.1)]">
+            <Link
+              key={car.slug}
+              href={`/cars/${car.slug}`}
+              className={`group rounded-2xl bg-panel overflow-hidden transition hover:-translate-y-1 hover:border-brand/30 hover:shadow-[0_8px_30px_rgba(227,30,36,0.1)] ${car.featuredAt ? "border-2 border-gold" : "border border-metal-border"}`}
+            >
               <div className="relative h-48 bg-metal">
                 {car.images[0] ? (
                   <>
@@ -122,6 +126,11 @@ export default async function Home() {
                   <div className="flex h-full items-center justify-center text-4xl">🏎️</div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                {car.featuredAt ? (
+                  <span className="absolute top-3 left-3 rounded-full border-2 border-gold bg-background/60 px-3 py-1 text-[11px] font-black text-gold backdrop-blur-sm">
+                    إعلان مميز
+                  </span>
+                ) : null}
                 <span className="absolute top-3 right-3 rounded-lg bg-brand px-2.5 py-1 text-xs font-bold text-white">{car.year}</span>
                 {car.status === "مباع" && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/60">
@@ -147,7 +156,11 @@ export default async function Home() {
         <SectionHeader title="قطع الغيار" icon="⚙️" href="/parts" />
         <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {partListings.slice(0, 6).map((part) => (
-            <Link key={part.slug} href={`/parts/${part.slug}`} className="group rounded-2xl border border-metal-border bg-panel overflow-hidden transition hover:-translate-y-1 hover:border-brand/30">
+            <Link
+              key={part.slug}
+              href={`/parts/${part.slug}`}
+              className={`group rounded-2xl bg-panel overflow-hidden transition hover:-translate-y-1 hover:border-brand/30 ${part.featuredAt ? "border-2 border-gold" : "border border-metal-border"}`}
+            >
               <div className="relative h-40 bg-metal">
                 {part.images[0] ? (
                   <>
@@ -162,6 +175,11 @@ export default async function Home() {
                   <div className="flex h-full items-center justify-center text-3xl">⚙️</div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+                {part.featuredAt ? (
+                  <span className="absolute top-3 left-3 rounded-full border-2 border-gold bg-background/60 px-3 py-1 text-[11px] font-black text-gold backdrop-blur-sm">
+                    إعلان مميز
+                  </span>
+                ) : null}
                 {part.condition === "جديد" && (
                   <span className="absolute top-3 right-3 rounded-lg bg-mint px-2.5 py-1 text-xs font-bold text-white">جديد</span>
                 )}

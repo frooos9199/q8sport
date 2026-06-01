@@ -6,6 +6,7 @@ import WhatsAppButton from "@/components/ui/WhatsAppButton";
 
 export default function PartCard({ part }: { part: Part }) {
   const { locale, t } = useLocale();
+  const partTitle = part.title?.[locale] || part.title?.ar;
 
   return (
     <div className="card group">
@@ -41,9 +42,9 @@ export default function PartCard({ part }: { part: Part }) {
 
         <div className="flex gap-2">
           <Link href={`/${locale}/parts/${part.id}`} className="btn-secondary text-sm !py-2 flex-1 text-center">
-            {locale === "ar" ? "التفاصيل" : "Details"}
+            {t.common.details}
           </Link>
-          <WhatsAppButton phone={part.userWhatsapp} message={`مرحبا، أبي أستفسر عن: ${part.title.ar}`} />
+          <WhatsAppButton phone={part.userWhatsapp} message={`${t.common.whatsappMsgPart} ${partTitle || ""}`} />
         </div>
       </div>
     </div>

@@ -4,10 +4,14 @@ import { db } from './firebase';
 import { getDbSnapshot } from './firebaseDatabase';
 import { BannerAd, BannerPlacement } from '../types';
 
-export const bannerPlacementOptions: Array<{ value: BannerPlacement; label: string; description: string }> = [
-  { value: 'home', label: 'الرئيسية', description: 'بانر أفقي في أعلى السوق' },
-  { value: 'cars', label: 'السيارات', description: 'إعلان داخل قائمة السيارات بعد كل 4 عناصر' },
-  { value: 'parts', label: 'القطع', description: 'إعلان داخل شبكة قطع الغيار بعد كل 4 عناصر' },
+export const bannerPlacementOptions: Array<{
+  value: BannerPlacement;
+  labelKey: 'bannerPlacementHome' | 'bannerPlacementCars' | 'bannerPlacementParts';
+  descriptionKey: 'bannerPlacementHomeDesc' | 'bannerPlacementCarsDesc' | 'bannerPlacementPartsDesc';
+}> = [
+  { value: 'home', labelKey: 'bannerPlacementHome', descriptionKey: 'bannerPlacementHomeDesc' },
+  { value: 'cars', labelKey: 'bannerPlacementCars', descriptionKey: 'bannerPlacementCarsDesc' },
+  { value: 'parts', labelKey: 'bannerPlacementParts', descriptionKey: 'bannerPlacementPartsDesc' },
 ];
 
 export function bannerHasPlacement(item: BannerAd, placement: BannerPlacement) {

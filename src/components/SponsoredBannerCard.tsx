@@ -4,6 +4,7 @@ import { Alert, Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-
 import FastAdImage from './FastAdImage';
 import { colors, radius, shadows, spacing } from '../lib/theme';
 import { BannerAd } from '../types';
+import { t } from '../i18n';
 
 type SponsoredBannerCardProps = {
   banner: BannerAd;
@@ -21,13 +22,13 @@ export default function SponsoredBannerCard({ banner }: SponsoredBannerCardProps
       const supported = await Linking.canOpenURL(normalizedUrl);
 
       if (!supported) {
-        Alert.alert('الرابط غير صالح', 'تعذر فتح الرابط المرفق مع هذا الإعلان.');
+        Alert.alert(t('invalidLinkTitle'), t('invalidLinkMsg'));
         return;
       }
 
       await Linking.openURL(normalizedUrl);
     } catch {
-      Alert.alert('تعذر فتح الإعلان', 'حاول مرة ثانية بعد قليل.');
+      Alert.alert(t('openAdFailedTitle'), t('openAdFailedMsg'));
     }
   }, [banner.targetUrl]);
 
@@ -39,15 +40,20 @@ export default function SponsoredBannerCard({ banner }: SponsoredBannerCardProps
       onPress={openBannerTarget}
     >
       <View style={styles.imageFrame}>
-        <FastAdImage uri={banner.thumbnailUrl || banner.imageUrl} style={styles.image} placeholderColor={colors.darkLight} />
+        <FastAdImage
+          uri={banner.thumbnailUrl || banner.imageUrl}
+          style={styles.image}
+          placeholderColor={colors.darkLight}
+          showWatermark={false}
+        />
       </View>
       <View style={styles.body}>
         <View style={styles.metaRow}>
-          <View style={styles.badge}><Text style={styles.badgeText}>مساحة إعلانية</Text></View>
-          <Text style={styles.orderText}>أولوية {banner.sortOrder || 0}</Text>
+          <View style={styles.badge}><Text style={styles.badgeText}>{t('sponsoredAdBadge')}</Text></View>
+          <Text style={styles.orderText}>{t('sponsoredAdPriority', { n: banner.sortOrder || 0 })}</Text>
         </View>
         {banner.title?.trim() ? <Text style={styles.title} numberOfLines={2}>{banner.title}</Text> : null}
-        <Text style={styles.subtext} numberOfLines={1}>{banner.targetUrl ? 'اضغط لفتح العرض' : 'إعلان ممول داخل السوق'}</Text>
+        <Text style={styles.subtext} numberOfLines={1}>{banner.targetUrl ? t('sponsoredAdTapToOpen') : t('sponsoredAdInMarketplace')}</Text>
       </View>
     </TouchableOpacity>
   );

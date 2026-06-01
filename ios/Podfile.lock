@@ -3017,7 +3017,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - RNReanimated (4.3.0):
+  - RNReanimated (4.4.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -3044,12 +3044,12 @@ PODS:
     - ReactCodegen
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
-    - RNReanimated/apple (= 4.3.0)
-    - RNReanimated/common (= 4.3.0)
+    - RNReanimated/apple (= 4.4.0)
+    - RNReanimated/common (= 4.4.0)
     - RNWorklets
     - SocketRocket
     - Yoga
-  - RNReanimated/apple (4.3.0):
+  - RNReanimated/apple (4.4.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -3079,7 +3079,7 @@ PODS:
     - RNWorklets
     - SocketRocket
     - Yoga
-  - RNReanimated/common (4.3.0):
+  - RNReanimated/common (4.4.0):
     - boost
     - DoubleConversion
     - fast_float
@@ -3196,7 +3196,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - RNWorklets (0.8.0):
+  - RNWorklets (0.9.1):
     - boost
     - DoubleConversion
     - fast_float
@@ -3223,11 +3223,11 @@ PODS:
     - ReactCodegen
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
-    - RNWorklets/apple (= 0.8.0)
-    - RNWorklets/common (= 0.8.0)
+    - RNWorklets/apple (= 0.9.1)
+    - RNWorklets/common (= 0.9.1)
     - SocketRocket
     - Yoga
-  - RNWorklets/apple (0.8.0):
+  - RNWorklets/apple (0.9.1):
     - boost
     - DoubleConversion
     - fast_float
@@ -3256,7 +3256,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - RNWorklets/common (0.8.0):
+  - RNWorklets/common (0.9.1):
     - boost
     - DoubleConversion
     - fast_float
@@ -3727,10 +3727,10 @@ SPEC CHECKSUMS:
   RNFBDatabase: 915db9a3aceed4e5cd43978c82d457b914a154f4
   RNFBStorage: 1f8fec4e0762a656c25b2e76bf2b39a1fee59fc0
   RNReactNativeHapticFeedback: 5ee9629c048b3a0bf1640dc5ae20e00585ddf08a
-  RNReanimated: d248da5f585539f3a259f48c39bd6843f9107ddc
+  RNReanimated: 66431475d3a350b9dd8f7f926312cadc201af06f
   RNScreens: 656e050942ae9445f5cc45d05d57f13ce7a4c8e4
   RNVectorIcons: 96c832d9134dfee90ce0be7a1e0bf4c1e41a8d11
-  RNWorklets: a13f2381f6ad0982fc2fa6430935e42c76dcea99
+  RNWorklets: a9b64c5325db72962c9895aecd931837d851131f
   SDWebImage: a7f831e1a65eb5e285e3fb046a23fcfbf08e696d
   SDWebImageWebPCoder: 908b83b6adda48effe7667cd2b7f78c897e5111d
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748

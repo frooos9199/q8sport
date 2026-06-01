@@ -7,6 +7,7 @@ import { Platform, Text, View, StyleSheet, TouchableOpacity } from 'react-native
 import { useAuth } from '../hooks/useAuth';
 import { colors } from '../lib/theme';
 import { t } from '../i18n';
+import { useLocale } from '../i18n/LocaleProvider';
 
 import HomeScreen from '../screens/HomeScreen';
 import CarsScreen from '../screens/cars/CarsScreen';
@@ -75,8 +76,9 @@ function CreateHeaderButton({ navigation }: { navigation: any }) {
 }
 
 function HomeStack() {
+  const { locale } = useLocale();
   return (
-    <Stack.Navigator id="home-stack" screenOptions={screenOptions}>
+    <Stack.Navigator key={`home-${locale}`} id="home-stack" screenOptions={screenOptions}>
       <Stack.Screen
         name="Home"
         component={HomeScreen}
@@ -87,18 +89,19 @@ function HomeStack() {
       />
       <Stack.Screen name="CarDetails" component={CarDetailsScreen} options={{ title: t('details'), headerTransparent: true, headerTitle: '' }} />
       <Stack.Screen name="PartDetails" component={PartDetailsScreen} options={{ title: t('details') }} />
-      <Stack.Screen name="SellerProfile" component={SellerProfileScreen} options={{ title: 'ملف المعلن' }} />
-      <Stack.Screen name="CreateListingHub" component={CreateListingHubScreen} options={{ title: 'وش تبي تنشر؟' }} />
-      <Stack.Screen name="CreateCar" component={CreateCarScreen} options={{ title: 'أضف سيارة' }} />
-      <Stack.Screen name="CreatePart" component={CreatePartScreen} options={{ title: 'أضف قطعة' }} />
-      <Stack.Screen name="CreateRequest" component={CreateRequestScreen} options={{ title: 'انشر مطلوبك' }} />
+      <Stack.Screen name="SellerProfile" component={SellerProfileScreen} options={{ title: t('sellerProfileTitle') }} />
+      <Stack.Screen name="CreateListingHub" component={CreateListingHubScreen} options={{ title: t('createListingHubTitle') }} />
+      <Stack.Screen name="CreateCar" component={CreateCarScreen} options={{ title: t('createCarTitle') }} />
+      <Stack.Screen name="CreatePart" component={CreatePartScreen} options={{ title: t('createPartTitle') }} />
+      <Stack.Screen name="CreateRequest" component={CreateRequestScreen} options={{ title: t('createRequestTitle') }} />
     </Stack.Navigator>
   );
 }
 
 function CarsStack() {
+  const { locale } = useLocale();
   return (
-    <Stack.Navigator id="cars-stack" screenOptions={screenOptions}>
+    <Stack.Navigator key={`cars-${locale}`} id="cars-stack" screenOptions={screenOptions}>
       <Stack.Screen
         name="Cars"
         component={CarsScreen}
@@ -108,15 +111,16 @@ function CarsStack() {
         })}
       />
       <Stack.Screen name="CarDetails" component={CarDetailsScreen} options={{ title: t('details'), headerTransparent: true, headerTitle: '' }} />
-      <Stack.Screen name="SellerProfile" component={SellerProfileScreen} options={{ title: 'ملف المعلن' }} />
-      <Stack.Screen name="CreateCar" component={CreateCarScreen} options={{ title: 'أضف سيارة' }} />
+      <Stack.Screen name="SellerProfile" component={SellerProfileScreen} options={{ title: t('sellerProfileTitle') }} />
+      <Stack.Screen name="CreateCar" component={CreateCarScreen} options={{ title: t('createCarTitle') }} />
     </Stack.Navigator>
   );
 }
 
 function PartsStack() {
+  const { locale } = useLocale();
   return (
-    <Stack.Navigator id="parts-stack" screenOptions={screenOptions}>
+    <Stack.Navigator key={`parts-${locale}`} id="parts-stack" screenOptions={screenOptions}>
       <Stack.Screen
         name="Parts"
         component={PartsScreen}
@@ -126,15 +130,16 @@ function PartsStack() {
         })}
       />
       <Stack.Screen name="PartDetails" component={PartDetailsScreen} options={{ title: t('details') }} />
-      <Stack.Screen name="SellerProfile" component={SellerProfileScreen} options={{ title: 'ملف المعلن' }} />
-      <Stack.Screen name="CreatePart" component={CreatePartScreen} options={{ title: 'أضف قطعة' }} />
+      <Stack.Screen name="SellerProfile" component={SellerProfileScreen} options={{ title: t('sellerProfileTitle') }} />
+      <Stack.Screen name="CreatePart" component={CreatePartScreen} options={{ title: t('createPartTitle') }} />
     </Stack.Navigator>
   );
 }
 
 function RequestsStack() {
+  const { locale } = useLocale();
   return (
-    <Stack.Navigator id="requests-stack" screenOptions={screenOptions}>
+    <Stack.Navigator key={`requests-${locale}`} id="requests-stack" screenOptions={screenOptions}>
       <Stack.Screen
         name="Requests"
         component={RequestsScreen}
@@ -143,16 +148,17 @@ function RequestsStack() {
           headerRight: () => <CreateHeaderButton navigation={navigation} />,
         })}
       />
-      <Stack.Screen name="SellerProfile" component={SellerProfileScreen} options={{ title: 'ملف المعلن' }} />
-      <Stack.Screen name="CreateRequest" component={CreateRequestScreen} options={{ title: 'إنشاء طلب' }} />
-      <Stack.Screen name="CreateListingHub" component={CreateListingHubScreen} options={{ title: 'وش تبي تنشر؟' }} />
+      <Stack.Screen name="SellerProfile" component={SellerProfileScreen} options={{ title: t('sellerProfileTitle') }} />
+      <Stack.Screen name="CreateRequest" component={CreateRequestScreen} options={{ title: t('createRequestSimpleTitle') }} />
+      <Stack.Screen name="CreateListingHub" component={CreateListingHubScreen} options={{ title: t('createListingHubTitle') }} />
     </Stack.Navigator>
   );
 }
 
 function AuthStack() {
+  const { locale } = useLocale();
   return (
-    <Stack.Navigator id="auth-stack" screenOptions={{ ...screenOptions, headerShown: false }}>
+    <Stack.Navigator key={`auth-${locale}`} id="auth-stack" screenOptions={{ ...screenOptions, headerShown: false }}>
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
     </Stack.Navigator>
@@ -160,8 +166,9 @@ function AuthStack() {
 }
 
 function AccountStack() {
+  const { locale } = useLocale();
   return (
-    <Stack.Navigator id="account-stack" screenOptions={screenOptions}>
+    <Stack.Navigator key={`account-${locale}`} id="account-stack" screenOptions={screenOptions}>
       <Stack.Screen
         name="Account"
         component={AccountScreen}
@@ -173,15 +180,15 @@ function AccountStack() {
       <Stack.Screen
         name="MyListings"
         component={MyListingsScreen}
-        options={({ route }: any) => ({ title: route?.params?.adminView ? 'إدارة السوق' : 'إعلاناتي' })}
+        options={({ route }: any) => ({ title: route?.params?.adminView ? t('adminMarketTitle') : t('myListingsTitle') })}
       />
-      <Stack.Screen name="UserManagement" component={UserManagementScreen} options={{ title: 'إدارة المستخدمين' }} />
-      <Stack.Screen name="BannerManagement" component={BannerManagementScreen} options={{ title: 'إدارة البانرات' }} />
-      <Stack.Screen name="SellerProfile" component={SellerProfileScreen} options={{ title: 'تفاصيل المستخدم' }} />
-      <Stack.Screen name="CreateListingHub" component={CreateListingHubScreen} options={{ title: 'وش تبي تنشر؟' }} />
-      <Stack.Screen name="CreateCar" component={CreateCarScreen} options={{ title: 'أضف سيارة' }} />
-      <Stack.Screen name="CreatePart" component={CreatePartScreen} options={{ title: 'أضف قطعة' }} />
-      <Stack.Screen name="CreateRequest" component={CreateRequestScreen} options={{ title: 'انشر مطلوبك' }} />
+      <Stack.Screen name="UserManagement" component={UserManagementScreen} options={{ title: t('userManagementTitle') }} />
+      <Stack.Screen name="BannerManagement" component={BannerManagementScreen} options={{ title: t('bannerManagementTitle') }} />
+      <Stack.Screen name="SellerProfile" component={SellerProfileScreen} options={{ title: t('userDetailsTitle') }} />
+      <Stack.Screen name="CreateListingHub" component={CreateListingHubScreen} options={{ title: t('createListingHubTitle') }} />
+      <Stack.Screen name="CreateCar" component={CreateCarScreen} options={{ title: t('createCarTitle') }} />
+      <Stack.Screen name="CreatePart" component={CreatePartScreen} options={{ title: t('createPartTitle') }} />
+      <Stack.Screen name="CreateRequest" component={CreateRequestScreen} options={{ title: t('createRequestTitle') }} />
     </Stack.Navigator>
   );
 }
@@ -198,9 +205,14 @@ function TabIcon({ icon, focused }: { icon: string; focused: boolean }) {
 export default function AppNavigator() {
   const insets = useSafeAreaInsets();
   const { user, loading } = useAuth();
+  const { locale } = useLocale();
   const tabBarBottomPad = Math.max(
     insets.bottom,
     Platform.OS === 'android' ? 24 : 10,
+  );
+  const tabBarLabelStyle = React.useMemo(
+    () => ({ fontSize: 10, fontWeight: '700' as const, marginTop: 2 }),
+    [locale],
   );
   const [showIntro, setShowIntro] = React.useState(true);
   const [showLaunchNotice, setShowLaunchNotice] = React.useState(false);
@@ -277,7 +289,7 @@ export default function AppNavigator() {
         },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.silver,
-        tabBarLabelStyle: { fontSize: 10, fontWeight: '700', marginTop: 2 },
+        tabBarLabelStyle,
       }}
     >
       <Tab.Screen name="HomeTab" component={HomeStack} options={{ tabBarLabel: t('home'), tabBarIcon: ({ focused }) => <TabIcon icon="🔥" focused={focused} /> }} />

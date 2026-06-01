@@ -21,20 +21,32 @@ export default function CarCard({ car, onPress, onWhatsApp }: Props) {
   const scale = useRef(new Animated.Value(1)).current;
   const publishedAt = formatListingPublishedAt(car.createdAt);
   const thumbnailUrl = getListingThumbnailUrl(car);
+  const isFeatured = Number(car.featuredAt || 0) > 0;
 
   const onPressIn = () => Animated.spring(scale, { toValue: 0.96, useNativeDriver: true }).start();
   const onPressOut = () => Animated.spring(scale, { toValue: 1, friction: 3, useNativeDriver: true }).start();
 
   return (
     <Animated.View style={[s.wrapper, { transform: [{ scale }] }]}>
-      <TouchableOpacity activeOpacity={0.9} onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut} style={s.card}>
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={onPress}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
+        style={[s.card, isFeatured ? s.cardFeatured : null]}
+      >
         <View style={s.imgWrap}>
           {thumbnailUrl ? (
             <FastAdImage uri={thumbnailUrl} style={s.img} fallback={<Text style={{ fontSize: 50 }}>🏎️</Text>} />
           ) : (
             <View style={[s.img, s.placeholder]}><Text style={{ fontSize: 50 }}>🏎️</Text></View>
           )}
-          <LinearGradient colors={['transparent', 'rgba(0,0,0,0.8)']} style={s.gradient} />
+          <LinearGradient colors={['transparent', 'transparent']} style={s.gradient} />
+          {isFeatured ? (
+            <View pointerEvents="none" style={s.featureBadge}>
+              <Text style={s.featureBadgeText} numberOfLines={1}>{t('featuredAdLabel')}</Text>
+            </View>
+          ) : null}
           <View style={s.yearBadge}>
             <Text style={s.yearText}>{car.year}</Text>
           </View>
@@ -58,7 +70,7 @@ export default function CarCard({ car, onPress, onWhatsApp }: Props) {
               <View style={s.waIconWrap}>
                 <Text style={s.waBtnIcon}>💬</Text>
               </View>
-              <Text style={s.waBtnText}>واتساب</Text>
+              <Text style={s.waBtnText}>{t('contactWhatsapp')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -70,10 +82,25 @@ export default function CarCard({ car, onPress, onWhatsApp }: Props) {
 const s = StyleSheet.create({
   wrapper: { width: CARD_WIDTH, marginRight: 14 },
   card: { backgroundColor: colors.darkCard, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.metalBorder, ...shadows.card },
+  cardFeatured: { borderColor: colors.gold, borderWidth: 2 },
   imgWrap: { position: 'relative', borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, overflow: 'hidden' },
   img: { width: '100%', height: 190 },
   placeholder: { backgroundColor: colors.metal, justifyContent: 'center', alignItems: 'center' },
   gradient: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 80 },
+  featureBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radius.full,
+    borderWidth: 2,
+    borderColor: colors.gold,
+    backgroundColor: colors.dark,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  featureBadgeText: { fontSize: 11, fontWeight: '900', color: colors.gold },
   yearBadge: { position: 'absolute', top: 12, left: 12, backgroundColor: colors.primary, paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.sm },
   yearText: { color: colors.white, fontSize: 12, fontWeight: '800' },
   waActionBtn: {

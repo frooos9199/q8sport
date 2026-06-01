@@ -70,6 +70,11 @@ export default async function CarDetailPage({ params }: { params: Promise<{ slug
           <div className="rounded-2xl border border-metal-border bg-panel p-6">
             <div className="flex flex-wrap items-center gap-3 mb-4">
               <span className="rounded-lg bg-brand px-3 py-1.5 text-xs font-bold text-white">{car.year}</span>
+              {car.featuredAt ? (
+                <span className="rounded-full border-2 border-gold bg-background/60 px-3 py-1.5 text-xs font-black text-gold backdrop-blur-sm">
+                  إعلان مميز
+                </span>
+              ) : null}
               <span className={`rounded-lg px-3 py-1.5 text-xs font-bold ${car.status === "مباع" ? "bg-brand/10 text-brand border border-brand/20" : "bg-mint/10 text-mint border border-mint/20"}`}>
                 {car.status}
               </span>

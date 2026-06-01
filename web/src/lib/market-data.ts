@@ -17,6 +17,7 @@ export type CarListing = {
   sellerSlug: string;
   title: string;
   price: string;
+  featuredAt?: number;
   year: string;
   mileage: string;
   location: string;
@@ -31,6 +32,7 @@ export type PartListing = {
   sellerSlug: string;
   title: string;
   price: string;
+  featuredAt?: number;
   category: string;
   fitment: string;
   condition: string;
@@ -83,6 +85,7 @@ type RawCar = {
   images?: string[];
   status?: string;
   createdAt?: unknown;
+  featuredAt?: unknown;
 };
 
 type RawPart = {
@@ -98,6 +101,7 @@ type RawPart = {
   images?: string[];
   status?: string;
   createdAt?: unknown;
+  featuredAt?: unknown;
 };
 
 function isBlockedPartCategory(category: unknown) {
@@ -474,6 +478,7 @@ export async function loadMarketData(): Promise<MarketSnapshot> {
         sellerSlug,
         title: normalizeText(item.title, item.model || item.brand || "سيارة معروضة"),
         price: formatCurrency(item.price),
+        featuredAt: normalizeTimestamp(item.featuredAt) || 0,
         year: formatYear(item.year),
         mileage: formatMileage(item.mileage),
         location: "الكويت",
@@ -485,7 +490,11 @@ export async function loadMarketData(): Promise<MarketSnapshot> {
         isActive: item.status !== "sold" && item.status !== "pending",
       };
     })
-    .sort((left, right) => right.createdAt - left.createdAt)
+    .sort((left, right) => {
+      const featuredDiff = (right.featuredAt || 0) - (left.featuredAt || 0);
+      if (featuredDiff) return featuredDiff;
+      return right.createdAt - left.createdAt;
+    })
     .map(withoutCreatedAt);
 
   const partListings = Object.entries(partsNode || {})
@@ -495,6 +504,7 @@ export async function loadMarketData(): Promise<MarketSnapshot> {
       sellerSlug: item.userId || "unknown-seller",
       title: normalizeText(item.title, item.category || "قطعة معروضة"),
       price: formatCurrency(item.price),
+      featuredAt: normalizeTimestamp(item.featuredAt) || 0,
       category: item.category?.trim() || "قطع غيار",
       fitment: item.compatibleBrands?.length ? item.compatibleBrands.join(" / ") : "توافق غير محدد",
       condition: mapCondition(item.condition),
@@ -503,7 +513,11 @@ export async function loadMarketData(): Promise<MarketSnapshot> {
       createdAt: normalizeTimestamp(item.createdAt),
       isActive: item.status !== "sold" && item.status !== "pending",
     }))
-    .sort((left, right) => right.createdAt - left.createdAt)
+    .sort((left, right) => {
+      const featuredDiff = (right.featuredAt || 0) - (left.featuredAt || 0);
+      if (featuredDiff) return featuredDiff;
+      return right.createdAt - left.createdAt;
+    })
     .map(withoutCreatedAt);
 
   const wantedListings = Object.entries(requestsNode || {})

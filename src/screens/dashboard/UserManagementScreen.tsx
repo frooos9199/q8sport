@@ -4,10 +4,11 @@ import { ref as dbRef, update } from '@react-native-firebase/database';
 
 import { useAuth } from '../../hooks/useAuth';
 import { db } from '../../lib/firebase';
-import { deleteUserAccountFromMarketplace } from '../../lib/adminUserManagement';
+import { DELETED_ACCOUNT_NAME_SENTINEL, deleteUserAccountFromMarketplace } from '../../lib/adminUserManagement';
 import { getDbSnapshot } from '../../lib/firebaseDatabase';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { User } from '../../types';
+import { t } from '../../i18n';
 
 function toMillis(value: any): number {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
@@ -73,7 +74,7 @@ export default function UserManagementScreen({ navigation }: any) {
         await loadUsers();
       } catch (error: any) {
         if (mounted) {
-          Alert.alert('خطأ', error?.message || 'تعذر جلب المستخدمين');
+          Alert.alert(t('loginErrorTitle'), error?.message || t('usersFetchFailedMsg'));
         }
       } finally {
         if (mounted) setLoading(false);
@@ -110,17 +111,17 @@ export default function UserManagementScreen({ navigation }: any) {
 
   const toggleAdmin = async (item: User) => {
     if (!user?.isSuperAdmin) {
-      Alert.alert('غير مصرح', 'هذه العملية للسوبر أدمن فقط');
+      Alert.alert(t('warningTitle'), t('superAdminOnlyActionMsg'));
       return;
     }
 
     if (item.uid === user?.uid) {
-      Alert.alert('تنبيه', 'ما تقدر تسحب صلاحية الإدارة من حسابك من هذه الشاشة');
+      Alert.alert(t('warningTitle'), t('cannotChangeOwnAdminMsg'));
       return;
     }
 
     if (item.isSuperAdmin) {
-      Alert.alert('تنبيه', 'لا يمكن تعديل صلاحية السوبر أدمن');
+      Alert.alert(t('warningTitle'), t('cannotRevokeSuperAdminMsg'));
       return;
     }
 
@@ -134,7 +135,7 @@ export default function UserManagementScreen({ navigation }: any) {
 
       setUsers(prev => prev.map(entry => (entry.uid === item.uid ? { ...entry, isAdmin: nextIsAdmin } : entry)));
     } catch (error: any) {
-      Alert.alert('خطأ', error?.message || 'تعذر تحديث صلاحية المستخدم');
+      Alert.alert(t('loginErrorTitle'), error?.message || t('adminPermissionUpdateFailedMsg'));
     } finally {
       setPendingUid(null);
       await loadUsers();
@@ -143,22 +144,22 @@ export default function UserManagementScreen({ navigation }: any) {
 
   const toggleDisabled = async (item: User) => {
     if (!user?.isSuperAdmin) {
-      Alert.alert('غير مصرح', 'هذه العملية للسوبر أدمن فقط');
+      Alert.alert(t('warningTitle'), t('superAdminOnlyActionMsg'));
       return;
     }
 
     if (item.deletedAt) {
-      Alert.alert('تنبيه', 'هذا الحساب محذوف بالفعل');
+      Alert.alert(t('warningTitle'), t('accountAlreadyDeletedMsg'));
       return;
     }
 
     if (item.isSuperAdmin) {
-      Alert.alert('تنبيه', 'لا يمكن تعطيل حساب السوبر أدمن');
+      Alert.alert(t('warningTitle'), t('cannotDisableSuperAdminMsg'));
       return;
     }
 
     if (item.uid === user?.uid) {
-      Alert.alert('تنبيه', 'ما تقدر تعطل حسابك من شاشة الإدارة');
+      Alert.alert(t('warningTitle'), t('cannotDisableOwnAccountMsg'));
       return;
     }
 
@@ -172,7 +173,7 @@ export default function UserManagementScreen({ navigation }: any) {
 
       setUsers(prev => prev.map(entry => (entry.uid === item.uid ? { ...entry, disabled: nextDisabled } : entry)));
     } catch (error: any) {
-      Alert.alert('خطأ', error?.message || 'تعذر تحديث حالة الحساب');
+      Alert.alert(t('loginErrorTitle'), error?.message || t('accountStatusUpdateFailedMsg'));
     } finally {
       setPendingUid(null);
       await loadUsers();
@@ -181,32 +182,32 @@ export default function UserManagementScreen({ navigation }: any) {
 
   const deleteAccount = (item: User) => {
     if (!user?.isSuperAdmin) {
-      Alert.alert('غير مصرح', 'هذه العملية للسوبر أدمن فقط');
+      Alert.alert(t('warningTitle'), t('superAdminOnlyActionMsg'));
       return;
     }
 
     if (item.uid === user?.uid) {
-      Alert.alert('تنبيه', 'ما تقدر حذف حسابك من شاشة الإدارة');
+      Alert.alert(t('warningTitle'), t('cannotDeleteOwnAccountMsg'));
       return;
     }
 
     if (item.isSuperAdmin) {
-      Alert.alert('تنبيه', 'لا يمكن حذف حساب السوبر أدمن');
+      Alert.alert(t('warningTitle'), t('cannotDeleteSuperAdminMsg'));
       return;
     }
 
     if (item.deletedAt) {
-      Alert.alert('تنبيه', 'هذا الحساب محذوف بالفعل');
+      Alert.alert(t('warningTitle'), t('accountAlreadyDeletedMsg'));
       return;
     }
 
     Alert.alert(
-      'حذف الحساب',
-      `سيتم حذف حساب ${item.name || item.email || 'هذا المستخدم'} من السوق مع كل السيارات والقطع والطلبات التابعة له. هذا الإجراء نهائي.`,
+      t('deleteAccountTitle'),
+      t('deleteAccountConfirmMsg', { name: item.name || item.email || t('thisUser') }),
       [
-        { text: 'إلغاء', style: 'cancel' },
+        { text: t('cancel'), style: 'cancel' },
         {
-          text: 'حذف الحساب',
+          text: t('deleteAccountBtn'),
           style: 'destructive',
           onPress: async () => {
             setPendingUid(item.uid);
@@ -214,7 +215,7 @@ export default function UserManagementScreen({ navigation }: any) {
               await deleteUserAccountFromMarketplace({ uid: item.uid, email: item.email });
               await loadUsers();
             } catch (error: any) {
-              Alert.alert('خطأ', error?.message || 'تعذر حذف الحساب');
+              Alert.alert(t('loginErrorTitle'), error?.message || t('deleteAccountFailedMsg'));
             } finally {
               setPendingUid(null);
             }
@@ -227,8 +228,8 @@ export default function UserManagementScreen({ navigation }: any) {
   if (!user?.isSuperAdmin) {
     return (
       <View style={s.centerState}>
-        <Text style={s.centerTitle}>هذه الصفحة للسوبر أدمن فقط</Text>
-        <Text style={s.centerSub}>صلاحيات إدارة المستخدمين متاحة فقط للسوبر أدمن.</Text>
+        <Text style={s.centerTitle}>{t('userManagementAdminOnlyTitle')}</Text>
+        <Text style={s.centerSub}>{t('userManagementAdminOnlySub')}</Text>
       </View>
     );
   }
@@ -236,16 +237,16 @@ export default function UserManagementScreen({ navigation }: any) {
   return (
     <View style={s.container}>
       <View style={s.heroCard}>
-        <Text style={s.heroTitle}>إدارة المستخدمين</Text>
-        <Text style={s.heroSub}>راقب الحسابات، وابحث بسرعة، وامنح أو اسحب صلاحية الإدارة من مكان واحد.</Text>
+        <Text style={s.heroTitle}>{t('userManagementTitle')}</Text>
+        <Text style={s.heroSub}>{t('userManagementHeroSub')}</Text>
         <View style={s.statsRow}>
           <View style={s.statCard}>
             <Text style={s.statValue}>{users.length}</Text>
-            <Text style={s.statLabel}>إجمالي المستخدمين</Text>
+            <Text style={s.statLabel}>{t('userManagementTotalUsers')}</Text>
           </View>
           <View style={s.statCard}>
             <Text style={s.statValue}>{adminCount}</Text>
-            <Text style={s.statLabel}>المشرفون</Text>
+            <Text style={s.statLabel}>{t('userManagementAdmins')}</Text>
           </View>
         </View>
       </View>
@@ -255,7 +256,7 @@ export default function UserManagementScreen({ navigation }: any) {
         <TextInput
           value={search}
           onChangeText={setSearch}
-          placeholder="ابحث بالاسم أو الإيميل أو الرقم"
+          placeholder={t('userManagementSearchPlaceholder')}
           placeholderTextColor={colors.silver + '70'}
           style={s.searchInput}
         />
@@ -264,7 +265,7 @@ export default function UserManagementScreen({ navigation }: any) {
       {loading ? (
         <View style={s.centerState}>
           <ActivityIndicator color={colors.primary} />
-          <Text style={s.centerSub}>جاري تحميل المستخدمين...</Text>
+          <Text style={s.centerSub}>{t('userManagementLoading')}</Text>
         </View>
       ) : (
         <FlatList
@@ -274,38 +275,41 @@ export default function UserManagementScreen({ navigation }: any) {
           contentContainerStyle={s.listContent}
           ListEmptyComponent={
             <View style={s.centerState}>
-              <Text style={s.centerTitle}>لا يوجد مستخدمون</Text>
-              <Text style={s.centerSub}>جرّب تعديل البحث أو اسحب للتحديث.</Text>
+              <Text style={s.centerTitle}>{t('userManagementEmptyTitle')}</Text>
+              <Text style={s.centerSub}>{t('userManagementEmptySub')}</Text>
             </View>
           }
           renderItem={({ item }) => {
             const isSelf = item.uid === user.uid;
             const isPending = pendingUid === item.uid;
+            const displayName = item.deletedAt && (!item.name || item.name === DELETED_ACCOUNT_NAME_SENTINEL || item.name === 'حساب محذوف')
+              ? t('deletedAccountName')
+              : item.name || t('noName');
 
             return (
               <View style={s.userCard}>
                 <View style={s.userHeader}>
-                  <View style={s.avatar}><Text style={s.avatarText}>{item.name?.[0] || item.email?.[0] || '?'}</Text></View>
+                  <View style={s.avatar}><Text style={s.avatarText}>{displayName?.[0] || item.email?.[0] || '?'}</Text></View>
                   <View style={s.userMain}>
                     <View style={s.nameRow}>
-                      <Text style={s.userName}>{item.name || 'بدون اسم'}</Text>
+                      <Text style={s.userName}>{displayName}</Text>
                       {item.isSuperAdmin ? (
-                        <View style={s.adminBadge}><Text style={s.adminBadgeText}>سوبر أدمن</Text></View>
+                        <View style={s.adminBadge}><Text style={s.adminBadgeText}>{t('superAdminBadge')}</Text></View>
                       ) : item.isAdmin ? (
-                        <View style={s.adminBadge}><Text style={s.adminBadgeText}>أدمن</Text></View>
+                        <View style={s.adminBadge}><Text style={s.adminBadgeText}>{t('adminBadge')}</Text></View>
                       ) : null}
                       {item.disabled ? (
-                        <View style={s.disabledBadge}><Text style={s.disabledBadgeText}>معطل</Text></View>
+                        <View style={s.disabledBadge}><Text style={s.disabledBadgeText}>{t('accountDisabledLabel')}</Text></View>
                       ) : null}
                       {item.deletedAt ? (
-                        <View style={s.deletedBadge}><Text style={s.deletedBadgeText}>محذوف</Text></View>
+                        <View style={s.deletedBadge}><Text style={s.deletedBadgeText}>{t('accountDeletedLabel')}</Text></View>
                       ) : null}
                       {isSelf ? (
-                        <View style={s.selfBadge}><Text style={s.selfBadgeText}>أنت</Text></View>
+                        <View style={s.selfBadge}><Text style={s.selfBadgeText}>{t('youBadge')}</Text></View>
                       ) : null}
                     </View>
-                    <Text style={s.userMeta}>{item.email || 'بدون إيميل'}</Text>
-                    <Text style={s.userMeta}>{item.whatsapp || item.phone || 'بدون رقم تواصل'}</Text>
+                    <Text style={s.userMeta}>{item.email || t('noEmail')}</Text>
+                    <Text style={s.userMeta}>{item.whatsapp || item.phone || t('noContactNumber')}</Text>
                   </View>
                 </View>
 
@@ -314,9 +318,16 @@ export default function UserManagementScreen({ navigation }: any) {
                     style={[s.secondaryBtn, isPending && s.actionBtnDisabled]}
                     activeOpacity={0.85}
                     disabled={isPending}
-                    onPress={() => navigation.navigate('SellerProfile', { sellerId: item.uid, sellerName: item.name || item.email || 'مستخدم', sellerWhatsapp: item.whatsapp || item.phone || '', sellerPhone: item.phone || '' })}
+                    onPress={() =>
+                      navigation.navigate('SellerProfile', {
+                        sellerId: item.uid,
+                        sellerName: displayName || item.email || t('thisUser'),
+                        sellerWhatsapp: item.whatsapp || item.phone || '',
+                        sellerPhone: item.phone || '',
+                      })
+                    }
                   >
-                    <Text style={s.secondaryBtnText}>عرض التفاصيل</Text>
+                    <Text style={s.secondaryBtnText}>{t('viewDetails')}</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -325,7 +336,7 @@ export default function UserManagementScreen({ navigation }: any) {
                     disabled={isPending || isSelf || Boolean(item.deletedAt) || Boolean(item.isSuperAdmin)}
                     onPress={() => deleteAccount(item)}
                   >
-                    <Text style={s.deleteBtnText}>{isPending ? 'جاري...' : 'حذف الحساب'}</Text>
+                    <Text style={s.deleteBtnText}>{isPending ? t('workingShort') : t('deleteAccountBtn')}</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -335,7 +346,7 @@ export default function UserManagementScreen({ navigation }: any) {
                     onPress={() => toggleDisabled(item)}
                   >
                     <Text style={[s.actionBtnText, item.disabled ? s.actionBtnTextPrimary : s.actionBtnTextMuted]}>
-                      {isPending ? 'جاري التحديث...' : item.disabled ? 'تفعيل الحساب' : 'تعطيل الحساب'}
+                      {isPending ? t('updatingShort') : item.disabled ? t('enableAccount') : t('disableAccount')}
                     </Text>
                   </TouchableOpacity>
 
@@ -346,7 +357,7 @@ export default function UserManagementScreen({ navigation }: any) {
                     onPress={() => toggleAdmin(item)}
                   >
                     <Text style={[s.actionBtnText, item.isAdmin ? s.actionBtnTextMuted : s.actionBtnTextPrimary]}>
-                      {isPending ? 'جاري التحديث...' : item.isAdmin ? 'سحب الإدارة' : 'منح الإدارة'}
+                      {isPending ? t('updatingShort') : item.isAdmin ? t('revokeAdmin') : t('grantAdmin')}
                     </Text>
                   </TouchableOpacity>
                 </View>

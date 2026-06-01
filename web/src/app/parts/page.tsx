@@ -63,7 +63,11 @@ export default async function PartsPage() {
           {partListings.map((part) => {
             const seller = sellerMap.get(part.sellerSlug);
             return (
-              <Link key={part.slug} href={`/parts/${part.slug}`} className="group rounded-2xl border border-metal-border bg-panel overflow-hidden transition hover:-translate-y-1 hover:border-brand/30">
+              <Link
+                key={part.slug}
+                href={`/parts/${part.slug}`}
+                className={`group rounded-2xl bg-panel overflow-hidden transition hover:-translate-y-1 hover:border-brand/30 ${part.featuredAt ? "border-2 border-gold" : "border border-metal-border"}`}
+              >
                 <div className="relative h-40 bg-metal">
                   {part.images[0] ? (
                     <>
@@ -78,6 +82,11 @@ export default async function PartsPage() {
                     <div className="flex h-full items-center justify-center text-3xl">⚙️</div>
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+                  {part.featuredAt ? (
+                    <span className="absolute top-3 left-3 rounded-full border-2 border-gold bg-background/60 px-3 py-1 text-[11px] font-black text-gold backdrop-blur-sm">
+                      إعلان مميز
+                    </span>
+                  ) : null}
                   {part.condition === "جديد" && (
                     <span className="absolute top-3 right-3 rounded-lg bg-mint px-2.5 py-1 text-xs font-bold text-white">جديد</span>
                   )}
