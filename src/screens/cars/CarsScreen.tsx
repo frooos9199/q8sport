@@ -423,7 +423,9 @@ function AnimatedCard({ item, index, navigation, openWhatsApp }: any) {
               <Text style={s.featureBadgeText} numberOfLines={1}>{t('featuredAdLabel')}</Text>
             </View>
           ) : null}
-          <View style={s.cardYearBadge}><Text style={s.cardYearText}>{item.year}</Text></View>
+          <View style={[s.cardYearBadge, isFeatured ? s.cardYearBadgeBelowFeatured : null]}>
+            <Text style={s.cardYearText}>{item.year}</Text>
+          </View>
           {item.status === 'sold' && (
             <View style={s.soldBadge}><Text style={s.soldText}>{t('sold')}</Text></View>
           )}
@@ -506,6 +508,7 @@ const s = StyleSheet.create({
   },
   featureBadgeText: { fontSize: 11, fontWeight: '900', color: colors.gold },
   cardYearBadge: { position: 'absolute', top: 12, right: 12, backgroundColor: colors.primary, paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.sm },
+  cardYearBadgeBelowFeatured: { top: 44 },
   cardYearText: { color: colors.white, fontSize: 11, fontWeight: '800' },
   waActionBtn: {
     flexDirection: 'row',
