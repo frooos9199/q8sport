@@ -88,7 +88,7 @@ export default async function CarDetailPage({ params }: { params: Promise<{ slug
           {/* Specs */}
           <div className="rounded-2xl border border-metal-border bg-panel p-6">
             <h2 className="text-lg font-bold text-foreground mb-4">المواصفات</h2>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-2 gap-3">
               <SpecCard icon="📅" label="السنة" value={car.year} />
               <SpecCard icon="📏" label="الممشى" value={car.mileage} />
               <SpecCard icon="📍" label="الموقع" value={car.location} />

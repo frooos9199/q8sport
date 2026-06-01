@@ -87,7 +87,7 @@ export default async function PartDetailPage({ params }: { params: Promise<{ slu
           {/* Info */}
           <div className="rounded-2xl border border-metal-border bg-panel p-6">
             <h2 className="text-lg font-bold text-foreground mb-4">التفاصيل</h2>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-2 gap-3">
               <SpecCard icon="📂" label="التصنيف" value={part.category} />
               <SpecCard icon="🔧" label="التوافق" value={part.fitment} />
               <SpecCard icon="✅" label="الحالة" value={part.condition} />
