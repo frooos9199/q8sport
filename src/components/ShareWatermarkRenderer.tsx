@@ -1,5 +1,6 @@
 import React, { forwardRef, useImperativeHandle, useRef, useState } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import FastImage from 'react-native-fast-image';
 import ViewShot, { ViewShotRef } from 'react-native-view-shot';
 
 import { colors } from '../lib/theme';
@@ -27,12 +28,20 @@ export default forwardRef<ShareWatermarkHandle, Props>(function ShareWatermarkRe
   const viewShotRef = useRef<ViewShotRef | null>(null);
   const [activeUri, setActiveUri] = useState<string | null>(null);
   const onLoadResolveRef = useRef<(() => void) | null>(null);
+  const loadStatusRef = useRef<'idle' | 'ok' | 'error'>('idle');
 
   const waitForLoad = () => new Promise<void>((resolve) => {
     onLoadResolveRef.current = resolve;
   });
 
   const onLoadEnd = () => {
+    loadStatusRef.current = 'ok';
+    onLoadResolveRef.current?.();
+    onLoadResolveRef.current = null;
+  };
+
+  const onLoadError = () => {
+    loadStatusRef.current = 'error';
     onLoadResolveRef.current?.();
     onLoadResolveRef.current = null;
   };
@@ -42,10 +51,15 @@ export default forwardRef<ShareWatermarkHandle, Props>(function ShareWatermarkRe
     if (!trimmed) return null;
 
     const loadPromise = waitForLoad();
+    loadStatusRef.current = 'idle';
     setActiveUri(trimmed);
 
     // Wait for the image to finish loading into the view.
     await loadPromise;
+
+    if (loadStatusRef.current !== 'ok') {
+      return null;
+    }
 
     // Give RN a frame to paint before capture.
     await nextFrame();
@@ -87,7 +101,7 @@ export default forwardRef<ShareWatermarkHandle, Props>(function ShareWatermarkRe
         options={{
           format: 'jpg',
           quality: 0.92,
-          result: 'tmpfile',
+          result: 'data-uri',
           width: 1080,
           height: 1350,
         }}
@@ -95,7 +109,17 @@ export default forwardRef<ShareWatermarkHandle, Props>(function ShareWatermarkRe
         collapsable={false}
       >
         {activeUri ? (
-          <Image source={{ uri: activeUri }} style={s.image} resizeMode="cover" onLoadEnd={onLoadEnd} />
+          <FastImage
+            source={{
+              uri: activeUri,
+              cache: FastImage.cacheControl.immutable,
+              priority: FastImage.priority.high,
+            }}
+            style={s.image}
+            resizeMode={FastImage.resizeMode.cover}
+            onLoadEnd={onLoadEnd}
+            onError={onLoadError}
+          />
         ) : (
           <View style={s.image} />
         )}

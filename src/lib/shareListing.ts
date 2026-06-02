@@ -7,7 +7,7 @@ type ShareTarget = 'whatsapp' | 'instagram' | 'tiktok' | 'snapchat';
 type ShareImageInput = string | string[] | undefined;
 
 function isLocalShareUrl(url: string) {
-  return /^file:\/\//i.test(url) || /^content:\/\//i.test(url);
+  return /^file:\/\//i.test(url) || /^content:\/\//i.test(url) || /^data:/i.test(url);
 }
 
 async function openFirstSupportedUrl(urls: string[]) {
