@@ -498,7 +498,7 @@ const s = StyleSheet.create({
   cardImgGradient: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 60 },
   viewsBadge: {
     position: 'absolute',
-    left: 10,
+    right: 10,
     bottom: 10,
     backgroundColor: 'rgba(0,0,0,0.55)',
     paddingHorizontal: 10,

@@ -398,7 +398,7 @@ const s = StyleSheet.create({
   imgGradient: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 50 },
   viewsBadge: {
     position: 'absolute',
-    left: 8,
+    right: 8,
     bottom: 8,
     backgroundColor: 'rgba(0,0,0,0.55)',
     paddingHorizontal: 10,

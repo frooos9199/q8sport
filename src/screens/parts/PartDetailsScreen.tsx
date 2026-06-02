@@ -342,7 +342,7 @@ const s = StyleSheet.create({
   heroGradient: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 140 },
   viewsBadge: {
     position: 'absolute',
-    left: 18,
+    right: 18,
     bottom: 18,
     backgroundColor: 'rgba(0,0,0,0.65)',
     paddingHorizontal: 12,
