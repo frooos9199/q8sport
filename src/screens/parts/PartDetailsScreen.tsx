@@ -12,6 +12,7 @@ import { Part } from '../../types';
 import { getLocale, t } from '../../i18n';
 import { shareListing } from '../../lib/shareListing';
 import FastAdImage from '../../components/FastAdImage';
+import ShareWatermarkRenderer, { ShareWatermarkHandle } from '../../components/ShareWatermarkRenderer';
 import { getListingMediumUrl } from '../../lib/listingImages';
 import { toWaMeDigits } from '../../lib/gccPhone';
 import { getPublishedListingUrl } from '../../lib/publishedSite';
@@ -25,6 +26,7 @@ export default function PartDetailsScreen({ route, navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [views, setViews] = useState(0);
+  const shareWatermarkRef = React.useRef<ShareWatermarkHandle | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -187,6 +189,20 @@ export default function PartDetailsScreen({ route, navigation }: any) {
     getListingMediumUrl(part) ||
     undefined;
 
+  const shareToInstagram = async () => {
+    const galleryUrls = gallery.length ? gallery : (heroUri ? [heroUri] : []);
+    let urlsToShare: string[] = galleryUrls;
+
+    try {
+      const captured = await shareWatermarkRef.current?.captureAll(galleryUrls);
+      if (captured?.length) urlsToShare = captured;
+    } catch {
+      // best effort
+    }
+
+    await shareListing('instagram', shareMessage, urlsToShare);
+  };
+
   return (
     <ScrollView style={s.container} contentContainerStyle={{ paddingBottom: 36 }} showsVerticalScrollIndicator={false}>
       <View style={s.heroWrap}>
@@ -314,7 +330,7 @@ export default function PartDetailsScreen({ route, navigation }: any) {
             <TouchableOpacity style={[s.shareChip, { width: shareChipWidth }]} activeOpacity={0.88} onPress={() => shareListing('whatsapp', shareMessage)}>
               <Text style={s.shareChipText}>{t('whatsappLabel')}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[s.shareChip, { width: shareChipWidth }]} activeOpacity={0.88} onPress={() => shareListing('instagram', shareMessage, gallery.length ? gallery : heroUri)}>
+            <TouchableOpacity style={[s.shareChip, { width: shareChipWidth }]} activeOpacity={0.88} onPress={() => { void shareToInstagram(); }}>
               <Text style={s.shareChipText}>{t('instagramLabel')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[s.shareChip, { width: shareChipWidth }]} activeOpacity={0.88} onPress={() => shareListing('tiktok', shareMessage, heroUri)}>
@@ -325,6 +341,8 @@ export default function PartDetailsScreen({ route, navigation }: any) {
             </TouchableOpacity>
           </View>
         </View>
+
+        <ShareWatermarkRenderer ref={shareWatermarkRef} />
       </View>
     </ScrollView>
   );

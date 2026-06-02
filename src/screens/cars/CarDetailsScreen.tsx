@@ -12,6 +12,7 @@ import { Car } from '../../types';
 import { shareListing } from '../../lib/shareListing';
 import FastImage from 'react-native-fast-image';
 import FastAdImage from '../../components/FastAdImage';
+import ShareWatermarkRenderer, { ShareWatermarkHandle } from '../../components/ShareWatermarkRenderer';
 import { getListingMediumUrl, getListingOriginalUrl, getListingThumbnailUrl } from '../../lib/listingImages';
 import { toWaMeDigits } from '../../lib/gccPhone';
 import { getPublishedListingUrl } from '../../lib/publishedSite';
@@ -31,6 +32,7 @@ export default function CarDetailsScreen({ route, navigation }: any) {
   const [views, setViews] = useState(0);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(40)).current;
+  const shareWatermarkRef = useRef<ShareWatermarkHandle | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -163,6 +165,18 @@ export default function CarDetailsScreen({ route, navigation }: any) {
     (activeMediumUrl ? [activeMediumUrl] : [])
   ).filter((u): u is string => typeof u === 'string' && Boolean(u.trim()));
 
+  const shareToInstagram = async () => {
+    let urlsToShare: string[] = shareGalleryUrls;
+    try {
+      const captured = await shareWatermarkRef.current?.captureAll(shareGalleryUrls);
+      if (captured?.length) urlsToShare = captured;
+    } catch {
+      // best effort: fall back to original urls
+    }
+
+    await shareListing('instagram', shareMessage, urlsToShare);
+  };
+
   return (
     <View style={s.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -292,7 +306,7 @@ export default function CarDetailsScreen({ route, navigation }: any) {
               <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => shareListing('whatsapp', shareMessage)}>
                 <Text style={s.shareChipText}>{t('whatsappLabel')}</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => shareListing('instagram', shareMessage, shareGalleryUrls)}>
+              <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => { void shareToInstagram(); }}>
                 <Text style={s.shareChipText}>{t('instagramLabel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => shareListing('tiktok', shareMessage, activeMediumUrl)}>
@@ -303,6 +317,8 @@ export default function CarDetailsScreen({ route, navigation }: any) {
               </TouchableOpacity>
             </View>
           </View>
+
+          <ShareWatermarkRenderer ref={shareWatermarkRef} />
         </Animated.View>
 
         <View style={{ height: tabBarHeight + 36 }} />

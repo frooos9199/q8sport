@@ -6,6 +6,10 @@ type ShareTarget = 'whatsapp' | 'instagram' | 'tiktok' | 'snapchat';
 
 type ShareImageInput = string | string[] | undefined;
 
+function isLocalShareUrl(url: string) {
+  return /^file:\/\//i.test(url) || /^content:\/\//i.test(url);
+}
+
 async function openFirstSupportedUrl(urls: string[]) {
   for (const url of urls) {
     try {
@@ -64,6 +68,11 @@ function toImageUrlList(input: ShareImageInput): string[] {
 async function fetchImagesAsDataUrls(imageUrls: string[], limit: number) {
   const results: Array<{ dataUrl: string; contentType: string }> = [];
   for (const url of imageUrls.slice(0, Math.max(0, limit))) {
+    if (isLocalShareUrl(url)) {
+      // Local files can be passed to react-native-share directly.
+      results.push({ dataUrl: url, contentType: 'image/*' });
+      continue;
+    }
     const asset = await tryFetchImageAsDataUrl(url);
     if (asset) results.push(asset);
   }
