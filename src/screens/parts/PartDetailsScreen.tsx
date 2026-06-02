@@ -201,9 +201,10 @@ export default function PartDetailsScreen({ route, navigation }: any) {
   const shareToInstagram = async () => {
     // Ensure we share ALL images the user can browse, even if imageMediums is shorter than images.
     const count = Math.max(imageMediums.length, images.length, gallery.length);
-    const galleryUrls = count
+    const galleryUrls = (count
       ? Array.from({ length: count }).map((_, i) => imageMediums[i] || images[i]).filter(Boolean)
-      : (heroUri ? [heroUri] : []);
+      : (heroUri ? [heroUri] : []))
+      .slice(0, 10);
     let urlsToShare: string[] = galleryUrls;
 
     try {

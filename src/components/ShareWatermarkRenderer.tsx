@@ -79,7 +79,7 @@ export default forwardRef<ShareWatermarkHandle, Props>(function ShareWatermarkRe
   useImperativeHandle(ref, () => ({
     captureAll: async (imageUrls: string[]) => {
       const list = Array.isArray(imageUrls) ? imageUrls : [];
-      const unique = Array.from(new Set(list.map(u => String(u || '').trim()).filter(Boolean)));
+      const unique = Array.from(new Set(list.map(u => String(u || '').trim()).filter(Boolean))).slice(0, 10);
 
       const results: string[] = [];
       for (const uri of unique) {
@@ -100,10 +100,11 @@ export default forwardRef<ShareWatermarkHandle, Props>(function ShareWatermarkRe
         }}
         options={{
           format: 'jpg',
-          quality: 0.92,
+          // Keep it Instagram-friendly but lighter (base64/data-uri can be memory heavy on iOS).
+          quality: 0.86,
           result: 'data-uri',
-          width: 1080,
-          height: 1350,
+          width: 720,
+          height: 900,
         }}
         style={s.canvas}
         collapsable={false}

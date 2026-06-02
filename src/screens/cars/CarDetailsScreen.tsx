@@ -221,9 +221,10 @@ export default function CarDetailsScreen({ route, navigation }: any) {
   })();
 
   const shareToInstagram = async () => {
-    let urlsToShare: string[] = shareGalleryUrls;
+    const inputUrls = shareGalleryUrls.slice(0, 10);
+    let urlsToShare: string[] = inputUrls;
     try {
-      const captured = await shareWatermarkRef.current?.captureAll(shareGalleryUrls);
+      const captured = await shareWatermarkRef.current?.captureAll(inputUrls);
       if (captured?.length) urlsToShare = captured;
     } catch {
       // best effort: fall back to original urls
