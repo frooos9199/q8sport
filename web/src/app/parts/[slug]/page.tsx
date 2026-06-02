@@ -59,7 +59,7 @@ export default async function PartDetailPage({ params }: { params: Promise<{ slu
       <Link href="/parts" className="mb-6 text-sm font-bold text-sand transition hover:text-foreground">← رجوع لقطع الغيار</Link>
 
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           {/* Gallery */}
           <div className="rounded-2xl border border-metal-border bg-panel p-5">
             <ImageGallery images={part.images} title={part.title} />
@@ -102,7 +102,7 @@ export default async function PartDetailPage({ params }: { params: Promise<{ slu
         </div>
 
         {/* Right */}
-        <div className="space-y-6">
+  <div className="min-w-0 space-y-6">
           {seller?.whatsapp && (
             <a
               href={`https://wa.me/${seller.whatsapp.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(`مرحبا، أبي أستفسر عن: ${part.title}`)}`}

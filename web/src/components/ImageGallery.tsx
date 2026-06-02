@@ -40,7 +40,7 @@ export default function ImageGallery({ images, title }: { images: string[]; titl
 
         {/* Thumbnails */}
         {images.length > 1 && (
-          <div className="flex gap-2 overflow-x-auto pb-1">
+          <div className="flex w-full min-w-0 max-w-full gap-2 overflow-x-auto pb-1">
             {images.map((img, i) => (
               <button
                 key={i}

@@ -60,7 +60,7 @@ export default async function CarDetailPage({ params }: { params: Promise<{ slug
 
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         {/* Left - Details */}
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           {/* Gallery */}
           <div className="rounded-2xl border border-metal-border bg-panel p-5">
             <ImageGallery images={car.images} title={car.title} />
@@ -106,7 +106,7 @@ export default async function CarDetailPage({ params }: { params: Promise<{ slug
         </div>
 
         {/* Right - Seller & CTA */}
-        <div className="space-y-6">
+  <div className="min-w-0 space-y-6">
           {/* WhatsApp CTA */}
           {seller?.whatsapp && (
             <a
