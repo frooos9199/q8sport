@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import { absoluteUrl, siteConfig } from "@/lib/site";
@@ -33,6 +33,12 @@ export const metadata: Metadata = {
   twitter: { card: 'summary_large_image', title: siteConfig.name, description: siteConfig.description, images: [absoluteUrl(siteConfig.ogImage)] },
   category: 'automotive',
   appleWebApp: { capable: true, title: siteConfig.shortName, statusBarStyle: 'black-translucent' },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
