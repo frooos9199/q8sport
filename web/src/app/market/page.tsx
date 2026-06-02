@@ -89,7 +89,7 @@ export default async function MarketPage() {
                 <Link href={`/sellers/${entry.sellerSlug}`} className="font-black text-brand transition hover:text-[#ff8a80]">
                   عرض ملف المعلن
                 </Link>
-                <span dir="ltr">{entry.whatsapp || "واتساب غير متاح"}</span>
+                <span dir="ltr" className="break-all">{entry.whatsapp || "واتساب غير متاح"}</span>
               </div>
             </div>
           ))}
@@ -102,15 +102,15 @@ export default async function MarketPage() {
             <Link
               key={car.slug}
               href={`/cars/${car.slug}`}
-              className={`rounded-[1.5rem] bg-panel p-4 transition hover:-translate-y-0.5 hover:border-brand/30 sm:p-5 ${car.featuredAt ? "border-2 border-gold" : "border border-white/8"}`}
+              className={`min-w-0 max-w-full overflow-hidden rounded-[1.5rem] bg-panel p-4 transition hover:-translate-y-0.5 hover:border-brand/30 sm:p-5 ${car.featuredAt ? "border-2 border-gold" : "border border-white/8"}`}
             >
               <ListingMedia title={car.title} image={car.images[0]} tone="brand" featured={Boolean(car.featuredAt)} />
               <div className="flex items-center justify-between gap-3">
                 <span className="rounded-full border border-brand/25 bg-brand/10 px-3 py-2 text-xs font-bold text-brand">{car.status}</span>
                 <span className="text-xs font-bold text-zinc-500">{car.location}</span>
               </div>
-              <h2 className="mt-5 text-2xl font-black text-foreground">{car.title}</h2>
-              <p className="mt-3 text-sm leading-7 text-zinc-400">{car.summary}</p>
+              <h2 className="mt-5 break-words text-2xl font-black text-foreground">{car.title}</h2>
+              <p className="mt-3 break-words text-sm leading-7 text-zinc-400">{car.summary}</p>
               <div className="mt-5 flex items-center justify-between text-sm">
                 <span className="font-black text-brand">{car.price}</span>
                 <span className="text-zinc-400">{car.year} • {car.mileage}</span>
@@ -127,14 +127,14 @@ export default async function MarketPage() {
             <Link
               key={part.slug}
               href={`/parts/${part.slug}`}
-              className={`rounded-[1.5rem] bg-panel p-4 transition hover:-translate-y-0.5 hover:border-brand/30 sm:p-5 ${part.featuredAt ? "border-2 border-gold" : "border border-white/8"}`}
+              className={`min-w-0 max-w-full overflow-hidden rounded-[1.5rem] bg-panel p-4 transition hover:-translate-y-0.5 hover:border-brand/30 sm:p-5 ${part.featuredAt ? "border-2 border-gold" : "border border-white/8"}`}
             >
               <ListingMedia title={part.title} image={part.images[0]} tone="sand" featured={Boolean(part.featuredAt)} />
               <p className="text-xs font-bold uppercase tracking-[0.25em] text-sand">{part.category}</p>
-              <h2 className="mt-4 text-2xl font-black text-foreground">{part.title}</h2>
-              <p className="mt-3 text-sm leading-7 text-zinc-400">{part.summary}</p>
+              <h2 className="mt-4 break-words text-2xl font-black text-foreground">{part.title}</h2>
+              <p className="mt-3 break-words text-sm leading-7 text-zinc-400">{part.summary}</p>
               <div className="mt-5 space-y-2 text-sm text-zinc-400">
-                <p>{part.fitment}</p>
+                <p className="break-words">{part.fitment}</p>
                 <p>{part.condition}</p>
               </div>
               <p className="mt-5 font-black text-brand">{part.price}</p>
@@ -147,13 +147,13 @@ export default async function MarketPage() {
       <Section title="المطلوب الآن" eyebrow="Wanted">
         <div className="grid gap-4 min-[380px]:grid-cols-2 lg:grid-cols-3">
           {wantedListings.map((wanted) => (
-            <Link key={wanted.slug} href={`/wanted/${wanted.slug}`} className="rounded-[1.5rem] border border-mint/20 bg-[linear-gradient(180deg,rgba(94,226,182,0.09),rgba(17,17,17,0.95))] p-5 transition hover:-translate-y-0.5 hover:border-mint/40">
+            <Link key={wanted.slug} href={`/wanted/${wanted.slug}`} className="min-w-0 max-w-full overflow-hidden rounded-[1.5rem] border border-mint/20 bg-[linear-gradient(180deg,rgba(94,226,182,0.09),rgba(17,17,17,0.95))] p-5 transition hover:-translate-y-0.5 hover:border-mint/40">
               <div className="flex items-center justify-between gap-3">
                 <span className="rounded-full border border-mint/25 bg-mint/10 px-3 py-2 text-xs font-bold text-mint">{wanted.category}</span>
                 <span className="text-xs font-bold text-zinc-300">{wanted.urgency}</span>
               </div>
-              <h2 className="mt-5 text-2xl font-black text-foreground">{wanted.title}</h2>
-              <p className="mt-3 text-sm leading-7 text-zinc-300">{wanted.summary}</p>
+              <h2 className="mt-5 break-words text-2xl font-black text-foreground">{wanted.title}</h2>
+              <p className="mt-3 break-words text-sm leading-7 text-zinc-300">{wanted.summary}</p>
               <p className="mt-5 font-black text-mint">{wanted.budget}</p>
             </Link>
           ))}

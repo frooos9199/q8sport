@@ -125,7 +125,7 @@ export default function PrivacyPolicyPage() {
         </div>
         <Link
           href="/privacy-policy"
-          className="rounded-full border border-white/12 bg-white/8 px-5 py-3 text-center text-sm font-black text-white transition hover:bg-white/12"
+          className="max-w-full break-all whitespace-normal rounded-full border border-white/12 bg-white/8 px-5 py-3 text-center text-sm font-black text-white transition hover:bg-white/12"
         >
           {absoluteUrl('/privacy-policy')}
         </Link>
