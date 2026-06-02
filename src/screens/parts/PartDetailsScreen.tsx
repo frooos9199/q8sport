@@ -314,7 +314,7 @@ export default function PartDetailsScreen({ route, navigation }: any) {
             <TouchableOpacity style={[s.shareChip, { width: shareChipWidth }]} activeOpacity={0.88} onPress={() => shareListing('whatsapp', shareMessage)}>
               <Text style={s.shareChipText}>{t('whatsappLabel')}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[s.shareChip, { width: shareChipWidth }]} activeOpacity={0.88} onPress={() => shareListing('instagram', shareMessage, heroUri)}>
+            <TouchableOpacity style={[s.shareChip, { width: shareChipWidth }]} activeOpacity={0.88} onPress={() => shareListing('instagram', shareMessage, gallery.length ? gallery : heroUri)}>
               <Text style={s.shareChipText}>{t('instagramLabel')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[s.shareChip, { width: shareChipWidth }]} activeOpacity={0.88} onPress={() => shareListing('tiktok', shareMessage, heroUri)}>

@@ -157,6 +157,12 @@ export default function CarDetailsScreen({ route, navigation }: any) {
     getListingMediumUrl(car);
   const activeOriginalUrl = getListingOriginalUrl(car, imgIndex);
 
+  const shareGalleryUrls = (
+    (Array.isArray(car.imageMediums) && car.imageMediums.length ? car.imageMediums : undefined) ||
+    (Array.isArray(car.images) && car.images.length ? car.images : undefined) ||
+    (activeMediumUrl ? [activeMediumUrl] : [])
+  ).filter((u): u is string => typeof u === 'string' && Boolean(u.trim()));
+
   return (
     <View style={s.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -286,7 +292,7 @@ export default function CarDetailsScreen({ route, navigation }: any) {
               <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => shareListing('whatsapp', shareMessage)}>
                 <Text style={s.shareChipText}>{t('whatsappLabel')}</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => shareListing('instagram', shareMessage, activeMediumUrl)}>
+              <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => shareListing('instagram', shareMessage, shareGalleryUrls)}>
                 <Text style={s.shareChipText}>{t('instagramLabel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => shareListing('tiktok', shareMessage, activeMediumUrl)}>

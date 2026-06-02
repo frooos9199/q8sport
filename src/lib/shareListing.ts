@@ -4,6 +4,8 @@ import RNShare, { Social } from 'react-native-share';
 
 type ShareTarget = 'whatsapp' | 'instagram' | 'tiktok' | 'snapchat';
 
+type ShareImageInput = string | string[] | undefined;
+
 async function openFirstSupportedUrl(urls: string[]) {
   for (const url of urls) {
     try {
@@ -48,7 +50,27 @@ async function tryFetchImageAsDataUrl(imageUrl: string) {
   }
 }
 
-export async function shareListing(target: ShareTarget, message: string, imageUrl?: string) {
+function toImageUrlList(input: ShareImageInput): string[] {
+  if (!input) return [];
+  const list = Array.isArray(input) ? input : [input];
+  const cleaned = list
+    .filter((u): u is string => typeof u === 'string')
+    .map(u => u.trim())
+    .filter(Boolean);
+
+  return Array.from(new Set(cleaned));
+}
+
+async function fetchImagesAsDataUrls(imageUrls: string[], limit: number) {
+  const results: Array<{ dataUrl: string; contentType: string }> = [];
+  for (const url of imageUrls.slice(0, Math.max(0, limit))) {
+    const asset = await tryFetchImageAsDataUrl(url);
+    if (asset) results.push(asset);
+  }
+  return results;
+}
+
+export async function shareListing(target: ShareTarget, message: string, imageUrl?: ShareImageInput) {
   const trimmedMessage = message.trim();
 
   if (!trimmedMessage) {
@@ -67,19 +89,49 @@ export async function shareListing(target: ShareTarget, message: string, imageUr
   if (target === 'instagram') {
     Clipboard.setString(trimmedMessage);
 
-    if (imageUrl) {
-      const asset = await tryFetchImageAsDataUrl(imageUrl);
-      if (asset) {
+    const imageUrls = toImageUrlList(imageUrl);
+
+    if (imageUrls.length) {
+      const assets = await fetchImagesAsDataUrls(imageUrls, 10);
+
+      if (assets.length === 1) {
         try {
           await RNShare.shareSingle({
             social: Social.Instagram,
-            url: asset.dataUrl,
-            type: asset.contentType,
+            url: assets[0].dataUrl,
+            type: assets[0].contentType,
           });
           notifyCopied();
           return;
         } catch {
-          // fall through to deep-link open
+          // fall through
+        }
+      }
+
+      if (assets.length > 1) {
+        try {
+          await RNShare.shareSingle({
+            social: Social.Instagram,
+            urls: assets.map(a => a.dataUrl),
+            type: 'image/*',
+          });
+          notifyCopied();
+          return;
+        } catch {
+          // fall through
+        }
+
+        // Backup: open the system share sheet with multiple images
+        try {
+          await RNShare.open({
+            urls: assets.map(a => a.dataUrl),
+            type: 'image/*',
+            failOnCancel: false,
+          });
+          notifyCopied();
+          return;
+        } catch {
+          // fall through
         }
       }
     }
@@ -109,8 +161,10 @@ export async function shareListing(target: ShareTarget, message: string, imageUr
   if (target === 'snapchat') {
     Clipboard.setString(trimmedMessage);
 
-    if (imageUrl) {
-      const asset = await tryFetchImageAsDataUrl(imageUrl);
+    const imageUrls = toImageUrlList(imageUrl);
+
+    if (imageUrls[0]) {
+      const asset = await tryFetchImageAsDataUrl(imageUrls[0]);
       if (asset) {
         try {
           await RNShare.shareSingle({
