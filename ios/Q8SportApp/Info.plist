@@ -33,6 +33,7 @@
 		<string>whatsapp</string>
 		<string>instagram</string>
 		<string>snapchat</string>
+		<string>tiktok</string>
 		<string>snssdk1233</string>
 	</array>
 	<key>NSAppTransportSecurity</key>

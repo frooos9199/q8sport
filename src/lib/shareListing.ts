@@ -1,5 +1,6 @@
-import { Alert, Linking, Share } from 'react-native';
+import { Alert, Linking, Share as NativeShare } from 'react-native';
 import Clipboard from '@react-native-clipboard/clipboard';
+import RNShare, { Social } from 'react-native-share';
 
 type ShareTarget = 'whatsapp' | 'instagram' | 'tiktok' | 'snapchat';
 
@@ -22,7 +23,32 @@ function notifyCopied() {
   Alert.alert('تم النسخ', 'نسخنا نص الإعلان. الصقه داخل التطبيق اللي فتحناه.');
 }
 
-export async function shareListing(target: ShareTarget, message: string) {
+async function tryFetchImageAsDataUrl(imageUrl: string) {
+  try {
+    const res = await fetch(imageUrl);
+    if (!res.ok) return null;
+
+    const contentType = res.headers.get('content-type') || 'image/jpeg';
+    const blob: any = await (res as any).blob();
+
+    const FileReaderCtor = (global as any).FileReader;
+    if (!FileReaderCtor) return null;
+
+    const dataUrl: string = await new Promise((resolve, reject) => {
+      const reader = new FileReaderCtor();
+      reader.onloadend = () => resolve(String(reader.result || ''));
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+
+    if (!dataUrl.startsWith('data:')) return null;
+    return { dataUrl, contentType };
+  } catch {
+    return null;
+  }
+}
+
+export async function shareListing(target: ShareTarget, message: string, imageUrl?: string) {
   const trimmedMessage = message.trim();
 
   if (!trimmedMessage) {
@@ -40,6 +66,24 @@ export async function shareListing(target: ShareTarget, message: string) {
 
   if (target === 'instagram') {
     Clipboard.setString(trimmedMessage);
+
+    if (imageUrl) {
+      const asset = await tryFetchImageAsDataUrl(imageUrl);
+      if (asset) {
+        try {
+          await RNShare.shareSingle({
+            social: Social.Instagram,
+            url: asset.dataUrl,
+            type: asset.contentType,
+          });
+          notifyCopied();
+          return;
+        } catch {
+          // fall through to deep-link open
+        }
+      }
+    }
+
     const opened = await openFirstSupportedUrl([
       'instagram://app',
       'instagram://camera',
@@ -64,6 +108,24 @@ export async function shareListing(target: ShareTarget, message: string) {
 
   if (target === 'snapchat') {
     Clipboard.setString(trimmedMessage);
+
+    if (imageUrl) {
+      const asset = await tryFetchImageAsDataUrl(imageUrl);
+      if (asset) {
+        try {
+          await RNShare.shareSingle({
+            social: Social.Snapchat,
+            url: asset.dataUrl,
+            type: asset.contentType,
+          });
+          notifyCopied();
+          return;
+        } catch {
+          // fall through to deep-link open
+        }
+      }
+    }
+
     const opened = await openFirstSupportedUrl([
       'snapchat://camera',
       'snapchat://',
@@ -74,7 +136,7 @@ export async function shareListing(target: ShareTarget, message: string) {
     }
   }
 
-  await Share.share({
+  await NativeShare.share({
     message: trimmedMessage,
     title: 'Q8 Sport Car',
   });

@@ -286,13 +286,13 @@ export default function CarDetailsScreen({ route, navigation }: any) {
               <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => shareListing('whatsapp', shareMessage)}>
                 <Text style={s.shareChipText}>{t('whatsappLabel')}</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => shareListing('instagram', shareMessage)}>
+              <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => shareListing('instagram', shareMessage, activeMediumUrl)}>
                 <Text style={s.shareChipText}>{t('instagramLabel')}</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => shareListing('tiktok', shareMessage)}>
+              <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => shareListing('tiktok', shareMessage, activeMediumUrl)}>
                 <Text style={s.shareChipText}>{t('tiktokLabel')}</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => shareListing('snapchat', shareMessage)}>
+              <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => shareListing('snapchat', shareMessage, activeMediumUrl)}>
                 <Text style={s.shareChipText}>{t('snapchatLabel')}</Text>
               </TouchableOpacity>
             </View>
