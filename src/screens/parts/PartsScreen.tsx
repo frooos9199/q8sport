@@ -298,6 +298,9 @@ function AnimatedPartCard({ item, index, navigation }: any) {
             <View style={[s.img, s.placeholder]}><Text style={{ fontSize: 30 }}>⚙️</Text></View>
           )}
           <LinearGradient colors={['transparent', 'transparent']} style={s.imgGradient} />
+          <View pointerEvents="none" style={s.viewsBadge}>
+            <Text style={s.viewsText}>👁 {Number(item.views || 0).toLocaleString()}</Text>
+          </View>
           {isFeatured ? (
             <View pointerEvents="none" style={s.featureBadge}>
               <Text style={s.featureBadgeText} numberOfLines={1}>{t('featuredAdLabel')}</Text>
@@ -393,6 +396,16 @@ const s = StyleSheet.create({
   img: { width: '100%', height: 130 },
   placeholder: { backgroundColor: colors.metal, justifyContent: 'center', alignItems: 'center' },
   imgGradient: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 50 },
+  viewsBadge: {
+    position: 'absolute',
+    left: 8,
+    bottom: 8,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: radius.full,
+  },
+  viewsText: { color: colors.white, fontSize: 11, fontWeight: '900' },
   featureBadge: {
     position: 'absolute',
     top: 8,

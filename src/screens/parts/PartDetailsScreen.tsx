@@ -15,6 +15,7 @@ import FastAdImage from '../../components/FastAdImage';
 import { getListingMediumUrl } from '../../lib/listingImages';
 import { toWaMeDigits } from '../../lib/gccPhone';
 import { getPublishedListingUrl } from '../../lib/publishedSite';
+import { incrementListingViewsOncePerDay } from '../../lib/listingViews';
 
 export default function PartDetailsScreen({ route, navigation }: any) {
   const { width } = useWindowDimensions();
@@ -23,6 +24,7 @@ export default function PartDetailsScreen({ route, navigation }: any) {
   const [sellerCampaign, setSellerCampaign] = useState<{ founderPosition?: number; tierLabel?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [views, setViews] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -49,6 +51,24 @@ export default function PartDetailsScreen({ route, navigation }: any) {
       mounted = false;
     };
   }, [id]);
+
+  useEffect(() => {
+    let mounted = true;
+    if (!part?.id) return;
+
+    setViews(Number(part.views || 0));
+
+    incrementListingViewsOncePerDay('parts', part.id).then((nextViews) => {
+      if (!mounted) return;
+      if (typeof nextViews === 'number' && Number.isFinite(nextViews)) {
+        setViews(nextViews);
+      }
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, [part?.id, part?.views]);
 
   useEffect(() => {
     let mounted = true;
@@ -178,6 +198,9 @@ export default function PartDetailsScreen({ route, navigation }: any) {
           </View>
         )}
         <LinearGradient colors={['transparent', 'transparent']} style={s.heroGradient} />
+        <View pointerEvents="none" style={s.viewsBadge}>
+          <Text style={s.viewsText}>👁 {Number(views || 0).toLocaleString()}</Text>
+        </View>
         <View style={s.conditionBadge}>
           <Text style={s.conditionText}>{part.condition === 'new' ? t('new') : t('used')}</Text>
         </View>
@@ -317,6 +340,16 @@ const s = StyleSheet.create({
   placeholder: { justifyContent: 'center', alignItems: 'center' },
   placeholderIcon: { fontSize: 56 },
   heroGradient: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 140 },
+  viewsBadge: {
+    position: 'absolute',
+    left: 18,
+    bottom: 18,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radius.full,
+  },
+  viewsText: { color: colors.white, fontWeight: '900', fontSize: 12 },
   conditionBadge: { position: 'absolute', top: 18, left: 18, backgroundColor: colors.primary, borderRadius: radius.full, paddingHorizontal: 14, paddingVertical: 7 },
   conditionText: { color: colors.white, fontWeight: '900', fontSize: 12 },
 

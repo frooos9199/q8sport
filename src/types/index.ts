@@ -56,6 +56,7 @@ export interface Car {
   imageMediums?: string[];
   status: "active" | "sold" | "pending";
   featuredAt?: number | null;
+  views?: number;
   createdAt: any;
   updatedAt?: any;
 }
@@ -81,6 +82,7 @@ export interface Part {
   imageMediums?: string[];
   status: "active" | "sold" | "pending";
   featuredAt?: number | null;
+  views?: number;
   createdAt: any;
   updatedAt?: any;
 }
@@ -103,6 +105,7 @@ export interface Request {
   imageThumbs?: string[];
   imageMediums?: string[];
   status: "open" | "closed";
+  views?: number;
   createdAt: any;
   updatedAt?: any;
 }

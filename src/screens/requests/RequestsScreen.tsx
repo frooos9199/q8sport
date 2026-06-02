@@ -84,6 +84,9 @@ function AnimatedRequestCard({ item, index, navigation }: { item: Request; index
       {previewImage ? (
         <View style={s.cardImageWrap}>
           <FastAdImage uri={previewImage} style={s.cardImage} placeholderColor={colors.darkLight} />
+          <View pointerEvents="none" style={s.viewsBadge}>
+            <Text style={s.viewsText}>👁 {Number(item.views || 0).toLocaleString()}</Text>
+          </View>
         </View>
       ) : null}
       <View style={s.cardHeader}>
@@ -152,8 +155,18 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark },
 
   card: { backgroundColor: colors.darkCard, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.metalBorder, padding: 18, marginBottom: 14, ...shadows.card },
-  cardImageWrap: { marginBottom: 14 },
+  cardImageWrap: { marginBottom: 14, position: 'relative' },
   cardImage: { width: '100%', aspectRatio: REQUEST_CARD_IMAGE_ASPECT_RATIO, borderRadius: radius.lg },
+  viewsBadge: {
+    position: 'absolute',
+    left: 10,
+    bottom: 10,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: radius.full,
+  },
+  viewsText: { color: colors.white, fontSize: 11, fontWeight: '900' },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   badge: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 5, borderRadius: radius.full },
   openBg: { backgroundColor: colors.greenGlow },

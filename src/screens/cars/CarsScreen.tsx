@@ -418,6 +418,9 @@ function AnimatedCard({ item, index, navigation, openWhatsApp }: any) {
             <View style={[s.cardImg, s.placeholder]}><Text style={{ fontSize: 32 }}>🏎️</Text></View>
           )}
           <LinearGradient colors={['transparent', 'transparent']} style={s.cardImgGradient} />
+          <View pointerEvents="none" style={s.viewsBadge}>
+            <Text style={s.viewsText}>👁 {Number(item.views || 0).toLocaleString()}</Text>
+          </View>
           {isFeatured ? (
             <View pointerEvents="none" style={s.featureBadge}>
               <Text style={s.featureBadgeText} numberOfLines={1}>{t('featuredAdLabel')}</Text>
@@ -493,6 +496,16 @@ const s = StyleSheet.create({
   cardImg: { width: '100%', flex: 1 },
   placeholder: { backgroundColor: colors.metal, justifyContent: 'center', alignItems: 'center' },
   cardImgGradient: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 60 },
+  viewsBadge: {
+    position: 'absolute',
+    left: 10,
+    bottom: 10,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: radius.full,
+  },
+  viewsText: { color: colors.white, fontSize: 11, fontWeight: '900' },
   featureBadge: {
     position: 'absolute',
     top: 10,

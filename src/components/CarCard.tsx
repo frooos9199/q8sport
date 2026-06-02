@@ -42,6 +42,9 @@ export default function CarCard({ car, onPress, onWhatsApp }: Props) {
             <View style={[s.img, s.placeholder]}><Text style={{ fontSize: 50 }}>🏎️</Text></View>
           )}
           <LinearGradient colors={['transparent', 'transparent']} style={s.gradient} />
+          <View pointerEvents="none" style={s.viewsBadge}>
+            <Text style={s.viewsText}>👁 {Number(car.views || 0).toLocaleString()}</Text>
+          </View>
           {isFeatured ? (
             <View pointerEvents="none" style={s.featureBadge}>
               <Text style={s.featureBadgeText} numberOfLines={1}>{t('featuredAdLabel')}</Text>
@@ -87,6 +90,16 @@ const s = StyleSheet.create({
   img: { width: '100%', height: 190 },
   placeholder: { backgroundColor: colors.metal, justifyContent: 'center', alignItems: 'center' },
   gradient: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 80 },
+  viewsBadge: {
+    position: 'absolute',
+    left: 10,
+    bottom: 10,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: radius.full,
+  },
+  viewsText: { color: colors.white, fontSize: 11, fontWeight: '900' },
   featureBadge: {
     position: 'absolute',
     top: 10,

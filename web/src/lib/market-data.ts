@@ -18,6 +18,7 @@ export type CarListing = {
   title: string;
   price: string;
   featuredAt?: number;
+  views?: number;
   year: string;
   mileage: string;
   location: string;
@@ -33,6 +34,7 @@ export type PartListing = {
   title: string;
   price: string;
   featuredAt?: number;
+  views?: number;
   category: string;
   fitment: string;
   condition: string;
@@ -86,6 +88,7 @@ type RawCar = {
   status?: string;
   createdAt?: unknown;
   featuredAt?: unknown;
+  views?: unknown;
 };
 
 type RawPart = {
@@ -102,6 +105,7 @@ type RawPart = {
   status?: string;
   createdAt?: unknown;
   featuredAt?: unknown;
+  views?: unknown;
 };
 
 function isBlockedPartCategory(category: unknown) {
@@ -118,6 +122,7 @@ type RawRequest = {
   budget?: number | string;
   status?: string;
   createdAt?: unknown;
+  views?: unknown;
 };
 
 import { buildSellerCampaign } from "@/lib/seller-campaign";
@@ -479,6 +484,7 @@ export async function loadMarketData(): Promise<MarketSnapshot> {
         title: normalizeText(item.title, item.model || item.brand || "سيارة معروضة"),
         price: formatCurrency(item.price),
         featuredAt: normalizeTimestamp(item.featuredAt) || 0,
+        views: normalizeNumber(item.views) ?? 0,
         year: formatYear(item.year),
         mileage: formatMileage(item.mileage),
         location: "الكويت",
@@ -505,6 +511,7 @@ export async function loadMarketData(): Promise<MarketSnapshot> {
       title: normalizeText(item.title, item.category || "قطعة معروضة"),
       price: formatCurrency(item.price),
       featuredAt: normalizeTimestamp(item.featuredAt) || 0,
+      views: normalizeNumber(item.views) ?? 0,
       category: item.category?.trim() || "قطع غيار",
       fitment: item.compatibleBrands?.length ? item.compatibleBrands.join(" / ") : "توافق غير محدد",
       condition: mapCondition(item.condition),

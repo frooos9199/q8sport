@@ -15,6 +15,7 @@ import FastAdImage from '../../components/FastAdImage';
 import { getListingMediumUrl, getListingOriginalUrl, getListingThumbnailUrl } from '../../lib/listingImages';
 import { toWaMeDigits } from '../../lib/gccPhone';
 import { getPublishedListingUrl } from '../../lib/publishedSite';
+import { incrementListingViewsOncePerDay } from '../../lib/listingViews';
 
 const { width } = Dimensions.get('window');
 
@@ -27,6 +28,7 @@ export default function CarDetailsScreen({ route, navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [imgIndex, setImgIndex] = useState(0);
   const [lightbox, setLightbox] = useState(false);
+  const [views, setViews] = useState(0);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(40)).current;
 
@@ -53,6 +55,24 @@ export default function CarDetailsScreen({ route, navigation }: any) {
     run();
     return () => { mounted = false; };
   }, [fadeAnim, id, slideAnim]);
+
+  useEffect(() => {
+    let mounted = true;
+    if (!car?.id) return;
+
+    setViews(Number(car.views || 0));
+
+    incrementListingViewsOncePerDay('cars', car.id).then((nextViews) => {
+      if (!mounted) return;
+      if (typeof nextViews === 'number' && Number.isFinite(nextViews)) {
+        setViews(nextViews);
+      }
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, [car?.id, car?.views]);
 
   useEffect(() => {
     let mounted = true;
@@ -150,6 +170,10 @@ export default function CarDetailsScreen({ route, navigation }: any) {
             )}
           </TouchableOpacity>
           <LinearGradient colors={['transparent', 'transparent']} style={s.imgGradient} />
+
+          <View pointerEvents="none" style={s.viewsBadge}>
+            <Text style={s.viewsText}>👁 {Number(views || 0).toLocaleString()}</Text>
+          </View>
 
           {/* Image counter */}
           {car.images && car.images.length > 1 && (
@@ -333,6 +357,16 @@ const s = StyleSheet.create({
   mainImg: { width, height: 320 },
   placeholder: { backgroundColor: colors.metal, justifyContent: 'center', alignItems: 'center' },
   imgGradient: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 120 },
+  viewsBadge: {
+    position: 'absolute',
+    bottom: 16,
+    left: 16,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: radius.full,
+  },
+  viewsText: { color: colors.white, fontSize: 12, fontWeight: '800' },
   imgCounter: { position: 'absolute', bottom: 16, right: 16, backgroundColor: 'rgba(0,0,0,0.7)', paddingHorizontal: 12, paddingVertical: 5, borderRadius: radius.full },
   imgCounterText: { color: colors.white, fontSize: 12, fontWeight: '600' },
   statusBadge: { position: 'absolute', top: 16, right: 16, paddingHorizontal: 14, paddingVertical: 6, borderRadius: radius.full },
