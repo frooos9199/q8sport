@@ -151,6 +151,25 @@ export default function CarDetailsScreen({ route, navigation }: any) {
     return '';
   };
 
+  const marketHashtags = [
+    '#الكويت',
+    '#سيارات_الكويت',
+    '#حراج_الكويت',
+    '#سيارات',
+    '#سيارات_للبيع',
+    '#للبيع',
+    '#سوق_الكويت',
+    '#سيارات_رياضية',
+    '#سوبركار',
+    '#كوبيه',
+    '#SUV',
+    '#Kuwait',
+    '#KuwaitCars',
+    '#CarsForSale',
+    '#UsedCars',
+    '#Supercar',
+  ].join(' ');
+
   const carTitle = getLocalizedText(car.title);
   const carLine = [safeText(car.brand), safeText(car.model), car.year ? String(car.year) : '']
     .map(v => String(v || '').trim())
@@ -164,6 +183,7 @@ export default function CarDetailsScreen({ route, navigation }: any) {
     safeText(t('sharePriceLine', { price: car.price?.toLocaleString(), kwd: t('kwd') })),
     getLocalizedText((car as any).description),
     safeText(t('shareDownloadAppLineCars')),
+    marketHashtags,
   ].filter(Boolean).join('\n');
 
   const specs = [
