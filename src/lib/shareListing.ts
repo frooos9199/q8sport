@@ -1,4 +1,4 @@
-import { Alert, Linking, Share as NativeShare } from 'react-native';
+import { Alert, Linking, Platform, Share as NativeShare } from 'react-native';
 import Clipboard from '@react-native-clipboard/clipboard';
 import RNShare, { Social } from 'react-native-share';
 
@@ -118,16 +118,20 @@ export async function shareListing(target: ShareTarget, message: string, imageUr
       }
 
       if (assets.length > 1) {
-        try {
-          await RNShare.shareSingle({
-            social: Social.Instagram,
-            urls: assets.map(a => a.dataUrl),
-            type: 'image/*',
-          });
-          notifyCopied();
-          return;
-        } catch {
-          // fall through
+        // iOS Instagram feed doesn't reliably accept direct multi-image share.
+        // Most apps fall back to the system share sheet (user picks Instagram).
+        if (Platform.OS === 'android') {
+          try {
+            await RNShare.shareSingle({
+              social: Social.Instagram,
+              urls: assets.map(a => a.dataUrl),
+              type: 'image/*',
+            });
+            notifyCopied();
+            return;
+          } catch {
+            // fall through
+          }
         }
 
         // Backup: open the system share sheet with multiple images

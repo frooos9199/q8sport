@@ -134,13 +134,27 @@ export default function CarDetailsScreen({ route, navigation }: any) {
     );
   };
 
+  const safeText = (value: unknown) => {
+    if (typeof value !== 'string') return '';
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    if (trimmed === 'null' || trimmed === 'undefined') return '';
+    return trimmed;
+  };
+
+  const carTitle = safeText(car.title?.ar) || safeText(car.title?.en);
+  const carLine = [safeText(car.brand), safeText(car.model), car.year ? String(car.year) : '']
+    .map(v => String(v || '').trim())
+    .filter(Boolean)
+    .join(' ');
+
   const shareMessage = [
-    t('shareFromAppLine'),
-    `${car.title.ar}`,
-    `${car.brand} ${car.model} ${car.year}`,
-    t('sharePriceLine', { price: car.price?.toLocaleString(), kwd: t('kwd') }),
-    car.description?.ar || '',
-    t('shareDownloadAppLineCars'),
+    safeText(t('shareFromAppLine')),
+    carTitle,
+    carLine,
+    safeText(t('sharePriceLine', { price: car.price?.toLocaleString(), kwd: t('kwd') })),
+    safeText(car.description?.ar),
+    safeText(t('shareDownloadAppLineCars')),
   ].filter(Boolean).join('\n');
 
   const specs = [

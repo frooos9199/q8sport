@@ -147,12 +147,12 @@ export default function PartDetailsScreen({ route, navigation }: any) {
   const callDigits = String(part.userPhone || part.userWhatsapp || '').replace(/[^0-9]/g, '');
 
   const shareMessage = [
-    t('shareFromAppLine'),
-    part.title?.ar || t('listingTypePart'),
-    part.category || '',
+    typeof t('shareFromAppLine') === 'string' ? t('shareFromAppLine') : '',
+    typeof part.title?.ar === 'string' && part.title.ar.trim() ? part.title.ar.trim() : (typeof t('listingTypePart') === 'string' ? t('listingTypePart') : ''),
+    typeof part.category === 'string' ? part.category.trim() : '',
     part.price != null ? t('sharePriceLine', { price: part.price?.toLocaleString(), kwd: t('kwd') }) : '',
-    part.description?.ar || '',
-    t('shareDownloadAppLineParts'),
+    typeof part.description?.ar === 'string' ? part.description.ar.trim() : '',
+    typeof t('shareDownloadAppLineParts') === 'string' ? t('shareDownloadAppLineParts') : '',
   ].filter(Boolean).join('\n');
   const heroHeight = Math.max(250, Math.min(width * 0.88, 340));
   const shareChipWidth = width < 360 ? '100%' : '47%';

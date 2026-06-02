@@ -79,7 +79,7 @@ export default forwardRef<ShareWatermarkHandle, Props>(function ShareWatermarkRe
   }), []);
 
   return (
-    <View pointerEvents="none" style={s.offscreen}>
+    <View pointerEvents="none" style={s.hiddenHost} collapsable={false}>
       <ViewShot
         ref={(r) => {
           viewShotRef.current = r;
@@ -92,6 +92,7 @@ export default forwardRef<ShareWatermarkHandle, Props>(function ShareWatermarkRe
           height: 1350,
         }}
         style={s.canvas}
+        collapsable={false}
       >
         {activeUri ? (
           <Image source={{ uri: activeUri }} style={s.image} resizeMode="cover" onLoadEnd={onLoadEnd} />
@@ -132,13 +133,12 @@ export default forwardRef<ShareWatermarkHandle, Props>(function ShareWatermarkRe
 });
 
 const s = StyleSheet.create({
-  offscreen: {
+  hiddenHost: {
     position: 'absolute',
-    left: -9999,
-    top: -9999,
-    width: 1,
-    height: 1,
-    opacity: 0,
+    left: 0,
+    top: 0,
+    opacity: 0.01,
+    zIndex: -1,
   },
   canvas: {
     width: 360,
