@@ -142,7 +142,16 @@ export default function CarDetailsScreen({ route, navigation }: any) {
     return trimmed;
   };
 
-  const carTitle = safeText(car.title?.ar) || safeText(car.title?.en);
+  const getLocalizedText = (value: unknown) => {
+    if (typeof value === 'string') return safeText(value);
+    if (value && typeof value === 'object') {
+      const record = value as Record<string, unknown>;
+      return safeText(record.ar) || safeText(record.en);
+    }
+    return '';
+  };
+
+  const carTitle = getLocalizedText(car.title);
   const carLine = [safeText(car.brand), safeText(car.model), car.year ? String(car.year) : '']
     .map(v => String(v || '').trim())
     .filter(Boolean)
@@ -153,7 +162,7 @@ export default function CarDetailsScreen({ route, navigation }: any) {
     carTitle,
     carLine,
     safeText(t('sharePriceLine', { price: car.price?.toLocaleString(), kwd: t('kwd') })),
-    safeText(car.description?.ar),
+    getLocalizedText((car as any).description),
     safeText(t('shareDownloadAppLineCars')),
   ].filter(Boolean).join('\n');
 
@@ -173,11 +182,23 @@ export default function CarDetailsScreen({ route, navigation }: any) {
     getListingMediumUrl(car);
   const activeOriginalUrl = getListingOriginalUrl(car, imgIndex);
 
-  const shareGalleryUrls = (
-    (Array.isArray(car.imageMediums) && car.imageMediums.length ? car.imageMediums : undefined) ||
-    (Array.isArray(car.images) && car.images.length ? car.images : undefined) ||
-    (activeMediumUrl ? [activeMediumUrl] : [])
-  ).filter((u): u is string => typeof u === 'string' && Boolean(u.trim()));
+  const shareGalleryUrls = (() => {
+    const mediums = Array.isArray(car.imageMediums) ? car.imageMediums : [];
+    const originals = Array.isArray(car.images) ? car.images : [];
+    const count = Math.max(mediums.length, originals.length);
+
+    const urls: string[] = [];
+    if (count > 0) {
+      for (let i = 0; i < count; i += 1) {
+        const candidate = mediums[i] || originals[i];
+        if (typeof candidate === 'string' && candidate.trim()) urls.push(candidate.trim());
+      }
+    } else if (activeMediumUrl) {
+      urls.push(activeMediumUrl);
+    }
+
+    return Array.from(new Set(urls));
+  })();
 
   const shareToInstagram = async () => {
     let urlsToShare: string[] = shareGalleryUrls;

@@ -151,7 +151,16 @@ export default function PartDetailsScreen({ route, navigation }: any) {
     typeof part.title?.ar === 'string' && part.title.ar.trim() ? part.title.ar.trim() : (typeof t('listingTypePart') === 'string' ? t('listingTypePart') : ''),
     typeof part.category === 'string' ? part.category.trim() : '',
     part.price != null ? t('sharePriceLine', { price: part.price?.toLocaleString(), kwd: t('kwd') }) : '',
-    typeof part.description?.ar === 'string' ? part.description.ar.trim() : '',
+    (() => {
+      const desc: any = (part as any).description;
+      if (typeof desc === 'string') return desc.trim();
+      if (desc && typeof desc === 'object') {
+        const ar = typeof desc.ar === 'string' ? desc.ar.trim() : '';
+        const en = typeof desc.en === 'string' ? desc.en.trim() : '';
+        return ar || en;
+      }
+      return '';
+    })(),
     typeof t('shareDownloadAppLineParts') === 'string' ? t('shareDownloadAppLineParts') : '',
   ].filter(Boolean).join('\n');
   const heroHeight = Math.max(250, Math.min(width * 0.88, 340));
@@ -190,7 +199,11 @@ export default function PartDetailsScreen({ route, navigation }: any) {
     undefined;
 
   const shareToInstagram = async () => {
-    const galleryUrls = gallery.length ? gallery : (heroUri ? [heroUri] : []);
+    // Ensure we share ALL images the user can browse, even if imageMediums is shorter than images.
+    const count = Math.max(imageMediums.length, images.length, gallery.length);
+    const galleryUrls = count
+      ? Array.from({ length: count }).map((_, i) => imageMediums[i] || images[i]).filter(Boolean)
+      : (heroUri ? [heroUri] : []);
     let urlsToShare: string[] = galleryUrls;
 
     try {
