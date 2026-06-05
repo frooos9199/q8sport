@@ -162,16 +162,68 @@ export default function HomeScreen({ navigation }: any) {
 
     const intervalId = setInterval(() => {
       const nextIndex = (bannerIndexRef.current + 1) % banners.length;
+      bannerIndexRef.current = nextIndex;
 
-      bannerListRef.current?.scrollToIndex({
-        index: nextIndex,
-        animated: true,
-        viewPosition: 0,
+      try {
+        bannerListRef.current?.scrollToIndex({
+          index: nextIndex,
+          animated: true,
+          viewPosition: 0,
+        });
+      } catch {
+        // ignore
+      }
+    }, HOME_BANNER_AUTO_SLIDE_MS);
+
+    return () => clearInterval(intervalId);
+  }, [banners.length]);
+
+  const renderPartCard = ({ item }: { item: Part }) => {
+    const locale = getLocale();
+    const title = (locale === 'en' ? item.title?.en : item.title?.ar) || item.title?.ar || item.title?.en || '';
+    const publishedAt = formatListingPublishedAt((item as any)?.createdAt);
+    const thumb = getListingThumbnailUrl(item);
+    const imageUrl = thumb || (item as any)?.images?.[0] || (item as any)?.imageUrl || '';
+    const isFeatured = Boolean((item as any)?.isFeatured || (item as any)?.featured);
+    const hasPrice = typeof (item as any)?.price === 'number' && Number.isFinite((item as any).price) && (item as any).price > 0;
+
+    return (
+      <TouchableOpacity
+        style={[s.partCard, isFeatured ? s.featuredCard : null]}
+        activeOpacity={0.88}
+        onPress={() => navigation.navigate('PartDetails', { id: item.id })}
+      >
+        {imageUrl ? (
+          <FastAdImage uri={imageUrl} style={s.partImg} showWatermark={false} />
+        ) : (
+          <View style={[s.partImg, s.placeholder]}>
+            <Text style={{ color: colors.silverLight, fontSize: 24 }}>⚙️</Text>
+          </View>
+        )}
+
+        <LinearGradient colors={['transparent', 'rgba(0,0,0,0.78)']} style={s.partGradient} />
+
+        <View style={s.partOverlay} pointerEvents="none">
+          <Text style={s.partTitle} numberOfLines={1}>{title}</Text>
+          {hasPrice ? (
+            <Text style={s.partPrice} numberOfLines={1}>
+              {(item as any).price.toLocaleString()} {t('kwd')}
+            </Text>
+          ) : null}
+          {publishedAt ? <Text style={s.partMeta} numberOfLines={1}>{publishedAt}</Text> : null}
+        </View>
+
+        {item.condition === 'new' ? (
+          <View style={s.newBadge} pointerEvents="none">
+            <Text style={s.newBadgeText}>{t('new')}</Text>
+          </View>
         ) : null}
-      </View>
-      {item.condition === 'new' && (
-        <View style={s.newBadge}><Text style={s.newBadgeText}>{t('new')}</Text></View>
-      )}
+
+        {isFeatured ? (
+          <View style={s.featureBadge} pointerEvents="none">
+            <Text style={s.featureBadgeText} numberOfLines={1}>{t('featuredAdLabel')}</Text>
+          </View>
+        ) : null}
       </TouchableOpacity>
     );
   };
@@ -240,38 +292,6 @@ export default function HomeScreen({ navigation }: any) {
           <FlatList
             ref={bannerListRef}
             data={banners}
-            horizontal
-            keyExtractor={item => item.id}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: spacing.xl }}
-            snapToInterval={bannerSnapInterval}
-            decelerationRate="fast"
-            getItemLayout={(_, index) => ({
-              length: bannerSnapInterval,
-              offset: bannerSnapInterval * index,
-              index,
-            })}
-            onMomentumScrollEnd={event => {
-              const nextIndex = Math.round(event.nativeEvent.contentOffset.x / bannerSnapInterval);
-              bannerIndexRef.current = Math.max(0, Math.min(nextIndex, banners.length - 1));
-            }}
-            onScrollToIndexFailed={info => {
-              bannerListRef.current?.scrollToOffset({
-                offset: bannerSnapInterval * info.index,
-                animated: true,
-              });
-            }}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={[s.bannerCard, { width: bannerCardWidth }]}
-                activeOpacity={item.targetUrl ? 0.88 : 1}
-                onPress={() => openBannerTarget(item.targetUrl)}
-                disabled={!item.targetUrl}
-              >
-                <LazyImage uri={item.imageUrl} style={s.bannerCardImage} resizeMode="cover" showWatermark={false} />
-              </TouchableOpacity>
-            )}
-          />
         </Animated.View>
       ) : null}
 
