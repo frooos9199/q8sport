@@ -327,38 +327,6 @@ export default function HomeScreen({ navigation }: any) {
         </Animated.View>
       ) : null}
 
-      <Animated.View style={[s.section, { opacity: fadeAnim }] }>
-        <View style={s.sectionHeader}>
-          <View style={s.sectionTitleWrap}>
-            <View style={[s.sectionDot, { backgroundColor: colors.green }]} />
-            <Text style={s.sectionTitle}>{t('wantedNowTitle')}</Text>
-          </View>
-          <TouchableOpacity style={s.viewAllBtn} onPress={() => navigation.navigate('RequestsTab')}>
-            <Text style={s.viewAll}>{t('all')} ←</Text>
-          </TouchableOpacity>
-        </View>
-
-        {loading ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: spacing.xl }}>
-            {[1, 2].map(i => <View key={i} style={s.requestSkeleton} />)}
-          </ScrollView>
-        ) : requests.length === 0 ? (
-          <View style={s.emptyWrap}>
-            <Text style={s.emptyIcon}>🔥</Text>
-            <Text style={s.emptyText}>{t('startFirstWantedMsg')}</Text>
-          </View>
-        ) : (
-          <FlatList
-            data={requests}
-            renderItem={renderRequestCard}
-            keyExtractor={i => i.id}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: spacing.xl }}
-          />
-        )}
-      </Animated.View>
-
       {/* Cars Section */}
       <Animated.View style={[s.section, { opacity: fadeAnim }]}>
         <View style={s.sectionHeader}>
