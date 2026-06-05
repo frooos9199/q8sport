@@ -292,6 +292,38 @@ export default function HomeScreen({ navigation }: any) {
           <FlatList
             ref={bannerListRef}
             data={banners}
+            horizontal
+            keyExtractor={item => item.id}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: spacing.xl }}
+            snapToInterval={bannerSnapInterval}
+            decelerationRate="fast"
+            getItemLayout={(_, index) => ({
+              length: bannerSnapInterval,
+              offset: bannerSnapInterval * index,
+              index,
+            })}
+            onMomentumScrollEnd={event => {
+              const nextIndex = Math.round(event.nativeEvent.contentOffset.x / bannerSnapInterval);
+              bannerIndexRef.current = Math.max(0, Math.min(nextIndex, banners.length - 1));
+            }}
+            onScrollToIndexFailed={info => {
+              bannerListRef.current?.scrollToOffset({
+                offset: bannerSnapInterval * info.index,
+                animated: true,
+              });
+            }}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[s.bannerCard, { width: bannerCardWidth }]}
+                activeOpacity={item.targetUrl ? 0.88 : 1}
+                onPress={() => openBannerTarget(item.targetUrl)}
+                disabled={!item.targetUrl}
+              >
+                <LazyImage uri={item.imageUrl} style={s.bannerCardImage} resizeMode="cover" showWatermark={false} />
+              </TouchableOpacity>
+            )}
+          />
         </Animated.View>
       ) : null}
 
