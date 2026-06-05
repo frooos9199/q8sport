@@ -13,6 +13,8 @@ const auth = getAuth(app);
 const ADMIN_EMAILS = ["admin@q8sportcar.com", "summit_kw@hotmail.com"];
 const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.q8sportcar.app";
 const APP_STORE_URL = "https://apps.apple.com/us/app/q8sportapp/id6757956229";
+const INSTAGRAM_URL = "https://www.instagram.com/q8.sport.car/";
+const INSTAGRAM_HANDLE = "@Q8.Sport.Car";
 
 export default function Navbar() {
   const [user, setUser] = useState<User | null>(null);
@@ -48,6 +50,16 @@ export default function Navbar() {
 
         {/* Desktop Actions */}
         <div className="hidden items-center gap-3 md:flex">
+          <a
+            href={INSTAGRAM_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Instagram ${INSTAGRAM_HANDLE}`}
+            title={`تابعنا على إنستقرام ${INSTAGRAM_HANDLE}`}
+            className="rounded-xl border border-[var(--metal-border)] bg-[var(--metal)] px-4 py-2.5 text-sm font-bold text-[var(--foreground)] transition hover:bg-[var(--panel-soft)]"
+          >
+            Instagram {INSTAGRAM_HANDLE}
+          </a>
           <a
             href={APP_STORE_URL}
             target="_blank"
@@ -98,6 +110,17 @@ export default function Navbar() {
             <Link href="/parts" onClick={() => setMenuOpen(false)} className="text-[var(--foreground)]">قطع الغيار</Link>
             <Link href="/wanted" onClick={() => setMenuOpen(false)} className="text-[var(--foreground)]">المطلوب</Link>
             <Link href="/sell" onClick={() => setMenuOpen(false)} className="text-[var(--foreground)]">انشر إعلان</Link>
+            <a
+              href={INSTAGRAM_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setMenuOpen(false)}
+              className="text-[var(--foreground)]"
+              aria-label={`Instagram ${INSTAGRAM_HANDLE}`}
+              title={`تابعنا على إنستقرام ${INSTAGRAM_HANDLE}`}
+            >
+              Instagram {INSTAGRAM_HANDLE}
+            </a>
             <div className="mt-2 flex flex-col gap-3 rounded-2xl border border-[var(--metal-border)] bg-[var(--metal)] p-4">
               <div className="text-xs font-black text-[var(--sand)]">حمّل التطبيق</div>
               <div className="flex flex-wrap gap-3">
