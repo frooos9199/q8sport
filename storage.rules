@@ -22,5 +22,12 @@ service firebase.storage {
       allow read: if true;
       allow write: if false;
     }
+
+    match /popup-ads/{uid}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null
+        && request.auth.uid == uid
+        && request.auth.token.superAdmin == true;
+    }
   }
 }

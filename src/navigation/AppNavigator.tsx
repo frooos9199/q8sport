@@ -26,6 +26,7 @@ import RegisterScreen from '../screens/auth/RegisterScreen';
 import AccountScreen from '../screens/dashboard/AccountScreen';
 import UserManagementScreen from '../screens/dashboard/UserManagementScreen';
 import BannerManagementScreen from '../screens/dashboard/BannerManagementScreen';
+import PopupAdsManagementScreen from '../screens/dashboard/PopupAdsManagementScreen';
 import IntroSplashScreen from '../screens/IntroSplashScreen';
 import LaunchNoticeScreen from '../screens/LaunchNoticeScreen';
 
@@ -184,6 +185,7 @@ function AccountStack() {
       />
       <Stack.Screen name="UserManagement" component={UserManagementScreen} options={{ title: t('userManagementTitle') }} />
       <Stack.Screen name="BannerManagement" component={BannerManagementScreen} options={{ title: t('bannerManagementTitle') }} />
+      <Stack.Screen name="PopupAdsManagement" component={PopupAdsManagementScreen} options={{ title: 'Popup Ads' }} />
       <Stack.Screen name="SellerProfile" component={SellerProfileScreen} options={{ title: t('userDetailsTitle') }} />
       <Stack.Screen name="CreateListingHub" component={CreateListingHubScreen} options={{ title: t('createListingHubTitle') }} />
       <Stack.Screen name="CreateCar" component={CreateCarScreen} options={{ title: t('createCarTitle') }} />

@@ -21,6 +21,8 @@ import { prefetchAdImages } from '../lib/prefetchAdImages';
 import { toWaMeDigits } from '../lib/gccPhone';
 import { useAuth } from '../hooks/useAuth';
 import { getPublishedListingUrl } from '../lib/publishedSite';
+import PopupAdModal from '../components/PopupAdModal';
+import { markPopupAdDismissed, pickPopupAdToShow, type PopupAd } from '../lib/popupAds';
 
 const { width } = Dimensions.get('window');
 const HOME_BANNER_CARD_SPACING = 14;
@@ -36,6 +38,8 @@ export default function HomeScreen({ navigation }: any) {
   const [banners, setBanners] = useState<BannerAd[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [popupAd, setPopupAd] = useState<PopupAd | null>(null);
+  const [popupAdVisible, setPopupAdVisible] = useState(false);
   const heroAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -123,6 +127,56 @@ export default function HomeScreen({ navigation }: any) {
       Animated.timing(fadeAnim, { toValue: 1, duration: 1000, delay: 300, useNativeDriver: true }),
     ]).start();
   }, [fadeAnim, heroAnim]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    (async () => {
+      const ad = await pickPopupAdToShow();
+      if (!mounted) return;
+      if (ad) {
+        setPopupAd(ad);
+        setPopupAdVisible(true);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const closePopupAd = async () => {
+    setPopupAdVisible(false);
+    if (popupAd?.id) {
+      await markPopupAdDismissed(popupAd.id);
+    }
+  };
+
+  const handlePopupAdPress = async () => {
+    if (!popupAd) return;
+    if (popupAd.linkType === 'none' || !popupAd.linkUrl) return;
+
+    try {
+      if (popupAd.linkType === 'external') {
+        const raw = popupAd.linkUrl.trim();
+        const url = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+        const canOpen = await Linking.canOpenURL(url);
+        if (canOpen) {
+          await Linking.openURL(url);
+        }
+        await closePopupAd();
+        return;
+      }
+
+      if (popupAd.linkType === 'internal') {
+        // Minimal internal routing: treat linkUrl as a route name.
+        navigation.navigate(popupAd.linkUrl);
+        await closePopupAd();
+      }
+    } catch {
+      // ignore
+    }
+  };
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -265,11 +319,12 @@ export default function HomeScreen({ navigation }: any) {
   };
 
   return (
-    <ScrollView
-      style={s.container}
-      showsVerticalScrollIndicator={false}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
-    >
+    <>
+      <ScrollView
+        style={s.container}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+      >
       <Animated.View style={[s.hero, { paddingTop: insets.top + 24, opacity: heroAnim, transform: [{ translateY: heroAnim.interpolate({ inputRange: [0, 1], outputRange: [-20, 0] }) }] }]}>
         <View style={s.heroBtns}>
           <TouchableOpacity style={s.btnSecondary} activeOpacity={0.85} onPress={() => navigation.navigate('HomeTab', { screen: 'CreateListingHub' })}>
@@ -454,7 +509,15 @@ export default function HomeScreen({ navigation }: any) {
       </View>
 
       <View style={{ height: tabBarHeight + 20 }} />
-    </ScrollView>
+      </ScrollView>
+
+      <PopupAdModal
+        visible={popupAdVisible}
+        ad={popupAd}
+        onClose={closePopupAd}
+        onPressAd={handlePopupAdPress}
+      />
+    </>
   );
 }
 

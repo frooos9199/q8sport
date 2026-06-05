@@ -44,6 +44,8 @@ export default function AccountScreen({ navigation }: any) {
     else navigation.navigate(tabName, params);
   };
 
+  const openPopupAdsAdmin = () => navigation.navigate('PopupAdsManagement');
+
   const menuItems = isSuperAdmin
     ? [
         {
@@ -74,6 +76,13 @@ export default function AccountScreen({ navigation }: any) {
           desc: t('menuBannersDesc'),
           onPress: () => navigation.navigate('BannerManagement'),
         },
+        {
+          key: 'popupAds',
+          icon: '🪧',
+          label: 'Popup Ads',
+          desc: 'إدارة الإعلانات الافتتاحية',
+          onPress: openPopupAdsAdmin,
+        },
       ]
     : isAdmin
       ? [
@@ -90,6 +99,13 @@ export default function AccountScreen({ navigation }: any) {
             label: t('menuPublishHubLabel'),
             desc: t('menuPublishHubDesc'),
             onPress: () => navigateToTab('AccountTab', { screen: 'CreateListingHub' }),
+          },
+          {
+            key: 'popupAds',
+            icon: '🪧',
+            label: 'Popup Ads',
+            desc: 'إدارة الإعلانات الافتتاحية',
+            onPress: openPopupAdsAdmin,
           },
         ]
     : [

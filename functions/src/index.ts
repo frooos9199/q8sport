@@ -1,6 +1,7 @@
 import { onSchedule } from 'firebase-functions/v2/scheduler';
-import { onValueDeleted, onValueUpdated } from 'firebase-functions/v2/database';
+import { onValueDeleted, onValueUpdated, onValueWritten } from 'firebase-functions/v2/database';
 import { logger } from 'firebase-functions';
+import * as functionsV1 from 'firebase-functions/v1';
 import * as admin from 'firebase-admin';
 
 admin.initializeApp();
@@ -322,3 +323,136 @@ export const purgeExpiredListings = onSchedule(
     logger.info('purgeExpiredListings completed', { now, cars, parts, requests });
   },
 );
+
+export const syncSuperAdminClaims = functionsV1
+  .region('europe-west1')
+  .database.ref('/users/{uid}/isSuperAdmin')
+  .onWrite(async (change, context) => {
+    const uid = String(context.params.uid || '').trim();
+    if (!uid) return;
+
+    const nextIsSuperAdmin = change.after.exists() && change.after.val() === true;
+
+    try {
+      const user = await admin.auth().getUser(uid);
+      const currentClaims = (user.customClaims || {}) as Record<string, unknown>;
+      const current = currentClaims.superAdmin === true;
+
+      if (current === nextIsSuperAdmin) return;
+
+      const nextClaims: Record<string, unknown> = { ...currentClaims };
+      if (nextIsSuperAdmin) {
+        nextClaims.superAdmin = true;
+      } else {
+        delete nextClaims.superAdmin;
+      }
+
+      await admin.auth().setCustomUserClaims(uid, nextClaims);
+      logger.info('syncSuperAdminClaims updated', { uid, nextIsSuperAdmin });
+    } catch (error) {
+      logger.warn('syncSuperAdminClaims failed', { uid, nextIsSuperAdmin, error });
+    }
+  });
+
+export const cleanupPopupAdStorageOnDelete = functionsV1
+  .region('europe-west1')
+  .database.ref('/popupAds/{popupAdId}')
+  .onDelete(async (snap) => {
+    const value = (snap.val() || null) as ListingLike | null;
+    if (!value) return;
+    await deleteStorageByUrls(collectListingMediaUrls(value));
+  });
+
+export const cleanupPopupAdStorageOnUpdate = functionsV1
+  .region('europe-west1')
+  .database.ref('/popupAds/{popupAdId}')
+  .onUpdate(async (change) => {
+    const before = (change.before.val() || null) as ListingLike | null;
+    const after = (change.after.val() || null) as ListingLike | null;
+    await deleteRemovedStorageMedia(before, after);
+  });
+
+export const purgeExpiredPopupAds = functionsV1
+  .region('europe-west1')
+  .pubsub.schedule('every 6 hours')
+  .timeZone('Asia/Kuwait')
+  .onRun(async () => {
+    const now = Date.now();
+    const rootRef = admin.database().ref('popupAds');
+    const snap = await rootRef.orderByChild('endDate').endAt(now).once('value');
+    if (!snap.exists()) return null;
+
+    const updates: Record<string, null> = {};
+    let examined = 0;
+
+    snap.forEach((child) => {
+      examined += 1;
+      const id = String(child.key || '');
+      if (!id) return false;
+
+      const value = (child.val() || {}) as any;
+      const endDate = toTimestampMs(value.endDate);
+      if (!endDate || endDate > now) return false;
+
+      updates[id] = null;
+      return false;
+    });
+
+    const keys = Object.keys(updates);
+    if (!keys.length) {
+      logger.info('purgeExpiredPopupAds noop', { now, examined });
+      return null;
+    }
+
+    await rootRef.update(updates);
+    logger.info('purgeExpiredPopupAds removed', { now, examined, deleted: keys.length });
+    return null;
+  });
+
+export const bootstrapSuperAdminClaim = functionsV1
+  .region('europe-west1')
+  .https.onRequest(async (req, res) => {
+    if (req.method !== 'POST') {
+      res.status(405).json({ ok: false, error: 'method_not_allowed' });
+      return;
+    }
+
+    const authHeader = String(req.headers.authorization || '').trim();
+    const match = authHeader.match(/^Bearer\s+(.+)$/i);
+    if (!match) {
+      res.status(401).json({ ok: false, error: 'missing_bearer_token' });
+      return;
+    }
+
+    try {
+      const decoded = await admin.auth().verifyIdToken(match[1], true);
+      const uid = String(decoded.uid || '').trim();
+      if (!uid) {
+        res.status(401).json({ ok: false, error: 'invalid_token' });
+        return;
+      }
+
+      const flagSnap = await admin.database().ref(`/users/${uid}/isSuperAdmin`).once('value');
+      const isSuperAdmin = flagSnap.exists() && flagSnap.val() === true;
+      if (!isSuperAdmin) {
+        res.status(403).json({ ok: false, error: 'not_super_admin' });
+        return;
+      }
+
+      const user = await admin.auth().getUser(uid);
+      const currentClaims = (user.customClaims || {}) as Record<string, unknown>;
+      const already = currentClaims.superAdmin === true;
+
+      if (!already) {
+        await admin.auth().setCustomUserClaims(uid, { ...currentClaims, superAdmin: true });
+        logger.info('bootstrapSuperAdminClaim set', { uid });
+      } else {
+        logger.info('bootstrapSuperAdminClaim noop', { uid });
+      }
+
+      res.status(200).json({ ok: true, changed: !already });
+    } catch (error) {
+      logger.warn('bootstrapSuperAdminClaim failed', { error });
+      res.status(500).json({ ok: false, error: 'internal_error' });
+    }
+  });

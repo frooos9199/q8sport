@@ -12,6 +12,8 @@
 	<string>org.reactjs.native.example.Q8SportApp</string>
 	<key>PROJECT_ID</key>
 	<string>q8sportcar</string>
+	<key>DATABASE_URL</key>
+	<string>https://q8sportcar-default-rtdb.europe-west1.firebasedatabase.app</string>
 	<key>STORAGE_BUCKET</key>
 	<string>q8sportcar.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>

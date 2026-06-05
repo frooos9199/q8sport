@@ -43,6 +43,12 @@
       "$bannerId": {
         ".write": "auth != null && root.child('users').child(auth.uid).child('isSuperAdmin').val() === true"
       }
+    },
+    "popupAds": {
+      ".indexOn": ["endDate"],
+      "$popupAdId": {
+        ".write": "auth != null && root.child('users').child(auth.uid).child('isSuperAdmin').val() === true"
+      }
     }
   }
 }

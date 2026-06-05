@@ -12,7 +12,7 @@ const configuredDatabaseURL: string | undefined = appOptions?.databaseURL;
 // If native config is missing DATABASE_URL, Firebase Database may connect to the wrong host (or fail).
 // We fallback to Firebase's default instance URL pattern.
 const inferredDatabaseURL =
-	!configuredDatabaseURL && projectId ? `https://${projectId}-default-rtdb.firebaseio.com` : undefined;
+	!configuredDatabaseURL && projectId ? `https://${projectId}-default-rtdb.europe-west1.firebasedatabase.app` : undefined;
 
 const effectiveDatabaseURL = configuredDatabaseURL || inferredDatabaseURL;
 
