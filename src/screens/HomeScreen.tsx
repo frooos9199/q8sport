@@ -167,38 +167,6 @@ export default function HomeScreen({ navigation }: any) {
         index: nextIndex,
         animated: true,
         viewPosition: 0,
-      });
-
-      bannerIndexRef.current = nextIndex;
-    }, HOME_BANNER_AUTO_SLIDE_MS);
-
-    return () => clearInterval(intervalId);
-  }, [banners.length]);
-
-  const renderPartCard = ({ item }: { item: Part }) => {
-    const isFeatured = Number(item?.featuredAt || 0) > 0;
-    return (
-      <TouchableOpacity
-        style={[s.partCard, isFeatured ? s.featuredCard : null]}
-        activeOpacity={0.85}
-        onPress={() => navigation.navigate('PartDetails', { id: item.id })}
-      >
-      {getListingThumbnailUrl(item) ? (
-        <FastAdImage uri={getListingThumbnailUrl(item)} style={s.partImg} fallback={<Text style={{ fontSize: 30 }}>⚙️</Text>} />
-      ) : (
-        <View style={[s.partImg, s.placeholder]}><Text style={{ fontSize: 30 }}>⚙️</Text></View>
-      )}
-      <LinearGradient colors={['transparent', 'transparent']} style={s.partGradient} />
-      {isFeatured ? (
-        <View pointerEvents="none" style={s.featureBadge}>
-          <Text style={s.featureBadgeText} numberOfLines={1}>{t('featuredAdLabel')}</Text>
-        </View>
-      ) : null}
-      <View style={s.partOverlay}>
-        <Text style={s.partTitle} numberOfLines={1}>{item.title.ar}</Text>
-        <Text style={s.partPrice}>{item.price?.toLocaleString()} {t('kwd')}</Text>
-        {formatListingPublishedAt(item.createdAt) ? (
-          <Text style={s.partMeta}>{t('publishedOn')}: {formatListingPublishedAt(item.createdAt)}</Text>
         ) : null}
       </View>
       {item.condition === 'new' && (
@@ -412,6 +380,38 @@ export default function HomeScreen({ navigation }: any) {
           <FlatList
             data={parts}
             renderItem={renderPartCard}
+            keyExtractor={i => i.id}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: spacing.xl }}
+          />
+        )}
+      </Animated.View>
+
+      <Animated.View style={[s.section, { opacity: fadeAnim }] }>
+        <View style={s.sectionHeader}>
+          <View style={s.sectionTitleWrap}>
+            <View style={[s.sectionDot, { backgroundColor: colors.green }]} />
+            <Text style={s.sectionTitle}>{t('wantedNowTitle')}</Text>
+          </View>
+          <TouchableOpacity style={s.viewAllBtn} onPress={() => navigation.navigate('RequestsTab')}>
+            <Text style={s.viewAll}>{t('all')} ←</Text>
+          </TouchableOpacity>
+        </View>
+
+        {loading ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: spacing.xl }}>
+            {[1, 2].map(i => <View key={i} style={s.requestSkeleton} />)}
+          </ScrollView>
+        ) : requests.length === 0 ? (
+          <View style={s.emptyWrap}>
+            <Text style={s.emptyIcon}>🔥</Text>
+            <Text style={s.emptyText}>{t('startFirstWantedMsg')}</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={requests}
+            renderItem={renderRequestCard}
             keyExtractor={i => i.id}
             horizontal
             showsHorizontalScrollIndicator={false}
