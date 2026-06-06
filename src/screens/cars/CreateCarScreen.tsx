@@ -7,6 +7,7 @@ import PremiumButton from '../../components/PremiumButton';
 import GccPhoneInput from '../../components/GccPhoneInput';
 import { useAuth } from '../../hooks/useAuth';
 import { db } from '../../lib/firebase';
+import { showInstagramFollowPrompt } from '../../lib/instagramFollowPrompt';
 import { deleteRemovedListingMedia, ListingMediaItem, uploadListingMedia } from '../../lib/listingImages';
 import { buildE164, parseToGccNumber, type GccCountry } from '../../lib/gccPhone';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
@@ -193,8 +194,19 @@ export default function CreateCarScreen({ navigation, route }: any) {
         void deleteRemovedListingMedia(initialListing, media);
       }
 
-      Alert.alert(t('successTitle'), isEditing ? t('carUpdatedMsg') : t('carPublishedMsg'));
-      navigation.goBack();
+      if (isEditing) {
+        Alert.alert(t('successTitle'), t('carUpdatedMsg'));
+        navigation.goBack();
+      } else {
+        const shown = await showInstagramFollowPrompt({
+          onDone: () => navigation.goBack(),
+        });
+
+        if (!shown) {
+          Alert.alert(t('successTitle'), t('carPublishedMsg'));
+          navigation.goBack();
+        }
+      }
     } catch (e: any) {
       Alert.alert(t('loginErrorTitle'), e?.message || t('carPublishFailedMsg'));
     } finally {

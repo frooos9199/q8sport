@@ -7,6 +7,7 @@ import PremiumButton from '../../components/PremiumButton';
 import GccPhoneInput from '../../components/GccPhoneInput';
 import { useAuth } from '../../hooks/useAuth';
 import { db } from '../../lib/firebase';
+import { showInstagramFollowPrompt } from '../../lib/instagramFollowPrompt';
 import { deleteRemovedListingMedia, ListingMediaItem, uploadListingMedia } from '../../lib/listingImages';
 import { buildE164, parseToGccNumber, type GccCountry } from '../../lib/gccPhone';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
@@ -215,8 +216,19 @@ export default function CreatePartScreen({ navigation, route }: any) {
         void deleteRemovedListingMedia(listing, media);
       }
 
-      Alert.alert(t('successTitle'), isEditing ? t('partUpdatedMsg') : t('partPublishedMsg'));
-      navigation.goBack();
+      if (isEditing) {
+        Alert.alert(t('successTitle'), t('partUpdatedMsg'));
+        navigation.goBack();
+      } else {
+        const shown = await showInstagramFollowPrompt({
+          onDone: () => navigation.goBack(),
+        });
+
+        if (!shown) {
+          Alert.alert(t('successTitle'), t('partPublishedMsg'));
+          navigation.goBack();
+        }
+      }
     } catch (e: any) {
       Alert.alert(t('loginErrorTitle'), e?.message || t('partPublishFailedMsg'));
     } finally {

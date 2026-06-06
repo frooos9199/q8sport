@@ -5,6 +5,7 @@ import { push, ref as dbRef, serverTimestamp, set as dbSet, update } from '@reac
 
 import { useAuth } from '../../hooks/useAuth';
 import { db } from '../../lib/firebase';
+import { showInstagramFollowPrompt } from '../../lib/instagramFollowPrompt';
 import { deleteRemovedListingMedia, ListingMediaItem, uploadListingMedia } from '../../lib/listingImages';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import PremiumButton from '../../components/PremiumButton';
@@ -189,8 +190,19 @@ export default function CreateRequestScreen({ navigation, route }: any) {
         void deleteRemovedListingMedia(listing, media);
       }
 
-      Alert.alert(t('successTitle'), isEditing ? t('requestUpdatedMsg') : t('requestCreatedMsg'));
-      navigation.goBack();
+      if (isEditing) {
+        Alert.alert(t('successTitle'), t('requestUpdatedMsg'));
+        navigation.goBack();
+      } else {
+        const shown = await showInstagramFollowPrompt({
+          onDone: () => navigation.goBack(),
+        });
+
+        if (!shown) {
+          Alert.alert(t('successTitle'), t('requestCreatedMsg'));
+          navigation.goBack();
+        }
+      }
     } catch (e: any) {
       Alert.alert(t('loginErrorTitle'), e?.message || t('requestCreateFailedMsg'));
     } finally {
