@@ -152,22 +152,11 @@ export default function CarDetailsScreen({ route, navigation }: any) {
   };
 
   const marketHashtags = [
-    '#الكويت',
     '#سيارات_الكويت',
-    '#حراج_الكويت',
-    '#سيارات',
     '#سيارات_للبيع',
-    '#للبيع',
-    '#سوق_الكويت',
-    '#سيارات_رياضية',
-    '#سوبركار',
-    '#كوبيه',
-    '#SUV',
-    '#Kuwait',
-    '#KuwaitCars',
-    '#CarsForSale',
-    '#UsedCars',
-    '#Supercar',
+    '#SuperCars',
+    '#Carsofkuwait',
+    '#سيارات',
   ].join(' ');
 
   const carTitle = getLocalizedText(car.title);
