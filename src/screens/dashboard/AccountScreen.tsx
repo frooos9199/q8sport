@@ -9,6 +9,7 @@ import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { t } from '../../i18n';
 import { useLocale } from '../../i18n/LocaleProvider';
 import { buildE164, parseToGccNumber, getGccCountry, type GccCountry } from '../../lib/gccPhone';
+import { openAdminWhatsapp } from '../../lib/adminWhatsapp';
 
 export default function AccountScreen({ navigation }: any) {
   const { width } = useWindowDimensions();
@@ -45,6 +46,10 @@ export default function AccountScreen({ navigation }: any) {
   };
 
   const openPopupAdsAdmin = () => navigation.navigate('PopupAdsManagement');
+
+  const contactAdmin = async () => {
+    await openAdminWhatsapp(locale === 'ar' ? 'مرحبا، عندي استفسار بخصوص تطبيق Q8 Sport Car' : 'Hi, I have a question about Q8 Sport Car app.');
+  };
 
   const menuItems = isSuperAdmin
     ? [
@@ -299,6 +304,10 @@ export default function AccountScreen({ navigation }: any) {
         ))}
       </View>
 
+      <TouchableOpacity style={s.adminWhatsappBtn} activeOpacity={0.88} onPress={contactAdmin}>
+        <Text style={s.adminWhatsappText}>💬 {locale === 'ar' ? 'تواصل مع الإدارة واتساب' : 'Contact Admin on WhatsApp'}</Text>
+      </TouchableOpacity>
+
       {/* Logout */}
       <TouchableOpacity style={s.logoutBtn} activeOpacity={0.85} onPress={logout}>
         <Text style={s.logoutText}>🚪 {t('logout')}</Text>
@@ -368,6 +377,15 @@ const s = StyleSheet.create({
   menuLabel: { color: colors.white, fontWeight: '700', fontSize: 15 },
   menuDesc: { color: colors.silver, fontSize: 11, marginTop: 2 },
   menuArrow: { color: colors.silver, fontSize: 18 },
+
+  adminWhatsappBtn: {
+    backgroundColor: colors.whatsapp,
+    paddingVertical: 15,
+    borderRadius: radius.xl,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  adminWhatsappText: { color: colors.white, fontWeight: '900', fontSize: 14 },
 
   // Logout
   logoutBtn: { backgroundColor: colors.primaryGlow, borderWidth: 1, borderColor: colors.primaryBorder, paddingVertical: 17, borderRadius: radius.xl, alignItems: 'center' },

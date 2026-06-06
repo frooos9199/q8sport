@@ -10,6 +10,7 @@ import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { t } from '../../i18n';
 import { useLocale } from '../../i18n/LocaleProvider';
 import { buildE164, getGccCountry, type GccCountry } from '../../lib/gccPhone';
+import { openAdminWhatsapp } from '../../lib/adminWhatsapp';
 
 export default function RegisterScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
@@ -100,6 +101,10 @@ export default function RegisterScreen({ navigation }: any) {
       Alert.alert(t('loginErrorTitle'), t('appleRegisterFailedMsg'));
     }
     setLoading(false);
+  };
+
+  const contactAdmin = async () => {
+    await openAdminWhatsapp(locale === 'ar' ? 'مرحبا، أحتاج مساعدة قبل إنشاء حساب في تطبيق Q8 Sport Car' : 'Hi, I need help before creating an account in Q8 Sport Car app.');
   };
 
   return (
@@ -229,6 +234,10 @@ export default function RegisterScreen({ navigation }: any) {
           <TouchableOpacity onPress={() => navigation.navigate('Login')} style={s.link}>
             <Text style={s.linkText}>{t('hasAccount')} <Text style={{ color: colors.primary, fontWeight: '700' }}>{t('login')}</Text></Text>
           </TouchableOpacity>
+
+          <TouchableOpacity style={s.adminWhatsappBtn} activeOpacity={0.88} onPress={contactAdmin}>
+            <Text style={s.adminWhatsappText}>💬 {locale === 'ar' ? 'تواصل مع الإدارة واتساب' : 'Contact Admin on WhatsApp'}</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -306,4 +315,12 @@ const s = StyleSheet.create({
 
   link: { marginTop: 22, alignItems: 'center' },
   linkText: { color: colors.silver, fontSize: 13 },
+  adminWhatsappBtn: {
+    marginTop: 14,
+    backgroundColor: colors.whatsapp,
+    borderRadius: radius.lg,
+    paddingVertical: 13,
+    alignItems: 'center',
+  },
+  adminWhatsappText: { color: colors.white, fontWeight: '900', fontSize: 13 },
 });

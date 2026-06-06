@@ -9,6 +9,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { t } from '../../i18n';
 import { useLocale } from '../../i18n/LocaleProvider';
+import { openAdminWhatsapp } from '../../lib/adminWhatsapp';
 
 export default function LoginScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
@@ -88,6 +89,10 @@ export default function LoginScreen({ navigation }: any) {
       }
     }
     setLoading(false);
+  };
+
+  const contactAdmin = async () => {
+    await openAdminWhatsapp(locale === 'ar' ? 'مرحبا، أحتاج مساعدة قبل تسجيل الدخول في تطبيق Q8 Sport Car' : 'Hi, I need help before signing in to Q8 Sport Car app.');
   };
 
   return (
@@ -201,6 +206,10 @@ export default function LoginScreen({ navigation }: any) {
           <TouchableOpacity onPress={() => navigation.navigate('Register')} style={s.link}>
             <Text style={s.linkText}>{t('noAccount')} <Text style={{ color: colors.primary, fontWeight: '700' }}>{t('register')}</Text></Text>
           </TouchableOpacity>
+
+          <TouchableOpacity style={s.adminWhatsappBtn} activeOpacity={0.88} onPress={contactAdmin}>
+            <Text style={s.adminWhatsappText}>💬 {locale === 'ar' ? 'تواصل مع الإدارة واتساب' : 'Contact Admin on WhatsApp'}</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -255,4 +264,12 @@ const s = StyleSheet.create({
 
   link: { marginTop: 22, alignItems: 'center' },
   linkText: { color: colors.silver, fontSize: 13 },
+  adminWhatsappBtn: {
+    marginTop: 14,
+    backgroundColor: colors.whatsapp,
+    borderRadius: radius.lg,
+    paddingVertical: 13,
+    alignItems: 'center',
+  },
+  adminWhatsappText: { color: colors.white, fontWeight: '900', fontSize: 13 },
 });
