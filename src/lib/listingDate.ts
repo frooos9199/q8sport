@@ -30,6 +30,12 @@ function formatArabicPublishedAgo(unit: 'second' | 'minute' | 'hour' | 'day', va
   return `تم النشر قبل ${n} يوم`;
 }
 
+function formatEnglishPublishedAgo(unit: 'second' | 'minute' | 'hour' | 'day', value: number): string {
+  const n = Math.max(1, Math.floor(value));
+  const suffix = n === 1 ? '' : 's';
+  return `${n} ${unit}${suffix} ago`;
+}
+
 function toMillis(value: any): number {
   const normalizeEpoch = (input: number): number => {
     if (!Number.isFinite(input) || input <= 0) return 0;
@@ -79,33 +85,39 @@ export function formatListingPublishedAt(value: any, locale = getLocale()): stri
   const diffMs = Math.max(0, now - timestamp);
   const diffSeconds = Math.floor(diffMs / 1000);
   const isArabic = locale === 'ar';
-
-  const rtf = new Intl.RelativeTimeFormat(isArabic ? 'ar-KW' : 'en-GB', {
-    numeric: 'always',
-    style: 'long',
-  });
+  const hasRelativeTimeFormat = typeof Intl !== 'undefined' && typeof (Intl as any).RelativeTimeFormat === 'function';
+  const rtf = hasRelativeTimeFormat
+    ? new Intl.RelativeTimeFormat(isArabic ? 'ar-KW' : 'en-GB', {
+        numeric: 'always',
+        style: 'long',
+      })
+    : null;
 
   if (diffSeconds < 60) {
     if (isArabic) return formatArabicPublishedAgo('second', diffSeconds);
-    return rtf.format(-Math.max(1, diffSeconds), 'second');
+    if (rtf) return rtf.format(-Math.max(1, diffSeconds), 'second');
+    return formatEnglishPublishedAgo('second', diffSeconds);
   }
 
   const diffMinutes = Math.floor(diffSeconds / 60);
   if (diffMinutes < 60) {
     if (isArabic) return formatArabicPublishedAgo('minute', diffMinutes);
-    return rtf.format(-diffMinutes, 'minute');
+    if (rtf) return rtf.format(-diffMinutes, 'minute');
+    return formatEnglishPublishedAgo('minute', diffMinutes);
   }
 
   const diffHours = Math.floor(diffMinutes / 60);
   if (diffHours < 24) {
     if (isArabic) return formatArabicPublishedAgo('hour', diffHours);
-    return rtf.format(-diffHours, 'hour');
+    if (rtf) return rtf.format(-diffHours, 'hour');
+    return formatEnglishPublishedAgo('hour', diffHours);
   }
 
   const diffDays = Math.floor(diffHours / 24);
   if (diffDays < 7) {
     if (isArabic) return formatArabicPublishedAgo('day', diffDays);
-    return rtf.format(-diffDays, 'day');
+    if (rtf) return rtf.format(-diffDays, 'day');
+    return formatEnglishPublishedAgo('day', diffDays);
   }
 
   return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-KW' : 'en-GB', {
