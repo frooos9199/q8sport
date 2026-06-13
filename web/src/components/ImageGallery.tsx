@@ -105,9 +105,9 @@ function ZoomLightbox({ images, title, active, setActive, onClose }: {
       const dx = e.touches[0].clientX - e.touches[1].clientX;
       const dy = e.touches[0].clientY - e.touches[1].clientY;
       lastDist.current = Math.sqrt(dx * dx + dy * dy);
-    } else if (e.touches.length === 1 && scale > 1) {
+    } else if (e.touches.length === 1) {
       lastTouch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      setDragging(true);
+      if (scale > 1) setDragging(true);
     }
   }, [scale]);
 
@@ -124,13 +124,15 @@ function ZoomLightbox({ images, title, active, setActive, onClose }: {
         if (next === 1) setTranslate({ x: 0, y: 0 });
         return next;
       });
-    } else if (e.touches.length === 1 && dragging && lastTouch.current && scale > 1) {
+    } else if (e.touches.length === 1 && lastTouch.current && scale > 1) {
+      e.preventDefault();
       const dx = e.touches[0].clientX - lastTouch.current.x;
       const dy = e.touches[0].clientY - lastTouch.current.y;
       lastTouch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
       setTranslate((t) => ({ x: t.x + dx, y: t.y + dy }));
+      setDragging(true);
     }
-  }, [dragging, scale]);
+  }, [scale]);
 
   const handleTouchEnd = useCallback(() => {
     lastDist.current = null;
@@ -188,7 +190,7 @@ function ZoomLightbox({ images, title, active, setActive, onClose }: {
       {/* Image container */}
       <div
         ref={containerRef}
-        className="relative h-[85vh] w-[92vw] max-w-5xl select-none overflow-hidden"
+        className="relative h-[85vh] w-[92vw] max-w-5xl select-none"
         style={{ cursor: scale > 1 ? (dragging ? "grabbing" : "grab") : "zoom-in", touchAction: "none" }}
         onDoubleClick={handleDoubleClick}
         onWheel={handleWheel}
@@ -202,10 +204,11 @@ function ZoomLightbox({ images, title, active, setActive, onClose }: {
         onClick={(e) => e.stopPropagation()}
       >
         <div
-          className="relative h-full w-full transition-transform"
+          className="relative h-full w-full"
           style={{
-            transform: `scale(${scale}) translate(${translate.x / scale}px, ${translate.y / scale}px)`,
-            transitionDuration: dragging ? "0ms" : "200ms",
+            transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
+            transition: dragging ? "none" : "transform 0.2s ease-out",
+            transformOrigin: "center center",
           }}
         >
           <Image src={images[active]} alt={title} fill className="object-contain pointer-events-none" unoptimized />
