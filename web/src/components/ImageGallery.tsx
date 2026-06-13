@@ -140,22 +140,23 @@ function ZoomLightbox({ images, title, active, setActive, onClose }: {
     setDragging(false);
   }, []);
 
-  // Mouse drag (desktop)
+  // Mouse drag (desktop) - always allow drag when zoomed
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (scale > 1) {
-      lastTouch.current = { x: e.clientX, y: e.clientY };
-      setDragging(true);
-    }
+    e.preventDefault();
+    lastTouch.current = { x: e.clientX, y: e.clientY };
+    if (scale > 1) setDragging(true);
   }, [scale]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (dragging && lastTouch.current && scale > 1) {
+    if (lastTouch.current && scale > 1) {
+      e.preventDefault();
       const dx = e.clientX - lastTouch.current.x;
       const dy = e.clientY - lastTouch.current.y;
       lastTouch.current = { x: e.clientX, y: e.clientY };
       setTranslate((t) => ({ x: t.x + dx, y: t.y + dy }));
+      setDragging(true);
     }
-  }, [dragging, scale]);
+  }, [scale]);
 
   const handleMouseUp = useCallback(() => {
     lastTouch.current = null;
