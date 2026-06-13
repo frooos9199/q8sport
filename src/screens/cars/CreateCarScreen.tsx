@@ -10,6 +10,7 @@ import { db } from '../../lib/firebase';
 import { showInstagramFollowPrompt } from '../../lib/instagramFollowPrompt';
 import { deleteRemovedListingMedia, ListingMediaItem, uploadListingMedia } from '../../lib/listingImages';
 import { buildE164, parseToGccNumber, type GccCountry } from '../../lib/gccPhone';
+import { consumeOnePublishPoint, getTotalCredits, hasFreeAdsEligibility } from '../../lib/userCredits';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { t } from '../../i18n';
 
@@ -129,6 +130,14 @@ export default function CreateCarScreen({ navigation, route }: any) {
       }
     }
 
+    if (!isEditing && !manualMode && !hasFreeAdsEligibility(user.campaign)) {
+      const charge = await consumeOnePublishPoint(user.uid);
+      if (!charge.ok) {
+        Alert.alert(t('warningTitle'), t('insufficientCreditsMsg', { n: getTotalCredits(charge.credits) }));
+        return;
+      }
+    }
+
     const numericYear = Number(year);
     const numericPrice = Number(price);
     const numericMileage = mileage.trim() ? Number(mileage) : 0;
@@ -227,6 +236,12 @@ export default function CreateCarScreen({ navigation, route }: any) {
           <Text style={s.heroTitle}>{isEditing ? t('createCarHeroTitleEdit') : t('createCarHeroTitleNew')}</Text>
           <Text style={s.heroSub}>{isEditing ? t('createCarHeroSubEdit') : t('createCarHeroSubNew')}</Text>
         </View>
+
+        {!isEditing ? (
+          <View style={s.costNoticeCard}>
+            <Text style={s.costNoticeText}>💳 {t('publishCostNotice')}</Text>
+          </View>
+        ) : null}
 
         {isAdmin ? (
           <View style={s.adminCard}>
@@ -390,6 +405,8 @@ const s = StyleSheet.create({
   heroCard: { backgroundColor: colors.darkCard, borderRadius: radius.xxl, borderWidth: 1, borderColor: colors.primaryBorder, padding: 20, marginBottom: 18 },
   heroTitle: { color: colors.white, fontSize: 22, fontWeight: '900', marginBottom: 6 },
   heroSub: { color: colors.silverLight, fontSize: 14, lineHeight: 22 },
+  costNoticeCard: { backgroundColor: colors.metal, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.gold, paddingVertical: 12, paddingHorizontal: 14, marginBottom: 14 },
+  costNoticeText: { color: colors.white, fontSize: 12, fontWeight: '800', lineHeight: 18 },
   adminCard: { backgroundColor: colors.metal, borderRadius: radius.xxl, borderWidth: 1, borderColor: colors.metalBorder, padding: 16, marginBottom: 18 },
   adminTitle: { color: colors.white, fontSize: 15, fontWeight: '900' },
   adminSub: { color: colors.silver, fontSize: 12, marginTop: 6, lineHeight: 18 },

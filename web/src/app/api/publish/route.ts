@@ -58,6 +58,12 @@ async function upsertUser(uid: string, sellerName: string, sellerWhatsapp: strin
     email: typeof existingUser?.email === "string" ? existingUser.email : "",
     phone: digits(sellerWhatsapp),
     whatsapp: digits(sellerWhatsapp),
+    credits: {
+      trialPoints: Number((existingUser as any)?.credits?.trialPoints ?? 50),
+      paidPoints: Number((existingUser as any)?.credits?.paidPoints ?? 0),
+      totalSpentPoints: Number((existingUser as any)?.credits?.totalSpentPoints ?? 0),
+      updatedAt: now,
+    },
     disabled: false,
     createdAt: existingUser?.createdAt || now,
     updatedAt: now,

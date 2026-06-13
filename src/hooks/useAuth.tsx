@@ -1,8 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { auth, db } from '../lib/firebase';
-import { ref as dbRef, serverTimestamp, set as dbSet, update } from '@react-native-firebase/database';
-import { ref as storageRef } from '@react-native-firebase/storage';
-import {
+import { limitToFirst, orderByChild, query, ref as dbRef, serverTimestamp, set as dbSet, update } from '@react-native-firebase/database';
+import { ref as storageRef } from '@react-native-firebase/storage';import {
   AppleAuthProvider,
   createUserWithEmailAndPassword,
   onAuthStateChanged,
@@ -14,6 +13,7 @@ import {
 import { appleAuth } from '@invertase/react-native-apple-authentication';
 import { getDbSnapshot, reportRealtimeDatabaseError } from '../lib/firebaseDatabase';
 import { storage } from '../lib/firebase';
+import { FOUNDER_LIMIT, buildInitialCredits, normalizeUserCredits } from '../lib/userCredits';
 import { User } from '../types';
 
 function normalizeEmail(email: string) {
@@ -100,6 +100,7 @@ function buildFallbackUser(firebaseUser: any): User {
     email: normalizeEmail(firebaseUser.email || ''),
     phone: '',
     whatsapp: '',
+    credits: buildInitialCredits(),
     isAdmin: flags.isAdmin,
     isSuperAdmin: flags.isSuperAdmin,
     disabled: false,
@@ -109,6 +110,64 @@ function buildFallbackUser(firebaseUser: any): User {
 
 async function readUserRecord(uid: string) {
   return getDbSnapshot(dbRef(db, `users/${uid}`), `users/${uid}`, { showAlert: false });
+}
+
+function toTimestamp(value: unknown) {
+  const input = typeof value === 'object' ? value : {};
+  const founderPosition = Number((input as any)?.founderPosition || 0);
+  const position = Math.max(1, Math.floor(founderPosition));
+  return {
+    ...(input || {}),
+    founderPosition: position,
+    freeAdsEligible: true,
+    tierLabel: String((input as any)?.tierLabel || 'مؤسس'),
+    rewardLabel: String((input as any)?.rewardLabel || 'إعلانات مجانية دائمًا'),
+    updatedAt: Date.now(),
+  };
+}
+
+async function ensureFounderCampaignForUser(uid: string, currentCampaign: any) {
+  const currentFounderPosition = Number(currentCampaign?.founderPosition || 0);
+  const currentFreeAds = currentCampaign?.freeAdsEligible === true || currentFounderPosition > 0;
+  if (currentFreeAds && currentFounderPosition > 0) {
+    return currentCampaign;
+  }
+
+  try {
+    const usersSnap = await getDbSnapshot(dbRef(db, 'users'), 'users', { showAlert: false });
+    const rows: Array<{ uid: string; createdAt: number }> = [];
+
+    usersSnap.forEach((child: any) => {
+      const value = child.val();
+      rows.push({
+        uid: String(child.key || ''),
+        createdAt: Number(value?.createdAt || 0),
+      });
+      return undefined;
+    });
+
+    // Sort by createdAt ascending to get earliest registrations first
+    rows.sort((a, b) => a.createdAt - b.createdAt);
+
+    // Get first 50 UIDs (founders)
+    const founderUids = rows.slice(0, FOUNDER_LIMIT).map(r => r.uid);
+    const founderIndex = founderUids.findIndex(founderUid => founderUid === uid);
+
+    if (founderIndex >= 0) {
+      // User is in first 50, assign founder campaign
+      const nextCampaign = toTimestamp({
+        founderPosition: founderIndex + 1,
+        freeAdsEligible: true,
+        tierLabel: 'مؤسس',
+        rewardLabel: 'إعلانات مجانية دائمًا',
+        updatedAt: Date.now(),
+      });
+      return nextCampaign;
+    }
+    return currentCampaign;
+  } catch {
+    return currentCampaign;
+  }
 }
 
 async function assertPhoneNotUsed(phone: string, options?: { excludeUid?: string }) {
@@ -221,8 +280,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             });
           }
 
+          const normalizedCampaign = await ensureFounderCampaignForUser(u.uid, (existingUser as any)?.campaign);
+
           setUser({
             ...existingUser,
+            credits: normalizeUserCredits(existingUser.credits),
+            campaign: normalizedCampaign,
             ...flags,
             disabled: Boolean(existingUser.disabled),
           });
@@ -291,9 +354,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email: existingData?.email || fallbackEmail,
       phone: existingData?.phone || '',
       whatsapp: existingData?.whatsapp || '',
+      credits: normalizeUserCredits(existingData?.credits),
       phoneDigits: normalizePhoneDigits(String(existingData?.phone || '')),
       whatsappDigits: normalizePhoneDigits(String(existingData?.whatsapp || '')),
-      campaign: (existingData as any)?.campaign,
+      campaign: await ensureFounderCampaignForUser(firebaseUser.uid, (existingData as any)?.campaign),
       ...deriveAdminFlags({ email: existingData?.email || fallbackEmail, isAdmin: existingData?.isAdmin, isSuperAdmin: (existingData as any)?.isSuperAdmin }),
       disabled: Boolean(existingData?.disabled),
       avatar: existingData?.avatar,
@@ -330,6 +394,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email: normalizedEmail,
       phone: data.phone,
       whatsapp: data.whatsapp,
+      credits: buildInitialCredits(),
       phoneDigits: normalizePhoneDigits(data.phone),
       whatsappDigits: normalizePhoneDigits(data.whatsapp),
       ...deriveAdminFlags({ email: normalizedEmail }),
@@ -342,9 +407,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       reportRealtimeDatabaseError(`users/${cred.user.uid}`, error, false);
     }
 
-    setUser(userData);
+    const founderCampaign = await ensureFounderCampaignForUser(cred.user.uid, null);
+    const nextUser: User = founderCampaign ? { ...userData, campaign: founderCampaign } : userData;
 
-    void claimGuestListingsForUser(userData).catch(() => {
+    setUser(nextUser);
+
+    void claimGuestListingsForUser(nextUser).catch(() => {
       // Best-effort claim; ignore failures (rules/network) to avoid blocking registration.
     });
   };

@@ -1,0 +1,55 @@
+import { ref as dbRef } from '@react-native-firebase/database';
+
+import { db } from './firebase';
+import {
+  FOUNDER_LIMIT,
+  PUBLISH_POINT_COST,
+  buildInitialCredits,
+  hasFreeAdsEligibility,
+  normalizeUserCredits,
+  resolveChargeCredits,
+} from './userCreditsCore';
+
+export const FEATURED_LISTING_POINT_COST = 5;
+
+export {
+  FOUNDER_LIMIT,
+  INITIAL_TRIAL_POINTS,
+  PUBLISH_POINT_COST,
+  buildInitialCredits,
+  hasFreeAdsEligibility,
+  normalizeUserCredits,
+  getTotalCredits,
+  resolveChargeCredits,
+} from './userCreditsCore';
+
+import type { ChargeDecision } from './userCreditsCore';
+
+export async function consumeUserCredits(uid: string, cost: number) {
+  const creditsRef = dbRef(db, `users/${uid}/credits`);
+  let decision: ChargeDecision = { ok: false, current: buildInitialCredits() };
+
+  const result = await (creditsRef as any).transaction((current: unknown) => {
+    decision = resolveChargeCredits(current, cost, Date.now());
+    if (!decision.ok) {
+      return;
+    }
+    return decision.next;
+  });
+
+  if (!result?.committed || !decision.ok) {
+    return {
+      ok: false as const,
+      credits: decision.current,
+    };
+  }
+
+  return {
+    ok: true as const,
+    credits: decision.next,
+  };
+}
+
+export async function consumeOnePublishPoint(uid: string) {
+  return consumeUserCredits(uid, PUBLISH_POINT_COST);
+}

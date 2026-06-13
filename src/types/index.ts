@@ -6,6 +6,12 @@ export interface User {
   email: string;
   phone: string;
   whatsapp: string;
+  credits?: {
+    trialPoints?: number;
+    paidPoints?: number;
+    totalSpentPoints?: number;
+    updatedAt?: number;
+  };
   phoneDigits?: string;
   whatsappDigits?: string;
   campaign?: {

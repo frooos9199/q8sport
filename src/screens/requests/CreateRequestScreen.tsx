@@ -7,6 +7,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { db } from '../../lib/firebase';
 import { showInstagramFollowPrompt } from '../../lib/instagramFollowPrompt';
 import { deleteRemovedListingMedia, ListingMediaItem, uploadListingMedia } from '../../lib/listingImages';
+import { consumeOnePublishPoint, getTotalCredits, hasFreeAdsEligibility } from '../../lib/userCredits';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import PremiumButton from '../../components/PremiumButton';
 import GccPhoneInput from '../../components/GccPhoneInput';
@@ -121,6 +122,14 @@ export default function CreateRequestScreen({ navigation, route }: any) {
       }
     }
 
+    if (!isEditing && !manualMode && !hasFreeAdsEligibility(user.campaign)) {
+      const charge = await consumeOnePublishPoint(user.uid);
+      if (!charge.ok) {
+        Alert.alert(t('warningTitle'), t('insufficientCreditsMsg', { n: getTotalCredits(charge.credits) }));
+        return;
+      }
+    }
+
     const titleValue = title.trim();
     const descriptionValue = description.trim();
 
@@ -222,6 +231,12 @@ export default function CreateRequestScreen({ navigation, route }: any) {
         <View style={s.card}>
           <Text style={s.title}>{isEditing ? t('editRequestTitle') : t('createRequestSimpleTitle')}</Text>
           <Text style={s.sub}>{isEditing ? t('createRequestHeroSubEdit') : t('createRequestHeroSubNew')}</Text>
+
+          {!isEditing ? (
+            <View style={s.costNoticeCard}>
+              <Text style={s.costNoticeText}>💳 {t('publishCostNotice')}</Text>
+            </View>
+          ) : null}
 
           {isAdmin ? (
             <View style={s.adminCard}>
@@ -397,6 +412,8 @@ const s = StyleSheet.create({
 
   title: { color: colors.white, fontSize: 20, fontWeight: '900' },
   sub: { color: colors.silver, marginTop: 6, fontSize: 12 },
+  costNoticeCard: { backgroundColor: colors.metal, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.gold, paddingVertical: 10, paddingHorizontal: 12, marginTop: 12 },
+  costNoticeText: { color: colors.white, fontSize: 12, fontWeight: '800', lineHeight: 18 },
 
   adminCard: {
     marginTop: 16,

@@ -22,6 +22,9 @@
     "users": {
       "$uid": {
         ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('isSuperAdmin').val() === true)",
+        "credits": {
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('isSuperAdmin').val() === true || root.child('users').child(auth.uid).child('isAdmin').val() === true || (auth.uid === $uid && (!data.exists() || newData.val() === data.val() || (data.exists() && newData.child('trialPoints').isNumber() && newData.child('paidPoints').isNumber() && newData.child('totalSpentPoints').isNumber() && newData.child('updatedAt').isNumber() && data.child('trialPoints').isNumber() && data.child('paidPoints').isNumber() && data.child('totalSpentPoints').isNumber() && data.child('updatedAt').isNumber() && newData.child('trialPoints').val() >= 0 && newData.child('paidPoints').val() >= 0 && newData.child('totalSpentPoints').val() >= data.child('totalSpentPoints').val() && newData.child('updatedAt').val() >= data.child('updatedAt').val() && (newData.child('trialPoints').val() + newData.child('paidPoints').val()) <= (data.child('trialPoints').val() + data.child('paidPoints').val())))))"
+        },
         "phone": {
           ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('isSuperAdmin').val() === true || root.child('users').child(auth.uid).child('isAdmin').val() === true)"
         },

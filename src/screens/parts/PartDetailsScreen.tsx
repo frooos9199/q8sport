@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking, useWindowDimensions } from 'react-native';
+import { Alert, View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking, useWindowDimensions, NativeSyntheticEvent, NativeScrollEvent, Modal, StatusBar } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { ref as dbRef } from '@react-native-firebase/database';
 
@@ -12,11 +12,12 @@ import { Part } from '../../types';
 import { getLocale, t } from '../../i18n';
 import { shareListing } from '../../lib/shareListing';
 import FastAdImage from '../../components/FastAdImage';
+import PinchZoomImage from '../../components/PinchZoomImage';
 import ShareWatermarkRenderer, { ShareWatermarkHandle } from '../../components/ShareWatermarkRenderer';
 import { getListingMediumUrl } from '../../lib/listingImages';
 import { toWaMeDigits } from '../../lib/gccPhone';
 import { getPublishedListingUrl } from '../../lib/publishedSite';
-import { incrementListingViewsOncePerDay } from '../../lib/listingViews';
+import { getBoostedListingViews, incrementListingViewsOncePerDay } from '../../lib/listingViews';
 
 export default function PartDetailsScreen({ route, navigation }: any) {
   const { width } = useWindowDimensions();
@@ -25,8 +26,12 @@ export default function PartDetailsScreen({ route, navigation }: any) {
   const [sellerCampaign, setSellerCampaign] = useState<{ founderPosition?: number; tierLabel?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [lightbox, setLightbox] = useState(false);
+  const [lightboxZoomed, setLightboxZoomed] = useState(false);
   const [views, setViews] = useState(0);
   const shareWatermarkRef = React.useRef<ShareWatermarkHandle | null>(null);
+  const heroScrollRef = React.useRef<ScrollView | null>(null);
+  const lightboxScrollRef = React.useRef<ScrollView | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -58,19 +63,19 @@ export default function PartDetailsScreen({ route, navigation }: any) {
     let mounted = true;
     if (!part?.id) return;
 
-    setViews(Number(part.views || 0));
+    setViews(getBoostedListingViews(part.views, part.createdAt, part.id));
 
     incrementListingViewsOncePerDay('parts', part.id).then((nextViews) => {
       if (!mounted) return;
       if (typeof nextViews === 'number' && Number.isFinite(nextViews)) {
-        setViews(nextViews);
+        setViews(getBoostedListingViews(nextViews, part.createdAt, part.id));
       }
     });
 
     return () => {
       mounted = false;
     };
-  }, [part?.id, part?.views]);
+  }, [part?.id, part?.views, part?.createdAt]);
 
   useEffect(() => {
     let mounted = true;
@@ -198,6 +203,36 @@ export default function PartDetailsScreen({ route, navigation }: any) {
     getListingMediumUrl(part) ||
     undefined;
 
+  const onHeroSwipe = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const nextIndex = Math.round(event.nativeEvent.contentOffset.x / width);
+    if (nextIndex !== selectedImageIndex && nextIndex >= 0 && nextIndex < gallery.length) {
+      setSelectedImageIndex(nextIndex);
+    }
+  };
+
+  const onLightboxSwipe = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const nextIndex = Math.round(event.nativeEvent.contentOffset.x / width);
+    if (nextIndex !== selectedImageIndex && nextIndex >= 0 && nextIndex < gallery.length) {
+      setSelectedImageIndex(nextIndex);
+      heroScrollRef.current?.scrollTo({ x: nextIndex * width, animated: false });
+    }
+  };
+
+  const goToImage = (index: number) => {
+    const safeIndex = Math.max(0, Math.min(gallery.length - 1, index));
+    setSelectedImageIndex(safeIndex);
+    heroScrollRef.current?.scrollTo({ x: safeIndex * width, animated: true });
+    lightboxScrollRef.current?.scrollTo({ x: safeIndex * width, animated: true });
+  };
+
+  useEffect(() => {
+    if (!lightbox) return;
+    setLightboxZoomed(false);
+    requestAnimationFrame(() => {
+      lightboxScrollRef.current?.scrollTo({ x: selectedImageIndex * width, animated: false });
+    });
+  }, [lightbox, selectedImageIndex, width]);
+
   const shareToInstagram = async () => {
     // Ensure we share ALL images the user can browse, even if imageMediums is shorter than images.
     const count = Math.max(imageMediums.length, images.length, gallery.length);
@@ -218,10 +253,32 @@ export default function PartDetailsScreen({ route, navigation }: any) {
   };
 
   return (
+    <View style={s.container}>
     <ScrollView style={s.container} contentContainerStyle={{ paddingBottom: 36 }} showsVerticalScrollIndicator={false}>
       <View style={s.heroWrap}>
-        {heroUri ? (
-          <FastAdImage uri={heroUri} style={[s.heroImage, { height: heroHeight }]} fallback={<Text style={s.placeholderIcon}>⚙️</Text>} placeholderColor={colors.darkCard} />
+        {gallery.length > 0 ? (
+          <ScrollView
+            ref={heroScrollRef}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onMomentumScrollEnd={onHeroSwipe}
+          >
+            {gallery.map((uri, index) => (
+              <TouchableOpacity key={`${uri}-${index}`} activeOpacity={0.95} onPress={() => setLightbox(true)}>
+                <FastAdImage
+                  uri={uri}
+                  style={[s.heroImage, { height: heroHeight, width }]}
+                  fallback={<Text style={s.placeholderIcon}>⚙️</Text>}
+                  placeholderColor={colors.darkCard}
+                />
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        ) : heroUri ? (
+          <TouchableOpacity activeOpacity={0.95} onPress={() => setLightbox(true)}>
+            <FastAdImage uri={heroUri} style={[s.heroImage, { height: heroHeight }]} fallback={<Text style={s.placeholderIcon}>⚙️</Text>} placeholderColor={colors.darkCard} />
+          </TouchableOpacity>
         ) : (
           <View style={[s.heroImage, { height: heroHeight }, s.placeholder]}>
             <Text style={s.placeholderIcon}>⚙️</Text>
@@ -250,7 +307,7 @@ export default function PartDetailsScreen({ route, navigation }: any) {
               <TouchableOpacity
                 key={`${uri}-${index}`}
                 activeOpacity={0.9}
-                onPress={() => setSelectedImageIndex(index)}
+                onPress={() => goToImage(index)}
                 style={[s.galleryThumbWrap, active ? s.galleryThumbActive : s.galleryThumbIdle]}
               >
                 <FastAdImage
@@ -356,9 +413,47 @@ export default function PartDetailsScreen({ route, navigation }: any) {
           </View>
         </View>
 
-        <ShareWatermarkRenderer ref={shareWatermarkRef} />
+        <ShareWatermarkRenderer ref={shareWatermarkRef} isSold={part.status === 'sold'} soldLabel={t('sold')} />
       </View>
     </ScrollView>
+
+    <Modal visible={lightbox} transparent={false} animationType="fade" presentationStyle="fullScreen">
+      <View style={s.lightbox}>
+        <StatusBar hidden={lightbox} />
+        <TouchableOpacity style={s.closeBtn} onPress={() => setLightbox(false)}>
+          <View style={s.closeBtnBg}><Text style={s.closeText}>✕</Text></View>
+        </TouchableOpacity>
+        {heroUri ? (
+          <ScrollView
+            ref={lightboxScrollRef}
+            horizontal
+            pagingEnabled
+            scrollEnabled={!lightboxZoomed}
+            style={s.lightboxPager}
+            showsHorizontalScrollIndicator={false}
+            onMomentumScrollEnd={onLightboxSwipe}
+          >
+            {gallery.map((uri, index) => (
+              <View key={`${uri}-${index}`} style={[s.lightboxImgWrap, { width }]}> 
+                <PinchZoomImage uri={uri} style={s.lightboxImg} onZoomChange={setLightboxZoomed} />
+              </View>
+            ))}
+          </ScrollView>
+        ) : null}
+        {gallery.length > 1 ? (
+          <View style={s.lightboxNav}>
+            <TouchableOpacity onPress={() => goToImage(selectedImageIndex - 1)} style={s.navBtn}>
+              <Text style={s.navText}>→</Text>
+            </TouchableOpacity>
+            <Text style={s.lightboxCount}>{selectedImageIndex + 1} / {gallery.length}</Text>
+            <TouchableOpacity onPress={() => goToImage(selectedImageIndex + 1)} style={s.navBtn}>
+              <Text style={s.navText}>←</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+      </View>
+    </Modal>
+    </View>
   );
 }
 
@@ -444,4 +539,17 @@ const s = StyleSheet.create({
   shareGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   shareChip: { width: '47%', backgroundColor: colors.metal, borderRadius: radius.full, borderWidth: 1, borderColor: colors.metalBorder, paddingVertical: 12, alignItems: 'center', justifyContent: 'center' },
   shareChipText: { color: colors.white, fontSize: 13, fontWeight: '800' },
+
+  // Lightbox
+  lightbox: { flex: 1, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' },
+  lightboxPager: { width: '100%', height: '100%' },
+  closeBtn: { position: 'absolute', top: 24, right: 20, zIndex: 10 },
+  closeBtnBg: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
+  closeText: { color: colors.white, fontSize: 20 },
+  lightboxImgWrap: { height: '100%', justifyContent: 'center', alignItems: 'center' },
+  lightboxImg: { width: '100%', height: '100%' },
+  lightboxNav: { position: 'absolute', bottom: 24, flexDirection: 'row', alignItems: 'center', gap: 20 },
+  navBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
+  navText: { color: colors.white, fontSize: 20 },
+  lightboxCount: { color: colors.white, fontSize: 14, fontWeight: '600' },
 });

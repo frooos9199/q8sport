@@ -8,7 +8,7 @@ import { db } from '../../lib/firebase';
 import { collectListingMediaUrls, deleteListingMediaByUrls } from '../../lib/listingImages';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { t } from '../../i18n';
-
+import { FEATURED_LISTING_POINT_COST, consumeUserCredits, getTotalCredits } from '../../lib/userCredits';
 type ListingType = 'car' | 'part' | 'request';
 type FilterType = 'all' | ListingType;
 
@@ -270,8 +270,20 @@ export default function MyListingsScreen({ navigation }: any) {
   };
 
   const toggleFeatured = async (item: ListingRow) => {
-    if (!canManageAllListings) return;
+    const isOwner = String(item.raw?.userId || '') === String(user?.uid || '');
+    if (!canManageAllListings && !isOwner) return;
     if (item.type !== 'car' && item.type !== 'part') return;
+
+    let didChargePoints = false;
+
+    if (!item.featuredAt && !canManageAllListings && user?.uid) {
+      const charge = await consumeUserCredits(user.uid, FEATURED_LISTING_POINT_COST);
+      if (!charge.ok) {
+        Alert.alert(t('warningTitle'), t('insufficientFeatureCreditsMsg', { n: getTotalCredits(charge.credits) }));
+        return;
+      }
+      didChargePoints = true;
+    }
 
     const path = item.type === 'car' ? `cars/${item.id}` : `parts/${item.id}`;
     const nextFeaturedAt = item.featuredAt ? null : Date.now();
@@ -284,6 +296,10 @@ export default function MyListingsScreen({ navigation }: any) {
           ? { ...entry, featuredAt: nextFeaturedAt, raw: { ...entry.raw, ...patch } }
           : entry
       )));
+      const successMessage = nextFeaturedAt
+        ? didChargePoints ? t('featuredEnabledWithCostMsg') : t('featuredEnabledNoCostMsg')
+        : t('featuredDisabledMsg');
+      Alert.alert(t('successTitle'), successMessage);
     } catch (e: any) {
       Alert.alert(t('loginErrorTitle'), e?.message || t('registerErrorGenericMsg'));
     }
@@ -380,7 +396,7 @@ export default function MyListingsScreen({ navigation }: any) {
             <TouchableOpacity style={[s.editBtn, compactScreen && s.actionBtnCompact]} activeOpacity={0.85} onPress={() => editListing(item)}>
               <Text style={s.editText}>{t('edit')}</Text>
             </TouchableOpacity>
-            {canManageAllListings && (item.type === 'car' || item.type === 'part') ? (
+            {(item.type === 'car' || item.type === 'part') && (canManageAllListings || String(item.raw?.userId || '') === String(user?.uid || '')) ? (
               <TouchableOpacity
                 style={[s.featureBtn, item.featuredAt ? s.featureBtnActive : null, compactScreen && s.actionBtnCompact]}
                 activeOpacity={0.85}

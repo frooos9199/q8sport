@@ -10,6 +10,7 @@ import { t } from '../../i18n';
 import { useLocale } from '../../i18n/LocaleProvider';
 import { buildE164, parseToGccNumber, getGccCountry, type GccCountry } from '../../lib/gccPhone';
 import { openAdminWhatsapp } from '../../lib/adminWhatsapp';
+import { getTotalCredits, normalizeUserCredits } from '../../lib/userCredits';
 
 export default function AccountScreen({ navigation }: any) {
   const { width } = useWindowDimensions();
@@ -38,6 +39,7 @@ export default function AccountScreen({ navigation }: any) {
 
   const screenPadding = width < 380 ? spacing.lg : spacing.xl;
   const compactScreen = width < 360;
+  const credits = normalizeUserCredits(user.credits);
 
   const navigateToTab = (tabName: string, params?: object) => {
     const parent = navigation?.getParent?.();
@@ -228,6 +230,9 @@ export default function AccountScreen({ navigation }: any) {
             </View>
           ) : null}
         </View>
+        {user.campaign?.founderPosition ? (
+          <Text style={s.founderRewardText}>{user.campaign?.rewardLabel || 'إعلاناتك مجانية بالكامل'}</Text>
+        ) : null}
         <Text style={s.email}>{user.email}</Text>
         <View style={s.marketBadge}>
           <Text style={s.marketText}>{isSuperAdmin ? t('superAdminBadge') : isAdmin ? t('adminBadge') : t('marketName')}</Text>
@@ -254,6 +259,25 @@ export default function AccountScreen({ navigation }: any) {
       </View>
 
       {/* Info Card */}
+      <View style={s.infoCard}>
+        <Text style={s.infoLabel}>{t('creditsSummaryTitle')}</Text>
+        <View style={s.creditsRow}>
+          <View style={s.creditStat}>
+            <Text style={s.creditStatValue}>{credits.trialPoints}</Text>
+            <Text style={s.creditStatLabel}>{t('creditsTrialLabel')}</Text>
+          </View>
+          <View style={s.creditStat}>
+            <Text style={s.creditStatValue}>{credits.paidPoints}</Text>
+            <Text style={s.creditStatLabel}>{t('creditsPaidLabel')}</Text>
+          </View>
+          <View style={s.creditStat}>
+            <Text style={s.creditStatValue}>{getTotalCredits(credits)}</Text>
+            <Text style={s.creditStatLabel}>{t('creditsTotalLabel')}</Text>
+          </View>
+        </View>
+        <Text style={s.creditHint}>{t('creditsPublishCostHint')}</Text>
+      </View>
+
       <View style={s.infoCard}>
         <View style={s.formField}>
           <Text style={s.infoLabel}>{t('phone')}</Text>
@@ -333,6 +357,7 @@ const s = StyleSheet.create({
   avatarEditBtn: { position: 'absolute', right: -2, bottom: -2, width: 32, height: 32, borderRadius: 16, backgroundColor: colors.primary, borderWidth: 2, borderColor: colors.darkCard, alignItems: 'center', justifyContent: 'center' },
   avatarEditText: { fontSize: 14 },
   nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 8 },
+  founderRewardText: { marginTop: 8, color: colors.silver, fontWeight: '700', textAlign: 'center' },
   name: { color: colors.white, fontSize: 22, fontWeight: '900' },
   tierBadge: { backgroundColor: colors.primaryGlow, borderRadius: radius.full, borderWidth: 1, borderColor: colors.primaryBorder, paddingHorizontal: 10, paddingVertical: 5 },
   tierBadgeText: { color: colors.primary, fontSize: 11, fontWeight: '900' },
@@ -359,6 +384,11 @@ const s = StyleSheet.create({
 
   // Info
   infoCard: { backgroundColor: colors.darkCard, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.metalBorder, padding: 18, marginBottom: 16 },
+  creditsRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
+  creditStat: { flex: 1, backgroundColor: colors.metal, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.metalBorder, paddingVertical: 12, alignItems: 'center' },
+  creditStatValue: { color: colors.white, fontSize: 18, fontWeight: '900' },
+  creditStatLabel: { color: colors.silver, fontSize: 10, marginTop: 4, fontWeight: '700' },
+  creditHint: { color: colors.silverLight, fontSize: 11, marginTop: 10 },
   formField: { paddingVertical: 6 },
   infoLabel: { color: colors.silver, fontSize: 11 },
   input: { marginTop: 8, backgroundColor: colors.metal, borderWidth: 1, borderColor: colors.metalBorder, borderRadius: radius.lg, color: colors.white, fontSize: 15, paddingHorizontal: 14, paddingVertical: 14 },

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Alert, View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions, Linking, Modal, Animated, StatusBar } from 'react-native';
+import { Alert, View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions, Linking, Modal, Animated, StatusBar, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
@@ -10,15 +10,15 @@ import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { getLocale, t } from '../../i18n';
 import { Car } from '../../types';
 import { shareListing } from '../../lib/shareListing';
-import FastImage from 'react-native-fast-image';
 import FastAdImage from '../../components/FastAdImage';
+import PinchZoomImage from '../../components/PinchZoomImage';
 import ShareWatermarkRenderer, { ShareWatermarkHandle } from '../../components/ShareWatermarkRenderer';
 import { getListingMediumUrl, getListingOriginalUrl, getListingThumbnailUrl } from '../../lib/listingImages';
 import { toWaMeDigits } from '../../lib/gccPhone';
 import { getPublishedListingUrl } from '../../lib/publishedSite';
-import { incrementListingViewsOncePerDay } from '../../lib/listingViews';
+import { getBoostedListingViews, incrementListingViewsOncePerDay } from '../../lib/listingViews';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 export default function CarDetailsScreen({ route, navigation }: any) {
   const insets = useSafeAreaInsets();
@@ -29,10 +29,21 @@ export default function CarDetailsScreen({ route, navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [imgIndex, setImgIndex] = useState(0);
   const [lightbox, setLightbox] = useState(false);
+  const [lightboxZoomed, setLightboxZoomed] = useState(false);
   const [views, setViews] = useState(0);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(40)).current;
   const shareWatermarkRef = useRef<ShareWatermarkHandle | null>(null);
+  const heroScrollRef = useRef<ScrollView | null>(null);
+  const lightboxScrollRef = useRef<ScrollView | null>(null);
+
+  useEffect(() => {
+    if (!lightbox) return;
+    setLightboxZoomed(false);
+    requestAnimationFrame(() => {
+      lightboxScrollRef.current?.scrollTo({ x: imgIndex * width, animated: false });
+    });
+  }, [lightbox]);
 
   useEffect(() => {
     let mounted = true;
@@ -62,19 +73,19 @@ export default function CarDetailsScreen({ route, navigation }: any) {
     let mounted = true;
     if (!car?.id) return;
 
-    setViews(Number(car.views || 0));
+    setViews(getBoostedListingViews(car.views, car.createdAt, car.id));
 
     incrementListingViewsOncePerDay('cars', car.id).then((nextViews) => {
       if (!mounted) return;
       if (typeof nextViews === 'number' && Number.isFinite(nextViews)) {
-        setViews(nextViews);
+        setViews(getBoostedListingViews(nextViews, car.createdAt, car.id));
       }
     });
 
     return () => {
       mounted = false;
     };
-  }, [car?.id, car?.views]);
+  }, [car?.id, car?.views, car?.createdAt]);
 
   useEffect(() => {
     let mounted = true;
@@ -184,12 +195,47 @@ export default function CarDetailsScreen({ route, navigation }: any) {
     { icon: '⚙️', label: t('transmission'), value: car.transmission === 'automatic' ? t('automatic') : t('manual') },
   ];
 
-  const activeMediumUrl =
-    car.imageMediums?.[imgIndex] ||
-    (imgIndex === 0 ? car.mediumUrl : undefined) ||
-    car.images?.[imgIndex] ||
-    getListingMediumUrl(car);
+  const carGallery = (() => {
+    const mediums = Array.isArray(car.imageMediums) ? car.imageMediums : [];
+    const originals = Array.isArray(car.images) ? car.images : [];
+    const count = Math.max(mediums.length, originals.length);
+    if (!count) {
+      const fallback = getListingMediumUrl(car);
+      return fallback ? [fallback] : [];
+    }
+
+    const urls: string[] = [];
+    for (let i = 0; i < count; i += 1) {
+      const candidate = mediums[i] || originals[i];
+      if (typeof candidate === 'string' && candidate.trim()) urls.push(candidate.trim());
+    }
+    return urls;
+  })();
+
+  const activeMediumUrl = carGallery[imgIndex] || getListingMediumUrl(car);
   const activeOriginalUrl = getListingOriginalUrl(car, imgIndex);
+
+  const onHeroSwipe = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const nextIndex = Math.round(event.nativeEvent.contentOffset.x / width);
+    if (nextIndex !== imgIndex && nextIndex >= 0 && nextIndex < carGallery.length) {
+      setImgIndex(nextIndex);
+    }
+  };
+
+  const goToImage = (index: number) => {
+    const safeIndex = Math.max(0, Math.min(carGallery.length - 1, index));
+    setImgIndex(safeIndex);
+    heroScrollRef.current?.scrollTo({ x: safeIndex * width, animated: true });
+    lightboxScrollRef.current?.scrollTo({ x: safeIndex * width, animated: true });
+  };
+
+  const onLightboxSwipe = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const nextIndex = Math.round(event.nativeEvent.contentOffset.x / width);
+    if (nextIndex !== imgIndex && nextIndex >= 0 && nextIndex < carGallery.length) {
+      setImgIndex(nextIndex);
+      heroScrollRef.current?.scrollTo({ x: nextIndex * width, animated: false });
+    }
+  };
 
   const shareGalleryUrls = (() => {
     const mediums = Array.isArray(car.imageMediums) ? car.imageMediums : [];
@@ -227,13 +273,23 @@ export default function CarDetailsScreen({ route, navigation }: any) {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Image Gallery */}
         <View style={[s.imageSection, { marginTop: insets.top + 52 }] }>
-          <TouchableOpacity activeOpacity={0.95} onPress={() => setLightbox(true)}>
-            {activeMediumUrl ? (
-              <FastAdImage uri={activeMediumUrl} style={s.mainImg} fallback={<Text style={{ fontSize: 70 }}>🏎️</Text>} />
-            ) : (
-              <View style={[s.mainImg, s.placeholder]}><Text style={{ fontSize: 70 }}>🏎️</Text></View>
-            )}
-          </TouchableOpacity>
+          {carGallery.length > 0 ? (
+            <ScrollView
+              ref={heroScrollRef}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onMomentumScrollEnd={onHeroSwipe}
+            >
+              {carGallery.map((uri, index) => (
+                <TouchableOpacity key={`${uri}-${index}`} activeOpacity={0.95} onPress={() => setLightbox(true)}>
+                  <FastAdImage uri={uri} style={s.mainImg} fallback={<Text style={{ fontSize: 70 }}>🏎️</Text>} />
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          ) : (
+            <View style={[s.mainImg, s.placeholder]}><Text style={{ fontSize: 70 }}>🏎️</Text></View>
+          )}
           <LinearGradient colors={['transparent', 'transparent']} style={s.imgGradient} />
 
           <View pointerEvents="none" style={s.viewsBadge}>
@@ -241,9 +297,9 @@ export default function CarDetailsScreen({ route, navigation }: any) {
           </View>
 
           {/* Image counter */}
-          {car.images && car.images.length > 1 && (
+          {carGallery.length > 1 && (
             <View style={s.imgCounter}>
-              <Text style={s.imgCounterText}>{imgIndex + 1}/{car.images.length}</Text>
+              <Text style={s.imgCounterText}>{imgIndex + 1}/{carGallery.length}</Text>
             </View>
           )}
 
@@ -256,10 +312,10 @@ export default function CarDetailsScreen({ route, navigation }: any) {
         </View>
 
         {/* Thumbnails */}
-        {car.images && car.images.length > 1 && (
+        {carGallery.length > 1 && (
           <ScrollView horizontal style={s.thumbRow} showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: spacing.xl }}>
-            {car.images.map((img, i) => (
-              <TouchableOpacity key={i} onPress={() => setImgIndex(i)} style={[s.thumb, imgIndex === i && s.thumbActive]}>
+            {carGallery.map((uri, i) => (
+              <TouchableOpacity key={`${uri}-${i}`} onPress={() => goToImage(i)} style={[s.thumb, imgIndex === i && s.thumbActive]}>
                 <FastAdImage
                   uri={car.imageThumbs?.[i] || (i === 0 ? getListingThumbnailUrl(car) : undefined) || undefined}
                   style={s.thumbImg}
@@ -363,46 +419,53 @@ export default function CarDetailsScreen({ route, navigation }: any) {
             </View>
           </View>
 
-          <ShareWatermarkRenderer ref={shareWatermarkRef} />
+          <ShareWatermarkRenderer ref={shareWatermarkRef} isSold={car.status === 'sold'} soldLabel={t('sold')} />
         </Animated.View>
 
         <View style={{ height: tabBarHeight + 36 }} />
       </ScrollView>
 
       {/* Lightbox */}
-      <Modal visible={lightbox} transparent animationType="fade">
+      <Modal visible={lightbox} transparent={false} animationType="fade" presentationStyle="fullScreen">
         <View style={s.lightbox}>
           <StatusBar hidden={lightbox} />
           <TouchableOpacity style={[s.closeBtn, { top: insets.top + 16 }]} onPress={() => setLightbox(false)}>
             <View style={s.closeBtnBg}><Text style={s.closeText}>✕</Text></View>
           </TouchableOpacity>
           {activeOriginalUrl ? (
-            <View style={s.lightboxImgWrap}>
-              <FastImage
-                source={{
-                  uri: activeOriginalUrl,
-                  cache: FastImage.cacheControl.immutable,
-                  priority: FastImage.priority.high,
-                }}
-                style={s.lightboxImg}
-                resizeMode={FastImage.resizeMode.contain}
-              />
-              <View style={s.lightboxWatermark} pointerEvents="none">
-                <Text style={s.lightboxWatermarkText}>
-                  <Text style={s.lightboxWatermarkBrand}>Q8</Text>
-                  SPORTCAR
-                  <Text style={s.lightboxWatermarkBrand}>.COM</Text>
-                </Text>
-              </View>
-            </View>
+            <ScrollView
+              ref={lightboxScrollRef}
+              horizontal
+              pagingEnabled
+              scrollEnabled={!lightboxZoomed}
+              style={s.lightboxPager}
+              showsHorizontalScrollIndicator={false}
+              onMomentumScrollEnd={onLightboxSwipe}
+            >
+              {carGallery.map((_, index) => {
+                const uri = getListingOriginalUrl(car, index) || carGallery[index];
+                return (
+                  <View key={`${uri}-${index}`} style={s.lightboxImgWrap}>
+                    <PinchZoomImage uri={uri} style={s.lightboxImg} onZoomChange={setLightboxZoomed} />
+                    <View style={s.lightboxWatermark} pointerEvents="none">
+                      <Text style={s.lightboxWatermarkText}>
+                        <Text style={s.lightboxWatermarkBrand}>Q8</Text>
+                        SPORTCAR
+                        <Text style={s.lightboxWatermarkBrand}>.COM</Text>
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </ScrollView>
           ) : null}
-          {car.images && car.images.length > 1 && (
+          {carGallery.length > 1 && (
             <View style={[s.lightboxNav, { bottom: insets.bottom + 20 }]}>
-              <TouchableOpacity onPress={() => setImgIndex(Math.max(0, imgIndex - 1))} style={s.navBtn}>
+              <TouchableOpacity onPress={() => goToImage(imgIndex - 1)} style={s.navBtn}>
                 <Text style={s.navText}>→</Text>
               </TouchableOpacity>
-              <Text style={s.lightboxCount}>{imgIndex + 1} / {car.images.length}</Text>
-              <TouchableOpacity onPress={() => setImgIndex(Math.min(car.images.length - 1, imgIndex + 1))} style={s.navBtn}>
+              <Text style={s.lightboxCount}>{imgIndex + 1} / {carGallery.length}</Text>
+              <TouchableOpacity onPress={() => goToImage(imgIndex + 1)} style={s.navBtn}>
                 <Text style={s.navText}>←</Text>
               </TouchableOpacity>
             </View>
@@ -509,12 +572,13 @@ const s = StyleSheet.create({
   shareChipText: { color: colors.white, fontSize: 13, fontWeight: '800' },
 
   // Lightbox
-  lightbox: { flex: 1, backgroundColor: 'rgba(0,0,0,0.97)', justifyContent: 'center', alignItems: 'center' },
+  lightbox: { flex: 1, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' },
+  lightboxPager: { width: '100%', height: '100%' },
   closeBtn: { position: 'absolute', right: 20, zIndex: 10 },
   closeBtnBg: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
   closeText: { color: colors.white, fontSize: 20 },
-  lightboxImgWrap: { width: width, height: width },
-  lightboxImg: { width: width, height: width },
+  lightboxImgWrap: { width, height, justifyContent: 'center', alignItems: 'center' },
+  lightboxImg: { width: '100%', height: '100%' },
   lightboxWatermark: {
     position: 'absolute',
     left: 14,

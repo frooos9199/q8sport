@@ -17,6 +17,7 @@ import { prefetchAdImages } from '../../lib/prefetchAdImages';
 import { toWaMeDigits } from '../../lib/gccPhone';
 import { useAuth } from '../../hooks/useAuth';
 import { getPublishedListingUrl } from '../../lib/publishedSite';
+import { getBoostedListingViews } from '../../lib/listingViews';
 
 type PartsFeedItem =
   | { kind: 'row'; id: string; parts: Part[]; startIndex: number }
@@ -299,7 +300,7 @@ function AnimatedPartCard({ item, index, navigation }: any) {
           )}
           <LinearGradient colors={['transparent', 'transparent']} style={s.imgGradient} />
           <View pointerEvents="none" style={s.viewsBadge}>
-            <Text style={s.viewsText}>👁 {Number(item.views || 0).toLocaleString()}</Text>
+            <Text style={s.viewsText}>👁 {Number(getBoostedListingViews(item.views, item.createdAt, item.id)).toLocaleString()}</Text>
           </View>
           {isFeatured ? (
             <View pointerEvents="none" style={s.featureBadge}>

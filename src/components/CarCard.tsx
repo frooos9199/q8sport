@@ -7,6 +7,7 @@ import { Car } from '../types';
 import { formatListingPublishedAt } from '../lib/listingDate';
 import FastAdImage from './FastAdImage';
 import { getListingThumbnailUrl } from '../lib/listingImages';
+import { getBoostedListingViews } from '../lib/listingViews';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.75;
@@ -22,6 +23,7 @@ export default function CarCard({ car, onPress, onWhatsApp }: Props) {
   const publishedAt = formatListingPublishedAt(car.createdAt);
   const thumbnailUrl = getListingThumbnailUrl(car);
   const isFeatured = Number(car.featuredAt || 0) > 0;
+  const boostedViews = getBoostedListingViews(car.views, car.createdAt, car.id);
 
   const onPressIn = () => Animated.spring(scale, { toValue: 0.96, useNativeDriver: true }).start();
   const onPressOut = () => Animated.spring(scale, { toValue: 1, friction: 3, useNativeDriver: true }).start();
@@ -43,7 +45,7 @@ export default function CarCard({ car, onPress, onWhatsApp }: Props) {
           )}
           <LinearGradient colors={['transparent', 'transparent']} style={s.gradient} />
           <View pointerEvents="none" style={s.viewsBadge}>
-            <Text style={s.viewsText}>👁 {Number(car.views || 0).toLocaleString()}</Text>
+            <Text style={s.viewsText}>👁 {Number(boostedViews || 0).toLocaleString()}</Text>
           </View>
           {isFeatured ? (
             <View pointerEvents="none" style={s.featureBadge}>

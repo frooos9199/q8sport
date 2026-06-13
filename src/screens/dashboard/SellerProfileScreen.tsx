@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, FlatList, Linking, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, Linking, RefreshControl, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { ref as dbRef, update } from '@react-native-firebase/database';
 
 import LazyImage from '../../components/LazyImage';
@@ -14,6 +14,7 @@ import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { t } from '../../i18n';
 import { Car, Part, Request, User } from '../../types';
 import { buildE164, parseToGccNumber, toWaMeDigits, type GccCountry } from '../../lib/gccPhone';
+import { getTotalCredits, normalizeUserCredits } from '../../lib/userCredits';
 
 const INITIAL_SELLER_FEED_ITEMS = 10;
 const INITIAL_SELLER_IMAGE_PREFETCH = 6;
@@ -42,6 +43,8 @@ export default function SellerProfileScreen({ route, navigation }: any) {
   const [sellerPhoneNational, setSellerPhoneNational] = useState('');
   const [sellerWhatsappCountry, setSellerWhatsappCountry] = useState<GccCountry['code']>('KW');
   const [sellerWhatsappNational, setSellerWhatsappNational] = useState('');
+  const [trialPointsInput, setTrialPointsInput] = useState('0');
+  const [paidPointsInput, setPaidPointsInput] = useState('0');
 
   useEffect(() => {
     const parsedPhone = parseToGccNumber(String(sellerUser?.phone || ''), { defaultCountry: 'KW' });
@@ -51,6 +54,12 @@ export default function SellerProfileScreen({ route, navigation }: any) {
     setSellerWhatsappCountry(parsedWhatsapp.country);
     setSellerWhatsappNational(parsedWhatsapp.nationalNumber);
   }, [sellerUser?.phone, sellerUser?.whatsapp]);
+
+  useEffect(() => {
+    const credits = normalizeUserCredits(sellerUser?.credits);
+    setTrialPointsInput(String(credits.trialPoints));
+    setPaidPointsInput(String(credits.paidPoints));
+  }, [sellerUser?.credits]);
 
   const loadSellerData = useCallback(async () => {
     const [carsSnap, partsSnap, requestsSnap, userSnap] = await Promise.all([
@@ -256,6 +265,40 @@ export default function SellerProfileScreen({ route, navigation }: any) {
     }
   };
 
+  const saveSellerCredits = async () => {
+    if (!sellerUser) return;
+    if (!isAdminViewer) {
+      Alert.alert(t('warningTitle'), t('permissionDeniedMsg'));
+      return;
+    }
+
+    const nextTrial = Number(trialPointsInput.trim());
+    const nextPaid = Number(paidPointsInput.trim());
+    if (!Number.isFinite(nextTrial) || nextTrial < 0 || !Number.isFinite(nextPaid) || nextPaid < 0) {
+      Alert.alert(t('warningTitle'), t('creditsMustBeNonNegativeMsg'));
+      return;
+    }
+
+    setUpdatingUser(true);
+    try {
+      await update(dbRef(db, `users/${sellerId}`), {
+        credits: {
+          ...normalizeUserCredits(sellerUser.credits),
+          trialPoints: Math.floor(nextTrial),
+          paidPoints: Math.floor(nextPaid),
+          updatedAt: Date.now(),
+        },
+        updatedAt: Date.now(),
+      });
+      await loadSellerData();
+      Alert.alert(t('successTitle'), t('creditsUpdatedMsg'));
+    } catch (error: any) {
+      Alert.alert(t('loginErrorTitle'), error?.message || t('creditsUpdateFailedMsg'));
+    } finally {
+      setUpdatingUser(false);
+    }
+  };
+
   const deleteSellerAccount = () => {
     if (!sellerUser) return;
     if (sellerUser.deletedAt) {
@@ -411,6 +454,49 @@ export default function SellerProfileScreen({ route, navigation }: any) {
                     </Text>
                   </TouchableOpacity>
                 </View>
+
+                {sellerUser ? (
+                  <View style={s.creditsCard}>
+                    <Text style={s.creditsTitle}>{t('creditsAdminTitle')}</Text>
+                    <Text style={s.creditsHint}>{t('creditsAdminSub')}</Text>
+                    <Text style={s.creditsTotal}>{t('creditsCurrentTotalLabel', { n: getTotalCredits(sellerUser.credits) })}</Text>
+
+                    <View style={s.creditRow}>
+                      <Text style={s.creditLabel}>{t('creditsTrialLabel')}</Text>
+                      <TextInput
+                        value={trialPointsInput}
+                        onChangeText={setTrialPointsInput}
+                        keyboardType="number-pad"
+                        editable={!updatingUser}
+                        style={s.creditInput}
+                        placeholder="0"
+                        placeholderTextColor={colors.silver}
+                      />
+                    </View>
+
+                    <View style={s.creditRow}>
+                      <Text style={s.creditLabel}>{t('creditsPaidLabel')}</Text>
+                      <TextInput
+                        value={paidPointsInput}
+                        onChangeText={setPaidPointsInput}
+                        keyboardType="number-pad"
+                        editable={!updatingUser}
+                        style={s.creditInput}
+                        placeholder="0"
+                        placeholderTextColor={colors.silver}
+                      />
+                    </View>
+
+                    <TouchableOpacity
+                      style={[s.saveCreditsBtn, updatingUser && s.adminActionDisabled]}
+                      activeOpacity={0.85}
+                      disabled={updatingUser}
+                      onPress={saveSellerCredits}
+                    >
+                      <Text style={s.saveCreditsText}>{updatingUser ? t('savingShort') : t('saveCreditsBtn')}</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : null}
               </View>
             ) : null}
 
@@ -552,6 +638,15 @@ const s = StyleSheet.create({
   adminActionTextMuted: { color: colors.silverLight },
   deleteActionBtn: { flex: 1, borderRadius: radius.lg, borderWidth: 1, paddingVertical: 13, alignItems: 'center', backgroundColor: 'rgba(227, 30, 36, 0.12)', borderColor: colors.primaryBorder },
   deleteActionText: { color: colors.primary, fontSize: 13, fontWeight: '900' },
+  creditsCard: { marginTop: 14, backgroundColor: colors.darkCard, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.metalBorder, padding: 12 },
+  creditsTitle: { color: colors.white, fontSize: 13, fontWeight: '900' },
+  creditsHint: { color: colors.silver, fontSize: 11, marginTop: 4 },
+  creditsTotal: { color: colors.primary, fontSize: 12, fontWeight: '900', marginTop: 8, marginBottom: 10 },
+  creditRow: { marginTop: 8 },
+  creditLabel: { color: colors.silverLight, fontSize: 11, marginBottom: 6, fontWeight: '800' },
+  creditInput: { backgroundColor: colors.metal, color: colors.white, borderWidth: 1, borderColor: colors.metalBorder, borderRadius: radius.md, paddingHorizontal: 12, paddingVertical: 10, fontSize: 13, fontWeight: '800' },
+  saveCreditsBtn: { marginTop: 12, backgroundColor: colors.primaryGlow, borderRadius: radius.md, borderWidth: 1, borderColor: colors.primaryBorder, paddingVertical: 11, alignItems: 'center' },
+  saveCreditsText: { color: colors.primary, fontSize: 12, fontWeight: '900' },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
   sectionTitle: { color: colors.white, fontSize: 18, fontWeight: '900' },
   sectionSub: { color: colors.silver, fontSize: 12 },

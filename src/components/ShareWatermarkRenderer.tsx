@@ -11,6 +11,8 @@ export type ShareWatermarkHandle = {
 
 type Props = {
   watermarkText?: string;
+  isSold?: boolean;
+  soldLabel?: string;
 };
 
 const DEFAULT_WATERMARK_TEXT = 'Q8SPORTCAR.COM';
@@ -22,7 +24,7 @@ function nextFrame() {
 }
 
 export default forwardRef<ShareWatermarkHandle, Props>(function ShareWatermarkRenderer(
-  { watermarkText = DEFAULT_WATERMARK_TEXT }: Props,
+  { watermarkText = DEFAULT_WATERMARK_TEXT, isSold = false, soldLabel = 'مباع' }: Props,
   ref,
 ) {
   const viewShotRef = useRef<ViewShotRef | null>(null);
@@ -125,6 +127,14 @@ export default forwardRef<ShareWatermarkHandle, Props>(function ShareWatermarkRe
           <View style={s.image} />
         )}
 
+        {isSold ? (
+          <View style={s.soldOverlay}>
+            <View style={s.soldBadge}>
+              <Text style={s.soldText}>{soldLabel}</Text>
+            </View>
+          </View>
+        ) : null}
+
         <View style={s.watermark}>
           {String(watermarkText || '').trim().toUpperCase() === DEFAULT_WATERMARK_TEXT ? (
             <Text
@@ -174,6 +184,26 @@ const s = StyleSheet.create({
   image: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: colors.dark,
+  },
+  soldOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  soldBadge: {
+    backgroundColor: 'rgba(227,30,36,0.94)',
+    borderRadius: 14,
+    paddingHorizontal: 28,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.35)',
+  },
+  soldText: {
+    color: colors.white,
+    fontSize: 28,
+    fontWeight: '900',
+    letterSpacing: 0.4,
   },
   watermark: {
     position: 'absolute',

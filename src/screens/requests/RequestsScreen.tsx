@@ -10,6 +10,7 @@ import FastAdImage from '../../components/FastAdImage';
 import LazyImage from '../../components/LazyImage';
 import { toWaMeDigits } from '../../lib/gccPhone';
 import { getPublishedListingUrl } from '../../lib/publishedSite';
+import { getBoostedListingViews } from '../../lib/listingViews';
 
 const INITIAL_VISIBLE_REQUESTS = 10;
 const INITIAL_REQUEST_IMAGE_PREFETCH = 4;
@@ -85,7 +86,7 @@ function AnimatedRequestCard({ item, index, navigation }: { item: Request; index
         <View style={s.cardImageWrap}>
           <FastAdImage uri={previewImage} style={s.cardImage} placeholderColor={colors.darkLight} />
           <View pointerEvents="none" style={s.viewsBadge}>
-            <Text style={s.viewsText}>👁 {Number(item.views || 0).toLocaleString()}</Text>
+            <Text style={s.viewsText}>👁 {Number(getBoostedListingViews(item.views, item.createdAt, item.id)).toLocaleString()}</Text>
           </View>
         </View>
       ) : null}
