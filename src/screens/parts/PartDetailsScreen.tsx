@@ -10,7 +10,7 @@ import { formatListingPublishedAt } from '../../lib/listingDate';
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { Part } from '../../types';
 import { getLocale, t } from '../../i18n';
-import { shareListing } from '../../lib/shareListing';
+import { shareListing, type ShareTarget } from '../../lib/shareListing';
 import FastAdImage from '../../components/FastAdImage';
 import PinchZoomImage from '../../components/PinchZoomImage';
 import ShareWatermarkRenderer, { ShareWatermarkHandle } from '../../components/ShareWatermarkRenderer';
@@ -93,7 +93,7 @@ export default function PartDetailsScreen({ route, navigation }: any) {
         const snap = await getDbSnapshot(dbRef(db, `users/${sellerId}/campaign`), `users/${sellerId}/campaign`);
         if (!mounted) return;
         setSellerCampaign(snap.exists() ? snap.val() : null);
-      } catch (e) {
+      } catch {
         if (!mounted) return;
         setSellerCampaign(null);
       }
@@ -104,6 +104,14 @@ export default function PartDetailsScreen({ route, navigation }: any) {
       mounted = false;
     };
   }, [part?.userId]);
+
+  useEffect(() => {
+    if (!lightbox) return;
+    setLightboxZoomed(false);
+    requestAnimationFrame(() => {
+      lightboxScrollRef.current?.scrollTo({ x: selectedImageIndex * width, animated: false });
+    });
+  }, [lightbox, selectedImageIndex, width]);
 
   if (loading) {
     return (
@@ -151,22 +159,44 @@ export default function PartDetailsScreen({ route, navigation }: any) {
 
   const callDigits = String(part.userPhone || part.userWhatsapp || '').replace(/[^0-9]/g, '');
 
+  const safeText = (value: unknown) => {
+    if (typeof value !== 'string') return '';
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    if (trimmed === 'null' || trimmed === 'undefined') return '';
+    return trimmed;
+  };
+
+  const getLocalizedText = (value: unknown) => {
+    if (typeof value === 'string') return safeText(value);
+    if (value && typeof value === 'object') {
+      const record = value as Record<string, unknown>;
+      return safeText(record.ar) || safeText(record.en);
+    }
+    return '';
+  };
+
+  const marketHashtags = [
+    '#قطع_غيار_الكويت',
+    '#قطع_غيار',
+    '#spareparts',
+    '#partskuwait',
+    '#q8sportcar',
+  ].join(' ');
+
+  const partTitle = getLocalizedText(part.title);
+  const partLine = [safeText(part.category), ...(Array.isArray(part.compatibleBrands) ? part.compatibleBrands.map(safeText) : [])]
+    .filter(Boolean)
+    .join(' • ');
+
   const shareMessage = [
-    typeof t('shareFromAppLine') === 'string' ? t('shareFromAppLine') : '',
-    typeof part.title?.ar === 'string' && part.title.ar.trim() ? part.title.ar.trim() : (typeof t('listingTypePart') === 'string' ? t('listingTypePart') : ''),
-    typeof part.category === 'string' ? part.category.trim() : '',
-    part.price != null ? t('sharePriceLine', { price: part.price?.toLocaleString(), kwd: t('kwd') }) : '',
-    (() => {
-      const desc: any = (part as any).description;
-      if (typeof desc === 'string') return desc.trim();
-      if (desc && typeof desc === 'object') {
-        const ar = typeof desc.ar === 'string' ? desc.ar.trim() : '';
-        const en = typeof desc.en === 'string' ? desc.en.trim() : '';
-        return ar || en;
-      }
-      return '';
-    })(),
-    typeof t('shareDownloadAppLineParts') === 'string' ? t('shareDownloadAppLineParts') : '',
+    safeText(t('shareFromAppLine')),
+    partTitle || safeText(t('listingTypePart')),
+    partLine,
+    part.price != null ? safeText(t('sharePriceLine', { price: part.price?.toLocaleString(), kwd: t('kwd') })) : '',
+    getLocalizedText((part as any).description),
+    safeText(t('shareDownloadAppLineParts')),
+    marketHashtags,
   ].filter(Boolean).join('\n');
   const heroHeight = Math.max(250, Math.min(width * 0.88, 340));
   const shareChipWidth = width < 360 ? '100%' : '47%';
@@ -225,31 +255,36 @@ export default function PartDetailsScreen({ route, navigation }: any) {
     lightboxScrollRef.current?.scrollTo({ x: safeIndex * width, animated: true });
   };
 
-  useEffect(() => {
-    if (!lightbox) return;
-    setLightboxZoomed(false);
-    requestAnimationFrame(() => {
-      lightboxScrollRef.current?.scrollTo({ x: selectedImageIndex * width, animated: false });
-    });
-  }, [lightbox, selectedImageIndex, width]);
+  const shareGalleryUrls = (() => {
+    const count = Math.max(imageMediums.length, images.length);
+    const urls: string[] = [];
 
-  const shareToInstagram = async () => {
-    // Ensure we share ALL images the user can browse, even if imageMediums is shorter than images.
-    const count = Math.max(imageMediums.length, images.length, gallery.length);
-    const galleryUrls = (count
-      ? Array.from({ length: count }).map((_, i) => imageMediums[i] || images[i]).filter(Boolean)
-      : (heroUri ? [heroUri] : []))
-      .slice(0, 10);
-    let urlsToShare: string[] = galleryUrls;
+    if (count > 0) {
+      for (let i = 0; i < count; i += 1) {
+        const candidate = imageMediums[i] || images[i];
+        if (typeof candidate === 'string' && candidate.trim()) {
+          urls.push(candidate.trim());
+        }
+      }
+    } else if (heroUri) {
+      urls.push(heroUri);
+    }
+
+    return Array.from(new Set(urls));
+  })();
+
+  const shareToTarget = async (target: ShareTarget) => {
+    const inputUrls = shareGalleryUrls.slice(0, 10);
+    let urlsToShare: string[] = inputUrls;
 
     try {
-      const captured = await shareWatermarkRef.current?.captureAll(galleryUrls);
+      const captured = await shareWatermarkRef.current?.captureAll(inputUrls);
       if (captured?.length) urlsToShare = captured;
     } catch {
       // best effort
     }
 
-    await shareListing('instagram', shareMessage, urlsToShare);
+    await shareListing(target, shareMessage, urlsToShare);
   };
 
   return (
@@ -398,16 +433,16 @@ export default function PartDetailsScreen({ route, navigation }: any) {
           <Text style={s.shareTitle}>{t('shareTitle')}</Text>
           <Text style={s.shareSubtitle}>{t('shareSubtitlePart')}</Text>
           <View style={s.shareGrid}>
-            <TouchableOpacity style={[s.shareChip, { width: shareChipWidth }]} activeOpacity={0.88} onPress={() => shareListing('whatsapp', shareMessage)}>
+            <TouchableOpacity style={[s.shareChip, { width: shareChipWidth }]} activeOpacity={0.88} onPress={() => { void shareToTarget('whatsapp'); }}>
               <Text style={s.shareChipText}>{t('whatsappLabel')}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[s.shareChip, { width: shareChipWidth }]} activeOpacity={0.88} onPress={() => { void shareToInstagram(); }}>
+            <TouchableOpacity style={[s.shareChip, { width: shareChipWidth }]} activeOpacity={0.88} onPress={() => { void shareToTarget('instagram'); }}>
               <Text style={s.shareChipText}>{t('instagramLabel')}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[s.shareChip, { width: shareChipWidth }]} activeOpacity={0.88} onPress={() => shareListing('tiktok', shareMessage, heroUri)}>
+            <TouchableOpacity style={[s.shareChip, { width: shareChipWidth }]} activeOpacity={0.88} onPress={() => { void shareToTarget('tiktok'); }}>
               <Text style={s.shareChipText}>{t('tiktokLabel')}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[s.shareChip, { width: shareChipWidth }]} activeOpacity={0.88} onPress={() => shareListing('snapchat', shareMessage, heroUri)}>
+            <TouchableOpacity style={[s.shareChip, { width: shareChipWidth }]} activeOpacity={0.88} onPress={() => { void shareToTarget('snapchat'); }}>
               <Text style={s.shareChipText}>{t('snapchatLabel')}</Text>
             </TouchableOpacity>
           </View>

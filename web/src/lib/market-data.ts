@@ -85,6 +85,8 @@ type RawCar = {
   transmission?: string;
   fuelType?: string;
   images?: string[];
+  imageMediums?: string[];
+  imageThumbs?: string[];
   status?: string;
   createdAt?: unknown;
   featuredAt?: unknown;
@@ -102,6 +104,8 @@ type RawPart = {
   price?: number | string;
   condition?: string;
   images?: string[];
+  imageMediums?: string[];
+  imageThumbs?: string[];
   status?: string;
   createdAt?: unknown;
   featuredAt?: unknown;
@@ -379,6 +383,18 @@ function normalizeImages(images: unknown) {
   return images.filter((value): value is string => typeof value === "string" && value.trim().length > 0);
 }
 
+function normalizeListingImages(item: { images?: unknown; imageMediums?: unknown; imageThumbs?: unknown }) {
+  const originals = normalizeImages(item.images);
+  const mediums = normalizeImages(item.imageMediums);
+  const thumbs = normalizeImages(item.imageThumbs);
+
+  if (originals.length) return originals;
+  if (mediums.length) return mediums;
+  if (thumbs.length) return thumbs;
+
+  return [];
+}
+
 function withoutCreatedAt<T extends { createdAt: number }>(item: T): Omit<T, "createdAt"> {
   const { createdAt, ...rest } = item;
   void createdAt;
@@ -491,7 +507,7 @@ export async function loadMarketData(): Promise<MarketSnapshot> {
         summary: normalizeText(item.description, "إعلان سيارة مباشرة من التطبيق."),
         status: mapCarStatus(item.status),
         specs: specs.length ? specs : ["تفاصيل أكثر داخل الإعلان"],
-        images: normalizeImages(item.images),
+        images: normalizeListingImages(item),
         createdAt: normalizeTimestamp(item.createdAt),
         isActive: item.status !== "sold" && item.status !== "pending",
       };
@@ -516,7 +532,7 @@ export async function loadMarketData(): Promise<MarketSnapshot> {
       fitment: item.compatibleBrands?.length ? item.compatibleBrands.join(" / ") : "توافق غير محدد",
       condition: mapCondition(item.condition),
       summary: normalizeText(item.description, "إعلان قطعة غيار مباشرة من التطبيق."),
-      images: normalizeImages(item.images),
+      images: normalizeListingImages(item),
       createdAt: normalizeTimestamp(item.createdAt),
       isActive: item.status !== "sold" && item.status !== "pending",
     }))

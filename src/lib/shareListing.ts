@@ -2,7 +2,7 @@ import { Alert, Linking, Platform, Share as NativeShare } from 'react-native';
 import Clipboard from '@react-native-clipboard/clipboard';
 import RNShare, { Social } from 'react-native-share';
 
-type ShareTarget = 'whatsapp' | 'instagram' | 'tiktok' | 'snapchat';
+export type ShareTarget = 'whatsapp' | 'instagram' | 'tiktok' | 'snapchat';
 
 type ShareImageInput = string | string[] | undefined;
 
@@ -27,6 +27,10 @@ async function openFirstSupportedUrl(urls: string[]) {
 
 function notifyCopied() {
   Alert.alert('تم النسخ', 'نسخنا نص الإعلان. الصقه داخل التطبيق اللي فتحناه.');
+}
+
+function copyShareMessage(message: string) {
+  Clipboard.setString(message);
 }
 
 async function tryFetchImageAsDataUrl(imageUrl: string) {
@@ -86,9 +90,42 @@ export async function shareListing(target: ShareTarget, message: string, imageUr
     return;
   }
 
-  if (target === 'whatsapp') {
-    const whatsappUrl = `whatsapp://send?text=${encodeURIComponent(trimmedMessage)}`;
+  const imageUrls = toImageUrlList(imageUrl);
+  const assets = imageUrls.length ? await fetchImagesAsDataUrls(imageUrls, 10) : [];
+  const assetUrls = assets.map(a => a.dataUrl);
 
+  if (target === 'whatsapp') {
+    copyShareMessage(trimmedMessage);
+
+    if (assetUrls.length) {
+      try {
+        await RNShare.shareSingle({
+          social: Social.Whatsapp,
+          message: trimmedMessage,
+          url: assetUrls.length === 1 ? assetUrls[0] : undefined,
+          urls: assetUrls.length > 1 ? assetUrls : undefined,
+          type: assets.length === 1 ? assets[0].contentType : 'image/*',
+          title: 'Q8 Sport Car',
+          failOnCancel: false,
+        } as any);
+        return;
+      } catch {
+        try {
+          await RNShare.open({
+            message: trimmedMessage,
+            urls: assetUrls,
+            type: 'image/*',
+            title: 'Q8 Sport Car',
+            failOnCancel: false,
+          });
+          return;
+        } catch {
+          // fall through to text-only WhatsApp link
+        }
+      }
+    }
+
+    const whatsappUrl = `whatsapp://send?text=${encodeURIComponent(trimmedMessage)}`;
     if (await Linking.canOpenURL(whatsappUrl)) {
       await Linking.openURL(whatsappUrl);
       return;
@@ -96,18 +133,14 @@ export async function shareListing(target: ShareTarget, message: string, imageUr
   }
 
   if (target === 'instagram') {
-    Clipboard.setString(trimmedMessage);
+    copyShareMessage(trimmedMessage);
 
-    const imageUrls = toImageUrlList(imageUrl);
-
-    if (imageUrls.length) {
-      const assets = await fetchImagesAsDataUrls(imageUrls, 10);
-
-      if (assets.length === 1) {
+    if (assetUrls.length) {
+      if (assetUrls.length === 1) {
         try {
           await RNShare.shareSingle({
             social: Social.Instagram,
-            url: assets[0].dataUrl,
+            url: assetUrls[0],
             type: assets[0].contentType,
           });
           notifyCopied();
@@ -117,14 +150,14 @@ export async function shareListing(target: ShareTarget, message: string, imageUr
         }
       }
 
-      if (assets.length > 1) {
+      if (assetUrls.length > 1) {
         // iOS Instagram feed doesn't reliably accept direct multi-image share.
         // Most apps fall back to the system share sheet (user picks Instagram).
         if (Platform.OS === 'android') {
           try {
             await RNShare.shareSingle({
               social: Social.Instagram,
-              urls: assets.map(a => a.dataUrl),
+              urls: assetUrls,
               type: 'image/*',
             });
             notifyCopied();
@@ -137,8 +170,10 @@ export async function shareListing(target: ShareTarget, message: string, imageUr
         // Backup: open the system share sheet with multiple images
         try {
           await RNShare.open({
-            urls: assets.map(a => a.dataUrl),
+            message: trimmedMessage,
+            urls: assetUrls,
             type: 'image/*',
+            title: 'Q8 Sport Car',
             failOnCancel: false,
           });
           notifyCopied();
@@ -160,10 +195,55 @@ export async function shareListing(target: ShareTarget, message: string, imageUr
   }
 
   if (target === 'tiktok') {
-    Clipboard.setString(trimmedMessage);
+    copyShareMessage(trimmedMessage);
+
+    if (assetUrls.length) {
+      try {
+        await RNShare.open({
+          urls: assetUrls,
+          type: 'image/*',
+          title: 'Q8 Sport Car',
+          failOnCancel: false,
+        });
+        notifyCopied();
+        return;
+      } catch {
+        try {
+          await RNShare.open({
+            message: trimmedMessage,
+            urls: assetUrls,
+            type: 'image/*',
+            title: 'Q8 Sport Car',
+            failOnCancel: false,
+          });
+          notifyCopied();
+          return;
+        } catch {
+          // fall through to app open
+        }
+      }
+    }
+
+    if (!assetUrls.length && imageUrls.length) {
+      try {
+        await RNShare.open({
+          urls: imageUrls,
+          type: 'image/*',
+          title: 'Q8 Sport Car',
+          failOnCancel: false,
+        });
+        notifyCopied();
+        return;
+      } catch {
+        // fall through to app open
+      }
+    }
+
     const opened = await openFirstSupportedUrl([
       'tiktok://',
+      'snssdk1180://',
       'snssdk1233://',
+      'musically://',
     ]);
     if (opened) {
       notifyCopied();
@@ -172,29 +252,66 @@ export async function shareListing(target: ShareTarget, message: string, imageUr
   }
 
   if (target === 'snapchat') {
-    Clipboard.setString(trimmedMessage);
+    copyShareMessage(trimmedMessage);
 
-    const imageUrls = toImageUrlList(imageUrl);
-
-    if (imageUrls[0]) {
-      const asset = await tryFetchImageAsDataUrl(imageUrls[0]);
-      if (asset) {
+    if (assetUrls.length) {
+      try {
+        await RNShare.open({
+          urls: assetUrls,
+          type: 'image/*',
+          title: 'Q8 Sport Car',
+          failOnCancel: false,
+        });
+        notifyCopied();
+        return;
+      } catch {
         try {
-          await RNShare.shareSingle({
-            social: Social.Snapchat,
-            url: asset.dataUrl,
-            type: asset.contentType,
+          await RNShare.open({
+            message: trimmedMessage,
+            urls: assetUrls,
+            type: 'image/*',
+            title: 'Q8 Sport Car',
+            failOnCancel: false,
           });
           notifyCopied();
           return;
         } catch {
-          // fall through to deep-link open
+          try {
+            await RNShare.shareSingle({
+              social: Social.Snapchat,
+              message: trimmedMessage,
+              url: assetUrls.length === 1 ? assetUrls[0] : undefined,
+              urls: assetUrls.length > 1 ? assetUrls : undefined,
+              type: assets.length === 1 ? assets[0].contentType : 'image/*',
+              title: 'Q8 Sport Car',
+            } as any);
+            notifyCopied();
+            return;
+          } catch {
+            // fall through to deep-link open
+          }
         }
+      }
+    }
+
+    if (!assetUrls.length && imageUrls.length) {
+      try {
+        await RNShare.open({
+          urls: imageUrls,
+          type: 'image/*',
+          title: 'Q8 Sport Car',
+          failOnCancel: false,
+        });
+        notifyCopied();
+        return;
+      } catch {
+        // fall through to deep-link open
       }
     }
 
     const opened = await openFirstSupportedUrl([
       'snapchat://camera',
+      'snapchat://creativekit',
       'snapchat://',
     ]);
     if (opened) {
