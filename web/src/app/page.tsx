@@ -126,8 +126,6 @@ export default async function Home() {
                   <div className="flex h-full items-center justify-center text-4xl">🏎️</div>
                 )}
 
-                <div className="absolute bottom-3 left-3 rounded-full bg-black/60 px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white backdrop-blur-sm">
-                </div>
                 {car.featuredAt ? (
                   <span className="absolute top-2 left-2 rounded-full border-2 border-gold bg-background/60 px-2.5 py-1 text-[10px] font-black text-gold backdrop-blur-sm sm:top-3 sm:left-3 sm:px-3 sm:text-[11px]">
                     إعلان مميز
@@ -177,8 +175,6 @@ export default async function Home() {
                   <div className="flex h-full items-center justify-center text-3xl">⚙️</div>
                 )}
 
-                <div className="absolute bottom-3 left-3 rounded-full bg-black/60 px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white backdrop-blur-sm">
-                </div>
                 {part.featuredAt ? (
                   <span className="absolute top-2 left-2 rounded-full border-2 border-gold bg-background/60 px-2.5 py-1 text-[10px] font-black text-gold backdrop-blur-sm sm:top-3 sm:left-3 sm:px-3 sm:text-[11px]">
                     إعلان مميز
