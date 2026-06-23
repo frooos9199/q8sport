@@ -78,7 +78,7 @@ export default async function CarsPage() {
                 ) : (
                   <div className="flex h-full items-center justify-center text-4xl">🏎️</div>
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+
                 <div className="absolute bottom-3 left-3 rounded-full bg-black/60 px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white backdrop-blur-sm">
                 </div>
                 {car.featuredAt ? (
