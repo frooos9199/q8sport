@@ -182,7 +182,7 @@ function ListingMedia({ image, title, tone, featured }: { image?: string; title:
             إعلان مميز
           </div>
         ) : null}
-        <div className="absolute bottom-3 right-3 hidden rounded-full bg-black/50 px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white backdrop-blur-sm sm:block">
+        <div className="absolute bottom-3 left-3 rounded-full bg-black/50 px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white backdrop-blur-sm">
           <span className="text-brand">Q8</span>
           SPORTCAR
           <span className="text-brand">.COM</span>

@@ -116,7 +116,7 @@ export default async function Home() {
                 {car.images[0] ? (
                   <>
                     <Image src={car.images[0]} alt={car.title} fill className="object-cover" unoptimized />
-                    <div className="absolute bottom-3 right-3 hidden rounded-full bg-black/50 px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white backdrop-blur-sm sm:block">
+                    <div className="absolute bottom-3 left-3 rounded-full bg-black/50 px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white backdrop-blur-sm">
                       <span className="text-brand">Q8</span>
                       SPORTCAR
                       <span className="text-brand">.COM</span>
@@ -165,7 +165,7 @@ export default async function Home() {
                 {part.images[0] ? (
                   <>
                     <Image src={part.images[0]} alt={part.title} fill className="object-cover" unoptimized />
-                    <div className="absolute bottom-3 right-3 hidden rounded-full bg-black/50 px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white backdrop-blur-sm sm:block">
+                    <div className="absolute bottom-3 left-3 rounded-full bg-black/50 px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white backdrop-blur-sm">
                       <span className="text-brand">Q8</span>
                       SPORTCAR
                       <span className="text-brand">.COM</span>

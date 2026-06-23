@@ -21,10 +21,13 @@ export default function ImageGallery({ images, title }: { images: string[]; titl
         <button onClick={() => setLightbox(true)} className="relative h-72 w-full overflow-hidden rounded-2xl border border-[var(--metal-border)] cursor-zoom-in sm:h-80">
           <Image src={images[active]} alt={`${title} - ${active + 1}`} fill className="object-cover transition-all duration-300" unoptimized />
           {images.length > 1 && (
-            <div className="absolute bottom-3 left-3 rounded-full bg-black/70 px-3 py-1.5 text-xs font-bold text-white backdrop-blur-sm">
+            <div className="absolute bottom-3 right-3 rounded-full bg-black/70 px-3 py-1.5 text-xs font-bold text-white backdrop-blur-sm">
               {active + 1} / {images.length}
             </div>
           )}
+          <div className="absolute bottom-3 left-3 rounded-full bg-black/50 px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white backdrop-blur-sm">
+            <span className="text-[var(--brand)]">Q8</span>SPORTCAR<span className="text-[var(--brand)]">.COM</span>
+          </div>
           <div className="absolute top-3 left-3 rounded-full bg-black/70 px-3 py-1.5 text-xs text-white backdrop-blur-sm">
             🔍 اضغط للتكبير
           </div>
@@ -222,6 +225,11 @@ function ZoomLightbox({ images, title, active, setActive, onClose }: {
           {active + 1} / {images.length}
         </div>
       )}
+
+      {/* Watermark */}
+      <div className="absolute bottom-6 left-6 rounded-full bg-black/50 px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white backdrop-blur-sm">
+        <span className="text-[var(--brand)]">Q8</span>SPORTCAR<span className="text-[var(--brand)]">.COM</span>
+      </div>
 
       {/* Instructions */}
       <div className="absolute bottom-6 right-6 rounded-full bg-white/10 px-3 py-1.5 text-[10px] text-white/60 backdrop-blur-sm hidden sm:block">
