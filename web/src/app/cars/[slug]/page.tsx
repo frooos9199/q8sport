@@ -5,7 +5,6 @@ import { notFound } from "next/navigation";
 import { getCar, getSeller } from "@/lib/market-data";
 import { absoluteUrl, siteConfig } from "@/lib/site";
 import ImageGallery from "@/components/ImageGallery";
-import ListingViewsBadge from "@/components/ListingViewsBadge";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -76,7 +75,6 @@ export default async function CarDetailPage({ params }: { params: Promise<{ slug
                   إعلان مميز
                 </span>
               ) : null}
-              <ListingViewsBadge kind="cars" slug={car.slug} initialViews={car.views ?? 0} />
               <span className={`rounded-lg px-3 py-1.5 text-xs font-bold ${car.status === "مباع" ? "bg-brand/10 text-brand border border-brand/20" : "bg-mint/10 text-mint border border-mint/20"}`}>
                 {car.status}
               </span>

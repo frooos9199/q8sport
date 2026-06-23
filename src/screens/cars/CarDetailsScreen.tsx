@@ -6,10 +6,10 @@ import LinearGradient from 'react-native-linear-gradient';
 import { db } from '../../lib/firebase';
 import { ref as dbRef } from '@react-native-firebase/database';
 import { getDbSnapshot } from '../../lib/firebaseDatabase';
-import { colors, radius, shadows, spacing } from '../../lib/theme';
+import { colors, radius, spacing } from '../../lib/theme';
 import { getLocale, t } from '../../i18n';
 import { Car } from '../../types';
-import { shareListing } from '../../lib/shareListing';
+import { shareListing, type ShareTarget } from '../../lib/shareListing';
 import FastAdImage from '../../components/FastAdImage';
 import PinchZoomImage from '../../components/PinchZoomImage';
 import ShareWatermarkRenderer, { ShareWatermarkHandle } from '../../components/ShareWatermarkRenderer';
@@ -43,7 +43,7 @@ export default function CarDetailsScreen({ route, navigation }: any) {
     requestAnimationFrame(() => {
       lightboxScrollRef.current?.scrollTo({ x: imgIndex * width, animated: false });
     });
-  }, [lightbox]);
+  }, [imgIndex, lightbox]);
 
   useEffect(() => {
     let mounted = true;
@@ -103,7 +103,7 @@ export default function CarDetailsScreen({ route, navigation }: any) {
         const snap = await getDbSnapshot(dbRef(db, `users/${sellerId}/campaign`), `users/${sellerId}/campaign`);
         if (!mounted) return;
         setSellerCampaign(snap.exists() ? snap.val() : null);
-      } catch (e) {
+      } catch {
         if (!mounted) return;
         setSellerCampaign(null);
       }
@@ -178,6 +178,8 @@ export default function CarDetailsScreen({ route, navigation }: any) {
 
   const shareMessage = [
     safeText(t('shareFromAppLine')),
+    car.status === 'sold' ? 'مباع' : '',
+    car.status === 'sold' ? 'Q8SportCar' : '',
     carTitle,
     carLine,
     safeText(t('sharePriceLine', { price: car.price?.toLocaleString(), kwd: t('kwd') })),
@@ -255,7 +257,7 @@ export default function CarDetailsScreen({ route, navigation }: any) {
     return Array.from(new Set(urls));
   })();
 
-  const shareToInstagram = async () => {
+  const shareToTarget = async (target: ShareTarget) => {
     const inputUrls = shareGalleryUrls.slice(0, 10);
     let urlsToShare: string[] = inputUrls;
     try {
@@ -265,7 +267,7 @@ export default function CarDetailsScreen({ route, navigation }: any) {
       // best effort: fall back to original urls
     }
 
-    await shareListing('instagram', shareMessage, urlsToShare);
+    await shareListing(target, shareMessage, urlsToShare);
   };
 
   return (
@@ -404,22 +406,22 @@ export default function CarDetailsScreen({ route, navigation }: any) {
             <Text style={s.shareTitle}>{t('shareTitle')}</Text>
             <Text style={s.shareSubtitle}>{t('shareSubtitleCar')}</Text>
             <View style={s.shareGrid}>
-              <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => shareListing('whatsapp', shareMessage)}>
+              <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => { void shareToTarget('whatsapp'); }}>
                 <Text style={s.shareChipText}>{t('whatsappLabel')}</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => { void shareToInstagram(); }}>
+              <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => { void shareToTarget('instagram'); }}>
                 <Text style={s.shareChipText}>{t('instagramLabel')}</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => shareListing('tiktok', shareMessage, activeMediumUrl)}>
+              <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => { void shareToTarget('tiktok'); }}>
                 <Text style={s.shareChipText}>{t('tiktokLabel')}</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => shareListing('snapchat', shareMessage, activeMediumUrl)}>
+              <TouchableOpacity style={s.shareChip} activeOpacity={0.88} onPress={() => { void shareToTarget('snapchat'); }}>
                 <Text style={s.shareChipText}>{t('snapchatLabel')}</Text>
               </TouchableOpacity>
             </View>
           </View>
 
-          <ShareWatermarkRenderer ref={shareWatermarkRef} isSold={car.status === 'sold'} soldLabel={t('sold')} />
+          <ShareWatermarkRenderer ref={shareWatermarkRef} isSold={car.status === 'sold'} soldLabel={'مباع'} />
         </Animated.View>
 
         <View style={{ height: tabBarHeight + 36 }} />

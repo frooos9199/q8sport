@@ -104,7 +104,7 @@ export default async function MarketPage() {
               href={`/cars/${car.slug}`}
               className={`min-w-0 max-w-full overflow-hidden rounded-[1.5rem] bg-panel p-4 transition hover:-translate-y-0.5 hover:border-brand/30 sm:p-5 ${car.featuredAt ? "border-2 border-gold" : "border border-white/8"}`}
             >
-              <ListingMedia title={car.title} image={car.images[0]} tone="brand" featured={Boolean(car.featuredAt)} views={car.views ?? 0} />
+              <ListingMedia title={car.title} image={car.images[0]} tone="brand" featured={Boolean(car.featuredAt)} />
               <div className="flex items-center justify-between gap-3">
                 <span className="rounded-full border border-brand/25 bg-brand/10 px-3 py-2 text-xs font-bold text-brand">{car.status}</span>
                 <span className="text-xs font-bold text-zinc-500">{car.location}</span>
@@ -129,7 +129,7 @@ export default async function MarketPage() {
               href={`/parts/${part.slug}`}
               className={`min-w-0 max-w-full overflow-hidden rounded-[1.5rem] bg-panel p-4 transition hover:-translate-y-0.5 hover:border-brand/30 sm:p-5 ${part.featuredAt ? "border-2 border-gold" : "border border-white/8"}`}
             >
-              <ListingMedia title={part.title} image={part.images[0]} tone="sand" featured={Boolean(part.featuredAt)} views={part.views ?? 0} />
+              <ListingMedia title={part.title} image={part.images[0]} tone="sand" featured={Boolean(part.featuredAt)} />
               <p className="text-xs font-bold uppercase tracking-[0.25em] text-sand">{part.category}</p>
               <h2 className="mt-4 break-words text-2xl font-black text-foreground">{part.title}</h2>
               <p className="mt-3 break-words text-sm leading-7 text-zinc-400">{part.summary}</p>
@@ -172,7 +172,7 @@ function StatCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ListingMedia({ image, title, tone, featured, views }: { image?: string; title: string; tone: "brand" | "sand"; featured?: boolean; views?: number }) {
+function ListingMedia({ image, title, tone, featured }: { image?: string; title: string; tone: "brand" | "sand"; featured?: boolean }) {
   if (image) {
     return (
       <div className="relative mb-5">
@@ -183,7 +183,6 @@ function ListingMedia({ image, title, tone, featured, views }: { image?: string;
           </div>
         ) : null}
         <div className="absolute bottom-3 left-3 rounded-full bg-black/60 px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white backdrop-blur-sm">
-          👁️ {(views ?? 0).toLocaleString("ar-KW")} مشاهدة
         </div>
         <div className="absolute bottom-3 right-3 hidden rounded-full bg-black/50 px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white backdrop-blur-sm sm:block">
           <span className="text-brand">Q8</span>
@@ -204,7 +203,6 @@ function ListingMedia({ image, title, tone, featured, views }: { image?: string;
         </div>
       ) : null}
       <div className="absolute bottom-3 left-3 rounded-full bg-black/60 px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white backdrop-blur-sm">
-        👁️ {(views ?? 0).toLocaleString("ar-KW")} مشاهدة
       </div>
       <span className="text-sm font-black text-foreground">{title}</span>
     </div>

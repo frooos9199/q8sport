@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Linking, Animated, RefreshControl } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { db } from '../../lib/firebase';
@@ -50,7 +50,7 @@ export default function PartsScreen({ navigation }: any) {
   const [conditionFilter, setConditionFilter] = useState<'all' | 'new' | 'used'>('all');
   const [withImagesOnly, setWithImagesOnly] = useState(false);
 
-  const fetchParts = async () => {
+  const fetchParts = useCallback(async () => {
     try {
       const now = Date.now();
       const listingTtlMs = 30 * 24 * 60 * 60 * 1000;
@@ -103,9 +103,9 @@ export default function PartsScreen({ navigation }: any) {
       console.log('Error:', e);
     }
     setLoading(false);
-  };
+  }, [user?.isAdmin, user?.isSuperAdmin, user?.uid]);
 
-  useEffect(() => { fetchParts(); }, []);
+  useEffect(() => { fetchParts(); }, [fetchParts]);
 
   useEffect(() => {
     setBannerRotationIndex(0);
@@ -277,13 +277,12 @@ function Chip({ label, active, onPress }: { label: string; active: boolean; onPr
 
 function AnimatedPartCard({ item, index, navigation }: any) {
   const anim = useRef(new Animated.Value(0)).current;
-  const scale = useRef(new Animated.Value(1)).current;
   const thumbnailUrl = getListingThumbnailUrl(item);
   const isFeatured = Number(item?.featuredAt || 0) > 0;
 
   useEffect(() => {
     Animated.timing(anim, { toValue: 1, duration: 400, delay: index * 60, useNativeDriver: true }).start();
-  }, []);
+  }, [anim, index]);
 
   return (
     <Animated.View style={[s.cardWrap, { opacity: anim, transform: [{ scale: anim.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }) }] }]}>

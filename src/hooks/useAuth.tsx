@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { auth, db } from '../lib/firebase';
-import { limitToFirst, orderByChild, query, ref as dbRef, serverTimestamp, set as dbSet, update } from '@react-native-firebase/database';
+import { equalTo, limitToFirst, orderByChild, query, ref as dbRef, serverTimestamp, set as dbSet, update } from '@react-native-firebase/database';
 import { ref as storageRef } from '@react-native-firebase/storage';import {
   AppleAuthProvider,
   createUserWithEmailAndPassword,
@@ -134,7 +134,11 @@ async function ensureFounderCampaignForUser(uid: string, currentCampaign: any) {
   }
 
   try {
-    const usersSnap = await getDbSnapshot(dbRef(db, 'users'), 'users', { showAlert: false });
+    const usersSnap = await getDbSnapshot(
+      query(dbRef(db, 'users'), orderByChild('createdAt'), limitToFirst(FOUNDER_LIMIT)),
+      'users?orderByChild=createdAt&limitToFirst=50',
+      { showAlert: false },
+    );
     const rows: Array<{ uid: string; createdAt: number }> = [];
 
     usersSnap.forEach((child: any) => {
@@ -170,11 +174,24 @@ async function ensureFounderCampaignForUser(uid: string, currentCampaign: any) {
   }
 }
 
-async function assertPhoneNotUsed(phone: string, options?: { excludeUid?: string }) {
+async function assertPhoneNotUsed(phone: string, options?: { excludeUid?: string; failOpen?: boolean }) {
   const phoneDigits = normalizePhoneDigits(phone);
   if (!phoneDigits) return;
 
-  const snap = await getDbSnapshot(dbRef(db, 'users'), 'users', { showAlert: false });
+  let snap: any;
+  try {
+    snap = await getDbSnapshot(
+      query(dbRef(db, 'users'), orderByChild('phoneDigits'), equalTo(phoneDigits), limitToFirst(1)),
+      `users?orderByChild=phoneDigits&equalTo=${phoneDigits}`,
+      { showAlert: false },
+    );
+  } catch (error) {
+    if (options?.failOpen === true) {
+      // Best effort for registration path: do not block account creation when this precheck query is unavailable.
+      return;
+    }
+    throw error;
+  }
 
   let foundUid: string | null = null;
   snap.forEach((child: any) => {
@@ -378,7 +395,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Enforce phone uniqueness across real accounts only (users/*).
     // Guest/manual listings do not create users records, so they never block registration.
-    await assertPhoneNotUsed(data.phone);
+    await assertPhoneNotUsed(data.phone, { failOpen: true });
 
     const cred = await createUserWithEmailAndPassword(auth as any, normalizedEmail, data.password);
 

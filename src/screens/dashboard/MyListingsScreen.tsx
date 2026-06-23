@@ -33,7 +33,6 @@ export default function MyListingsScreen({ navigation }: any) {
   const compactScreen = width < 390;
   const screenPadding = width < 380 ? spacing.lg : spacing.xl;
   const canManageAllListings = Boolean(user?.isAdmin || user?.isSuperAdmin);
-  const soldDeleteDelayMs = 3 * 60 * 60 * 1000;
 
   const loadListings = useCallback(async () => {
     if (!user) return;
@@ -250,7 +249,7 @@ export default function MyListingsScreen({ navigation }: any) {
     if (item.type !== 'request') {
       if (nextStatus === 'sold') {
         patch.soldAt = now;
-        patch.deleteAt = now + soldDeleteDelayMs;
+        patch.deleteAt = now;
       } else {
         patch.soldAt = null;
         patch.deleteAt = null;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { Alert, View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import LinearGradient from 'react-native-linear-gradient';
 import LazyImage from '../../components/LazyImage';

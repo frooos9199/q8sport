@@ -5,7 +5,6 @@ import { notFound } from "next/navigation";
 import { getPart, getSeller } from "@/lib/market-data";
 import { absoluteUrl, siteConfig } from "@/lib/site";
 import ImageGallery from "@/components/ImageGallery";
-import ListingViewsBadge from "@/components/ListingViewsBadge";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -75,7 +74,6 @@ export default async function PartDetailPage({ params }: { params: Promise<{ slu
                   إعلان مميز
                 </span>
               ) : null}
-              <ListingViewsBadge kind="parts" slug={part.slug} initialViews={part.views ?? 0} />
               <span className={`rounded-lg px-3 py-1.5 text-xs font-bold ${part.condition === "جديد" ? "bg-mint/10 text-mint border border-mint/20" : "bg-yellow-500/10 text-yellow-500 border border-yellow-500/20"}`}>
                 {part.condition}
               </span>

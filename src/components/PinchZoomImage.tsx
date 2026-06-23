@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Animated, GestureResponderEvent, PanResponder, StyleProp, StyleSheet, ViewStyle } from 'react-native';
 import FastImage from 'react-native-fast-image';
 
@@ -35,7 +35,7 @@ export default function PinchZoomImage({ uri, style, onZoomChange }: Props) {
   const lastTapAt = useRef(0);
   const touchStart = useRef({ x: 0, y: 0, moved: false });
 
-  const animateTo = (nextScale: number, nextX = 0, nextY = 0) => {
+  const animateTo = useCallback((nextScale: number, nextX = 0, nextY = 0) => {
     currentScale.current = nextScale;
     currentTranslate.current = { x: nextX, y: nextY };
     onZoomChange?.(nextScale > 1.01);
@@ -44,11 +44,11 @@ export default function PinchZoomImage({ uri, style, onZoomChange }: Props) {
       Animated.spring(translateX, { toValue: nextX, useNativeDriver: true }),
       Animated.spring(translateY, { toValue: nextY, useNativeDriver: true }),
     ]).start();
-  };
+  }, [onZoomChange, scale, translateX, translateY]);
 
-  const reset = () => {
+  const reset = useCallback(() => {
     animateTo(1);
-  };
+  }, [animateTo]);
 
   const toggleDoubleTapZoom = () => {
     if (currentScale.current > 1.01) {
@@ -87,10 +87,11 @@ export default function PinchZoomImage({ uri, style, onZoomChange }: Props) {
 
   useEffect(() => {
     reset();
-  }, [uri]);
+  }, [reset, uri]);
 
   const responder = useMemo(() => PanResponder.create({
-    onStartShouldSetPanResponderCapture: evt => evt.nativeEvent.touches.length >= 2,
+    onStartShouldSetPanResponder: evt => evt.nativeEvent.touches.length >= 2 || currentScale.current > 1.01,
+    onStartShouldSetPanResponderCapture: evt => evt.nativeEvent.touches.length >= 2 || currentScale.current > 1.01,
     onMoveShouldSetPanResponderCapture: evt => evt.nativeEvent.touches.length >= 2 || currentScale.current > 1.01,
     onMoveShouldSetPanResponder: evt => evt.nativeEvent.touches.length >= 2 || currentScale.current > 1.01,
     onPanResponderTerminationRequest: () => false,
@@ -134,7 +135,7 @@ export default function PinchZoomImage({ uri, style, onZoomChange }: Props) {
         reset();
       }
     },
-  }), [onZoomChange, scale, translateX, translateY]);
+  }), [onZoomChange, reset, scale, translateX, translateY]);
 
   return (
     <Animated.View

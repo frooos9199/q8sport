@@ -37,7 +37,7 @@ function lastTouchMs(value: ListingLike): number {
   return updatedAt || createdAt;
 }
 
-async function cleanupExpiredByAge(path: 'cars' | 'parts' | 'requests', now: number) {
+async function cleanupExpiredByAge(path: 'requests', now: number) {
   const threshold = now - LISTING_TTL_MS;
   const rootRef = admin.database().ref(path);
 
@@ -314,13 +314,9 @@ export const purgeExpiredListings = onSchedule(
   },
   async () => {
     const now = Date.now();
-    const [cars, parts, requests] = await Promise.all([
-      cleanupExpiredByAge('cars', now),
-      cleanupExpiredByAge('parts', now),
-      cleanupExpiredByAge('requests', now),
-    ]);
+    const requests = await cleanupExpiredByAge('requests', now);
 
-    logger.info('purgeExpiredListings completed', { now, cars, parts, requests });
+    logger.info('purgeExpiredListings completed', { now, requests });
   },
 );
 

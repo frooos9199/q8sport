@@ -191,6 +191,8 @@ export default function PartDetailsScreen({ route, navigation }: any) {
 
   const shareMessage = [
     safeText(t('shareFromAppLine')),
+    part.status === 'sold' ? 'مباع' : '',
+    part.status === 'sold' ? 'Q8SportCar' : '',
     partTitle || safeText(t('listingTypePart')),
     partLine,
     part.price != null ? safeText(t('sharePriceLine', { price: part.price?.toLocaleString(), kwd: t('kwd') })) : '',
@@ -448,7 +450,7 @@ export default function PartDetailsScreen({ route, navigation }: any) {
           </View>
         </View>
 
-        <ShareWatermarkRenderer ref={shareWatermarkRef} isSold={part.status === 'sold'} soldLabel={t('sold')} />
+        <ShareWatermarkRenderer ref={shareWatermarkRef} isSold={part.status === 'sold'} soldLabel={'مباع'} />
       </View>
     </ScrollView>
 

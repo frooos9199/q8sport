@@ -4,9 +4,21 @@ import { useState } from "react";
 
 type PublishType = "car" | "part" | "request";
 
-const CAR_BRANDS = ["Porsche", "BMW", "Mercedes-Benz", "Audi", "Ford", "Chevrolet", "Dodge", "Nissan", "Toyota", "Mitsubishi", "Subaru", "Honda", "Other"];
+const CAR_BRANDS = [
+  "Porsche", "Ferrari", "Lamborghini", "McLaren", "Bugatti", "Aston Martin", "Maserati",
+  "BMW", "Mercedes-Benz", "Audi", "Nissan", "Toyota", "Mitsubishi", "Subaru", "Honda", "Mazda", "Suzuki",
+  "Hyundai", "Kia", "Genesis", "Chevrolet", "Ford", "Dodge", "GMC", "Cadillac", "Jeep",
+  "Jaguar", "Bentley", "Rolls-Royce", "Lexus", "Infiniti", "Land Rover", "Range Rover", "Mini", "Volkswagen", "Volvo", "Tesla",
+  "MG", "Geely", "BYD", "Changan", "GAC", "Haval", "Jetour", "Chery", "Other",
+];
 const PART_CATEGORIES = ["مكينة", "قير", "رنجات", "داخلية", "الخارجية", "بودي كت", "فرامل", "كمبيوتر", "أخرى"];
-const COMPATIBLE_BRANDS = ["Porsche", "BMW", "Mercedes-Benz", "Audi", "Ford", "Chevrolet", "Dodge", "Nissan", "Toyota", "Mitsubishi", "Subaru", "Honda"];
+const COMPATIBLE_BRANDS = [
+  "Porsche", "Ferrari", "Lamborghini", "McLaren", "Bugatti", "Aston Martin", "Maserati",
+  "BMW", "Mercedes-Benz", "Audi", "Nissan", "Toyota", "Mitsubishi", "Subaru", "Honda", "Mazda", "Suzuki",
+  "Hyundai", "Kia", "Genesis", "Chevrolet", "Ford", "Dodge", "GMC", "Cadillac", "Jeep",
+  "Jaguar", "Bentley", "Rolls-Royce", "Lexus", "Infiniti", "Land Rover", "Range Rover", "Mini", "Volkswagen", "Volvo", "Tesla",
+  "MG", "Geely", "BYD", "Changan", "GAC", "Haval", "Jetour", "Chery",
+];
 
 const initialState = {
   sellerName: "",

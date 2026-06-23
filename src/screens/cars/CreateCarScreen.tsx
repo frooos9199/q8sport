@@ -14,7 +14,13 @@ import { consumeOnePublishPoint, getTotalCredits, hasFreeAdsEligibility } from '
 import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { t } from '../../i18n';
 
-const BRANDS = ['Porsche', 'BMW', 'Mercedes-Benz', 'Audi', 'Ford', 'Chevrolet', 'Dodge', 'Nissan', 'Toyota', 'Mitsubishi', 'Subaru', 'Honda', 'Other'];
+const BRANDS = [
+  'Porsche', 'Ferrari', 'Lamborghini', 'McLaren', 'Bugatti', 'Aston Martin', 'Maserati',
+  'BMW', 'Mercedes-Benz', 'Audi', 'Nissan', 'Toyota', 'Mitsubishi', 'Subaru', 'Honda', 'Mazda', 'Suzuki',
+  'Hyundai', 'Kia', 'Genesis', 'Chevrolet', 'Ford', 'Dodge', 'GMC', 'Cadillac', 'Jeep',
+  'Jaguar', 'Bentley', 'Rolls-Royce', 'Lexus', 'Infiniti', 'Land Rover', 'Range Rover', 'Mini', 'Volkswagen', 'Volvo', 'Tesla',
+  'MG', 'Geely', 'BYD', 'Changan', 'GAC', 'Haval', 'Jetour', 'Chery', 'Other',
+];
 
 export default function CreateCarScreen({ navigation, route }: any) {
   const { width } = useWindowDimensions();

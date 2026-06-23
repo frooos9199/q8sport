@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Linking, Animated, RefreshControl, Platform } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { db } from '../../lib/firebase';
@@ -53,7 +53,7 @@ export default function CarsScreen({ navigation }: any) {
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
 
-  const fetchCars = async () => {
+  const fetchCars = useCallback(async () => {
     try {
       const now = Date.now();
       const listingTtlMs = 30 * 24 * 60 * 60 * 1000;
@@ -106,9 +106,9 @@ export default function CarsScreen({ navigation }: any) {
       console.log('Error:', e);
     }
     setLoading(false);
-  };
+  }, [user?.isAdmin, user?.isSuperAdmin, user?.uid]);
 
-  useEffect(() => { fetchCars(); }, []);
+  useEffect(() => { fetchCars(); }, [fetchCars]);
 
   useEffect(() => {
     setBannerRotationIndex(0);
@@ -300,7 +300,7 @@ export default function CarsScreen({ navigation }: any) {
       ) : (
         <FlatList
           data={feedItems}
-          renderItem={({ item, index }) => {
+          renderItem={({ item }) => {
             if (item.kind === 'banner') {
               const bannerIndex = banners.length
                 ? (item.bannerSlot + bannerRotationIndex) % banners.length
@@ -366,7 +366,7 @@ function AnimatedCard({ item, index, navigation, openWhatsApp }: any) {
 
   useEffect(() => {
     Animated.timing(anim, { toValue: 1, duration: 400, delay: index * 80, useNativeDriver: true }).start();
-  }, []);
+  }, [anim, index]);
 
   const onPressIn = () => Animated.spring(scale, { toValue: 0.97, useNativeDriver: true }).start();
   const onPressOut = () => Animated.spring(scale, { toValue: 1, friction: 3, useNativeDriver: true }).start();

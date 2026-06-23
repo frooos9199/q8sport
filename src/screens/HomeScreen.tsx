@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions, FlatList, Linking, Animated, RefreshControl } from 'react-native';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -48,7 +48,7 @@ export default function HomeScreen({ navigation }: any) {
   const bannerCardWidth = Math.max(280, Math.min(width - spacing.xl * 2, width * 0.88));
   const bannerSnapInterval = bannerCardWidth + HOME_BANNER_CARD_SPACING;
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const now = Date.now();
       const listingTtlMs = 30 * 24 * 60 * 60 * 1000;
@@ -118,7 +118,7 @@ export default function HomeScreen({ navigation }: any) {
       console.log('Fetch error:', e);
     }
     setLoading(false);
-  };
+  }, [user?.isAdmin, user?.isSuperAdmin, user?.uid]);
 
   useEffect(() => {
     fetchData();
@@ -126,7 +126,7 @@ export default function HomeScreen({ navigation }: any) {
       Animated.timing(heroAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
       Animated.timing(fadeAnim, { toValue: 1, duration: 1000, delay: 300, useNativeDriver: true }),
     ]).start();
-  }, [fadeAnim, heroAnim]);
+  }, [fadeAnim, fetchData, heroAnim]);
 
   useEffect(() => {
     let mounted = true;

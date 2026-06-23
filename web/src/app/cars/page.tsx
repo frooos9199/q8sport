@@ -80,7 +80,6 @@ export default async function CarsPage() {
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
                 <div className="absolute bottom-3 left-3 rounded-full bg-black/60 px-3 py-1.5 text-[11px] font-extrabold tracking-wide text-white backdrop-blur-sm">
-                  👁️ {(car.views ?? 0).toLocaleString("ar-KW")} مشاهدة
                 </div>
                 {car.featuredAt ? (
                   <span className="absolute top-2 left-2 rounded-full border-2 border-gold bg-background/60 px-2.5 py-1 text-[10px] font-black text-gold backdrop-blur-sm sm:top-3 sm:left-3 sm:px-3 sm:text-[11px]">

@@ -1,4 +1,4 @@
-import React, { forwardRef, useImperativeHandle, useRef, useState } from 'react';
+import React, { forwardRef, useCallback, useImperativeHandle, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import ViewShot, { ViewShotRef } from 'react-native-view-shot';
@@ -29,26 +29,26 @@ export default forwardRef<ShareWatermarkHandle, Props>(function ShareWatermarkRe
 ) {
   const viewShotRef = useRef<ViewShotRef | null>(null);
   const [activeUri, setActiveUri] = useState<string | null>(null);
-  const onLoadResolveRef = useRef<(() => void) | null>(null);
+  const onLoadResolveRef = useRef<((status: 'ok' | 'error') => void) | null>(null);
   const loadStatusRef = useRef<'idle' | 'ok' | 'error'>('idle');
 
-  const waitForLoad = () => new Promise<void>((resolve) => {
+  const waitForLoad = () => new Promise<'ok' | 'error'>((resolve) => {
     onLoadResolveRef.current = resolve;
   });
 
   const onLoadEnd = () => {
     loadStatusRef.current = 'ok';
-    onLoadResolveRef.current?.();
+    onLoadResolveRef.current?.('ok');
     onLoadResolveRef.current = null;
   };
 
   const onLoadError = () => {
     loadStatusRef.current = 'error';
-    onLoadResolveRef.current?.();
+    onLoadResolveRef.current?.('error');
     onLoadResolveRef.current = null;
   };
 
-  const captureOne = async (uri: string): Promise<string | null> => {
+  const captureOne = useCallback(async (uri: string): Promise<string | null> => {
     const trimmed = String(uri || '').trim();
     if (!trimmed) return null;
 
@@ -57,9 +57,9 @@ export default forwardRef<ShareWatermarkHandle, Props>(function ShareWatermarkRe
     setActiveUri(trimmed);
 
     // Wait for the image to finish loading into the view.
-    await loadPromise;
+    const loadStatus = await loadPromise;
 
-    if (loadStatusRef.current !== 'ok') {
+    if (loadStatus !== 'ok') {
       return null;
     }
 
@@ -76,7 +76,7 @@ export default forwardRef<ShareWatermarkHandle, Props>(function ShareWatermarkRe
     } catch {
       return null;
     }
-  };
+  }, []);
 
   useImperativeHandle(ref, () => ({
     captureAll: async (imageUrls: string[]) => {
@@ -92,7 +92,7 @@ export default forwardRef<ShareWatermarkHandle, Props>(function ShareWatermarkRe
       setActiveUri(null);
       return results;
     },
-  }), []);
+  }), [captureOne]);
 
   return (
     <View pointerEvents="none" style={s.hiddenHost} collapsable={false}>
@@ -109,7 +109,6 @@ export default forwardRef<ShareWatermarkHandle, Props>(function ShareWatermarkRe
           height: 900,
         }}
         style={s.canvas}
-        collapsable={false}
       >
         {activeUri ? (
           <FastImage
@@ -131,6 +130,7 @@ export default forwardRef<ShareWatermarkHandle, Props>(function ShareWatermarkRe
           <View style={s.soldOverlay}>
             <View style={s.soldBadge}>
               <Text style={s.soldText}>{soldLabel}</Text>
+              <Text style={s.soldAppText}>Q8SportCar</Text>
             </View>
           </View>
         ) : null}
@@ -204,6 +204,14 @@ const s = StyleSheet.create({
     fontSize: 28,
     fontWeight: '900',
     letterSpacing: 0.4,
+  },
+  soldAppText: {
+    color: 'rgba(255,255,255,0.92)',
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.6,
+    marginTop: 4,
+    textAlign: 'center',
   },
   watermark: {
     position: 'absolute',

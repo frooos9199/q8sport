@@ -1,27 +1,45 @@
 {
   "rules": {
-    ".read": true,
+    ".read": false,
     "cars": {
+      ".read": true,
       ".indexOn": ["createdAt", "updatedAt", "deleteAt"],
       "$carId": {
         ".write": "auth != null && (root.child('users').child(auth.uid).child('isSuperAdmin').val() === true || root.child('users').child(auth.uid).child('isAdmin').val() === true || (!data.exists() && newData.child('userId').val() === auth.uid) || (data.exists() && data.child('userId').val() === auth.uid) || (data.exists() && data.child('userId').val().matches(/^guest-/) && newData.child('userId').val() === auth.uid && newData.child('userPhone').val() === data.child('userPhone').val() && newData.child('userWhatsapp').val() === data.child('userWhatsapp').val() && ((data.child('contactDigits').exists() && root.child('users').child(auth.uid).child('phoneDigits').exists() && data.child('contactDigits').val() === root.child('users').child(auth.uid).child('phoneDigits').val()) || (data.child('contactDigits').exists() && root.child('users').child(auth.uid).child('whatsappDigits').exists() && data.child('contactDigits').val() === root.child('users').child(auth.uid).child('whatsappDigits').val()) || (!data.child('contactDigits').exists() && ((data.child('userPhone').val() === root.child('users').child(auth.uid).child('phone').val()) || (data.child('userWhatsapp').val() === root.child('users').child(auth.uid).child('whatsapp').val()) || (data.child('userPhone').val() === root.child('users').child(auth.uid).child('whatsapp').val()) || (data.child('userWhatsapp').val() === root.child('users').child(auth.uid).child('phone').val()))))))"
       }
     },
     "parts": {
+      ".read": true,
       ".indexOn": ["createdAt", "updatedAt", "deleteAt"],
       "$partId": {
         ".write": "auth != null && (root.child('users').child(auth.uid).child('isSuperAdmin').val() === true || root.child('users').child(auth.uid).child('isAdmin').val() === true || (!data.exists() && newData.child('userId').val() === auth.uid) || (data.exists() && data.child('userId').val() === auth.uid) || (data.exists() && data.child('userId').val().matches(/^guest-/) && newData.child('userId').val() === auth.uid && newData.child('userPhone').val() === data.child('userPhone').val() && newData.child('userWhatsapp').val() === data.child('userWhatsapp').val() && ((data.child('contactDigits').exists() && root.child('users').child(auth.uid).child('phoneDigits').exists() && data.child('contactDigits').val() === root.child('users').child(auth.uid).child('phoneDigits').val()) || (data.child('contactDigits').exists() && root.child('users').child(auth.uid).child('whatsappDigits').exists() && data.child('contactDigits').val() === root.child('users').child(auth.uid).child('whatsappDigits').val()) || (!data.child('contactDigits').exists() && ((data.child('userPhone').val() === root.child('users').child(auth.uid).child('phone').val()) || (data.child('userWhatsapp').val() === root.child('users').child(auth.uid).child('whatsapp').val()) || (data.child('userPhone').val() === root.child('users').child(auth.uid).child('whatsapp').val()) || (data.child('userWhatsapp').val() === root.child('users').child(auth.uid).child('phone').val()))))))"
       }
     },
     "requests": {
+      ".read": true,
       ".indexOn": ["createdAt", "updatedAt"],
       "$requestId": {
         ".write": "auth != null && (root.child('users').child(auth.uid).child('isSuperAdmin').val() === true || root.child('users').child(auth.uid).child('isAdmin').val() === true || (!data.exists() && newData.child('userId').val() === auth.uid) || (data.exists() && data.child('userId').val() === auth.uid) || (data.exists() && data.child('userId').val().matches(/^guest-/) && newData.child('userId').val() === auth.uid && newData.child('userPhone').val() === data.child('userPhone').val() && newData.child('userWhatsapp').val() === data.child('userWhatsapp').val() && ((data.child('contactDigits').exists() && root.child('users').child(auth.uid).child('phoneDigits').exists() && data.child('contactDigits').val() === root.child('users').child(auth.uid).child('phoneDigits').val()) || (data.child('contactDigits').exists() && root.child('users').child(auth.uid).child('whatsappDigits').exists() && data.child('contactDigits').val() === root.child('users').child(auth.uid).child('whatsappDigits').val()) || (!data.child('contactDigits').exists() && ((data.child('userPhone').val() === root.child('users').child(auth.uid).child('phone').val()) || (data.child('userWhatsapp').val() === root.child('users').child(auth.uid).child('whatsapp').val()) || (data.child('userPhone').val() === root.child('users').child(auth.uid).child('whatsapp').val()) || (data.child('userWhatsapp').val() === root.child('users').child(auth.uid).child('phone').val()))))))"
       }
     },
     "users": {
+      ".indexOn": ["createdAt", "phoneDigits"],
+      ".read": "(auth != null && (root.child('users').child(auth.uid).child('isSuperAdmin').val() === true || root.child('users').child(auth.uid).child('isAdmin').val() === true)) || (auth != null && query.orderByChild == 'createdAt' && query.limitToFirst != null && query.limitToFirst <= 50) || (query.orderByChild == 'phoneDigits' && query.equalTo != null && query.limitToFirst != null && query.limitToFirst <= 1)",
       "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('isSuperAdmin').val() === true || root.child('users').child(auth.uid).child('isAdmin').val() === true)",
         ".write": "auth != null && (auth.uid === $uid || root.child('users').child(auth.uid).child('isSuperAdmin').val() === true)",
+        "name": {
+          ".read": true
+        },
+        "avatar": {
+          ".read": true
+        },
+        "campaign": {
+          ".read": true
+        },
+        "deletedAt": {
+          ".read": true
+        },
         "credits": {
           ".write": "auth != null && (root.child('users').child(auth.uid).child('isSuperAdmin').val() === true || root.child('users').child(auth.uid).child('isAdmin').val() === true || (auth.uid === $uid && (!data.exists() || newData.val() === data.val() || (data.exists() && newData.child('trialPoints').isNumber() && newData.child('paidPoints').isNumber() && newData.child('totalSpentPoints').isNumber() && newData.child('updatedAt').isNumber() && data.child('trialPoints').isNumber() && data.child('paidPoints').isNumber() && data.child('totalSpentPoints').isNumber() && data.child('updatedAt').isNumber() && newData.child('trialPoints').val() >= 0 && newData.child('paidPoints').val() >= 0 && newData.child('totalSpentPoints').val() >= data.child('totalSpentPoints').val() && newData.child('updatedAt').val() >= data.child('updatedAt').val() && (newData.child('trialPoints').val() + newData.child('paidPoints').val()) <= (data.child('trialPoints').val() + data.child('paidPoints').val())))))"
         },
@@ -43,11 +61,13 @@
       }
     },
     "banners": {
+      ".read": true,
       "$bannerId": {
         ".write": "auth != null && root.child('users').child(auth.uid).child('isSuperAdmin').val() === true"
       }
     },
     "popupAds": {
+      ".read": true,
       ".indexOn": ["endDate"],
       "$popupAdId": {
         ".write": "auth != null && root.child('users').child(auth.uid).child('isSuperAdmin').val() === true"

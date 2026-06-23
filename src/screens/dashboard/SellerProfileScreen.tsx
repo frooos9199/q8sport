@@ -38,6 +38,7 @@ export default function SellerProfileScreen({ route, navigation }: any) {
   const canEditSellerContacts = Boolean(user?.isAdmin || user?.isSuperAdmin);
   const isGuestSeller = String(sellerId || '').startsWith('guest-');
   const canEditThisSellerContacts = canEditSellerContacts && !isGuestSeller && Boolean(sellerUser) && !Boolean(sellerUser?.deletedAt);
+  const canReadFullSellerUser = Boolean(user?.uid === sellerId || user?.isAdmin || user?.isSuperAdmin);
 
   const [sellerPhoneCountry, setSellerPhoneCountry] = useState<GccCountry['code']>('KW');
   const [sellerPhoneNational, setSellerPhoneNational] = useState('');
@@ -62,11 +63,10 @@ export default function SellerProfileScreen({ route, navigation }: any) {
   }, [sellerUser?.credits]);
 
   const loadSellerData = useCallback(async () => {
-    const [carsSnap, partsSnap, requestsSnap, userSnap] = await Promise.all([
+    const [carsSnap, partsSnap, requestsSnap] = await Promise.all([
       getDbSnapshot(dbRef(db, 'cars'), 'cars'),
       getDbSnapshot(dbRef(db, 'parts'), 'parts'),
       getDbSnapshot(dbRef(db, 'requests'), 'requests'),
-      getDbSnapshot(dbRef(db, `users/${sellerId}`), `users/${sellerId}`, { showAlert: false }),
     ]);
 
     const nextCars: Car[] = [];
@@ -98,13 +98,36 @@ export default function SellerProfileScreen({ route, navigation }: any) {
     setCars(sortedCars);
     setParts(sortedParts);
     setRequests(sortedRequests);
-    setSellerUser(userSnap.exists() ? { uid: sellerId, ...userSnap.val() } : null);
+
+    if (canReadFullSellerUser) {
+      try {
+        const userSnap = await getDbSnapshot(dbRef(db, `users/${sellerId}`), `users/${sellerId}`, { showAlert: false });
+        setSellerUser(userSnap.exists() ? { uid: sellerId, ...userSnap.val() } : null);
+      } catch {
+        setSellerUser(null);
+      }
+    } else {
+      const [nameSnap, avatarSnap, campaignSnap, deletedAtSnap] = await Promise.allSettled([
+        getDbSnapshot(dbRef(db, `users/${sellerId}/name`), `users/${sellerId}/name`, { showAlert: false }),
+        getDbSnapshot(dbRef(db, `users/${sellerId}/avatar`), `users/${sellerId}/avatar`, { showAlert: false }),
+        getDbSnapshot(dbRef(db, `users/${sellerId}/campaign`), `users/${sellerId}/campaign`, { showAlert: false }),
+        getDbSnapshot(dbRef(db, `users/${sellerId}/deletedAt`), `users/${sellerId}/deletedAt`, { showAlert: false }),
+      ]);
+
+      const partialUser: Partial<User> = { uid: sellerId };
+      if (nameSnap.status === 'fulfilled' && nameSnap.value.exists()) partialUser.name = String(nameSnap.value.val() || '');
+      if (avatarSnap.status === 'fulfilled' && avatarSnap.value.exists()) partialUser.avatar = String(avatarSnap.value.val() || '');
+      if (campaignSnap.status === 'fulfilled' && campaignSnap.value.exists()) partialUser.campaign = campaignSnap.value.val();
+      if (deletedAtSnap.status === 'fulfilled' && deletedAtSnap.value.exists()) partialUser.deletedAt = deletedAtSnap.value.val();
+
+      setSellerUser(Object.keys(partialUser).length > 1 ? (partialUser as User) : null);
+    }
 
     await prefetchListingImages(
       [...sortedCars, ...sortedParts, ...sortedRequests].slice(0, INITIAL_SELLER_IMAGE_PREFETCH),
       INITIAL_SELLER_IMAGE_PREFETCH,
     );
-  }, [sellerId]);
+  }, [canReadFullSellerUser, sellerId]);
 
   useEffect(() => {
     let mounted = true;

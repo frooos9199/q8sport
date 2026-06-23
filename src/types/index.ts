@@ -136,6 +136,8 @@ export type BannerPlacement = 'home' | 'cars' | 'parts';
 export const CAR_BRANDS = [
   "Porsche", "Ferrari", "Lamborghini", "McLaren", "Bugatti",
   "Aston Martin", "Maserati", "BMW", "Mercedes-Benz", "Audi",
-  "Nissan", "Toyota", "Mitsubishi", "Subaru", "Honda", "Chevrolet", "Ford", "Dodge",
-  "Jaguar", "Bentley", "Rolls-Royce", "Lexus", "Other"
+  "Nissan", "Toyota", "Mitsubishi", "Subaru", "Honda", "Mazda", "Suzuki",
+  "Hyundai", "Kia", "Genesis", "Chevrolet", "Ford", "Dodge", "GMC", "Cadillac", "Jeep",
+  "Jaguar", "Bentley", "Rolls-Royce", "Lexus", "Infiniti", "Land Rover", "Range Rover", "Mini", "Volkswagen", "Volvo", "Tesla",
+  "MG", "Geely", "BYD", "Changan", "GAC", "Haval", "Jetour", "Chery", "Other"
 ];

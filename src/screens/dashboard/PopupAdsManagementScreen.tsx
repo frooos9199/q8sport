@@ -256,7 +256,7 @@ export default function PopupAdsManagementScreen() {
       return;
     }
 
-    const result = await launchImageLibrary({ mediaType: 'photo', selectionLimit: 1, quality: 0.85 });
+    const result = await launchImageLibrary({ mediaType: 'photo', selectionLimit: 1, quality: 0.8 });
     if (result.didCancel) return;
 
     const asset = result.assets?.[0];
@@ -730,7 +730,7 @@ const s = StyleSheet.create({
   toggleBtnOn: { borderColor: 'rgba(48,209,88,0.35)', backgroundColor: 'rgba(48,209,88,0.12)' },
   toggleBtnOff: { borderColor: colors.metalBorder, backgroundColor: colors.metal },
   toggleText: { fontWeight: '900' },
-  toggleTextOn: { color: colors.mint },
+  toggleTextOn: { color: colors.green },
   toggleTextOff: { color: colors.silverLight },
 
   primaryBtn: {
@@ -799,7 +799,7 @@ const s = StyleSheet.create({
   badgeOn: { borderColor: 'rgba(48,209,88,0.25)', backgroundColor: 'rgba(48,209,88,0.10)' },
   badgeOff: { borderColor: colors.metalBorder, backgroundColor: colors.metal },
   badgeText: { fontSize: 10, fontWeight: '900' },
-  badgeTextOn: { color: colors.mint },
+  badgeTextOn: { color: colors.green },
   badgeTextOff: { color: colors.silverLight },
 
   badgeNeutral: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, borderColor: colors.metalBorder, backgroundColor: colors.metal },

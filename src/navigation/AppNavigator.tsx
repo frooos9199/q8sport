@@ -38,6 +38,8 @@ const screenOptions = {
   headerStyle: { backgroundColor: colors.dark },
   headerTintColor: colors.white,
   headerTitleStyle: { fontWeight: '800' as const },
+  headerBackTitle: '',
+  headerBackTitleVisible: false,
   contentStyle: { backgroundColor: colors.dark },
   headerShadowVisible: false,
 };
@@ -207,14 +209,13 @@ function TabIcon({ icon, focused }: { icon: string; focused: boolean }) {
 export default function AppNavigator() {
   const insets = useSafeAreaInsets();
   const { user, loading } = useAuth();
-  const { locale } = useLocale();
   const tabBarBottomPad = Math.max(
     insets.bottom,
     Platform.OS === 'android' ? 24 : 10,
   );
   const tabBarLabelStyle = React.useMemo(
     () => ({ fontSize: 10, fontWeight: '700' as const, marginTop: 2 }),
-    [locale],
+    [],
   );
   const [showIntro, setShowIntro] = React.useState(true);
   const [showLaunchNotice, setShowLaunchNotice] = React.useState(false);
