@@ -309,7 +309,11 @@ function AnimatedPartCard({ item, index, navigation }: any) {
           {item.status === 'sold' && (
             <View style={s.soldOverlay}>
               <Text style={s.soldMainText}>مباع</Text>
-              <Text style={s.soldSiteText}>Q8SportCar.com</Text>
+              <View style={s.soldSiteRow}>
+                <Text style={{ color: colors.primary, fontSize: 10, fontWeight: '900' }}>Q8</Text>
+                <Text style={{ color: colors.white, fontSize: 10, fontWeight: '900' }}>SPORTCAR</Text>
+                <Text style={{ color: colors.primary, fontSize: 10, fontWeight: '900' }}>.COM</Text>
+              </View>
             </View>
           )}
         </View>
@@ -426,8 +430,8 @@ const s = StyleSheet.create({
   condBadge: { position: 'absolute', top: 8, left: 8, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.sm },
   condText: { color: colors.white, fontSize: 10, fontWeight: '700' },
   soldOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'center', alignItems: 'center' },
-  soldMainText: { color: colors.white, fontSize: 22, fontWeight: '900', letterSpacing: 4, textTransform: 'uppercase' },
-  soldSiteText: { color: colors.white, fontSize: 10, fontWeight: '900', marginTop: 6, letterSpacing: 1, opacity: 0.9 },
+  soldMainText: { color: colors.white, fontSize: 22, fontWeight: '900', letterSpacing: 4 },
+  soldSiteRow: { flexDirection: 'row', marginTop: 6 },
   info: { padding: 12 },
   title: { color: colors.white, fontWeight: '700', fontSize: 13, marginBottom: 6, lineHeight: 18 },
   price: { color: colors.primary, fontWeight: '900', fontSize: 16, marginBottom: 10 },

@@ -301,7 +301,11 @@ export default function CarDetailsScreen({ route, navigation }: any) {
           {car.status === 'sold' && (
             <View pointerEvents="none" style={s.soldOverlayHero}>
               <Text style={s.soldHeroText}>مباع</Text>
-              <Text style={s.soldHeroSite}>Q8SportCar.com</Text>
+              <View style={s.soldHeroSiteRow}>
+                <Text style={{ color: colors.primary, fontSize: 16, fontWeight: '900' }}>Q8</Text>
+                <Text style={{ color: colors.white, fontSize: 16, fontWeight: '900' }}>SPORTCAR</Text>
+                <Text style={{ color: colors.primary, fontSize: 16, fontWeight: '900' }}>.COM</Text>
+              </View>
             </View>
           )}
 
@@ -497,8 +501,8 @@ const s = StyleSheet.create({
   placeholder: { backgroundColor: colors.metal, justifyContent: 'center', alignItems: 'center' },
   imgGradient: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 120 },
   soldOverlayHero: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
-  soldHeroText: { color: colors.white, fontSize: 40, fontWeight: '900', letterSpacing: 5, textTransform: 'uppercase' },
-  soldHeroSite: { color: colors.white, fontSize: 16, fontWeight: '900', marginTop: 12, letterSpacing: 1, opacity: 0.9 },
+  soldHeroText: { color: colors.white, fontSize: 40, fontWeight: '900', letterSpacing: 5 },
+  soldHeroSiteRow: { flexDirection: 'row', marginTop: 12 },
   imgCounter: { position: 'absolute', bottom: 16, right: 16, backgroundColor: 'rgba(0,0,0,0.7)', paddingHorizontal: 12, paddingVertical: 5, borderRadius: radius.full },
   imgCounterText: { color: colors.white, fontSize: 12, fontWeight: '600' },
   statusBadge: { position: 'absolute', top: 16, right: 16, paddingHorizontal: 14, paddingVertical: 6, borderRadius: radius.full },
