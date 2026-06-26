@@ -176,6 +176,7 @@ export default function CarDetailsScreen({ route, navigation }: any) {
     .filter(Boolean)
     .join(' ');
 
+  const carUrl = getPublishedListingUrl('cars', car.id);
   const shareMessage = [
     safeText(t('shareFromAppLine')),
     car.status === 'sold' ? 'مباع' : '',
@@ -184,6 +185,9 @@ export default function CarDetailsScreen({ route, navigation }: any) {
     carLine,
     safeText(t('sharePriceLine', { price: car.price?.toLocaleString(), kwd: t('kwd') })),
     getLocalizedText((car as any).description),
+    '',
+    carUrl,
+    '',
     safeText(t('shareDownloadAppLineCars')),
     marketHashtags,
   ].filter(Boolean).join('\n');

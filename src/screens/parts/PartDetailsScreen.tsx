@@ -189,6 +189,7 @@ export default function PartDetailsScreen({ route, navigation }: any) {
     .filter(Boolean)
     .join(' • ');
 
+  const partUrl = getPublishedListingUrl('parts', part.id);
   const shareMessage = [
     safeText(t('shareFromAppLine')),
     part.status === 'sold' ? 'مباع' : '',
@@ -197,6 +198,9 @@ export default function PartDetailsScreen({ route, navigation }: any) {
     partLine,
     part.price != null ? safeText(t('sharePriceLine', { price: part.price?.toLocaleString(), kwd: t('kwd') })) : '',
     getLocalizedText((part as any).description),
+    '',
+    partUrl,
+    '',
     safeText(t('shareDownloadAppLineParts')),
     marketHashtags,
   ].filter(Boolean).join('\n');
