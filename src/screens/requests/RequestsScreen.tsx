@@ -85,9 +85,6 @@ function AnimatedRequestCard({ item, index, navigation }: { item: Request; index
       {previewImage ? (
         <View style={s.cardImageWrap}>
           <FastAdImage uri={previewImage} style={s.cardImage} placeholderColor={colors.darkLight} />
-          <View pointerEvents="none" style={s.viewsBadge}>
-            <Text style={s.viewsText}>👁 {Number(getBoostedListingViews(item.views, item.createdAt, item.id)).toLocaleString()}</Text>
-          </View>
         </View>
       ) : null}
       <View style={s.cardHeader}>
