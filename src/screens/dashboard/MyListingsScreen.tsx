@@ -245,11 +245,12 @@ export default function MyListingsScreen({ navigation }: any) {
       : item.status === 'sold' ? 'active' : 'sold';
 
     const now = Date.now();
+    const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
     const patch: Record<string, any> = { status: nextStatus, updatedAt: now };
     if (item.type !== 'request') {
       if (nextStatus === 'sold') {
         patch.soldAt = now;
-        patch.deleteAt = now;
+        patch.deleteAt = now + THREE_DAYS_MS;
       } else {
         patch.soldAt = null;
         patch.deleteAt = null;
