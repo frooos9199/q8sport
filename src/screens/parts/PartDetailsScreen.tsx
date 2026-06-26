@@ -512,8 +512,8 @@ const s = StyleSheet.create({
   placeholderIcon: { fontSize: 56 },
   heroGradient: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 140 },
   soldOverlayHero: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
-  soldHeroText: { color: colors.white, fontSize: 32, fontWeight: '900', letterSpacing: 3 },
-  soldHeroSite: { color: colors.primary, fontSize: 14, fontWeight: '800', marginTop: 8 },
+  soldHeroText: { color: colors.white, fontSize: 36, fontWeight: '900', letterSpacing: 5, textTransform: 'uppercase' },
+  soldHeroSite: { color: colors.white, fontSize: 15, fontWeight: '900', marginTop: 10, letterSpacing: 1, opacity: 0.9 },
   conditionBadge: { position: 'absolute', top: 18, left: 18, backgroundColor: colors.primary, borderRadius: radius.full, paddingHorizontal: 14, paddingVertical: 7 },
   conditionText: { color: colors.white, fontWeight: '900', fontSize: 12 },
 

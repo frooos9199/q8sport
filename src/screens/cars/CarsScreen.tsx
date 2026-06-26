@@ -548,8 +548,8 @@ const s = StyleSheet.create({
   waOverlayIcon: { fontSize: 15 },
   waOverlayText: { color: colors.white, fontSize: 12, fontWeight: '800' },
   soldOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'center', alignItems: 'center' },
-  soldMainText: { color: colors.white, fontSize: 22, fontWeight: '900', letterSpacing: 2 },
-  soldSiteText: { color: colors.primary, fontSize: 11, fontWeight: '800', marginTop: 4 },
+  soldMainText: { color: colors.white, fontSize: 26, fontWeight: '900', letterSpacing: 4, textTransform: 'uppercase' },
+  soldSiteText: { color: colors.white, fontSize: 12, fontWeight: '900', marginTop: 8, letterSpacing: 1, opacity: 0.9 },
 
   cardInfo: { flex: 1, paddingHorizontal: 14, paddingVertical: 12, justifyContent: 'space-between', alignItems: 'flex-end' },
   cardTextBlock: { gap: 6, alignItems: 'flex-end' },
