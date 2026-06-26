@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,6 +10,7 @@ import { colors, radius, shadows, spacing } from '../../lib/theme';
 import { t } from '../../i18n';
 import { useLocale } from '../../i18n/LocaleProvider';
 import { openAdminWhatsapp } from '../../lib/adminWhatsapp';
+import { isBiometricAvailable, hasSavedCredentials, saveCredentials, getCredentialsWithBiometric, getBiometricLabel } from '../../lib/biometricAuth';
 
 export default function LoginScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
@@ -21,12 +22,43 @@ export default function LoginScreen({ navigation }: any) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [biometricReady, setBiometricReady] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const available = await isBiometricAvailable();
+      const hasCreds = await hasSavedCredentials();
+      setBiometricReady(available && hasCreds);
+    })();
+  }, []);
 
   const handleLogin = async () => {
     if (!email || !password) return;
     setLoading(true);
     try {
       await login(email, password);
+      // Save credentials for Face ID next time
+      const available = await isBiometricAvailable();
+      if (available) {
+        await saveCredentials(email, password);
+      }
+    } catch (e: any) {
+      if (e?.message === 'user-disabled-by-admin') {
+        Alert.alert(t('accountDisabledTitle'), t('accountDisabledMsg'));
+      } else {
+        Alert.alert(t('loginErrorTitle'), t('loginErrorMsg'));
+      }
+    }
+    setLoading(false);
+  };
+
+  const handleBiometricLogin = async () => {
+    setLoading(true);
+    try {
+      const creds = await getCredentialsWithBiometric();
+      if (creds) {
+        await login(creds.email, creds.password);
+      }
     } catch (e: any) {
       if (e?.message === 'user-disabled-by-admin') {
         Alert.alert(t('accountDisabledTitle'), t('accountDisabledMsg'));
@@ -195,6 +227,13 @@ export default function LoginScreen({ navigation }: any) {
             </View>
           ) : null}
 
+          {biometricReady ? (
+            <TouchableOpacity style={s.biometricBtn} activeOpacity={0.85} onPress={handleBiometricLogin} disabled={loading}>
+              <Text style={s.biometricIcon}>{Platform.OS === 'ios' ? '🔐' : '👆'}</Text>
+              <Text style={s.biometricText}>{`الدخول بـ ${getBiometricLabel()}`}</Text>
+            </TouchableOpacity>
+          ) : null}
+
           <TouchableOpacity
             onPress={handleForgotPassword}
             disabled={resetting}
@@ -258,6 +297,9 @@ const s = StyleSheet.create({
   btnText: { color: colors.white, fontWeight: '900', fontSize: 17 },
   appleWrap: { marginTop: 12 },
   appleButton: { width: '100%', height: 52 },
+  biometricBtn: { marginTop: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: colors.metal, borderWidth: 1, borderColor: colors.metalBorder, borderRadius: radius.lg, paddingVertical: 16 },
+  biometricIcon: { fontSize: 20 },
+  biometricText: { color: colors.white, fontWeight: '800', fontSize: 15 },
 
   forgotLink: { marginTop: 14, alignItems: 'center' },
   forgotText: { color: colors.silver, fontSize: 13, textDecorationLine: 'underline' },
