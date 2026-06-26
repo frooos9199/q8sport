@@ -101,12 +101,12 @@ function AnimatedRequestCard({ item, index, navigation }: { item: Request; index
       <Text style={s.desc} numberOfLines={2}>{item.description?.ar}</Text>
       {publishedAt ? <Text style={s.metaText}>{t('publishedOn')}: {publishedAt}</Text> : null}
 
-      {item.budget && (
+      {item.budget ? (
         <View style={s.budgetWrap}>
           <Text style={s.budgetLabel}>{t('budget')}</Text>
           <Text style={s.budgetValue}>{item.budget.toLocaleString()} {t('kwd')}</Text>
         </View>
-      )}
+      ) : null}
 
       <View style={s.footer}>
         <TouchableOpacity
