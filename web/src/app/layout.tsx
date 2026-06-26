@@ -44,6 +44,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ar" dir="rtl" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+      <head>
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-YGCQYT54K4" />
+        <script dangerouslySetInnerHTML={{ __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-YGCQYT54K4');` }} />
+      </head>
       <body className="min-h-full flex flex-col">
         <Navbar />
         <div className="flex-1">{children}</div>
