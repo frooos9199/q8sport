@@ -428,7 +428,10 @@ function AnimatedCard({ item, index, navigation, openWhatsApp }: any) {
             <Text style={s.cardYearText}>{item.year}</Text>
           </View>
           {item.status === 'sold' && (
-            <View style={s.soldBadge}><Text style={s.soldText}>{t('sold')}</Text></View>
+            <View style={s.soldOverlay}>
+              <Text style={s.soldMainText}>مباع</Text>
+              <Text style={s.soldSiteText}>Q8SportCar.com</Text>
+            </View>
           )}
         </View>
       </TouchableOpacity>
@@ -544,8 +547,9 @@ const s = StyleSheet.create({
   },
   waOverlayIcon: { fontSize: 15 },
   waOverlayText: { color: colors.white, fontSize: 12, fontWeight: '800' },
-  soldBadge: { position: 'absolute', top: 12, left: 12, backgroundColor: 'rgba(227,30,36,0.9)', paddingHorizontal: 12, paddingVertical: 4, borderRadius: radius.sm },
-  soldText: { color: colors.white, fontSize: 11, fontWeight: '800' },
+  soldOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'center', alignItems: 'center' },
+  soldMainText: { color: colors.white, fontSize: 22, fontWeight: '900', letterSpacing: 2 },
+  soldSiteText: { color: colors.primary, fontSize: 11, fontWeight: '800', marginTop: 4 },
 
   cardInfo: { flex: 1, paddingHorizontal: 14, paddingVertical: 12, justifyContent: 'space-between', alignItems: 'flex-end' },
   cardTextBlock: { gap: 6, alignItems: 'flex-end' },

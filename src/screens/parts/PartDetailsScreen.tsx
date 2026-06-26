@@ -326,9 +326,12 @@ export default function PartDetailsScreen({ route, navigation }: any) {
           </View>
         )}
         <LinearGradient colors={['transparent', 'transparent']} style={s.heroGradient} />
-        <View pointerEvents="none" style={s.viewsBadge}>
-          <Text style={s.viewsText}>👁 {Number(views || 0).toLocaleString()}</Text>
-        </View>
+        {part.status === 'sold' && (
+          <View pointerEvents="none" style={s.soldOverlayHero}>
+            <Text style={s.soldHeroText}>مباع</Text>
+            <Text style={s.soldHeroSite}>Q8SportCar.com</Text>
+          </View>
+        )}
         <View style={s.conditionBadge}>
           <Text style={s.conditionText}>{part.condition === 'new' ? t('new') : t('used')}</Text>
         </View>
@@ -508,16 +511,9 @@ const s = StyleSheet.create({
   placeholder: { justifyContent: 'center', alignItems: 'center' },
   placeholderIcon: { fontSize: 56 },
   heroGradient: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 140 },
-  viewsBadge: {
-    position: 'absolute',
-    right: 18,
-    bottom: 18,
-    backgroundColor: 'rgba(0,0,0,0.65)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: radius.full,
-  },
-  viewsText: { color: colors.white, fontWeight: '900', fontSize: 12 },
+  soldOverlayHero: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
+  soldHeroText: { color: colors.white, fontSize: 32, fontWeight: '900', letterSpacing: 3 },
+  soldHeroSite: { color: colors.primary, fontSize: 14, fontWeight: '800', marginTop: 8 },
   conditionBadge: { position: 'absolute', top: 18, left: 18, backgroundColor: colors.primary, borderRadius: radius.full, paddingHorizontal: 14, paddingVertical: 7 },
   conditionText: { color: colors.white, fontWeight: '900', fontSize: 12 },
 

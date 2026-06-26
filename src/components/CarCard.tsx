@@ -57,7 +57,8 @@ export default function CarCard({ car, onPress, onWhatsApp }: Props) {
           </View>
           {car.status === 'sold' && (
             <View style={s.soldOverlay}>
-              <View style={s.soldBadge}><Text style={s.soldText}>{t('sold')}</Text></View>
+              <Text style={s.soldText}>مباع</Text>
+              <Text style={s.soldSite}>Q8SportCar.com</Text>
             </View>
           )}
         </View>
@@ -131,8 +132,8 @@ const s = StyleSheet.create({
     borderColor: 'rgba(37, 211, 102, 0.35)',
   },
   soldOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center' },
-  soldBadge: { backgroundColor: colors.primary, paddingHorizontal: 20, paddingVertical: 8, borderRadius: radius.md },
-  soldText: { color: colors.white, fontSize: 18, fontWeight: '900' },
+  soldText: { color: colors.white, fontSize: 28, fontWeight: '900', letterSpacing: 2 },
+  soldSite: { color: colors.primary, fontSize: 13, fontWeight: '800', marginTop: 6 },
   info: { padding: spacing.lg },
   title: { color: colors.white, fontWeight: '800', fontSize: 17, marginBottom: 3 },
   sub: { color: colors.silver, fontSize: 12, marginBottom: spacing.md },

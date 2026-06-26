@@ -306,6 +306,12 @@ function AnimatedPartCard({ item, index, navigation }: any) {
           <View style={[s.condBadge, { backgroundColor: item.condition === 'new' ? colors.green : colors.yellow }]}>
             <Text style={s.condText}>{item.condition === 'new' ? t('new') : t('used')}</Text>
           </View>
+          {item.status === 'sold' && (
+            <View style={s.soldOverlay}>
+              <Text style={s.soldMainText}>مباع</Text>
+              <Text style={s.soldSiteText}>Q8SportCar.com</Text>
+            </View>
+          )}
         </View>
         <View style={s.info}>
           <Text style={s.title} numberOfLines={2}>{item.title?.ar}</Text>
@@ -419,6 +425,9 @@ const s = StyleSheet.create({
   featureBadgeText: { fontSize: 11, fontWeight: '900', color: colors.gold },
   condBadge: { position: 'absolute', top: 8, left: 8, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.sm },
   condText: { color: colors.white, fontSize: 10, fontWeight: '700' },
+  soldOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'center', alignItems: 'center' },
+  soldMainText: { color: colors.white, fontSize: 18, fontWeight: '900', letterSpacing: 2 },
+  soldSiteText: { color: colors.primary, fontSize: 10, fontWeight: '800', marginTop: 4 },
   info: { padding: 12 },
   title: { color: colors.white, fontWeight: '700', fontSize: 13, marginBottom: 6, lineHeight: 18 },
   price: { color: colors.primary, fontWeight: '900', fontSize: 16, marginBottom: 10 },

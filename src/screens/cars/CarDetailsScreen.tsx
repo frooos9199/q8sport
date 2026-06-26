@@ -298,9 +298,12 @@ export default function CarDetailsScreen({ route, navigation }: any) {
           )}
           <LinearGradient colors={['transparent', 'transparent']} style={s.imgGradient} />
 
-          <View pointerEvents="none" style={s.viewsBadge}>
-            <Text style={s.viewsText}>👁 {Number(views || 0).toLocaleString()}</Text>
-          </View>
+          {car.status === 'sold' && (
+            <View pointerEvents="none" style={s.soldOverlayHero}>
+              <Text style={s.soldHeroText}>مباع</Text>
+              <Text style={s.soldHeroSite}>Q8SportCar.com</Text>
+            </View>
+          )}
 
           {/* Image counter */}
           {carGallery.length > 1 && (
@@ -493,16 +496,9 @@ const s = StyleSheet.create({
   mainImg: { width, height: 320 },
   placeholder: { backgroundColor: colors.metal, justifyContent: 'center', alignItems: 'center' },
   imgGradient: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 120 },
-  viewsBadge: {
-    position: 'absolute',
-    top: 16,
-    left: 16,
-    backgroundColor: 'rgba(0,0,0,0.65)',
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: radius.full,
-  },
-  viewsText: { color: colors.white, fontSize: 12, fontWeight: '800' },
+  soldOverlayHero: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
+  soldHeroText: { color: colors.white, fontSize: 36, fontWeight: '900', letterSpacing: 3 },
+  soldHeroSite: { color: colors.primary, fontSize: 15, fontWeight: '800', marginTop: 8 },
   imgCounter: { position: 'absolute', bottom: 16, right: 16, backgroundColor: 'rgba(0,0,0,0.7)', paddingHorizontal: 12, paddingVertical: 5, borderRadius: radius.full },
   imgCounterText: { color: colors.white, fontSize: 12, fontWeight: '600' },
   statusBadge: { position: 'absolute', top: 16, right: 16, paddingHorizontal: 14, paddingVertical: 6, borderRadius: radius.full },
