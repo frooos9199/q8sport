@@ -13,6 +13,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
   const canonical = absoluteUrl(`/cars/${car.slug}`);
   const imageUrl = car.images[0] || absoluteUrl(siteConfig.ogImage);
+  const ogDescription = `${car.price} • ${car.year} • ${car.mileage} | Q8 Sport Car - حمّل التطبيق وتصفح أقوى سيارات السبورت بالكويت`;
 
   return {
     title: car.title,
@@ -20,16 +21,17 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     alternates: { canonical },
     keywords: [car.title, "سيارات سبورت الكويت", "سيارات للبيع الكويت", ...siteConfig.keywords],
     openGraph: {
-      title: `${car.title} | ${siteConfig.name}`,
-      description: car.summary,
+      title: `${car.title} • ${car.price}`,
+      description: ogDescription,
       url: canonical,
+      siteName: "Q8 Sport Car",
       type: "article",
-      images: [{ url: imageUrl, alt: car.title }],
+      images: [{ url: imageUrl, alt: car.title, width: 1200, height: 630 }],
     },
     twitter: {
       card: "summary_large_image",
-      title: `${car.title} | ${siteConfig.name}`,
-      description: car.summary,
+      title: `${car.title} • ${car.price}`,
+      description: ogDescription,
       images: [imageUrl],
     },
   };

@@ -13,6 +13,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
   const canonical = absoluteUrl(`/parts/${part.slug}`);
   const imageUrl = part.images[0] || absoluteUrl(siteConfig.ogImage);
+  const ogDescription = `${part.price} • ${part.condition} • ${part.category} | Q8 Sport Car - حمّل التطبيق وتصفح قطع غيار السبورت بالكويت`;
 
   return {
     title: part.title,
@@ -20,16 +21,17 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     alternates: { canonical },
     keywords: [part.title, "قطع غيار الكويت", "قطع سبورت", ...siteConfig.keywords],
     openGraph: {
-      title: `${part.title} | ${siteConfig.name}`,
-      description: part.summary,
+      title: `${part.title} • ${part.price}`,
+      description: ogDescription,
       url: canonical,
+      siteName: "Q8 Sport Car",
       type: "article",
-      images: [{ url: imageUrl, alt: part.title }],
+      images: [{ url: imageUrl, alt: part.title, width: 1200, height: 630 }],
     },
     twitter: {
       card: "summary_large_image",
-      title: `${part.title} | ${siteConfig.name}`,
-      description: part.summary,
+      title: `${part.title} • ${part.price}`,
+      description: ogDescription,
       images: [imageUrl],
     },
   };
