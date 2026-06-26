@@ -298,9 +298,6 @@ function AnimatedPartCard({ item, index, navigation }: any) {
             <View style={[s.img, s.placeholder]}><Text style={{ fontSize: 30 }}>⚙️</Text></View>
           )}
           <LinearGradient colors={['transparent', 'transparent']} style={s.imgGradient} />
-          <View pointerEvents="none" style={s.viewsBadge}>
-            <Text style={s.viewsText}>👁 {Number(getBoostedListingViews(item.views, item.createdAt, item.id)).toLocaleString()}</Text>
-          </View>
           {isFeatured ? (
             <View pointerEvents="none" style={s.featureBadge}>
               <Text style={s.featureBadgeText} numberOfLines={1}>{t('featuredAdLabel')}</Text>

@@ -419,9 +419,6 @@ function AnimatedCard({ item, index, navigation, openWhatsApp }: any) {
             <View style={[s.cardImg, s.placeholder]}><Text style={{ fontSize: 32 }}>🏎️</Text></View>
           )}
           <LinearGradient colors={['transparent', 'transparent']} style={s.cardImgGradient} />
-          <View pointerEvents="none" style={s.viewsBadge}>
-            <Text style={s.viewsText}>👁 {Number(getBoostedListingViews(item.views, item.createdAt, item.id)).toLocaleString()}</Text>
-          </View>
           {isFeatured ? (
             <View pointerEvents="none" style={s.featureBadge}>
               <Text style={s.featureBadgeText} numberOfLines={1}>{t('featuredAdLabel')}</Text>
