@@ -82,8 +82,8 @@ android {
         applicationId "com.q8sportcar.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 23
-        versionName "2.5.24"
+        versionCode 24
+        versionName "2.5.25"
     }
         def keystorePropertiesFile = rootProject.file("key.properties")
         def keystoreProperties = new Properties()
